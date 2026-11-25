@@ -1,11 +1,12 @@
 import { UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import type { Context } from "hono";
+import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
 import { withModelFallbackResponse } from "../fallback.ts";
 import { bufferToUint8Array } from "../image/utils/imageDownload.ts";
 import { buildTrackingHeaders } from "../image/utils/trackingHeaders.ts";
-import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
+import { requireModelAttemptAccess } from "../utils/generation-access.ts";
 import {
     createAndReturnModel3d,
     type Model3dGenerationResult,
@@ -40,7 +41,7 @@ export async function generate3dResponse(
                 });
             },
             c.var.track?.attempts,
-            (candidate) => enforceModelRateLimit(c, candidate),
+            (candidate) => requireModelAttemptAccess(c, candidate),
         );
     } catch (error) {
         throw3dError(error);
@@ -133,7 +134,7 @@ export function mediaHeaders(
 }
 
 export function throw3dError(error: unknown): never {
-    if (error instanceof UpstreamError) throw error;
+    if (error instanceof HTTPException) throw error;
 
     const message = error instanceof Error ? error.message : String(error);
     throw new UpstreamError(500, {

@@ -7,8 +7,8 @@ understood independently of the rest of the repository.
 
 | Package | Purpose |
 | --- | --- |
-| [sdk/](./sdk) | JavaScript/TypeScript API client, device login and React BYOP hooks. |
-| [ui/](./ui) | UI components, account menu and drop-in sign-in button; SDK-backed components use `@pollinations/sdk/react`. |
+| [sdk/](./sdk) | JavaScript/TypeScript API client, device authorization and React BYOP hooks. |
+| [ui/](./ui) | UI components, account menu and drop-in Connect button; SDK-backed components use `@pollinations/sdk/react`. |
 | [polli-cli/](./polli-cli) | The `polli` command for generation, authentication, account management and Sites deployment. |
 | [llm-pollinations/](./llm-pollinations) | Python provider connecting Pollinations models to Simon Willison's `llm` CLI and library. |
 

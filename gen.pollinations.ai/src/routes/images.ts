@@ -5,10 +5,12 @@
  */
 
 import { UpstreamError } from "@shared/error.ts";
+import { HOTSHOT_XL_MODEL } from "@shared/registry/image.ts";
 import {
     buildUsageHeaders,
     FALLBACK_TARGET_HEADER,
     type OpenAIImageUsage,
+    PROVIDER_BILLING_HEADERS,
     parseUsageHeaders,
     usageToOpenAIImageUsage,
 } from "@shared/registry/usage-headers.ts";
@@ -21,9 +23,14 @@ import { normalizeSafeValue, type SafeValue } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import type { Env } from "@/env.ts";
-import { generateImageOrVideoResponse } from "@/image/handler.ts";
+import {
+    generateImageOrVideoResponse,
+    parseImageParams,
+} from "@/image/handler.ts";
+import { quoteMediaRequest } from "@/image/quote.ts";
 import { normalizedJsonBody } from "@/middleware/generation-cache.ts";
 import { applySafetyToInput, withSafetyHeaders } from "@/middleware/safety.ts";
+import { IMAGE_DIMENSIONS_HEADER } from "@/schemas/image.ts";
 import { arrayBufferToBase64 } from "@/util.ts";
 
 // --- Helpers ---
@@ -35,6 +42,10 @@ const PASSTHROUGH_PARAMS = [
     "guidance_scale",
     "duration",
     "audio",
+    "output_format",
+    "frame_count",
+    "frame_duration_ms",
+    "background",
 ] as const;
 const CACHE_PARAMS = [
     "image",
@@ -46,6 +57,10 @@ const CACHE_PARAMS = [
     "resolution",
     "aspectRatio",
     "audio",
+    "output_format",
+    "frame_count",
+    "frame_duration_ms",
+    "background",
 ] as const;
 
 function imageResponse(
@@ -81,6 +96,12 @@ function responseImageUsage(
     // /v1/images/* records fallback_used = false.
     const fallbackTarget = response.headers.get(FALLBACK_TARGET_HEADER);
     if (fallbackTarget) c.header(FALLBACK_TARGET_HEADER, fallbackTarget);
+    // Some providers report a charge instead of token counts. Preserve the
+    // receipt when wrapping the media response in OpenAI-compatible JSON.
+    for (const name of Object.values(PROVIDER_BILLING_HEADERS)) {
+        const value = response.headers.get(name);
+        if (value !== null) c.header(name, value);
+    }
     return usageToOpenAIImageUsage(usage);
 }
 
@@ -93,13 +114,13 @@ function resolveParams(opts: {
     width?: number;
     height?: number;
     quality: string;
-    seed: number;
+    seed?: number;
 } {
     // Width/height are only emitted when the caller actually passed `size`.
     // Leaving them undefined lets the image-param schema fill model-specific
     // defaults AND preserves the dimensionsExplicit signal seedream-4 needs.
     const sizeDims = opts.size
-        ? opts.size.split("x").map((s) => Number.parseInt(s, 10))
+        ? opts.size.split(/x/i).map((s) => Number.parseInt(s, 10))
         : undefined;
     const width = sizeDims?.[0];
     const height = sizeDims?.[1];
@@ -107,7 +128,10 @@ function resolveParams(opts: {
         ...(Number.isInteger(width) ? { width } : {}),
         ...(Number.isInteger(height) ? { height } : {}),
         quality: QUALITY_MAP[opts.quality || ""] || opts.quality || "medium",
-        seed: opts.seed ?? Math.floor(Math.random() * 2147483647),
+        // Keep the caller's seed in the cache identity, but leave a missing
+        // one out: the execution picks a random seed after the cache lookup so
+        // identical seed-less requests join one generation.
+        ...(typeof opts.seed === "number" ? { seed: opts.seed } : {}),
     };
 }
 
@@ -179,6 +203,15 @@ async function parseEditInput(c: Context): Promise<{
                 message: 'response_format must be "url" or "b64_json"',
             });
 
+        const count = CreateImageEditRequestSchema.shape.n.safeParse(
+            formData.has("n") ? Number(formData.get("n")) : undefined,
+        );
+        if (!count.success)
+            throw new UpstreamError(400, {
+                message:
+                    "n must be 1; generating multiple images is not supported",
+            });
+
         const seedField = formData.get("seed");
         const seed = CreateImageEditRequestSchema.shape.seed.safeParse(
             seedField == null || seedField === ""
@@ -190,10 +223,18 @@ async function parseEditInput(c: Context): Promise<{
                 message: "seed must be an integer between -1 and 2147483647",
             });
 
+        const size = CreateImageEditRequestSchema.shape.size.safeParse(
+            (formData.get("size") as string) || undefined,
+        );
+        if (!size.success)
+            throw new UpstreamError(400, {
+                message: size.error.issues.map((i) => i.message).join(", "),
+            });
+
         return {
             prompt,
             imageUrls,
-            size: (formData.get("size") as string) || undefined,
+            size: size.data,
             quality: (formData.get("quality") as string) || undefined,
             seed: seed.data ?? undefined,
             safe: formData.get("safe") as string | null,
@@ -297,12 +338,90 @@ export const prepareOpenAIImageEditReplay = createMiddleware<Env>(
     },
 );
 
+/**
+ * Prices an image or video request for the balance check. Where the options
+ * set the price (duration, resolution, sound, references), the check uses that
+ * price instead of the model's average. Each model of a caller's list is
+ * priced on its own definition. Runs before the entry check and again in the
+ * durable execution, which re-checks each model it tries.
+ */
+export const mediaRequestPrice = createMiddleware<Env>(async (c, next) => {
+    c.var.balance.requestPrice = ({ resolved, definition }) => {
+        try {
+            const json =
+                c.req.method === "POST"
+                    ? (c.req.valid("json" as never) as Record<string, unknown>)
+                    : undefined;
+            return quoteMediaRequest(
+                resolved,
+                definition,
+                parseImageParams(
+                    c,
+                    json ? { ...json, ...resolveParams(json) } : {},
+                    {
+                        ...c.var.model,
+                        resolved,
+                        definition,
+                        communityEndpoint:
+                            resolved === c.var.model.resolved
+                                ? c.var.model.communityEndpoint
+                                : undefined,
+                    },
+                ),
+            );
+        } catch {
+            // Invalid options are the generator's to report, as before;
+            // the check then uses the model's average.
+            return undefined;
+        }
+    };
+    await next();
+});
+
 /** Normalize the generation body and hash the parts that shape the file. */
 export const prepareOpenAIImageGeneration = createMiddleware<Env>(
     async (c, next) => {
         const body = c.req.valid("json" as never) as CreateImageRequest &
             Record<string, unknown>;
 
+        if (c.var.model.resolved === HOTSHOT_XL_MODEL) {
+            if (body.stream === true || body.aspect_ratio !== undefined) {
+                throw new UpstreamError(400, {
+                    message:
+                        "Hotshot-XL does not support streaming or aspect_ratio.",
+                });
+            }
+            // Use the model's fixed size when the client omits the schema's
+            // generic 1024x1024 default. Keep explicitly requested sizes.
+            if ((await c.req.json<CreateImageRequest>()).size === undefined) {
+                body.size = "auto";
+            }
+        }
+
+        // OpenAI-style aspect_ratio is an optional convenience when no custom
+        // size was specified. Explicit non-default size remains authoritative.
+        const aspectSizes: Record<string, string> = {
+            "16:9": "1536x864",
+            "9:16": "864x1536",
+            "1:1": "1024x1024",
+            "4:3": "1152x864",
+            "3:4": "864x1152",
+            "3:2": "1536x1024",
+            "2:3": "1024x1536",
+        };
+        const model = c.var.model.resolved;
+        const ratio = body.aspect_ratio;
+        const ratioSize =
+            (model === "openai/gpt-image-2.6-flare" ||
+                (model === "openai/gpt-image-2.6-sunburst" &&
+                    body.output_format === "gif")) &&
+            typeof ratio === "string" &&
+            body.size === "1024x1024"
+                ? aspectSizes[ratio]
+                : undefined;
+        // The generation handler resolves size again after the cache middleware,
+        // so persist the effective size instead of only changing this local copy.
+        if (ratioSize) body.size = ratioSize;
         const resolved = resolveParams(body);
         const safePrompt = await applySafetyToInput(
             c,
@@ -322,7 +441,9 @@ export const prepareOpenAIImageGeneration = createMiddleware<Env>(
             normalizedJsonBody(
                 JSON.stringify({
                     prompt: safePrompt,
-                    model: c.var.model.resolved,
+                    model: c.var.model.requested.includes(",")
+                        ? c.var.model.requested
+                        : c.var.model.resolved,
                     ...resolved,
                     ...collectPassthrough(body, ...CACHE_PARAMS),
                 }),
@@ -351,11 +472,9 @@ export const formatOpenAIImageResponse = createMiddleware<Env>(
         const body = c.req.valid("json" as never) as CreateImageRequest;
         const mediaLink = response.headers.get("Link");
         if (mediaLink) c.header("Link", mediaLink);
+        const dimensions = response.headers.get(IMAGE_DIMENSIONS_HEADER);
+        if (dimensions) c.header(IMAGE_DIMENSIONS_HEADER, dimensions);
         const usage = responseImageUsage(c, response);
-        const mediaData =
-            mediaType === "image/svg+xml" || mediaType.startsWith("video/")
-                ? { media_type: mediaType }
-                : {};
 
         if (body.response_format === "url") {
             // Media emits one enclosure link for the stored file.
@@ -383,7 +502,10 @@ export const formatOpenAIImageResponse = createMiddleware<Env>(
             c,
             c.json(
                 imageResponse(
-                    { b64_json: base64, ...mediaData },
+                    // Base64 bytes carry no Content-Type, so declare the type
+                    // for every media type; without it the SDK falls back to
+                    // image/png and mislabels JPEG output.
+                    { b64_json: base64, media_type: mediaType },
                     body.prompt,
                     usage,
                 ),
@@ -396,10 +518,17 @@ export async function handleImageGeneration(c: Context<Env>) {
     const body = c.req.valid("json" as never) as CreateImageRequest &
         Record<string, unknown>;
     const model = c.var.model.resolved;
+    const resolved = resolveParams(body);
 
     const response = await generateImageOrVideoResponse(c, body.prompt, {
         ...body,
-        ...resolveParams(body),
+        ...resolved,
+        // A seed-less request still needs a random seed for the provider, but
+        // only after the cache lookup: the identity above stays stable so a
+        // retry shares the first generation instead of billing a second one.
+        ...(resolved.seed === undefined
+            ? { seed: Math.floor(Math.random() * 2147483647) }
+            : {}),
         ...collectPassthrough(body, "image"),
         model,
     });

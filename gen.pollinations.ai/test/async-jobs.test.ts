@@ -197,6 +197,45 @@ it("submits, survives a disconnect, isolates accounts, caches the result, and ch
     expect(result.headers.get("cache-control")).toBe("private, no-store");
     expect(new Uint8Array(await result.arrayBuffer())).toEqual(output);
 
+    // The download URL is also a media player's source, so it must answer
+    // byte ranges itself.
+    const ranged = await worker.fetch(
+        new Request(`https://gen.pollinations.ai${path}/result`, {
+            headers: {
+                authorization: `Bearer ${owner.key}`,
+                range: "bytes=0-3",
+            },
+        }),
+        env,
+        createExecutionContext(),
+    );
+    expect(ranged.status).toBe(206);
+    expect(ranged.headers.get("content-range")).toBe(
+        `bytes 0-3/${output.byteLength}`,
+    );
+    expect(new Uint8Array(await ranged.arrayBuffer())).toEqual(
+        output.slice(0, 4),
+    );
+
+    const metadata = await worker.fetch(
+        new Request(`https://gen.pollinations.ai${path}/result`, {
+            method: "HEAD",
+            headers: {
+                authorization: `Bearer ${owner.key}`,
+                range: "bytes=0-3",
+            },
+        }),
+        env,
+        createExecutionContext(),
+    );
+    expect(metadata.status).toBe(200);
+    expect(metadata.headers.get("content-range")).toBeNull();
+    expect(metadata.headers.get("content-length")).toBe(
+        String(output.byteLength),
+    );
+    expect(metadata.headers.get("cache-control")).toBe("private, no-store");
+    expect(await metadata.text()).toBe("");
+
     const cached = await worker.fetch(
         request(owner.key, false),
         env,

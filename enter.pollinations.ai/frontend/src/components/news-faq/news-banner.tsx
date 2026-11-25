@@ -58,11 +58,11 @@ const ANNOUNCEMENTS: Announcement[] = [
         until: "2026-11-15",
         label: "Updated",
         title: "App Keys",
-        text: "pk_ keys now identify apps only. API calls require sk_; connect users through Connect User Wallets.",
+        text: "pk_ keys now identify apps only. API calls require sk_; connect users through Pollinations Pay.",
         icon: KeyIcon,
         cta: {
             label: "Migrate your app",
-            href: "https://gen.pollinations.ai/docs#tag/connect-user-wallets",
+            href: "https://gen.pollinations.ai/docs#tag/pollinations-pay",
         },
     },
     {
@@ -70,7 +70,7 @@ const ANNOUNCEMENTS: Announcement[] = [
         until: "2026-11-15",
         label: "Updated",
         title: "Sandbox launch pricing",
-        text: "Run a 2 vCPU, 2 GB sandbox from 0.0333 pollen/hour.",
+        text: "Run a 2 vCPU, 2 GB sandbox from $0.0333/hour.",
         icon: TerminalIcon,
         cta: { label: "Open Sandboxes", href: "/sandboxes" },
     },
@@ -351,7 +351,11 @@ export const Announcements: FC<{ items: Announcement[] }> = ({ items }) => (
                 </Heading>
                 <Text size="sm">{item.text}</Text>
                 <div className="mt-auto pt-1">
-                    <ExternalLinkButton href={item.cta.href} size="sm">
+                    <ExternalLinkButton
+                        href={item.cta.href}
+                        size="sm"
+                        intent="neutral"
+                    >
                         {item.cta.label}
                     </ExternalLinkButton>
                 </div>

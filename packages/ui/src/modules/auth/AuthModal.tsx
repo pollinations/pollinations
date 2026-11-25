@@ -312,7 +312,7 @@ export function AuthAccessItem({
                         />
                         <span
                             aria-hidden="true"
-                            className="polli:flex polli:h-5 polli:w-5 polli:items-center polli:justify-center polli:rounded polli:border polli:border-theme-text-muted/50 polli:bg-transparent polli:transition-colors polli:peer-checked:border-theme-bg-active polli:peer-checked:bg-theme-bg-active polli:peer-checked:text-theme-text-strong polli:peer-focus-visible:outline-2 polli:peer-focus-visible:outline-offset-2 polli:peer-focus-visible:outline-theme-text-soft polli:peer-disabled:opacity-50"
+                            className="polli:flex polli:h-5 polli:w-5 polli:items-center polli:justify-center polli:rounded polli:border polli:border-theme-text-muted/50 polli:bg-transparent polli:transition-colors polli:peer-checked:border-theme-fill polli:peer-checked:bg-theme-fill polli:peer-checked:text-theme-on-fill polli:peer-focus-visible:outline-2 polli:peer-focus-visible:outline-offset-2 polli:peer-focus-visible:outline-theme-text-soft polli:peer-disabled:opacity-50"
                         >
                             {checked && (
                                 <CheckIcon className="polli:h-3.5 polli:w-3.5" />

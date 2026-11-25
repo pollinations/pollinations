@@ -8,6 +8,7 @@ import worker from "./worker.js";
 
 const TOKEN = "sk_test_request_scoped";
 const EXPECTED_TOOLS = [
+    "changeVoice",
     "createEmbeddings",
     "createKey",
     "deleteSite",
@@ -21,7 +22,9 @@ const EXPECTED_TOOLS = [
     "getEarnings",
     "getModelStatus",
     "getUsage",
+    "isolateSpeech",
     "listKeys",
+    "listMcpServers",
     "listModels",
     "listQuests",
     "listSites",
@@ -236,6 +239,38 @@ test("generateText uses the non-streaming chat completion contract", async (t) =
         model: "openai",
     });
     await client.close();
+});
+
+test("generateText exposes HTTP 200 completion errors as MCP tool errors", async (t) => {
+    const originalFetch = globalThis.fetch;
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+    globalThis.fetch = async (input) =>
+        String(input).endsWith("/text/models")
+            ? Response.json([{ name: "openai" }])
+            : Response.json({
+                  choices: [
+                      {
+                          message: { content: "partial answer" },
+                          finish_reason: "error",
+                      },
+                  ],
+              });
+    const client = await connectClient({
+        versionNegotiation: { mode: "auto" },
+    });
+    t.after(() => client.close());
+    const result = await client.callTool({
+        name: "generateText",
+        arguments: {
+            model: "openai",
+            messages: [{ role: "user", content: "hi" }],
+        },
+    });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /Chat completion failed/);
+    assert.doesNotMatch(result.content[0].text, /partial answer/);
 });
 
 test("returns the image API's resource link without downloading or uploading", async (t) => {

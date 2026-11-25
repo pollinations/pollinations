@@ -25,7 +25,7 @@ const MODEL3D_BASE_SERVICES = {
         cost: { completionImageTokens: 1.1 },
         title: "Tripo P2",
         description:
-            "Text-to-3D GLB meshes with a 10,000-face target and PBR textures",
+            "Describe an object to create a 3D mesh with materials that catch and reflect light.",
         inputModalities: ["text"],
         outputModalities: ["3d"],
     },
@@ -77,7 +77,8 @@ const MODEL3D_BASE_SERVICES = {
             ],
         ),
         title: "Trellis 2",
-        description: "Image-to-3D generation with selectable output detail",
+        description:
+            "Turn one image into a 3D model and choose how much detail to keep.",
         inputModalities: ["image"],
         outputModalities: ["3d"],
         maxReferenceImages: 1,
@@ -97,7 +98,8 @@ const MODEL3D_BASE_SERVICES = {
             completionImageTokens: 0.07,
         },
         title: "Asset Harvester",
-        description: "Image-to-3D Gaussian Splat (PLY)",
+        description:
+            "Turn one image into a 3D Gaussian splat, a scene made of soft, overlapping points.",
         inputModalities: ["image"],
         outputModalities: ["3d"],
         maxReferenceImages: 1,
@@ -116,7 +118,8 @@ const MODEL3D_BASE_SERVICES = {
             completionImageTokens: 0.1, // per generation
         },
         title: "Rodin Gen-2.5",
-        description: "Textured 3D models from an image or a text prompt",
+        description:
+            "Create a textured 3D object from a written description or a reference image.",
         inputModalities: ["text", "image"],
         outputModalities: ["3d"],
         maxReferenceImages: 1,

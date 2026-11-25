@@ -9,7 +9,10 @@ Canonical vendor: `elevenlabs`
 - Workspace: `My Workspace` (`myceli`).
 - The plan page states the plan name, its monthly price, the renewal date and
   the remaining share of the subscription usage credits. Record all four on the
-  balance row; the credits are non-transferable and expire at renewal.
+  balance row. Subscription quota can roll over up to twice the monthly
+  allocation while the subscription is retained. Renewal refreshes quota; it
+  is not the expiry of the entire remaining balance. Keep PAYG purchase lots
+  and their separate expiry terms distinct.
 - The response is column-oriented (`columns` plus array-valued `rows`); it
   does not return a `total_cost` property on each row object.
 
@@ -54,7 +57,18 @@ Collection steps:
    only rows with `timestamp` before the exclusive end: the API can include
    zero-cost rows stamped exactly at that end boundary.
 4. Save invoice/top-up/subscription evidence separately when reconciling cash.
+   Invoices are at `/app/subscription/invoices`; billing-window details are
+   under Developers → Analytics → Usage. Preserve each overlapping cycle's
+   dates rather than relabeling it as calendar-month usage. Invoice emails can
+   come from Eleven Labs Inc. through Stripe, so search supplier text as well
+   as provider domains.
 5. Use this skill for saved raw evidence.
+
+For current quota, `GET /v1/user/subscription` returns `character_count`,
+`character_limit`, `next_character_count_reset_unix`, `tier`, `next_invoice`
+and `current_overage`. Verify the visible plan name; the API tier
+`growing_business` corresponds to Scale. Carry established rollover terms
+forward unless the plan or terms change.
 
 Known traps:
 

@@ -1,7 +1,6 @@
 import { cn } from "../lib/cn.ts";
 import { Chip } from "../primitives/Chip.tsx";
-import { CheckIcon, ClipboardIcon } from "../primitives/icons/index.tsx";
-import { CopyButton } from "./CopyButton.tsx";
+import { CopyButton, CopyStateIcon } from "./CopyButton.tsx";
 
 export type KeyChipProps = {
     /** The visible start of the key, e.g. "sk_0ysBCkH". */
@@ -38,25 +37,13 @@ export function KeyChip({
     return (
         <CopyButton
             value={value}
-            tooltip={null}
             aria-label={label}
             className="polli:inline-flex polli:cursor-pointer polli:rounded-lg"
         >
             {(copied) => (
-                <Chip
-                    intent={copied ? "success" : "neutral"}
-                    className={cn(
-                        chipClassName,
-                        "polli:transition-colors",
-                        className,
-                    )}
-                >
-                    {copied ? (
-                        <CheckIcon aria-hidden="true" />
-                    ) : (
-                        <ClipboardIcon aria-hidden="true" />
-                    )}
-                    {copied ? "Copied" : text}
+                <Chip intent="neutral" className={cn(chipClassName, className)}>
+                    <CopyStateIcon copied={copied} aria-hidden="true" />
+                    {text}
                 </Chip>
             )}
         </CopyButton>

@@ -1,7 +1,9 @@
 /* Shared by the UI bundle and the standalone website. Text links inherit
-   surrounding type size; footer and utility links have explicit small sizes. */
+   surrounding type size; footer and utility links have explicit small sizes.
+   A link is the text colour with an underline, so it never reads as already
+   visited; amber appears on hover only. */
 .polli-link {
-    color: var(--polli-color-text-soft, oklch(0.47 0.13 85));
+    color: var(--polli-color-text-strong, oklch(0.25 0.02 80));
     font-family: inherit;
     font-weight: 500;
     border-radius: 0.125rem;
@@ -20,6 +22,9 @@
     color: var(--polli-color-text-muted, oklch(0.55 0.02 80));
 }
 .polli-link:hover {
+    color: var(--polli-color-text-soft, oklch(0.54 0.15 67));
+}
+.polli-link[data-tone="quiet"]:hover {
     color: var(--polli-color-text-strong, oklch(0.25 0.02 80));
 }
 .polli-link:focus-visible,

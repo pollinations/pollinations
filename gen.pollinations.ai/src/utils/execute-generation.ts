@@ -1,3 +1,4 @@
+import { nameD1Caller, withD1Calls } from "@shared/d1-calls.ts";
 import { handleError } from "@shared/error.ts";
 import { Hono } from "hono";
 import type { Env } from "@/env.ts";
@@ -60,6 +61,7 @@ function generationExecutor(
             c.header("X-Request-Id", job.requestId);
             await next();
         })
+        .use("*", nameD1Caller)
         .use("*", logger)
         .use("*", authFromSnapshot(job.auth))
         .use("*", async (c, next) => {
@@ -82,29 +84,52 @@ function generationExecutor(
     return executor;
 }
 
-/** Runs a provider handler for the coordinator alarm that owns the job. */
-export async function executeGeneration(
-    job: GenerationJob,
-    env: CloudflareBindings,
-): Promise<DetachedGeneration> {
+/** An ExecutionContext for detached work. settled() also waits for work
+ * registered while earlier work runs, such as the D1 telemetry a failing
+ * post-response billing query sends. */
+export function detachedContext() {
     const promises: Promise<unknown>[] = [];
-    let cacheWrite: Promise<void> | undefined;
-    const executionCtx = {
+    const ctx = {
         waitUntil(promise: Promise<unknown>) {
             promises.push(promise);
         },
         passThroughOnException() {},
     } as ExecutionContext;
+    const settled = async () => {
+        for (let done = 0; done < promises.length; ) {
+            const pending = promises.slice(done);
+            done = promises.length;
+            await Promise.allSettled(pending);
+        }
+    };
+    return { ctx, settled };
+}
+
+/** Runs a provider handler for the coordinator alarm that owns the job. */
+export async function executeGeneration(
+    job: GenerationJob,
+    env: CloudflareBindings,
+): Promise<DetachedGeneration> {
+    let cacheWrite: Promise<void> | undefined;
+    const { ctx: executionCtx, settled } = detachedContext();
 
     const request = new Request(job.request.url, {
         method: job.request.method,
         headers: job.request.headers,
         body: job.request.body?.slice().buffer,
     });
-    const response = await generationExecutor(job, (promise) => {
-        cacheWrite = promise;
-    }).fetch(request, env, executionCtx);
-    const settlement = Promise.allSettled(promises).then(() => {});
+    const response = await withD1Calls(
+        "gen",
+        env,
+        executionCtx,
+        // The method only: the job URL can carry the prompt.
+        () => ({ route_path: "generation", method: request.method }),
+        () =>
+            generationExecutor(job, (promise) => {
+                cacheWrite = promise;
+            }).fetch(request, env, executionCtx),
+    );
+    const settlement = settled();
 
     try {
         const failed = !response.ok;
@@ -179,6 +204,8 @@ export const generationHandoffRoutes = new Hono<Env>().post(
                 c.req.header(GENERATION_HANDOFF_HEADER) ?? "",
             )) as GenerationJobHead | null;
         if (!job) return c.notFound();
+        // Correlate handoff errors with the verified job's billing event.
+        c.set("requestId", job.requestId);
         const body = new Uint8Array(await c.req.arrayBuffer());
         const { result, settlement } = await executeGeneration(
             {

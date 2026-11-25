@@ -82,6 +82,9 @@ export function Authorize() {
     const user = session?.user as User | undefined;
 
     const [isAuthorizing, setIsAuthorizing] = useState(false);
+    // Allowed: the button shows the done check while the browser returns
+    // to the app.
+    const [isDone, setIsDone] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [attribution, setAttribution] = useState<Attribution | null>(null);
     const [redirectValidationState, setRedirectValidationState] = useState<
@@ -121,8 +124,8 @@ export function Authorize() {
     const canAuthorize =
         (isDeviceMode || parsedRedirectUrl !== null) &&
         !isAttributionPending &&
-        // The code flow only runs for registered clients with a validated
-        // redirect — no hostname-only fallback like the legacy flow.
+        // A code flow with a client_id waits for its redirect check; without
+        // one it names the app by the redirect hostname, like the legacy flow.
         (!isCodeFlow || redirectValidationState === "valid");
     const canRedirectOnDeny =
         parsedRedirectUrl !== null &&
@@ -206,16 +209,10 @@ export function Authorize() {
                 return;
             }
 
-            // Code-flow front door (OAuth 2.1): PKCE and a registered client
-            // are mandatory. Errors render locally — error params are never
-            // redirected to a redirect_uri that hasn't been validated.
+            // Code-flow front door (OAuth 2.1): PKCE is mandatory. Errors
+            // render locally — error params are never redirected to a
+            // redirect_uri that hasn't been validated.
             if (isCodeFlow) {
-                if (!app_key) {
-                    setError(
-                        "client_id is required for the authorization code flow",
-                    );
-                    return;
-                }
                 if (!code_challenge) {
                     setError(
                         "PKCE code_challenge is required for the authorization code flow",
@@ -373,6 +370,11 @@ export function Authorize() {
                     },
                 });
                 if (!res.ok) {
+                    // As in the code flow: don't leave an undeliverable key
+                    // active in the account.
+                    accountClient.keys[":id"]
+                        .$delete({ param: { id } })
+                        .catch(() => {});
                     const data = await res.json().catch(() => null);
                     throw new Error(
                         (data as { message?: string })?.message ||
@@ -386,10 +388,8 @@ export function Authorize() {
                 }
                 const url = new URL(parsedRedirectUrl.href);
                 if (isCodeFlow) {
-                    if (!app_key || !code_challenge || !redirect_url) {
-                        throw new Error(
-                            "Missing client_id or PKCE code_challenge",
-                        );
+                    if (!code_challenge || !redirect_url) {
+                        throw new Error("Missing PKCE code_challenge");
                     }
                     const res = await apiClient.oauth.code
                         .$post({
@@ -432,6 +432,7 @@ export function Authorize() {
                     if (state) hash.set("state", state);
                     url.hash = hash.toString();
                 }
+                setIsDone(true);
                 window.location.href = url.toString();
             }
         } catch (e) {
@@ -577,8 +578,14 @@ export function Authorize() {
                         intent="commit"
                         icon={<KeyIcon />}
                         disabled={!canAuthorize || isAuthorizing}
+                        aria-busy={isAuthorizing && !isDone}
+                        done={isDone}
                     >
-                        {isAuthorizing ? "Connecting…" : "Allow access"}
+                        {isDone
+                            ? "Connected"
+                            : isAuthorizing
+                              ? "Connecting…"
+                              : "Allow access"}
                     </Button>
                 </>
             }
@@ -589,7 +596,7 @@ export function Authorize() {
                     <Alert intent="warning" className="mb-4">
                         Access goes to a program on this computer, and any
                         program can use this app's name. Only allow it if you
-                        just started this sign-in yourself.
+                        just started this request yourself.
                     </Alert>
                 )}
             <form

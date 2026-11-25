@@ -507,14 +507,38 @@ describe("community endpoint configuration policy", () => {
             baseModel: "openai",
         });
         expect(created.status, await created.clone().text()).toBe(200);
-        const { id } = await created.json<{ id: string }>();
+        const { id, model } = await created.json<{
+            id: string;
+            model: string;
+        }>();
 
         const renamed = await request("PATCH", `/${id}`, { title: "Renamed" });
         expect(renamed.status, await renamed.clone().text()).toBe(200);
-        const retargeted = await request("PATCH", `/${id}`, {
-            baseModel: "no-such/model-xyz",
+        for (const baseModel of ["no-such/model-xyz", model]) {
+            const retargeted = await request("PATCH", `/${id}`, {
+                baseModel,
+            });
+            expect(retargeted.status).toBe(400);
+        }
+        const wrapped = await request("POST", "", {
+            ...agent,
+            name: "wrapped-agent",
+            baseModel: model,
         });
-        expect(retargeted.status).toBe(400);
+        expect(wrapped.status).toBe(400);
+
+        // The dashboard resends baseModel on every save, so a stored model
+        // that has since been retired must not block other edits.
+        await env.DB.prepare(
+            "UPDATE community_endpoint SET payload = json_set(payload, '$.baseModel', 'retired-model') WHERE id = ?",
+        )
+            .bind(id)
+            .run();
+        const edited = await request("PATCH", `/${id}`, {
+            title: "Edited",
+            baseModel: "retired-model",
+        });
+        expect(edited.status, await edited.clone().text()).toBe(200);
     });
 
     test("names the field when an agent update is invalid", async ({

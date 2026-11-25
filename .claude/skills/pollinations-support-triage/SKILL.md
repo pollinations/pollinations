@@ -42,7 +42,7 @@ credentials; never put secrets or customer content in the repository.
 | Product behavior or fix availability | Current code, schemas and related issues/PRs against fresh `origin/production`. Confirm deployed revision and successful production jobs before saying a fix is available. |
 | Identity, balance or key restrictions | D1 account, linked GitHub identity, non-secret key permissions, wallet buckets and credit/reward ledger. Match the reporter before disclosing private data. |
 | Failed requests or spending | Tinybird events scoped by user, time and production environment; reconcile current state with D1. Use `model-debugging` or `spending-analysis` when needed. |
-| Payments, refunds or disputes | Stripe live payment/charge/invoice, refunds and credited Pollen in D1. Checkout pages, screenshots and usage alone do not prove payment. |
+| Payments, refunds or disputes | Stripe live payment/charge/invoice, refunds and balance credits in D1. Checkout pages, screenshots and usage alone do not prove payment. |
 | Abuse or duplicate accounts | `abuse-detection`, read-only unless separately authorized. Require corroborating signals; a missing payment is not proof of fraud. |
 | Privacy, providers or terms | Public legal pages, current routes/fallbacks and provider evidence. Use authoritative sources for legal interpretation; distinguish policy, operational facts and unknowns. |
 
@@ -71,7 +71,7 @@ splitting command flags. Keep tables narrow enough for mobile.
 Read current colors from `packages/ui/src/theme-palette.json`; the example's
 inline styles illustrate them. Brand assets belong to `packages/ui/src/brand/`
 and `packages/ui/README.md`; voice guidance is in the Voice & Identity section
-of `operations/social/prompts/brand/about.md`. Do not create another brand kit.
+of `operations/news/prompts/brand/about.md`. Do not create another brand kit.
 Sign with the actual operator's name. For Workspace-covered senders, omit the
 wordmark from submitted HTML and plain text: Google adds it. Follow the access
 reference for uncovered senders and unknown coverage.

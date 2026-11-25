@@ -180,6 +180,12 @@ describe("getAuthorizeInitialPermissions", () => {
         );
     });
 
+    it("never pre-fills a negative budget", () => {
+        expect(
+            getAuthorizeInitialPermissions({ budget: -5 }).pollenBudget,
+        ).toBe(0);
+    });
+
     it("preserves a zero budget instead of falling back to the default", () => {
         expect(
             getAuthorizeInitialPermissions({

@@ -1,8 +1,7 @@
-import type { Dispatch, SetStateAction } from "react";
+import { StableLabel } from "@pollinations/ui";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, expect, it, vi } from "vitest";
 import { forgetSessionToken } from "../frontend/src/api.ts";
-import { PendingCount } from "../frontend/src/components/layout/dashboard-shell.tsx";
 import { LastEventsPanel } from "../frontend/src/components/pollen/last-events-panel.tsx";
 
 vi.mock("../frontend/src/config.ts", () => ({
@@ -23,15 +22,11 @@ afterEach(async () => {
     vi.unstubAllGlobals();
 });
 
-async function mount(setPending: Dispatch<SetStateAction<number>> = () => {}) {
+async function mount() {
     vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
     vi.stubGlobal("window", new EventTarget());
     await act(async () => {
-        renderer = create(
-            <PendingCount.Provider value={setPending}>
-                <LastEventsPanel />
-            </PendingCount.Provider>,
-        );
+        renderer = create(<LastEventsPanel />);
     });
     await act(async () => {
         await vi.waitFor(() =>
@@ -42,11 +37,14 @@ async function mount(setPending: Dispatch<SetStateAction<number>> = () => {}) {
     });
 }
 
+function olderLabel() {
+    return renderer?.root.findAllByType(StableLabel)[0];
+}
+
 function older() {
-    return renderer?.root.findAll(
-        (node) =>
-            node.type === "button" && node.children.includes("Show older"),
-    )[0];
+    let node = olderLabel()?.parent;
+    while (node && node.type !== "button") node = node.parent;
+    return node ?? undefined;
 }
 
 function displayedRows() {
@@ -184,11 +182,7 @@ it("retains displayed rows and both cursors when one next-page request fails", a
     expect(older()).toBeUndefined();
 });
 
-it("uses the shared page loading status for older rows and clears it after failure and retry", async () => {
-    let pending = 0;
-    const setPending: Dispatch<SetStateAction<number>> = (update) => {
-        pending = typeof update === "function" ? update(pending) : update;
-    };
+it("shows loading on the Show older button and restores it after failure and retry", async () => {
     let respond: (response: Response) => void = () => {};
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
         const url = new URL(String(input));
@@ -211,32 +205,29 @@ it("uses the shared page loading status for older rows and clears it after failu
         });
     });
 
-    await mount(setPending);
-    expect(pending).toBe(0);
+    await mount();
+    expect(olderLabel()?.props.text).toBe("Show older");
     let request: Promise<void> | undefined;
     await act(async () => {
         request = older()?.props.onClick();
     });
-    expect(pending).toBe(1);
     expect(displayedRows()).toHaveLength(15);
-    const loading = renderer?.root.findAll(
-        (node) => node.type === "button" && node.children.includes("Loading…"),
-    )[0];
-    expect(loading?.props.disabled).toBe(true);
+    expect(olderLabel()?.props.text).toBe("Loading…");
+    expect(older()?.props.disabled).toBe(true);
     await act(async () => {
         respond(new Response(null, { status: 400 }));
         await request;
     });
-    expect(pending).toBe(0);
+    expect(olderLabel()?.props.text).toBe("Show older");
+    expect(older()?.props.disabled).toBe(false);
     await act(async () => {
         request = older()?.props.onClick();
     });
-    expect(pending).toBe(1);
+    expect(olderLabel()?.props.text).toBe("Loading…");
     await act(async () => {
         respond(Response.json({ usage: [] }));
         await request;
     });
-    expect(pending).toBe(0);
     expect(displayedRows()).toHaveLength(16);
 });
 

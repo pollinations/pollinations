@@ -19,7 +19,7 @@ import {
     callSeedream5ProAPI,
     callSeedreamAPI,
 } from "../../src/image/models/seedreamReplicateModel.ts";
-import { callSeedream5ProVercelAPI } from "../../src/image/models/seedreamVercelModel.ts";
+import { callSeedreamVercelAPI } from "../../src/image/models/seedreamVercelModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 
 interface ReplicateRequest {
@@ -433,7 +433,7 @@ describe("Seedream 5 Pro via Vercel", () => {
         "preserves the 2K canvas for ratio %s and dimensions %sx%s",
         async (aspectRatio, width, height, size) => {
             const fetch = mockGateway();
-            await callSeedream5ProVercelAPI("test", {
+            await callSeedreamVercelAPI("test", {
                 ...baseParams,
                 model: "bytedance/seedream-5.0-pro",
                 aspectRatio,
@@ -466,7 +466,7 @@ describe("Seedream 5 Pro via Vercel", () => {
         png.writeUInt32BE(1024, 16);
         png.writeUInt32BE(512, 20);
         const reference = `data:image/png;base64,${png.toString("base64")}`;
-        await callSeedream5ProVercelAPI("edit", {
+        await callSeedreamVercelAPI("edit", {
             ...baseParams,
             model: "bytedance/seedream-5.0-pro",
             image: Array.from({ length: 10 }, () => reference),
@@ -481,10 +481,47 @@ describe("Seedream 5 Pro via Vercel", () => {
         expect(body.size).toBe("2832x1408");
     });
 
+    it.each([
+        ["1k", "720x1456", 0.02],
+        ["2k", "1456x2896", 0.115],
+    ] as const)(
+        "sends 5.5 %s edits and records the reference usage",
+        async (resolution, size, cost) => {
+            const fetch = mockGateway(String(cost));
+            const count = resolution === "2k" ? 10 : 0;
+            const result = await callSeedreamVercelAPI("test", {
+                ...baseParams,
+                model: "bytedance-seed/seedream-5-5",
+                resolution,
+                dimensionsExplicit: true,
+                width: 512,
+                height: 1024,
+                seed: 42,
+                image: Array(count).fill(
+                    `data:image/jpeg;base64,${Buffer.from(JPEG_BYTES).toString("base64")}`,
+                ),
+            });
+            const [, init] = fetch.mock.calls[0];
+            expect(new Headers(init?.headers).get("ai-model-id")).toBe(
+                "bytedance/seedream-5.5",
+            );
+            const body = JSON.parse(String(init?.body));
+            expect(body).toMatchObject({ size, seed: 42 });
+            expect(body.files).toHaveLength(count);
+            expect(result.trackingData.usage.promptImageTokens ?? 0).toBe(
+                count,
+            );
+            expect(result.trackingData.providerBilling).toEqual({
+                units: cost,
+                unitCost: 1,
+            });
+        },
+    );
+
     it("settles the complete reported charge rather than reconstructing it from the quote", async () => {
         mockGateway("0.037");
         const model = "bytedance/seedream-5.0-pro";
-        const result = await callSeedream5ProVercelAPI("test", {
+        const result = await callSeedreamVercelAPI("test", {
             ...baseParams,
             model,
         });
@@ -504,7 +541,7 @@ describe("Seedream 5 Pro via Vercel", () => {
         async (cost) => {
             mockGateway(cost);
             await expect(
-                callSeedream5ProVercelAPI("test", {
+                callSeedreamVercelAPI("test", {
                     ...baseParams,
                     model: "bytedance/seedream-5.0-pro",
                 }),
@@ -519,7 +556,7 @@ describe("Seedream 5 Pro via Vercel", () => {
             }),
         );
         await expect(
-            callSeedream5ProVercelAPI("test", {
+            callSeedreamVercelAPI("test", {
                 ...baseParams,
                 model: "bytedance/seedream-5.0-pro",
             }),

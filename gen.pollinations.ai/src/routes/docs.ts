@@ -24,6 +24,7 @@ import { Hono } from "hono";
 import { generateSpecs } from "hono-openapi";
 import { stringify as yamlStringify } from "yaml";
 import type { Env } from "@/env.ts";
+import { acceptsMarkdown } from "@/middleware/agent-discovery.ts";
 import BRAND_LOCKUP_SVG from "../../../packages/ui/src/brand/lockup-horizontal.svg?raw";
 import LOGO_WHITE_SVG from "../../../packages/ui/src/brand/lockup-horizontal-white.svg?raw";
 import { authenticateDocsRequest } from "../docs-client/request-auth.ts";
@@ -75,7 +76,7 @@ const DOC_TAGS = {
     quickStart: "Quick Start",
     authentication: "Authentication",
     x402PrepaidKeys: "x402 Prepaid Keys",
-    userWallets: "Connect User Wallets",
+    userWallets: "Pollinations Pay",
     publishModel: "Publish a Model",
     communityModels: "Community Models",
     publishAgent: "Publish an Agent",
@@ -340,9 +341,13 @@ const REALTIME_DOCS = [
     "",
     "Use a secret key with positive balance. Server clients can use `Authorization: Bearer <key>`. Browser WebSocket clients pass their user-authorized secret key (`sk_`) in `?key=`.",
     "",
-    "The WebSocket settles one billing event when the session closes. Selecting `elevenlabs/scribe-v2-realtime` creates a transcription session automatically; other realtime models create voice and multimodal sessions.",
+    "The WebSocket settles one billing event when the session closes. Selecting `elevenlabs/scribe-v2-realtime`, `elevenlabs/scribe-v3-live`, or `google/gemini-3.5-transcribe-live` opens a transcription session automatically.",
     "",
-    "Events sent and received over both routes use the OpenAI Realtime protocol. See OpenAI's [Realtime WebSocket events guide](https://developers.openai.com/api/docs/guides/realtime-websocket#sending-and-receiving-events).",
+    "With `google/gemini-3.5-transcribe-live`, append mono PCM16 audio (24 kHz by default, or configure 16 kHz before streaming) and commit each utterance. The default language is en-US. Set `session.audio.input.transcription.languages` before the first append for other languages. Read interim transcription deltas and use the completed transcript as authoritative. Wait for the completed or failed event before starting the next utterance. Disconnecting after audio reaches the provider finalizes the pending utterance and settles reported usage. Only manual turn detection is supported.",
+    "",
+    "With `google/gemini-3.8-live`, send text, base64 JPEG frames, or mono 24 kHz PCM16 audio. Responses stream audio and a transcript. Manual audio turns use `input_audio_buffer.commit` followed by `response.create`. Only manual turn detection is supported. Configure instructions and function tools with `session.update` before the first `response.create`. Later changes return a client error and the socket stays open. Send `response.cancel` to interrupt generation. Cancelling before input reaches Vertex incurs no charge for that turn. After dispatch, the response includes usage incurred through the interruption. A response that finished first reports completion. Output arriving after cancellation is suppressed, so the client may receive only part of a completed response. Continue on the same socket. A text or camera turn immediately following an interruption includes 20 ms of silence in the provider input.",
+    "",
+    "Events sent and received over both routes use the OpenAI Realtime protocol. See OpenAI's [Realtime conversations guide](https://developers.openai.com/api/docs/guides/realtime-conversations).",
     "",
     "```js",
     'import WebSocket from "ws";',
@@ -390,7 +395,7 @@ const GEN_API_DOCS = [
     PUBLIC_STATS_DOCS,
 ].join("\n\n");
 
-const USER_WALLETS_SECTION = `## Connect User Wallets\n\n${USER_WALLETS_DOCS}`;
+const USER_WALLETS_SECTION = `## Pollinations Pay\n\n${USER_WALLETS_DOCS}`;
 const PUBLISH_MODEL_SECTION = `## Publish a Model\n\n${PUBLISH_MODEL_DOCS}`;
 const PUBLISH_AGENT_SECTION = `## Publish an Agent\n\n${PUBLISH_AGENT_DOCS}`;
 const CLI_SECTION = `## CLI\n\n${CLI_DOCS}`;
@@ -437,7 +442,7 @@ export const LLMS_FULL_TEXT = [
 
 // Scalar tag anchors for the retired /docs/guides/:id pages.
 const GUIDE_REDIRECT_TAGS: Record<string, string> = {
-    byop: "connect-user-wallets",
+    byop: "pollinations-pay",
     models: "publish-a-model",
     "community-models": "publish-a-model",
     agents: "publish-an-agent",
@@ -474,8 +479,8 @@ ${connectScript}
 <script>
 (function () {
   function normalizeLegacyHash() {
-    if (window.location.hash === '#tag/byop') {
-      window.history.replaceState(null, '', window.location.pathname + window.location.search + '#tag/connect-user-wallets');
+    if (window.location.hash === '#tag/byop' || window.location.hash === '#tag/connect-user-wallets') {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search + '#tag/pollinations-pay');
     }
   }
   normalizeLegacyHash();
@@ -1123,9 +1128,9 @@ const SCALAR_CDN =
 const SCALAR_INTEGRITY =
     "sha384-VXnKAz61Xwc3tbw1P+KKrUP7YbcsSl1Ik4is5UnogJyw9XEYZ5Ay/T1i0zPYtSZH";
 const CONNECT_CDN =
-    "https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.20/dist/connect.js";
+    "https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.41/dist/connect.js";
 const CONNECT_INTEGRITY =
-    "sha384-9e0ucXSJrvLUvlRtPQ2N/j41OJx/5ob+9qk9CaJK9PaY477QIQiQFWE+l/RofoSi";
+    "sha384-0AH5BRM416sdgU5dUihJpBjwgIUEqFKvDMZ4KPjtjVIuARqp5FRw6TrucZOqk+bR";
 
 export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
     const routes = new Hono<Env>()
@@ -1136,7 +1141,7 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
                 return c.redirect(publicUrl.href, 302);
             }
             c.header("Vary", "Accept", { append: true });
-            if (c.req.header("accept")?.includes("text/markdown")) {
+            if (acceptsMarkdown(c.req.header("accept") ?? "")) {
                 // Cloudflare ignores Vary on cached responses: keep it private.
                 c.header("Cache-Control", "private, max-age=3600");
                 return c.body(LLM_DOC_TEXT, 200, {

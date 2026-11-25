@@ -12,17 +12,32 @@ export type MediaModelMetadata = {
 /** Missing metadata is unknown, never a guessed fixed value or size preset. */
 export function mediaModelSettings(
     model: MediaModelMetadata | undefined,
-    selected: { resolution?: string; duration?: number } = {},
+    selected: {
+        resolution?: string;
+        duration?: number;
+        durationLimit?: number;
+    } = {},
 ) {
-    const resolutions = model?.resolutions ?? [];
+    // "source" describes preserved input dimensions, not a request tier.
+    const resolutions = (model?.resolutions ?? []).filter(
+        (value) => value !== "source",
+    );
     const resolution =
         resolutions.find((value) => value === selected.resolution) ??
         resolutions[0];
-    const options = [...(model?.allowedDurations ?? [])].sort((a, b) => a - b);
+    const durationLimit = selected.durationLimit ?? Infinity;
+    const declared = model?.allowedDurations ?? [];
+    const options = declared
+        .filter((value) => value <= durationLimit)
+        .sort((a, b) => a - b);
+    if (declared.length && !options.length)
+        return { resolution, duration: undefined };
     const min = options.length ? options[0] : model?.minDuration;
     const max = options.length
         ? options[options.length - 1]
-        : model?.maxDuration;
+        : model?.maxDuration === undefined
+          ? undefined
+          : Math.min(model.maxDuration, durationLimit);
     // The API accepts integer seconds; a model may declare a coarser step.
     const step = model?.durationStep ?? 1;
     if (min === undefined || max === undefined || max < min)

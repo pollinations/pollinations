@@ -42,7 +42,7 @@
         "deploy:production": "npm run build:production && wrangler deploy --config dist/pollinations_enter/wrangler.json",
         "decrypt-vars:dev": "node scripts/decrypt-dev-vars.mjs",
         "decrypt-vars:production": "sops decrypt secrets/prod.vars.json --output-type dotenv > .dev.vars",
-        "push-secrets:staging": "sops exec-file --no-fifo secrets/staging.vars.json 'npx wrangler secret bulk {} --env staging'",
+        "push-secrets:staging": "sops exec-file --no-fifo secrets/staging.vars.json 'node scripts/push-staging-secrets.mjs {}'",
         "push-secrets:production": "sops exec-file --no-fifo secrets/prod.vars.json 'npx wrangler secret bulk {} --env production'",
         "tail:json": "wrangler tail --env production | jq '.logs[].message[] | fromjson'"
     },

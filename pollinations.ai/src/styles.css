@@ -83,12 +83,7 @@ html {
    page. */
 .site-home-nav-group:has(.site-home-logo:hover)
     .site-home-nav-button:not([aria-current="page"]) {
-    background-color: color-mix(
-        in oklab,
-        var(--polli-color-brand-accent) 60%,
-        transparent
-    );
-    color: var(--polli-color-brand-dark);
+    background-color: var(--polli-color-fill-wash);
 }
 
 .site-home-nav-group:has(.site-home-nav-button:hover) .site-home-logo {
@@ -308,19 +303,41 @@ main > * {
     background: var(--polli-color-surface-opaque);
 }
 
-/* Parameter rows (FieldStack orientation="inline"): one column, two from lg. */
+.play-model-option[aria-pressed="true"] :is(span, svg):not(.play-model-new) {
+    color: inherit;
+}
+
+@supports (position-area: top span-right) {
+    .play-stat-popover {
+        inset: auto;
+        margin: 0;
+        position-area: top span-right;
+        justify-self: start;
+        position-try-fallbacks: flip-block;
+        max-inline-size: min(16rem, 100%);
+    }
+}
+
 .play-parameter-grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
+    align-items: first baseline;
     gap: 1.5rem 2rem;
 }
 .play-parameter-grid:empty {
     display: none;
 }
-@media (min-width: 64rem) {
-    .play-parameter-grid {
+/* Keep a wrapped group aligned to its first row of choices. */
+.play-parameter-grid > :has(> [role="group"]) {
+    align-items: first baseline;
+}
+/* Two 20rem fields plus the gutter. A lone field uses the full width. */
+@container play-inputs (min-width: 42rem) {
+    .play-parameter-grid:has(> :nth-child(2)) {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        align-items: center;
+        background: linear-gradient(
+            color-mix(in oklab, var(--polli-color-text-muted) 18%, transparent) 0 0
+        ) center / 1px calc(100% - 1rem) no-repeat;
     }
 }
 

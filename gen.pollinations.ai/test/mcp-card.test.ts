@@ -48,6 +48,23 @@ describe("SEP-2127 MCP Server Cards", () => {
         );
     });
 
+    it("identifies the catalog operator for Level 2 discovery", async () => {
+        const res = await fetchWorker("/.well-known/ai-catalog.json");
+        const catalog = (await res.json()) as {
+            host: {
+                displayName: string;
+                identifier: string;
+                documentationUrl: string;
+            };
+        };
+        // AI Catalog Level 2 requires a host object identifying the operator.
+        expect(catalog.host).toEqual({
+            displayName: "Pollinations.ai",
+            identifier: "pollinations.ai",
+            documentationUrl: `${ORIGIN}/docs/llm.txt`,
+        });
+    });
+
     it("serves the ARD manifest at /.well-known/ard.json with the same entries", async () => {
         const res = await fetchWorker("/.well-known/ard.json");
         expect(res.status).toBe(200);

@@ -8,7 +8,7 @@
     "packages/auth",
     "packages/sdk",
     "packages/ui",
-    "operations/economics/web",
+    "operations/dashboards/economics/web",
     "media.pollinations.ai"
   ],
   "scripts": {

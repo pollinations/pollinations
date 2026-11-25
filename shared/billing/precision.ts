@@ -1,7 +1,7 @@
 /**
- * Pollen billing precision policy.
+ * Billing precision policy.
  *
- * The smallest billable Pollen unit is 1e-8. Ledger debits, credits, and
+ * The smallest billable USD increment is 1e-8. Ledger debits, credits, and
  * analytics totals round to this precision so they agree exactly.
  */
 export const POLLEN_BILLING_PRECISION = 8;

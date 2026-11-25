@@ -9,6 +9,82 @@ import { perMillion } from "./price-helpers";
  * `FallbackDefinition`.
  */
 export const IMAGE_FALLBACKS = {
+    "bytedance/seedance-2.5-flash": {
+        "bytedance/seedance-2.5-flash:openrouter": {
+            provider: "openrouter",
+            cost: { completionVideoTokens: perMillion(7 * 1.055) },
+            costVariants: {
+                "720p": { completionVideoTokens: perMillion(7 * 1.055) },
+                video_in_480p: {
+                    completionVideoTokens: perMillion(4.3 * 1.055),
+                },
+                video_in_720p: {
+                    completionVideoTokens: perMillion(4.3 * 1.055),
+                },
+            },
+        },
+    },
+    "minimax/minimax-h3-image": {
+        "minimax/minimax-h3-image:openrouter": {
+            provider: "openrouter",
+            cost: {
+                promptTextTokens: perMillion(2.3 * 1.055),
+                promptImageTokens: perMillion(1.5 * 1.055),
+                completionImageTokens: perMillion(3.8 * 1.055),
+            },
+        },
+    },
+    "minimax/minimax-h3-image-highspeed": {
+        "minimax/minimax-h3-image-highspeed:openrouter": {
+            provider: "openrouter",
+            cost: {
+                promptTextTokens: perMillion(2.3 * 1.055),
+                promptImageTokens: perMillion(3 * 1.055),
+                completionImageTokens: perMillion(7.6 * 1.055),
+            },
+        },
+    },
+    "kwaivgi/kling-v3.0-pro": {
+        "kwaivgi/kling-v3.0-pro:azure": {
+            provider: "azure",
+            cost: {
+                completionVideoSeconds: 0.1232,
+                completionAudioSeconds: 0.0616,
+            },
+        },
+    },
+    "lightricks/ltx-2.5-pro": {
+        "lightricks/ltx-2.5-pro:azure": {
+            provider: "azure",
+        },
+    },
+    "stability-ai/stable-diffusion-3.5-large": {
+        "stability-ai/stable-diffusion-3.5-large:stability": {
+            provider: "stability",
+            cost: { completionImageTokens: 0.065 },
+        },
+    },
+    "stability-ai/stable-image-core": {
+        "stability-ai/stable-image-core:stability": {
+            provider: "stability",
+            cost: { completionImageTokens: 0.03 },
+        },
+    },
+    "bytedance-seed/seedream-5-5": {
+        "bytedance-seed/seedream-5-5:openrouter": {
+            provider: "openrouter",
+            cost: {
+                promptImageTokens: 0.008 * 1.055,
+                completionImageTokens: 0.02 * 1.055,
+            },
+            costVariants: {
+                "2k": {
+                    promptImageTokens: 0.008 * 1.055,
+                    completionImageTokens: 0.035 * 1.055,
+                },
+            },
+        },
+    },
     "bytedance/seedream-5.0-pro": {
         "bytedance/seedream-5.0-pro:replicate": {
             provider: "replicate",
@@ -18,13 +94,12 @@ export const IMAGE_FALLBACKS = {
     "google/gemini-nano-banana-2.1": {
         "google/gemini-nano-banana-2.1:vercel": {
             provider: "vercel",
-            // Pinned to Google. Record the gateway's reported charge; its
-            // cached input is billed at full rate. Keep the caller's Vertex
-            // price, including the cache discount, on this fallback.
+            // Pinned to Google. Gateway cached-input rate verified 2026-11-11.
+            // Record the reported charge and keep the caller's Vertex price.
             cost: {
                 promptTextTokens: perMillion(1.5),
                 promptImageTokens: perMillion(1.5),
-                promptCachedTokens: perMillion(1.5),
+                promptCachedTokens: perMillion(0.15),
                 completionTextTokens: perMillion(7.5),
                 completionImageTokens: perMillion(30),
             },
@@ -36,15 +111,8 @@ export const IMAGE_FALLBACKS = {
     "alibaba/wan-3.0": {
         "alibaba/wan-3.0:fal": {
             provider: "fal",
-            // Fal Prime bills output only; retain the Alibaba quote.
-            cost: { promptVideoSeconds: 0, completionVideoSeconds: 0.068 },
-            costVariants: {
-                "720p": { promptVideoSeconds: 0, completionVideoSeconds: 0.14 },
-                "1080p": {
-                    promptVideoSeconds: 0,
-                    completionVideoSeconds: 0.28,
-                },
-            },
+            // fal lists Alibaba's per-second rates and also bills input video
+            // seconds, so the route inherits the Alibaba cost sheet.
         },
     },
     "google/veo-3.1-fast": {
@@ -92,6 +160,12 @@ export const IMAGE_FALLBACKS = {
             provider: "openai",
             addedDate: new Date("2026-09-14").getTime(),
         },
+    },
+    "openai/gpt-image-2.6-flare": {
+        "openai/gpt-image-2.6-flare:fal": { provider: "fal", cost: {} },
+    },
+    "openai/gpt-image-2.6-sunburst": {
+        "openai/gpt-image-2.6-sunburst:fal": { provider: "fal", cost: {} },
     },
     "black-forest-labs/flux.1-kontext-pro": {
         "black-forest-labs/flux.1-kontext-pro:replicate": {
@@ -196,6 +270,18 @@ export const IMAGE_FALLBACKS = {
             addedDate: new Date("2026-09-01").getTime(),
         },
     },
+    "microsoft/mai-image-2.6-flash": {
+        "microsoft/mai-image-2.6-flash:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-10-24").getTime(),
+            // OpenRouter's only endpoint is Azure, at our deployment's rates.
+            cost: {
+                promptTextTokens: perMillion(1.75) * 1.055,
+                promptImageTokens: perMillion(2.5) * 1.055,
+                completionImageTokens: perMillion(19) * 1.055,
+            },
+        },
+    },
     "google/gemini-2.5-flash-image": {
         "google/gemini-2.5-flash-image:openrouter:vertex-global": {
             provider: "openrouter",
@@ -270,6 +356,31 @@ export const IMAGE_FALLBACKS = {
             provider: "fal",
             addedDate: new Date("2026-09-01").getTime(),
             maxReferenceImages: 10,
+        },
+    },
+    "heygen/heygen-avatar-6": {
+        "heygen/heygen-avatar-6:openrouter": {
+            provider: "openrouter",
+            cost: { completionVideoSeconds: 0.1 * 1.055 },
+            costVariants: { "2k": { completionVideoSeconds: 0.145 * 1.055 } },
+        },
+    },
+    "heygen/heygen-avatar-6-turbo": {
+        "heygen/heygen-avatar-6-turbo:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-11-20").getTime(),
+            cost: { completionVideoSeconds: 0.05 * 1.055 },
+            ...defineCostVariants(
+                { "2k": { completionVideoSeconds: 0.0875 * 1.055 } },
+                matchResolution("2k"),
+                {
+                    "2k": {
+                        label: "2K",
+                        description: "Applies at 2K resolution.",
+                    },
+                },
+                "1080p",
+            ),
         },
     },
     "heygen/heygen-video-1": {

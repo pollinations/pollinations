@@ -1,5 +1,5 @@
 name: Balance Problem
-description: Pollen not showing after purchase
+description: Balance not showing after a top-up
 title: "Balance: "
 body:
   - type: input
@@ -15,6 +15,6 @@ body:
     id: description
     attributes:
       label: What happened?
-      placeholder: "e.g., Bought 20 pollen 30 min ago, still shows 0"
+      placeholder: "e.g., Topped up $20 30 min ago, balance still shows $0"
     validations:
       required: true

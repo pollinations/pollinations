@@ -43,6 +43,7 @@ For all Pollinations-hosted MCP servers, see the
 | `getUsage` | Request history or daily summary; requires `account:usage` | `/account/usage`, `/account/usage/daily` |
 | `getEarnings` | Developer earnings from BYOP apps and community models; requires `account:usage` | `/account/earnings` |
 | `listQuests` | Quests with reward and claim state; requires `account:usage` | `/account/quests` |
+| `getProfile` | Account profile: linked GitHub username, image, community model access; name/email need `account:profile` | `/account/profile` |
 | `listKeys` | List API keys; requires `account:keys` | `/account/keys` |
 | `createKey` | Create a secret or publishable app key; requires `account:keys` | `POST /account/keys` |
 | `revokeKey` | Revoke a key by id; requires `account:keys` | `DELETE /account/keys/{id}` |

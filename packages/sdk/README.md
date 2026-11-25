@@ -858,10 +858,30 @@ import type {
 | `videoUrl(prompt, options?)` | Get video URL |
 | `generateAudio(text, options?)` | Text-to-speech / music |
 | `transcribe(audio, options?)` | Speech-to-text |
+| `createRealtimeSession(options?)` | Realtime voice session (WebSocket) |
 | `embeddings(input, options?)` | Vector embeddings |
 | `upload(data, options?)` | Upload media, optionally publishing it with `tags` |
 | `getModels(kind?)` | List all models, or one kind: `text`, `image`, `video`, `audio`, `embeddings` |
 | `configure({ apiKey })` | Set global config |
+
+## Realtime voice
+
+```ts
+import { createRealtimeSession } from '@pollinations/sdk';
+
+const session = createRealtimeSession({
+  apiKey,
+  session: { type: 'realtime', instructions: 'Be concise.' },
+});
+session.on((event) => console.log(event.type));
+await session.ready;
+session.send({ type: 'response.create' });
+```
+
+Events use the OpenAI Realtime protocol. In React, `useRealtimeSession()`
+from `@pollinations/sdk/react` binds the session to the signed-in user.
+Play model audio through an `<audio>` element so the browser's echo
+cancellation can use it as its reference.
 
 ## Troubleshooting
 

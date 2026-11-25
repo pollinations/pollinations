@@ -1,5 +1,11 @@
 export { isOutageError } from "../error-response.js";
 export { usePollinationsChatTransport } from "./chat-transport.js";
+export {
+    type RealtimeStatus,
+    type UseRealtimeSessionOptions,
+    type UseRealtimeSessionValue,
+    useRealtimeSession,
+} from "./realtime.js";
 export type {
     AuthActionsValue,
     AuthContextValue,

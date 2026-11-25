@@ -2,6 +2,14 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.37] - 2026-11-25
+
+### Added
+
+- Realtime voice sessions: `createRealtimeSession()` opens a session on
+  `wss://gen.pollinations.ai/v1/realtime` and passes OpenAI Realtime events
+  through; `useRealtimeSession()` binds it to the signed-in user in React.
+
 ## [5.1.0-alpha.36] - 2026-11-24
 
 ### Changed

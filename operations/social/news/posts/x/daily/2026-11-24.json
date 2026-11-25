@@ -1,0 +1,14 @@
+{
+  "platform": "x",
+  "scope": "daily",
+  "date": "2026-11-24",
+  "period_start": "2026-11-24",
+  "period_end": "2026-11-24",
+  "generated_at": "2026-11-25T06:07:24.235532+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/8efb0049af98408ccf8c16b93baf243060bed61654bd83639db912ba51dcb068"
+    }
+  ],
+  "text": "Added opt-in Auto mode for sandboxes. Azure can suspend when idle and resume on demand. Shared Azure ports now accept signed Discord interactions: verification pings don't wake the sandbox; slash commands are acknowledged before it wakes. Polite infrastructure."
+}

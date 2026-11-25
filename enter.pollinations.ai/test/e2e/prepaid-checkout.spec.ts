@@ -189,6 +189,8 @@ test("double-clicks sign once, uncertain retries reuse the proof, and the key ch
             network: "eip155:8453",
             amount: "2000000",
         });
+        // A 503 before the API records the purchase (checkout unavailable) is
+        // safe to retry; once recorded, the API answers 409 instead.
         if (paidHeaders.length === 1) {
             await paymentGate;
             return route.fulfill({ status: 503 });
@@ -234,6 +236,7 @@ test("double-clicks sign once, uncertain retries reuse the proof, and the key ch
     ).toBeVisible();
     const pendingWarning = page.waitForEvent("dialog");
     const pendingLeave = page
+        .getByRole("main")
         .getByRole("link", { name: "Terms", exact: true })
         .click();
     const pendingDialog = await pendingWarning;
@@ -269,6 +272,7 @@ test("double-clicks sign once, uncertain retries reuse the proof, and the key ch
     expect(stored).not.toContain(paidHeaders[0]);
     const warning = page.waitForEvent("dialog");
     const leave = page
+        .getByRole("main")
         .getByRole("link", { name: "Terms", exact: true })
         .click();
     const dialog = await warning;
@@ -283,7 +287,10 @@ test("double-clicks sign once, uncertain retries reuse the proof, and the key ch
             name: "I have saved my prepaid key somewhere safe.",
         })
         .check();
-    await page.getByRole("link", { name: "Terms", exact: true }).click();
+    await page
+        .getByRole("main")
+        .getByRole("link", { name: "Terms", exact: true })
+        .click();
     await expect(page).toHaveURL(/\/terms$/);
 });
 

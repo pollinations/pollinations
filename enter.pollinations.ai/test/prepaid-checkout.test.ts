@@ -123,7 +123,7 @@ test("reads the API's x402 challenge without sending account credentials", async
     );
 });
 
-test("retries an uncertain purchase with identical signed payment bytes", async () => {
+test("retries a purchase the API did not record with identical signed payment bytes", async () => {
     // Sign with the real x402 SDK and viem; only the HTTP transport is replaced.
     const headers = await prepaidPaymentHeaders(quote, "2", signer);
     const payload = decodePaymentSignatureHeader(headers["PAYMENT-SIGNATURE"]);
@@ -131,6 +131,7 @@ test("retries an uncertain purchase with identical signed payment bytes", async 
     expect(payload.payload).toMatchObject({
         authorization: { from: signer.address, value: "2000000" },
     });
+    // A 503 before the API records the purchase is safe to retry.
     const transport = vi
         .fn()
         .mockResolvedValueOnce(new Response(null, { status: 503 }))

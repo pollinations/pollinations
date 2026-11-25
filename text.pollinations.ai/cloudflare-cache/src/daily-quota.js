@@ -38,15 +38,18 @@ const usedUpUntilByIp = new Map();
 export const usedUp = (ip) => usedUpUntilByIp.get(ip) > Date.now();
 
 /**
- * Counts one free reply for `ip` in the DAILY_QUOTA namespace; false once it
- * had `limit` today. RPC errors propagate.
+ * Counts one free reply for `ip` in the DAILY_QUOTA namespace, on the UTC day
+ * of `at`, when the reply starts; false once it had `limit` that day. RPC
+ * errors propagate.
  */
-export async function takeQuota(namespace, ip, limit) {
-    const day = new Date().toISOString().slice(0, 10);
+export async function takeQuota(namespace, ip, limit, at) {
+    const day = new Date(at).toISOString().slice(0, 10);
     const free = await namespace.getByName(`${day} ${ip}`).take(limit);
     if (!free) {
         if (usedUpUntilByIp.size >= MAX_REMEMBERED_IPS) usedUpUntilByIp.clear();
-        usedUpUntilByIp.set(ip, nextMidnight());
+        // From the same `at`: a reply that lands after midnight is not
+        // remembered into the new day
+        usedUpUntilByIp.set(ip, nextMidnight(at));
     }
     return free;
 }

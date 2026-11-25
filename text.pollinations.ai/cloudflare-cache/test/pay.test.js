@@ -1,6 +1,7 @@
 import { env, fetchMock, runInDurableObject } from "cloudflare:test";
 import { afterEach, beforeAll, expect, test, vi } from "vitest";
 import { MAX_HOLD_MS } from "../../../shared/ip-slot.js";
+import { nextMidnight, takeQuota, usedUp } from "../src/daily-quota.js";
 import browserHeaders from "./fixtures/text.pollinations.ai-get-browser.headers?raw";
 import {
     alarmOf,
@@ -304,8 +305,26 @@ test("the 50th free reply of the day is served and counted, the 51st goes to the
         expect(response.headers.get("payment-required")).not.toBeNull();
     }
     expect(events).not.toContain("gen");
-    // The refused request freed the slot it took
-    expect(await alarmOf(ip)).toBeNull();
+    // The refused stream ended its booking but kept the interval
+    expect(await alarmOf(ip)).toBeGreaterThan(Date.now());
+});
+
+test("a model we don't serve uses no quota", async () => {
+    const ip = nextIp();
+    await quotaOf(ip, 49);
+    const { response } = await call("/quota?model=gpt-5", {
+        ip,
+        headers: CURL,
+    });
+    expect(response.status).toBe(404);
+    expect(await quotaOf(ip)).toBe(49);
+});
+
+test("a quota used up just before midnight is not remembered into the new day", async () => {
+    const ip = nextIp();
+    const beforeMidnight = nextMidnight() - 86_400_000 - 1;
+    expect(await takeQuota(env.DAILY_QUOTA, ip, 0, beforeMidnight)).toBe(false);
+    expect(usedUp(ip)).toBe(false);
 });
 
 test("a JSON request past the daily quota gets gen's error body", async () => {

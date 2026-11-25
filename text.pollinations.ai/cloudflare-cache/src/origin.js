@@ -639,30 +639,38 @@ async function generation(
     const canWait = params.stream || !weftEnabled(env);
     // A used-up daily quota goes to the paywall, streams too: they cannot wait
     // until midnight
-    const dailyLimit = { action: "pay", until: nextMidnight(), daily: true };
+    const dailyLimit = (at) => ({
+        action: "pay",
+        until: nextMidnight(at),
+        daily: true,
+    });
     let slot;
     try {
         slot = usedUp(ip)
-            ? dailyLimit
+            ? dailyLimit(Date.now())
             : await takeSlot(env.IP_SLOT, ip, FREE_INTERVAL_MS, canWait);
     } catch (error) {
         logFailure(route, { error: "ip_slot", type: error.name });
         return sendGenAnswer(failure(503));
     }
-    if (slot.action === "go" || slot.action === "wait") {
+    // A model we don't serve still books the slot, as on the VM, but its 404
+    // uses no quota
+    if (
+        (slot.action === "go" || slot.action === "wait") &&
+        MODELS.has(job.model)
+    ) {
+        // Counted on the day the booked reply starts
+        const start = Date.now() + slot.waitMs;
         let free = true;
         try {
-            free = await takeQuota(env.DAILY_QUOTA, ip, FREE_PER_DAY);
+            free = await takeQuota(env.DAILY_QUOTA, ip, FREE_PER_DAY, start);
         } catch (error) {
             // A cost cap, not a safety check: the reply stays free
             logFailure(route, { error: "daily_quota", type: error.name });
         }
         if (!free) {
-            // Frees the slot at once: the IP's next request meets the quota
-            const release = env.IP_SLOT.getByName(ip).release({
-                ...slot,
-                until: 0,
-            });
+            // Ends the booking as a finished reply would: the interval stays
+            const release = env.IP_SLOT.getByName(ip).release(slot);
             ctx.waitUntil(
                 release.catch((error) =>
                     logFailure(route, {
@@ -671,7 +679,7 @@ async function generation(
                     }),
                 ),
             );
-            slot = dailyLimit;
+            slot = dailyLimit(start);
         }
     }
 

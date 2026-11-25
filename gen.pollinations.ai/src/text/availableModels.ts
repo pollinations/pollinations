@@ -322,7 +322,7 @@ const models: ModelDefinition[] = [
         name: "openai/gpt-5.3-codex",
         config: portkeyConfig["gpt-5.3-codex"],
         transform: omitOpenAISampling,
-        reasoningEffortMap: { ...maxToXhigh, ...minimalToLow },
+        reasoningEffortMap: maxToXhighAndMinimalToLow,
         useResponsesApi: true,
     },
     {
@@ -1295,9 +1295,8 @@ const models: ModelDefinition[] = [
         transform: pipe(
             createMessageTransform(midijourneyPrompt),
             omitOpenAISampling,
-            effortMaxToXhigh,
         ),
-        reasoningEffortMap: minimalToLow,
+        reasoningEffortMap: maxToXhighAndMinimalToLow,
     },
     {
         name: "perplexity/sonar",

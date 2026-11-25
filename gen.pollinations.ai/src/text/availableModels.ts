@@ -34,6 +34,7 @@ const maxToXhigh = { max: "xhigh" };
 const maxToHigh = { max: "high" };
 const noneToLow = { none: "low" };
 const minimalToLow = { minimal: "low" };
+const maxToXhighAndMinimalToLow = { ...maxToXhigh, ...minimalToLow };
 const noneAndMinimalToLow = { ...noneToLow, ...minimalToLow };
 const effortMaxToXhigh = remapReasoningEffort(maxToXhigh);
 const gptOssEffort = remapReasoningEffort({
@@ -355,24 +356,26 @@ const models: ModelDefinition[] = [
         name: "openai/gpt-5.4-mini:openai",
         config: portkeyConfig["gpt-5.4-mini-openai"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: maxToXhigh,
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-5.4-mini",
         config: portkeyConfig["gpt-5.4-mini"],
-        transform: pipe(omitOpenAISampling, effortMaxToXhigh),
+        transform: omitOpenAISampling,
+        reasoningEffortMap: maxToXhigh,
     },
     {
         name: "openai/gpt-5.5",
         config: portkeyConfig["gpt-5.5"],
-        transform: pipe(omitOpenAISampling, effortMaxToXhigh),
-        reasoningEffortMap: minimalToLow,
+        transform: omitOpenAISampling,
+        reasoningEffortMap: maxToXhighAndMinimalToLow,
     },
     {
         name: "openai/gpt-5.5:aws",
         config: portkeyConfig["gpt-5.5-bedrock"],
         transform: omitOpenAISampling,
-        reasoningEffortMap: minimalToLow,
+        reasoningEffortMap: maxToXhighAndMinimalToLow,
         useResponsesApi: true,
     },
     {

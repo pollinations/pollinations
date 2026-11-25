@@ -116,6 +116,12 @@ describe("direct Responses transport", () => {
     it.each([
         ["openai/gpt-5.4", "max", "xhigh"],
         ["openai/gpt-5.4-nano", "max", "xhigh"],
+        ["openai/gpt-5.4-mini", "max", "xhigh"],
+        ["openai/gpt-5.4-mini:openai", "max", "xhigh"],
+        ["openai/gpt-5.5", "max", "xhigh"],
+        ["openai/gpt-5.5:aws", "max", "xhigh"],
+        ["openai/gpt-5.5", "minimal", "low"],
+        ["openai/gpt-5.5:aws", "minimal", "low"],
         ["openai/gpt-5.3-codex", "max", "xhigh"],
         ["openai/gpt-6-astra", "none", "low"],
         ["openai/gpt-6.1-sol", "none", "low"],

@@ -250,6 +250,41 @@ test("IPv6 addresses in one /64 share the free slot", async () => {
     expect(await alarmOf("2001:db8:6:4:aaaa::1")).toBeNull();
 });
 
+test("JSON cut off at the token limit is an error, not a stored answer", async () => {
+    const cut = await call("/gen:length?json=true");
+    expect(cut.response.status).toBe(422);
+    expect(cut.response.headers.get("cache-control")).toBe("private, no-store");
+    expect(JSON.parse(cut.text).error.code).toBe("OUTPUT_TOO_LONG");
+    expect(await storedAt("/gen:length?json=true")).toBeNull();
+
+    // Plain text keeps the partial reply, as before
+    const text = await call("/gen:length");
+    expect(text.response.status).toBe(200);
+    expect(text.text).toBe('{"a": [1, 2');
+});
+
+test("the prompt cap counts the messages gen gets, without the default system prompt", async () => {
+    const { bodies, testEnv } = recordingGen();
+    // Fields genMessages drops do not count
+    const response = await call("/openai", {
+        testEnv,
+        method: "POST",
+        headers: JSON_BODY,
+        body: JSON.stringify({
+            messages: [
+                {
+                    role: "assistant",
+                    content: "hi",
+                    reasoning_content: "x".repeat(20_000),
+                },
+                { role: "user", content: "gen:echo" },
+            ],
+        }),
+    });
+    expect(response.response.status).toBe(200);
+    expect(bodies[0].messages[1]).toEqual({ role: "assistant", content: "hi" });
+});
+
 test("a prompt over 16,000 characters is refused before gen and the IP's slot", async () => {
     const { bodies, testEnv } = recordingGen();
     const ip = nextIp();

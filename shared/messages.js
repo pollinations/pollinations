@@ -94,6 +94,7 @@ const CODES = {
     403: "FORBIDDEN",
     404: "NOT_FOUND",
     413: "PAYLOAD_TOO_LARGE",
+    422: "OUTPUT_TOO_LONG",
     429: "RATE_LIMITED",
     500: "INTERNAL_ERROR",
     503: "SERVICE_UNAVAILABLE",
@@ -159,6 +160,8 @@ export const REFUSED = {
     imageBusy: `Your previous image is still being made. The Classic API makes 1 image at a time per IP. Wait for it to finish, or make images in parallel with a pollen key at ${ENTER}`,
     badMessages:
         "messages must be a list of {role, content} objects. See https://github.com/pollinations/pollinations/blob/master/APIDOCS.md",
+    jsonTooLong: (maxTokens) =>
+        `The JSON reply hit the free Classic API's ${maxTokens}-token limit before it was complete. Ask for shorter output, or use longer replies with a pollen key at ${ENTER}`,
     unknownModel: (model) =>
         `Model "${model}" isn't on the Classic API. Free models: https://text.pollinations.ai/models. Every model we offer is on ${ENTER}`,
     enterOnly: (model) =>

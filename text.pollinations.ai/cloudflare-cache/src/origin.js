@@ -604,15 +604,27 @@ async function generation(
         format === "openai" ||
         responseFormat === "json_object" ||
         responseFormat === "json_schema";
-    // Before the slot, so an oversized prompt costs neither gen nor a wait
+    // Normalized once, before the slot: the cap measures exactly the messages
+    // gen gets, and a refused prompt costs neither gen nor a wait
+    let messages;
+    try {
+        messages = genMessages(params.messages);
+    } catch (error) {
+        logFailure(route, { error: "exception", type: error.name });
+        return sendGenAnswer(genAnswer(400, REFUSED.badMessages), UNPAID);
+    }
+    // The default system prompt is ours, so it does not count
     const promptChars =
-        JSON.stringify(params.messages ?? "").length +
-        JSON.stringify(params.options.tools ?? "").length;
+        JSON.stringify(
+            messages.filter((message) => message.content !== SYSTEM_PROMPT),
+        ).length + JSON.stringify(params.options.tools ?? "").length;
     if (promptChars > MAX_PROMPT_CHARS) {
         return sendGenAnswer(promptTooLong(MAX_PROMPT_CHARS, json), UNPAID);
     }
     const job = {
         ...params,
+        messages,
+        json,
         format,
         route,
         caller: callerHeaders(
@@ -721,7 +733,7 @@ async function generate(env, job, cacheControl, ended) {
             body: JSON.stringify(
                 clean({
                     model: "gpt-oss",
-                    messages: genMessages(job.messages),
+                    messages: job.messages,
                     ...job.options,
                     stream: job.stream,
                     max_tokens: MAX_TOKENS,
@@ -765,9 +777,17 @@ async function generate(env, job, cacheControl, ended) {
                 cacheControl,
             );
         }
-        return await (job.format === "openai"
-            ? openAiResponse(completion, cacheControl)
-            : textResponse(completion));
+        if (job.format === "openai")
+            return await openAiResponse(completion, cacheControl);
+        // A plain text reply drops finish_reason, so JSON cut off at
+        // MAX_TOKENS would pass, and be stored, as a complete answer
+        if (job.json && completion.choices[0].finish_reason === "length") {
+            return await sendGenAnswer(
+                genAnswer(422, REFUSED.jsonTooLong(MAX_TOKENS)),
+                cacheControl ?? UNPAID,
+            );
+        }
+        return await textResponse(completion);
     } catch (error) {
         logFailure(job.route, { error: "exception", type: error.name });
         return sendGenAnswer(

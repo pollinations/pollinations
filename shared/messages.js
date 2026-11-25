@@ -93,6 +93,7 @@ const CODES = {
     400: "BAD_REQUEST",
     403: "FORBIDDEN",
     404: "NOT_FOUND",
+    413: "PAYLOAD_TOO_LARGE",
     429: "RATE_LIMITED",
     500: "INTERNAL_ERROR",
     503: "SERVICE_UNAVAILABLE",
@@ -104,6 +105,27 @@ export const genAnswer = (status, message, headers = {}) => ({
     headers: { "Content-Type": JSON_TYPE, ...headers },
     body: genError(status, CODES[status] ?? "BAD_REQUEST", message),
 });
+
+/**
+ * A prompt over the Classic API's size limit: gen's error body for OpenAI and
+ * JSON callers, and for the rest a notice that apps show their users as is
+ */
+export function promptTooLong(maxChars, json) {
+    const chars = maxChars.toLocaleString("en-US");
+    const tokens = (maxChars / 4).toLocaleString("en-US");
+    if (json)
+        return genAnswer(
+            413,
+            `Prompt too long for the free Classic API: ${chars} characters max (about ${tokens} tokens), counting messages and tools. Shorten it, or use long prompts and every model with a pollen key at ${ENTER}`,
+        );
+    return {
+        status: 413,
+        headers: { "Content-Type": "text/plain; charset=utf-8" },
+        body:
+            `This message is too long for the free Classic API. It runs GPT-OSS 20B, a small model, with prompts up to ${chars} characters (about ${tokens} tokens) and short replies. Shorten the conversation and try again, or [use long prompts and stronger models](${ENTER}).\n\n` +
+            "If you're using someone else's app, ask whoever runs it to switch to a pollen key.",
+    };
+}
 
 /**
  * A free generation gen could not make, answered as gen answers its own

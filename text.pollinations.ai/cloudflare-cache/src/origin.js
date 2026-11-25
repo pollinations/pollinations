@@ -9,6 +9,7 @@ import {
     explainFreeLimit,
     failure,
     genAnswer,
+    promptTooLong,
     REFUSED,
 } from "../../../shared/messages.js";
 import { BLOCKED_PREFIXES } from "./blocked-prefixes.js";
@@ -24,7 +25,11 @@ import { prepareForwardedHeaders } from "./index.js";
 const GEN_URL = "https://gen.pollinations.ai/v1/chat/completions";
 const FREE_INTERVAL_MS = 45_000;
 const MAX_BODY_BYTES = 20 * 1024 * 1024; // body-parser's "20mb"
-const MAX_TOKENS = 1500;
+// Free gpt-oss costs: half of all replies are under 150 tokens, and prompts
+// over ~4k tokens were 13% of requests but 60% of the cost (Tinybird, Nov 2026)
+const MAX_TOKENS = 800;
+// Characters of the caller's messages and tools, about 4,000 tokens
+const MAX_PROMPT_CHARS = 16_000;
 // Node's default --max-http-header-size on the VM. Node 22 counts the request
 // target and each header name and value (no method, separators or line ends)
 // and answers 431 from this size on.
@@ -509,12 +514,6 @@ function readParams(data, prompt) {
             tool_choice: data.tool_choice || undefined,
             modalities: data.modalities,
             audio: data.audio,
-            // Changed: the VM omitted effort by default. Low reduces
-            // token-budget failures under MAX_TOKENS.
-            reasoning_effort:
-                data.reasoning_effort == null
-                    ? "low"
-                    : String(data.reasoning_effort),
             response_format:
                 data.response_format ||
                 (jsonMode ? { type: "json_object" } : undefined),
@@ -599,6 +598,19 @@ async function generation(
         // is not a function"). Answered as Express answers a route's error.
         return errorPage(500, `${error.name}: ${error.message}`, true);
     }
+    const responseFormat = params.options.response_format?.type;
+    // OpenAI and JSON callers read errors as JSON, the rest print the text
+    const json =
+        format === "openai" ||
+        responseFormat === "json_object" ||
+        responseFormat === "json_schema";
+    // Before the slot, so an oversized prompt costs neither gen nor a wait
+    const promptChars =
+        JSON.stringify(params.messages ?? "").length +
+        JSON.stringify(params.options.tools ?? "").length;
+    if (promptChars > MAX_PROMPT_CHARS) {
+        return sendGenAnswer(promptTooLong(MAX_PROMPT_CHARS, json), UNPAID);
+    }
     const job = {
         ...params,
         format,
@@ -639,12 +651,6 @@ async function generation(
         // Outside the free limit: books no slot
         const unpaid = () => generate(env, job, UNPAID, () => {});
         const { pay } = await import("./pay.js");
-        const format = job.options.response_format?.type;
-        // OpenAI and JSON callers read errors as JSON, the rest print the text
-        const json =
-            job.format === "openai" ||
-            format === "json_object" ||
-            format === "json_schema";
         return explainFreeLimit(
             request,
             await pay(request, env, ctx, unpaid),
@@ -719,6 +725,9 @@ async function generate(env, job, cacheControl, ended) {
                     ...job.options,
                     stream: job.stream,
                     max_tokens: MAX_TOKENS,
+                    // Changed: the VM omitted effort and callers could raise
+                    // it. Always low, so reasoning fits MAX_TOKENS.
+                    reasoning_effort: "low",
                 }),
             ),
         });

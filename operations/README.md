@@ -4,7 +4,7 @@ Internal tools that run Pollinations, grouped by what they are for. Apps with a 
 
 ## Scheduled operations
 
-See the [Codex schedule catalog](codex-schedules/README.md) for model work and
+See the [scheduled tasks catalog](scheduled-tasks/README.md) for model work and
 support. The catalog lists each job’s cadence, scope and runbook.
 
 ## Dashboards
@@ -41,7 +41,7 @@ support. The catalog lists each job’s cadence, scope and runbook.
 
 | Folder | What it is |
 | --- | --- |
-| [`app-management`](app-management/) | Community app list (`app.json`), submission reviews, screenshots, metrics and the README app table |
+| [`app-management`](app-management/README.md) | Community app list (`app.json`), submission reviews, screenshots, metrics and the README app table |
 
 ## Infrastructure
 

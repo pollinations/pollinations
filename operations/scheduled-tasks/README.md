@@ -1,4 +1,4 @@
-# Codex schedules
+# Scheduled tasks
 
 Use one dedicated chat per job. Times are local to Europe/Berlin. Support
 reviews run every day. Thursday is the weekly model review day, with separate

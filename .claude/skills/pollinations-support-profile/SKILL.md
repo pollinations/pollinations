@@ -5,7 +5,7 @@ description: Triage the Pollinations Express GitHub support queue and prepare pr
 
 # Pollinations GitHub support profiles
 
-For the daily queue scan, read [daily-express-triage.md](../../../operations/codex-schedules/daily-express-triage.md).
+For the daily queue scan, read [daily-express-triage.md](../../../operations/scheduled-tasks/daily-express-triage.md).
 
 Whenever you prepare a GitHub support reply for `pollinations/pollinations`, show a compact **Private profile** above the customer-facing draft in the Codex chat. Include the GitHub handle, verified gross Stripe purchases over the last 90 days and since the first recorded payment, and one relevant support or contributor fact when available. Examples include a related open fix, a substantive prior maintainer reply, or merged contributions to Pollinations. Keep the draft short and grounded in current issue and deployment evidence. Keep purchase information and private account context out of the draft and GitHub. Follow the user's authorization when sending a reply.
 

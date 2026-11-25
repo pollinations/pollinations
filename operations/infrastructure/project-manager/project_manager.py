@@ -15,9 +15,14 @@ from typing import Optional
 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 POLLINATIONS_TOKEN = os.getenv("POLLINATIONS_TOKEN")
-GITHUB_EVENT_JSON = os.getenv("GITHUB_EVENT", "{}")
 try:
-    GITHUB_EVENT = json.loads(GITHUB_EVENT_JSON)
+    if payload := os.getenv("GITHUB_EVENT"):
+        GITHUB_EVENT = json.loads(payload)
+    elif event_path := os.getenv("GITHUB_EVENT_PATH"):
+        with open(event_path) as event_file:
+            GITHUB_EVENT = json.load(event_file)
+    else:
+        GITHUB_EVENT = {}
 except json.JSONDecodeError:
     GITHUB_EVENT = {}
 REPO_OWNER = "pollinations"

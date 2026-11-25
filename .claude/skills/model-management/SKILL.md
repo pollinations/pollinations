@@ -25,7 +25,7 @@ Read [operating-policy.md](references/operating-policy.md) before recommending a
 
 | Task | Required references |
 |---|---|
-| Review models for deprecation or upstream shutdowns | [deprecation-review.md](../../../operations/codex-schedules/deprecation-review.md) |
+| Review models for deprecation or upstream shutdowns | [deprecation-review.md](../../../operations/scheduled-tasks/deprecation-review.md) |
 | Find code or run locally | [repository-and-local-testing.md](references/repository-and-local-testing.md) |
 | Add, update, reroute, rename, or remove | [change-and-test-matrix.md](references/change-and-test-matrix.md) |
 | New model, provider, model ID, or price | [billing-verification.md](references/billing-verification.md) |

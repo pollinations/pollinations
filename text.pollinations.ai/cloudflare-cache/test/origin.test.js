@@ -240,6 +240,16 @@ test("a stream ends after data: [DONE] and is stored once complete", async () =>
     expect(hit.text).toBe(SSE_UNTIL_DONE);
 });
 
+test("IPv6 addresses in one /64 share the free slot", async () => {
+    const { response } = await call("/ipv6%20slot", {
+        ip: "2001:db8:6:4:aaaa::1",
+    });
+    expect(response.status).toBe(200);
+
+    expect(await alarmOf("2001:db8:6:4::/64")).not.toBeNull();
+    expect(await alarmOf("2001:db8:6:4:aaaa::1")).toBeNull();
+});
+
 test("a prompt over 16,000 characters is refused before gen and the IP's slot", async () => {
     const { bodies, testEnv } = recordingGen();
     const ip = nextIp();

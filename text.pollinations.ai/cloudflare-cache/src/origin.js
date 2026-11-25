@@ -4,7 +4,7 @@ import contentType from "content-type";
 import iconv from "iconv-lite";
 import mediaTyper from "media-typer";
 import { callerHeaders } from "../../../shared/gen-caller.js";
-import { takeSlot } from "../../../shared/ip-slot.js";
+import { slotKey, takeSlot } from "../../../shared/ip-slot.js";
 import {
     explainFreeLimit,
     failure,
@@ -212,7 +212,7 @@ async function answer(request, env, ctx) {
         // it chunked
         return new Response(chunked(""), { status: 431 });
     }
-    const ip = request.headers.get("cf-connecting-ip") || "unknown";
+    const ip = slotKey(request.headers.get("cf-connecting-ip") || "unknown");
     // The VM's blocklist ran first and answered an empty 403 without CORS
     if (BLOCKED_PREFIXES.has(ip.split(".").slice(0, 3).join("."))) {
         return new Response(null, {

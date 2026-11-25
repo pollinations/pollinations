@@ -1,5 +1,6 @@
 import { x402Client, x402HTTPClient } from "@x402/core/client";
-import type { PaymentRequired } from "@x402/core/types";
+import { decodePaymentSignatureHeader } from "@x402/core/http";
+import type { PaymentPayload, PaymentRequired } from "@x402/core/types";
 import {
     type ClientEvmSigner,
     type ExactEvmPayloadV2,
@@ -98,6 +99,14 @@ export async function loadPrepaidQuote(url: string, amount: string) {
     );
 }
 
+function approvalExpired(payload: PaymentPayload): boolean {
+    const evm = payload.payload as ExactEvmPayloadV2;
+    const deadline = isEIP3009Payload(evm)
+        ? evm.authorization.validBefore
+        : evm.permit2Authorization.deadline;
+    return BigInt(deadline) <= BigInt(Math.floor(Date.now() / 1000));
+}
+
 export async function prepaidPaymentHeaders(
     required: PaymentRequired,
     amount: string,
@@ -109,13 +118,9 @@ export async function prepaidPaymentHeaders(
         .register("eip155:8453", new ExactEvmScheme(signer));
     const http = new x402HTTPClient(client);
     const payload = await http.createPaymentPayload(quote);
-    const evm = payload.payload as ExactEvmPayloadV2;
-    const deadline = isEIP3009Payload(evm)
-        ? evm.authorization.validBefore
-        : evm.permit2Authorization.deadline;
     // Wallet prompts can outlast the provider's signed authorization window.
     // Reject before submitting; retries of an already-sent proof stay unchanged.
-    if (BigInt(deadline) <= BigInt(Math.floor(Date.now() / 1000)))
+    if (approvalExpired(payload))
         throw Object.assign(new Error("Payment approval expired"), {
             code: "payment_expired",
         });
@@ -161,6 +166,9 @@ export async function submitPrepaidPayment(
     url: string,
     headers: Record<string, string>,
 ) {
+    const expired = approvalExpired(
+        decodePaymentSignatureHeader(headers["PAYMENT-SIGNATURE"]),
+    );
     const response = await fetch(url, {
         method: "POST",
         credentials: "omit",
@@ -169,13 +177,21 @@ export async function submitPrepaidPayment(
     });
     if (response.status === 409) return { status: "recorded" } as const;
     if (response.status === 503) {
-        const body = await response.json().catch(() => null);
+        const body = (await response.json().catch(() => null)) as {
+            error?: unknown;
+        } | null;
         if (
             typeof body?.error === "string" &&
             body.error.startsWith("Payment settled but key activation failed.")
         )
             return { status: "settled" } as const;
     }
+    // The API answers 409 for any recorded attempt, and an expired approval
+    // can no longer be recorded or settled, so this one was never charged.
+    if (!response.ok && expired)
+        throw Object.assign(new Error("Payment approval unused"), {
+            code: "approval_unused",
+        });
     if (!response.ok) throw new Error("Payment status unknown");
     const result: unknown = await response.json();
     if (

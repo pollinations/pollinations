@@ -341,6 +341,49 @@ for (const [status, body, notice] of [
     });
 }
 
+test("an expired approval the API never recorded is released for a fresh payment", async ({
+    page,
+}) => {
+    const now = Date.now();
+    await page.clock.setFixedTime(now);
+    const submissions: string[] = [];
+    await page.route("**/api/x402/keys/*", (route) => {
+        const signature = route.request().headers()["payment-signature"];
+        if (!signature) return route.fallback();
+        submissions.push(signature);
+        if (submissions.length === 1) return route.abort();
+        // An expired approval fails verification before the API records it.
+        if (submissions.length === 2)
+            return route.fulfill({ status: 402, json: {} });
+        return route.fulfill({
+            json: { key: "sk_browser_fixture", pollen: 2 },
+        });
+    });
+    for (const name of ["Review payment", "Connect wallet", "Pay 2.00 USDC"])
+        await page.getByRole("button", { name, exact: true }).click();
+    await expect(
+        page.getByText("Payment is not confirmed.", { exact: false }),
+    ).toBeVisible();
+    await page.clock.setFixedTime(now + 61_000);
+    await page
+        .getByRole("button", { name: "Retry this payment", exact: true })
+        .click();
+    await expect(
+        page.getByText("Your approval expired and was never charged.", {
+            exact: false,
+        }),
+    ).toBeVisible();
+    for (const name of ["Connect wallet", "Pay 2.00 USDC"])
+        await page.getByRole("button", { name, exact: true }).click();
+    await expect(
+        page.getByText("Your key is ready with 2 Pollinations credits."),
+    ).toBeVisible();
+    expect(signatures).toBe(2);
+    expect(submissions).toHaveLength(3);
+    expect(submissions[1]).toBe(submissions[0]);
+    expect(submissions[2]).not.toBe(submissions[0]);
+});
+
 test("an approval that expires in the wallet can be retried without submitting the old proof", async ({
     page,
 }) => {

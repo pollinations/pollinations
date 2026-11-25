@@ -5,6 +5,8 @@ its [catalog lifecycle policy](operating-policy.md). Use current `origin/product
 for configured routes and `origin/main` for upcoming changes. Fetch refs if
 needed and read them with Git without switching the user's checkout.
 
+Start with open issues and PRs in the [Retirement queue](https://github.com/orgs/pollinations/projects/20/views/42?filterQuery=is%3Aopen%20area%3AModels%20model-work%3ARetirement). Check for existing work before proposing another retirement.
+
 ## Usage
 
 Start from the live public catalog at `https://gen.pollinations.ai/models`.

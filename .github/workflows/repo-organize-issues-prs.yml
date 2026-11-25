@@ -14,6 +14,10 @@ on:
       issue_numbers:
         description: "Space-separated issue numbers"
         required: false
+      model_queues_only:
+        description: "Fill only empty Model work cells for open Models items (ignore number inputs)"
+        type: boolean
+        default: false
       dry_run:
         description: "Log the changes without applying them"
         type: boolean
@@ -61,7 +65,7 @@ jobs:
         run: python operations/infrastructure/project-manager/project_manager.py
 
       - name: Organize existing issues and PRs
-        if: github.event_name == 'workflow_dispatch'
+        if: github.event_name == 'workflow_dispatch' && !inputs.model_queues_only
         env:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           GH_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
@@ -92,3 +96,11 @@ jobs:
           for number in $ISSUE_NUMBERS; do organize issue "$number" || failed=$((failed + 1)); done
           echo "Failed items: $failed"
           [ "$failed" -eq 0 ]
+
+      - name: Fill Model work queues
+        if: github.event_name == 'workflow_dispatch' && inputs.model_queues_only
+        env:
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+          POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
+          DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
+        run: python operations/infrastructure/project-manager/backfill_model_work.py

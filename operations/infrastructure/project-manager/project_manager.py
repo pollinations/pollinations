@@ -54,6 +54,7 @@ TEAM_IDS = {5099901, 36901823, 74301576, 158852059, 34513273}
 # The Discord relay ends each relayed issue with "**Author:** `name` (UID: `123`)".
 RELAY_AUTHOR_LINE = re.compile(r"^\*\*Author:\*\* .*\(UID:\s*`?\d+`?\)\s*$", re.MULTILINE)
 TYPES = ["Bug", "Feature", "Question", "Task"]
+MODEL_WORK = ["Repair", "Retirement", "Addition", "Update"]
 PR_TYPES = ["Bug", "Feature", "Task"]
 PRIORITIES = ["High", "Medium", "Low"]
 SOURCES = ["Team", "Community", "Agent", "Apps", "Quests"]
@@ -177,7 +178,7 @@ def dev_fields(areas: list) -> dict:
         for n in nodes
         if n.get("options")
     }
-    expected = [("Area", areas), ("Priority", PRIORITIES), ("Source", SOURCES)]
+    expected = [("Area", areas), ("Priority", PRIORITIES), ("Source", SOURCES), ("Model work", MODEL_WORK)]
     if IS_PULL_REQUEST:
         expected.append(("Work type", PR_TYPES))
     for name, values in expected:
@@ -354,6 +355,11 @@ def classification_answer(raw: dict, areas: list, is_pr: bool) -> dict:
     area = raw.get("area")
     if area is not None and area not in areas:
         raise ValueError(f"invalid area: {area!r}")
+    model_work = raw.get("model_work")
+    if model_work is not None and (area != "Models" or model_work not in MODEL_WORK):
+        raise ValueError(f"invalid Model work for {area!r}: {model_work!r}")
+    if area == "Models" and "model_work" not in raw:
+        raise ValueError("missing model_work for Models")
     # Promotions and census responses have no type or priority.
     if area is None:
         return {"area": None, "type": None, "priority": None}
@@ -362,7 +368,7 @@ def classification_answer(raw: dict, areas: list, is_pr: bool) -> dict:
         raise ValueError(f"invalid type: {raw.get('type')!r}")
     if not is_pr and raw.get("priority") not in PRIORITIES:
         raise ValueError(f"invalid priority: {raw.get('priority')!r}")
-    return {"area": area, "type": raw["type"], "priority": None if is_pr else raw["priority"]}
+    return {"area": area, "type": raw["type"], "priority": None if is_pr else raw["priority"], "model_work": model_work}
 
 
 def write_reward_comment():
@@ -423,10 +429,11 @@ def main():
     # A priority that is already set (by a person, an earlier run or the Express job) is kept.
     existing = current_priority() if answer["priority"] else None
     priority = existing or answer["priority"]
-    print(f"{'DRY-RUN ' if DRY_RUN else ''}#{ISSUE_NUMBER}\t{source}\t{answer['area']}\t{answer['type']}\t{priority}{' (kept)' if existing else ''}\t{ISSUE_TITLE}")
+    print(f"{'DRY-RUN ' if DRY_RUN else ''}#{ISSUE_NUMBER}\t{source}\t{answer['area']}\t{answer['type']}\t{answer.get('model_work')}\t{priority}{' (kept)' if existing else ''}\t{ISSUE_TITLE}")
 
     item_id = add_to_dev()
     set_field(item_id, fields["Area"], answer["area"])
+    set_field(item_id, fields["Model work"], answer.get("model_work"))
     set_field(item_id, fields["Source"], source)
     if answer["priority"] and not existing:
         set_field(item_id, fields["Priority"], answer["priority"])

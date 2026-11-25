@@ -23,15 +23,25 @@ class ClassificationTest(unittest.TestCase):
 
     def test_pr_type_has_no_issue_priority(self):
         for work_type in ("Bug", "Feature", "Task"):
-            self.assertEqual(classification_answer({"area": "Models", "type": work_type, "priority": "High"}, ["Models"], True),
-                             {"area": "Models", "type": work_type, "priority": None})
+            self.assertEqual(classification_answer({"area": "Models", "type": work_type, "priority": "High", "model_work": None}, ["Models"], True),
+                             {"area": "Models", "type": work_type, "priority": None, "model_work": None})
         with self.assertRaises(ValueError):
             classification_answer({"area": "Models", "type": "Question"}, ["Models"], True)
         with self.assertRaises(ValueError):
             classification_answer({"area": "Models", "type": None}, ["Models"], True)
 
+    def test_model_queues_for_issues_and_prs(self):
+        item = {"area": "Models", "type": "Task", "priority": "Low"}
+        for queue in ("Repair", "Retirement", "Addition", "Update"):
+            for is_pr in (True, False):
+                result = classification_answer({**item, "model_work": queue}, ["Models"], is_pr)
+                self.assertEqual(result["model_work"], queue)
+        for invalid in (item, {**item, "model_work": "PR"}, {**item, "area": "Docs", "model_work": "Repair"}):
+            with self.assertRaises(ValueError):
+                classification_answer(invalid, ["Models", "Docs"], False)
+
     def test_native_issue_question_and_priority_remain_supported(self):
-        answer = {"area": "Docs & support", "type": "Question", "priority": "Low"}
+        answer = {"area": "Docs & support", "type": "Question", "priority": "Low", "model_work": None}
         self.assertEqual(classification_answer(answer, ["Docs & support"], False), answer)
         with self.assertRaises(ValueError):
             classification_answer({**answer, "priority": None}, ["Docs & support"], False)
@@ -48,7 +58,7 @@ class ClassificationTest(unittest.TestCase):
         with patch.object(manager, "IS_PULL_REQUEST", True), \
              patch.object(manager, "fetch_pr_files", return_value=["shared/registry/text.ts"]), \
              patch.object(manager, "closing_issues", return_value=linked), \
-             patch.object(manager, "ask_ai", return_value={"area": "Models", "type": "Bug"}) as ask:
+             patch.object(manager, "ask_ai", return_value={"area": "Models", "type": "Bug", "model_work": "Repair"}) as ask:
             answer = manager.classify("brief", ["Models"])
         self.assertEqual(answer["type"], "Bug")
         prompt = ask.call_args.args[1]
@@ -57,7 +67,7 @@ class ClassificationTest(unittest.TestCase):
         self.assertIn("hints, verify against PR scope", prompt)
 
     def test_promotion_pr_clears_existing_work_type_through_main(self):
-        fields = {name: {"id": name} for name in ("Area", "Source", "Work type")}
+        fields = {name: {"id": name} for name in ("Area", "Source", "Work type", "Model work")}
         context = {"IS_PULL_REQUEST": True, "ISSUE_NUMBER": 1, "ISSUE_NODE_ID": "pr-node",
                    "GITHUB_TOKEN": "test", "POLLINATIONS_TOKEN": "test", "GITHUB_EVENT": {},
                    "ITEM_DATA": {"labels": []}, "DRY_RUN": False}
@@ -75,6 +85,7 @@ class ClassificationTest(unittest.TestCase):
             result = json.loads((Path(directory) / "classification.json").read_text())
             self.assertEqual(result, {"area": None, "type": None, "source": "Community"})
         write.assert_any_call("item", fields["Work type"], None)
+        write.assert_any_call("item", fields["Model work"], None)
         native_type.assert_not_called()
 
     def test_unavailable_classifier_skips_without_failing(self):
@@ -126,7 +137,7 @@ class RewardCommentTest(unittest.TestCase):
         self.assertIsNone(self.post(opened, {**item, "created_at": "2026-11-04T23:59:59Z"}))
 
     def test_app_submissions_access_requests_and_census_responses_get_no_reward_comment(self):
-        fields = {name: {"id": name, "options": {}} for name in ("Area", "Source", "Priority")}
+        fields = {name: {"id": name, "options": {}} for name in ("Area", "Source", "Priority", "Model work")}
         for label, title in (("APP-SUBMISSION", ""), ("HONEY-CENSUS", ""), ("BUG", "[Community Model Publisher Access] me")):
             item = {"created_at": "2026-11-05T00:00:00Z", "user": {"type": "User"}, "labels": [{"name": label}]}
             with self.subTest(label=label), \

@@ -2,6 +2,15 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.37] - 2026-11-26
+
+### Added
+
+- `connectRealtime()` and `pollinations.connectRealtime()` for OpenAI Realtime voice and live transcription sessions on `wss://gen.pollinations.ai/v1/realtime`.
+- `pcm16ToBase64()` and `base64ToPcm16()` helpers for 24 kHz mono PCM16 audio streaming.
+- `useRealtime()` React hook for managing realtime sessions against `PolliProvider` auth state.
+- `examples/realtime-voice.html` minimal browser demo for voice and live transcription.
+
 ## [5.1.0-alpha.36] - 2026-11-24
 
 ### Changed

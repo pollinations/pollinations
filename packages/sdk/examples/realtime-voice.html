@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pollinations Realtime Voice &amp; Transcription Example</title>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 680px; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; }
+        .row { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap; }
+        input, select, button { padding: 0.5rem 0.75rem; font-size: 0.95rem; }
+        input { flex: 1; min-width: 220px; }
+        pre { background: #111827; color: #f3f4f6; padding: 1rem; border-radius: 8px; min-height: 220px; overflow: auto; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>Pollinations Realtime Voice</h1>
+    <div class="row">
+        <input id="apiKey" type="password" placeholder="Secret API key (sk_...)" />
+        <select id="model">
+            <option value="openai/gpt-realtime-2.1">openai/gpt-realtime-2.1</option>
+            <option value="openai/gpt-realtime-2.1-mini">openai/gpt-realtime-2.1-mini</option>
+            <option value="openai/gpt-live-transcribe">openai/gpt-live-transcribe</option>
+        </select>
+        <button id="toggleBtn">Start Session</button>
+    </div>
+    <pre id="log">Ready.</pre>
+
+    <script type="module">
+        import { connectRealtime, pcm16ToBase64, base64ToPcm16 } from "../dist/index.js";
+
+        const logEl = document.getElementById("log");
+        const keyInput = document.getElementById("apiKey");
+        const modelSelect = document.getElementById("model");
+        const toggleBtn = document.getElementById("toggleBtn");
+
+        let session = null;
+        let audioCtx = null;
+        let micStream = null;
+        let nextPlayTime = 0;
+
+        const log = (line) => {
+            logEl.textContent += `\n${line}`;
+            logEl.scrollTop = logEl.scrollHeight;
+        };
+
+        function playPcm16(pcm16) {
+            if (!audioCtx) return;
+            const float32 = new Float32Array(pcm16.length);
+            for (let i = 0; i < pcm16.length; i++) float32[i] = pcm16[i] / 32768;
+            const buffer = audioCtx.createBuffer(1, float32.length, 24000);
+            buffer.copyToChannel(float32, 0);
+            const source = audioCtx.createBufferSource();
+            source.buffer = buffer;
+            source.connect(audioCtx.destination);
+            const startAt = Math.max(audioCtx.currentTime, nextPlayTime);
+            source.start(startAt);
+            nextPlayTime = startAt + buffer.duration;
+        }
+
+        async function stop() {
+            session?.close();
+            session = null;
+            micStream?.getTracks().forEach((t) => t.stop());
+            micStream = null;
+            if (audioCtx) {
+                await audioCtx.close();
+                audioCtx = null;
+            }
+            nextPlayTime = 0;
+            toggleBtn.textContent = "Start Session";
+        }
+
+        toggleBtn.addEventListener("click", async () => {
+            if (session) {
+                await stop();
+                log("Session stopped.");
+                return;
+            }
+
+            try {
+                logEl.textContent = "Connecting...";
+                session = await connectRealtime({
+                    apiKey: keyInput.value.trim(),
+                    model: modelSelect.value,
+                });
+                log(`Connected (${session.model}).`);
+                toggleBtn.textContent = "Stop Session";
+
+                session.on("response.audio.delta", (ev) => {
+                    if (typeof ev.delta === "string") playPcm16(base64ToPcm16(ev.delta));
+                });
+                session.on("response.audio_transcript.delta", (ev) => {
+                    if (typeof ev.delta === "string") logEl.textContent += ev.delta;
+                });
+                session.on("conversation.item.input_audio_transcription.completed", (ev) => {
+                    if (typeof ev.transcript === "string") log(`\n[You] ${ev.transcript}`);
+                });
+                session.on("error", (ev) => log(`\n[Error] ${JSON.stringify(ev.error ?? ev)}`));
+                session.onClose((info) => log(`\n[Closed] ${info.code} ${info.reason}`));
+
+                audioCtx = new AudioContext({ sampleRate: 24000 });
+                micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const source = audioCtx.createMediaStreamSource(micStream);
+                const processor = audioCtx.createScriptProcessor(4096, 1, 1);
+                processor.onaudioprocess = (e) => {
+                    if (!session || session.status !== "open") return;
+                    const input = e.inputBuffer.getChannelData(0);
+                    const pcm16 = new Int16Array(input.length);
+                    for (let i = 0; i < input.length; i++) {
+                        const s = Math.max(-1, Math.min(1, input[i]));
+                        pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+                    }
+                    session.appendAudio(pcm16ToBase64(pcm16));
+                };
+                source.connect(processor);
+                processor.connect(audioCtx.destination);
+            } catch (err) {
+                log(`Failed: ${err.message}`);
+                await stop();
+            }
+        });
+    </script>
+</body>
+</html>

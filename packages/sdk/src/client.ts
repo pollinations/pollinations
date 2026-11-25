@@ -1,5 +1,10 @@
 import { createParser } from "eventsource-parser";
 import { pollinationsErrorFromResponse } from "./error-response.js";
+import {
+    connectRealtime as openRealtimeSession,
+    type RealtimeConnectOptions,
+    type RealtimeSession,
+} from "./realtime.js";
 import type {
     AccountBalance,
     AccountKey,
@@ -2305,5 +2310,19 @@ export class Pollinations {
                 if (!response.ok) await this.handleErrorResponse(response);
             },
         );
+    }
+
+    /**
+     * Open a realtime WebSocket session on `/v1/realtime` using this client's
+     * configured `apiKey` and `baseUrl`.
+     */
+    async connectRealtime(
+        options: RealtimeConnectOptions = {},
+    ): Promise<RealtimeSession> {
+        return openRealtimeSession({
+            baseUrl: this.baseUrl,
+            apiKey: this.apiKey,
+            ...options,
+        });
     }
 }

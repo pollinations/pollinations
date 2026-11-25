@@ -203,3 +203,20 @@ export type {
 } from "./types.js";
 // Export runtime constants and the error class
 export { CHAT_ROUTING_CAPABILITIES, PollinationsError } from "./types.js";
+// Realtime WebSocket sessions
+export {
+    base64ToPcm16,
+    buildRealtimeUrl,
+    connectRealtime,
+    DEFAULT_REALTIME_BASE_URL,
+    DEFAULT_REALTIME_MODEL,
+    pcm16ToBase64,
+    type RealtimeClientEvent,
+    type RealtimeCloseInfo,
+    type RealtimeConnectOptions,
+    type RealtimeServerEvent,
+    type RealtimeSession,
+    type RealtimeStatus,
+    type WebSocketConstructor,
+    type WebSocketLike,
+} from "./realtime.js";

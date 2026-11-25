@@ -1,4 +1,5 @@
 import { INVITE_REF_COOKIE } from "@shared/auth/additional-fields.ts";
+import { TRACKED_REFERRAL_REFS } from "@shared/http/referral-refs.ts";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { type FC, type PropsWithChildren, StrictMode } from "react";
 import ReactDOM from "react-dom/client";
@@ -9,14 +10,7 @@ import { config } from "./config";
 import { routeTree } from "./routeTree.gen";
 
 const ref = new URLSearchParams(window.location.search).get("ref");
-if (
-    ref === "image" ||
-    ref === "text" ||
-    ref === "agent_low_balance_topup" ||
-    ref === "agent_low_balance_quests" ||
-    ref === "agent_key_budget" ||
-    ref === "agent_grant"
-) {
+if (ref && TRACKED_REFERRAL_REFS.includes(ref)) {
     navigator.sendBeacon(`${config.apiBaseUrl}/referral?ref=${ref}`);
 } else if (ref && /^\d+$/.test(ref)) {
     // An invite link carries the inviter's GitHub id. The router's redirects

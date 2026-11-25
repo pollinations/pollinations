@@ -66,6 +66,7 @@ for (const modern of [false, true])
                 "currency_rates",
                 "check_contrast",
                 "compare_versions",
+                "decode_jwt",
                 "to_fraction",
                 "convert_number_base",
                 "check_digit",
@@ -949,4 +950,41 @@ test("integer_math rejects what is not integer arithmetic", async (t) => {
             JSON.stringify(args),
         );
     }
+});
+
+test("decode_jwt decodes header, payload, and checks expiry", async (t) => {
+    const client = await clientFor(t);
+    const enc = (obj) =>
+        Buffer.from(JSON.stringify(obj))
+            .toString("base64")
+            .replace(/\+/g, "-")
+            .replace(/\//g, "_")
+            .replace(/=+$/, "");
+    const token = `${enc({ alg: "HS256", typ: "JWT" })}.${enc({
+        sub: "user_1",
+        iat: 1700000000,
+        exp: 1700003600,
+    })}.sig`;
+
+    const active = await call(client, "decode_jwt", {
+        token: `Bearer ${token}`,
+        now_epoch_seconds: 1700001000,
+    });
+    assert.deepEqual(active.header, { alg: "HS256", typ: "JWT" });
+    assert.equal(active.payload.sub, "user_1");
+    assert.equal(active.has_signature, true);
+    assert.equal(active.expired, false);
+    assert.equal(active.timestamps.exp_iso, "2023-11-14T23:13:20.000Z");
+
+    const expired = await call(client, "decode_jwt", {
+        token,
+        now_epoch_seconds: 1700004000,
+    });
+    assert.equal(expired.expired, true);
+
+    assert.equal(
+        (await client.callTool({ name: "decode_jwt", arguments: { token: "bad.jwt" } }))
+            .isError,
+        true,
+    );
 });

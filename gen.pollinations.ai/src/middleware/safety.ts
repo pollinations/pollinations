@@ -81,7 +81,11 @@ async function checkSafetyTexts(
     const guardrailInputs = selectGuardrailInputs(texts);
     if (guardrailInputs.length === 0) return texts;
     const scannedTexts = guardrailInputs.map((input) => input.text);
-    const guardrailEnv = resolveBedrockGuardrailEnv(c.env);
+    const scannedCharacters = scannedTexts.reduce(
+        (length, text) => length + text.length,
+        0,
+    );
+    const guardrailEnv = resolveBedrockGuardrailEnv(c.env, features);
 
     setSafetyHeader(c, "X-Safety-Applied", [...features].join(","));
 
@@ -140,10 +144,7 @@ async function checkSafetyTexts(
         scanStartedAt,
         requestedFeatures: [...requestedFeatures],
         requiredFeatures,
-        scannedCharacters: guardrailInputs.reduce(
-            (length, input) => length + input.text.length,
-            0,
-        ),
+        scannedCharacters,
         scannedParts: guardrailInputs.length,
         guardrailAction: response.action,
         blockedFeatures: [...blockedFeatures],

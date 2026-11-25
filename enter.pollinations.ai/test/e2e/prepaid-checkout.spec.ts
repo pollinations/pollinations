@@ -31,7 +31,7 @@ test.beforeEach(async ({ page }) => {
                     x402Version: 2,
                     resource: {
                         url: route.request().url(),
-                        description: "Prepaid Pollen",
+                        description: "Prepaid Pollinations credits",
                         mimeType: "application/json",
                     },
                     accepts: [
@@ -103,7 +103,7 @@ test.beforeEach(async ({ page }) => {
     }, signer.address);
     await page.goto("/pollen");
     await expect(
-        page.getByRole("heading", { name: "Buy prepaid Pollen" }),
+        page.getByRole("heading", { name: "Buy prepaid Pollinations credits" }),
     ).toBeVisible();
 });
 
@@ -115,13 +115,13 @@ test("session failures do not block guest checkout or lose its key on recovery",
     );
     await page.reload();
     await expect(
-        page.getByRole("heading", { name: "Buy prepaid Pollen" }),
+        page.getByRole("heading", { name: "Buy prepaid Pollinations credits" }),
     ).toBeVisible();
     await page
         .getByRole("button", { name: "Review payment", exact: true })
         .click();
     await expect(
-        page.getByText("Pay 2.00 USDC on Base for 2 Pollen."),
+        page.getByText("Pay 2.00 USDC on Base for 2 Pollinations credits."),
     ).toBeVisible();
     await page.route("**/api/x402/keys/*", (route) =>
         route.request().headers()["payment-signature"]
@@ -244,7 +244,7 @@ test("double-clicks sign once, uncertain retries reuse the proof, and the key ch
         .getByRole("button", { name: "Retry this payment", exact: true })
         .click();
     await expect(
-        page.getByText("Your key is ready with 2 Pollen."),
+        page.getByText("Your key is ready with 2 Pollinations credits."),
     ).toBeVisible();
     expect(signatures).toBe(1);
     expect(paidHeaders).toHaveLength(2);
@@ -257,10 +257,10 @@ test("double-clicks sign once, uncertain retries reuse the proof, and the key ch
         .poll(() => page.evaluate(() => navigator.clipboard.readText()))
         .toBe("sk_browser_fixture");
     await page
-        .getByRole("button", { name: "Check remaining Pollen", exact: true })
+        .getByRole("button", { name: "Check remaining credits", exact: true })
         .click();
     await expect(
-        page.getByText("Remaining Pollen: 2", { exact: true }),
+        page.getByText("Remaining credits: 2", { exact: true }),
     ).toBeVisible();
     const stored = await page.evaluate(() =>
         JSON.stringify([localStorage, sessionStorage]),
@@ -286,6 +286,53 @@ test("double-clicks sign once, uncertain retries reuse the proof, and the key ch
     await page.getByRole("link", { name: "Terms", exact: true }).click();
     await expect(page).toHaveURL(/\/terms$/);
 });
+
+for (const [status, body, notice] of [
+    [409, {}, "This payment attempt is already recorded."],
+    [
+        503,
+        {
+            error: "Payment settled but key activation failed. Contact hello@pollinations.ai with the transaction.",
+        },
+        "We received your payment",
+    ],
+] as const) {
+    test(`a lost response followed by ${status} directs the buyer to support`, async ({
+        page,
+    }) => {
+        const submissions: string[] = [];
+        await page.route("**/api/x402/keys/*", (route) => {
+            const signature = route.request().headers()["payment-signature"];
+            if (!signature) return route.fallback();
+            submissions.push(signature);
+            return submissions.length === 1
+                ? route.abort()
+                : route.fulfill({ status, json: body });
+        });
+        for (const name of [
+            "Review payment",
+            "Connect wallet",
+            "Pay 2.00 USDC",
+            "Retry this payment",
+        ])
+            await page.getByRole("button", { name, exact: true }).click();
+        await expect(page.getByText(notice, { exact: false })).toBeVisible();
+        await expect(
+            page.getByText("Please don’t pay again.", { exact: false }),
+        ).toBeVisible();
+        await expect(
+            page.getByRole("link", { name: "billing@pollinations.ai" }),
+        ).toHaveAttribute("href", "mailto:billing@pollinations.ai");
+        await expect(
+            page.getByRole("button", {
+                name: /Retry this payment|Pay .* USDC/,
+            }),
+        ).toHaveCount(0);
+        expect(signatures).toBe(1);
+        expect(submissions).toHaveLength(2);
+        expect(submissions[0]).toBe(submissions[1]);
+    });
+}
 
 test("an approval that expires in the wallet can be retried without submitting the old proof", async ({
     page,
@@ -345,7 +392,7 @@ test("an approval that expires in the wallet can be retried without submitting t
         .getByRole("button", { name: "Pay 2.00 USDC", exact: true })
         .click();
     await expect(
-        page.getByText("Your key is ready with 2 Pollen."),
+        page.getByText("Your key is ready with 2 Pollinations credits."),
     ).toBeVisible();
     expect(payments).toBe(1);
     expect(signatures).toBe(2);
@@ -356,13 +403,13 @@ test("quick amounts update the reviewed price and missing wallets get a specific
 }) => {
     await page.getByRole("button", { name: "5 USDC", exact: true }).click();
     await expect(
-        page.getByLabel("Amount in USDC (1 USDC = 1 Pollen)"),
+        page.getByLabel("Amount in USDC (1 USDC = 1 Pollinations credit)"),
     ).toHaveValue("5.00");
     await page
         .getByRole("button", { name: "Review payment", exact: true })
         .click();
     await expect(
-        page.getByText("Pay 5.00 USDC on Base for 5 Pollen."),
+        page.getByText("Pay 5.00 USDC on Base for 5 Pollinations credits."),
     ).toBeVisible();
     await page.evaluate(() => {
         delete (window as Window & { ethereum?: unknown }).ethereum;

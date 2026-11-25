@@ -23,7 +23,7 @@ const quote: PaymentRequired = {
     x402Version: 2,
     resource: {
         url,
-        description: "2 prepaid Pollen",
+        description: "2 prepaid Pollinations credits",
         mimeType: "application/json",
     },
     accepts: [
@@ -139,9 +139,10 @@ test("retries an uncertain purchase with identical signed payment bytes", async 
         );
     vi.stubGlobal("fetch", transport);
     await expect(submitPrepaidPayment(url, headers)).rejects.toThrow(
-        "Retry this payment",
+        "Payment status unknown",
     );
     expect(await submitPrepaidPayment(url, headers)).toEqual({
+        status: "ready",
         key: "sk_prepaid_fixture",
         pollen: 2,
     });

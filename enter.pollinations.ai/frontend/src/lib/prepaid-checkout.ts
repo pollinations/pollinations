@@ -167,10 +167,16 @@ export async function submitPrepaidPayment(
         cache: "no-store",
         headers: { ...headers, Accept: "application/json" },
     });
-    if (!response.ok)
-        throw new Error(
-            "Payment is not confirmed. Retry this payment to recover the same key without paying again.",
-        );
+    if (response.status === 409) return { status: "recorded" } as const;
+    if (response.status === 503) {
+        const body = await response.json().catch(() => null);
+        if (
+            typeof body?.error === "string" &&
+            body.error.startsWith("Payment settled but key activation failed.")
+        )
+            return { status: "settled" } as const;
+    }
+    if (!response.ok) throw new Error("Payment status unknown");
     const result: unknown = await response.json();
     if (
         !result ||
@@ -181,8 +187,8 @@ export async function submitPrepaidPayment(
         !("pollen" in result) ||
         typeof result.pollen !== "number"
     )
-        throw new Error("Couldn’t read the prepaid key. Retry this payment.");
-    return { key: result.key, pollen: result.pollen };
+        throw new Error("Couldn’t read the prepaid key.");
+    return { status: "ready", key: result.key, pollen: result.pollen } as const;
 }
 
 export async function prepaidBalance(

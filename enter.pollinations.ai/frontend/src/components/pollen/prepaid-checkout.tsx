@@ -37,7 +37,7 @@ export function PrepaidCheckout({ onStart }: { onStart: () => void }) {
     const inFlight = useRef(false);
     const [error, setError] = useState<string>();
     useBlocker({
-        disabled: !busy && !pending && (!result || saved),
+        disabled: !busy && !pending && (result?.status !== "ready" || saved),
         enableBeforeUnload: true,
         shouldBlockFn: () =>
             !window.confirm(
@@ -46,7 +46,7 @@ export function PrepaidCheckout({ onStart }: { onStart: () => void }) {
     });
 
     async function checkout() {
-        if (inFlight.current) return;
+        if (inFlight.current || result) return;
         onStart();
         inFlight.current = true;
         setBusy(true);
@@ -86,7 +86,7 @@ export function PrepaidCheckout({ onStart }: { onStart: () => void }) {
             if (!sending) setWallet(null);
             setError(
                 sending
-                    ? "Payment is not confirmed. Keep this page open and retry this payment to recover the same key without paying again."
+                    ? "Payment is not confirmed. Check your wallet before doing anything else. If you see a transfer, don’t pay again. Email billing@pollinations.ai with the transaction hash. Otherwise, you can retry here using the same approval."
                     : !quote
                       ? "Couldn’t get a payment quote. Choose an amount from $0.01 to $10,000 in cents and try again later if checkout is unavailable."
                       : (api?.prepaidWalletError(error) ??
@@ -99,7 +99,7 @@ export function PrepaidCheckout({ onStart }: { onStart: () => void }) {
     }
 
     async function checkBalance() {
-        if (!result || inFlight.current) return;
+        if (result?.status !== "ready" || inFlight.current) return;
         inFlight.current = true;
         setBusy(true);
         setError(undefined);
@@ -122,21 +122,34 @@ export function PrepaidCheckout({ onStart }: { onStart: () => void }) {
     }
 
     return (
-        <Section title="Buy prepaid Pollen">
+        <Section title="Buy prepaid Pollinations credits">
             <Surface className="space-y-4">
                 <p>
                     Buy a prepaid API key with USDC on Base. No Pollinations
                     account or sign-in required.
                 </p>
                 <p className="text-theme-text-muted">
-                    This creates a separate key with its own Pollen budget. Save
-                    it yourself: it will not appear in an account, and closing
-                    this page loses your copy.
+                    This creates a separate key with its own credit balance.
+                    Save it yourself: it will not appear in an account, and
+                    closing this page loses your copy.
                 </p>
-                {result ? (
+                {result && result.status !== "ready" ? (
+                    <Alert intent="info">
+                        {result.status === "settled"
+                            ? "We received your payment, but couldn’t activate your key."
+                            : "This payment attempt is already recorded. Check your wallet for the transfer."}{" "}
+                        Please don’t pay again. Contact{" "}
+                        <InlineLink href="mailto:billing@pollinations.ai">
+                            billing@pollinations.ai
+                        </InlineLink>{" "}
+                        with the transaction hash from your wallet, if
+                        available, so we can check your purchase.
+                    </Alert>
+                ) : result?.status === "ready" ? (
                     <div className="space-y-4" aria-live="polite">
                         <Alert intent="info">
-                            Your key is ready with {result.pollen} Pollen.
+                            Your key is ready with {result.pollen} Pollinations
+                            credits.
                         </Alert>
                         <CopyField
                             label="Copy prepaid API key"
@@ -162,10 +175,10 @@ export function PrepaidCheckout({ onStart }: { onStart: () => void }) {
                         >
                             {busy
                                 ? "Checking balance…"
-                                : "Check remaining Pollen"}
+                                : "Check remaining credits"}
                         </Button>
                         {balance !== null && (
-                            <p role="status">Remaining Pollen: {balance}</p>
+                            <p role="status">Remaining credits: {balance}</p>
                         )}
                         <label className="flex items-center gap-2">
                             <input
@@ -216,7 +229,7 @@ export function PrepaidCheckout({ onStart }: { onStart: () => void }) {
                             className="flex flex-col gap-2"
                             htmlFor="prepaid-amount"
                         >
-                            Amount in USDC (1 USDC = 1 Pollen)
+                            Amount in USDC (1 USDC = 1 Pollinations credit)
                             <input
                                 id="prepaid-amount"
                                 className="polli-input rounded-lg border px-3 py-2"
@@ -238,7 +251,7 @@ export function PrepaidCheckout({ onStart }: { onStart: () => void }) {
                             <div className="space-y-2" aria-live="polite">
                                 <p>
                                     Pay {Number(amount).toFixed(2)} USDC on Base
-                                    for {Number(amount)} Pollen.
+                                    for {Number(amount)} Pollinations credits.
                                 </p>
                                 <p className="break-all text-sm text-theme-text-muted">
                                     Recipient: {quote.accepts[0].payTo}

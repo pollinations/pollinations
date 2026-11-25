@@ -2,6 +2,11 @@
 
 Internal tools that run Pollinations, grouped by what they are for. Apps with a `deploy.json` deploy from `production` through [`infrastructure/deployment/`](infrastructure/deployment/README.md).
 
+## Scheduled operations
+
+See the [Codex schedule catalog](codex-schedules/README.md) for model and API
+maintenance and support. Each job has its own chat, schedule and skill.
+
 ## Dashboards
 
 | Folder | What it is |

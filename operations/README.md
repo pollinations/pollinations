@@ -4,8 +4,8 @@ Internal tools that run Pollinations, grouped by what they are for. Apps with a 
 
 ## Scheduled operations
 
-See the [Codex schedule catalog](codex-schedules/README.md) for model and API
-maintenance and support. Each job has its own chat, schedule and skill.
+See the [Codex schedule catalog](codex-schedules/README.md) for model work and
+support. Each job has its own chat, schedule and skill.
 
 ## Dashboards
 

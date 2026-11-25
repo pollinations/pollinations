@@ -268,14 +268,14 @@ async function quotaOf(ip, used) {
 }
 
 const DAILY_NOTICE =
-    /^Free limit reached: 50 replies a day per IP\. It resets at 00:00 UTC, in \d+ hours?, or \[get unlimited replies\]\(https:\/\/enter\.pollinations\.ai\/\?ref=classic\) now\./;
+    /^Free limit reached: 100 replies a day per IP\. It resets at 00:00 UTC, in \d+ hours?, or \[get unlimited replies\]\(https:\/\/enter\.pollinations\.ai\/\?ref=classic\) now\./;
 
-test("the 50th free reply of the day is served and counted, the 51st goes to the paywall until midnight", async () => {
+test("the 100th free reply of the day is served and counted, the 101st goes to the paywall until midnight", async () => {
     const ip = nextIp();
-    await quotaOf(ip, 49);
-    const last = await call("/quota%2049", { ip, headers: CURL });
+    await quotaOf(ip, 99);
+    const last = await call("/quota%2099", { ip, headers: CURL });
     expect(last.response.status).toBe(200);
-    expect(await quotaOf(ip)).toBe(50);
+    expect(await quotaOf(ip)).toBe(100);
     // 45 seconds later: the slot is free again
     await runInDurableObject(
         env.IP_SLOT.getByName(ip),
@@ -288,8 +288,8 @@ test("the 50th free reply of the day is served and counted, the 51st goes to the
     events.length = 0;
     for (const [path, headers] of [
         // A stream first: takeSlot's memo answers other requests in the interval
-        ["/quota%2050?stream=true", CURL],
-        ["/quota%2050", CURL],
+        ["/quota%20100?stream=true", CURL],
+        ["/quota%20100", CURL],
     ]) {
         const { response, text } = await call(path, { ip, headers });
         expect(response.status, path).toBe(402);
@@ -304,12 +304,12 @@ test("the 50th free reply of the day is served and counted, the 51st goes to the
         expect(response.headers.get("payment-required")).not.toBeNull();
     }
     // A browser gets the daily page, which does not reload until midnight
-    const page = await call("/quota%2050", { ip, headers: BROWSER });
+    const page = await call("/quota%20100", { ip, headers: BROWSER });
     expect(page.response.status).toBe(402);
     expect(page.response.headers.get("content-type")).toBe(
         "text/html; charset=utf-8",
     );
-    expect(page.text).toContain("That's today's 50 free replies");
+    expect(page.text).toContain("That's today's 100 free replies");
     expect(page.text).toMatch(
         /Free replies are back at 00:00 UTC, in \d+ hours?\./,
     );
@@ -326,13 +326,13 @@ test("the 50th free reply of the day is served and counted, the 51st goes to the
 
 test("a model we don't serve uses no quota", async () => {
     const ip = nextIp();
-    await quotaOf(ip, 49);
+    await quotaOf(ip, 99);
     const { response } = await call("/quota?model=gpt-5", {
         ip,
         headers: CURL,
     });
     expect(response.status).toBe(404);
-    expect(await quotaOf(ip)).toBe(49);
+    expect(await quotaOf(ip)).toBe(99);
 });
 
 test("a quota used up just before midnight is not remembered into the new day", async () => {
@@ -344,7 +344,7 @@ test("a quota used up just before midnight is not remembered into the new day", 
 
 test("a JSON request past the daily quota gets gen's error body", async () => {
     const ip = nextIp();
-    await quotaOf(ip, 50);
+    await quotaOf(ip, 100);
     const { response, text } = await call("/quota?json=true", {
         ip,
         headers: CURL,
@@ -354,13 +354,13 @@ test("a JSON request past the daily quota gets gen's error body", async () => {
     const { error } = JSON.parse(text);
     expect(error.code).toBe("FREE_LIMIT");
     expect(error.message).toMatch(
-        /^Free limit reached: 50 replies a day per IP\. It resets at 00:00 UTC, in \d+ hours?\. Get unlimited replies with a Pollinations API key at /,
+        /^Free limit reached: 100 replies a day per IP\. It resets at 00:00 UTC, in \d+ hours?\. Get unlimited replies with a Pollinations API key at /,
     );
 });
 
 test("a request paid past the daily quota is answered", async () => {
     const ip = nextIp();
-    await quotaOf(ip, 50);
+    await quotaOf(ip, 100);
     const challenge = await call("/quota%20paid", { ip, headers: CURL });
     expect(challenge.response.status).toBe(402);
     const paid = await call("/quota%20paid", {
@@ -373,7 +373,7 @@ test("a request paid past the daily quota is answered", async () => {
         },
     });
     expect(paid.response.status).toBe(200);
-    expect(await quotaOf(ip)).toBe(50);
+    expect(await quotaOf(ip)).toBe(100);
 });
 
 test("browsers get the free limit's page, which reloads when the wait is over, and the VM's challenge", async () => {

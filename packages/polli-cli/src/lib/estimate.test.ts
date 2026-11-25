@@ -116,6 +116,23 @@ describe("estimateMediaCost", () => {
         expect(estimateMediaCost(model, video(8, true)).total).toBeCloseTo(0.8);
     });
 
+    it("prices every reference frame a video request sends", () => {
+        const model: MediaModel = {
+            name: "x-ai/grok-imagine-video-1.5",
+            pricing: {
+                currency: "pollen",
+                promptImageTokens: "0.01",
+                completionVideoSeconds: "0.14",
+            },
+        };
+        const oneFrame = estimateMediaCost(model, video(4, false, 1));
+        const twoFrames = estimateMediaCost(model, video(4, false, 2));
+        const frameOf = (lines: { unit: string; quantity: number }[]) =>
+            lines.find((line) => line.unit === "input image")?.quantity;
+        expect(frameOf(oneFrame.lines)).toBe(1);
+        expect(frameOf(twoFrames.lines)).toBe(2);
+    });
+
     it("adds per-generation fees and leaves other fees unpriced", () => {
         const model: MediaModel = {
             name: "black-forest-labs/flux.2-max",
@@ -181,6 +198,16 @@ describe("--estimate", () => {
             default_duration: 4,
             pricing: { currency: "pollen", completionVideoSeconds: "0.08" },
         },
+        {
+            name: "x-ai/grok-imagine-video-1.5",
+            aliases: ["grok-video"],
+            default_duration: 4,
+            pricing: {
+                currency: "pollen",
+                promptImageTokens: "0.01",
+                completionVideoSeconds: "0.08",
+            },
+        },
     ];
 
     const run = async (
@@ -232,6 +259,20 @@ describe("--estimate", () => {
         expect(urls.map((u) => new URL(u).pathname)).toEqual(["/image/models"]);
         expect(result.model).toBe("google/veo-3.1-fast");
         expect(result.pollen).toBeCloseTo(0.48);
+    });
+
+    it("estimates every reference frame of gen video --image", async () => {
+        const { result } = await run(createVideoCommand(), [
+            "--model",
+            "x-ai/grok-imagine-video-1.5",
+            "--image",
+            "https://example.com/start.png",
+            "https://example.com/end.png",
+            "--estimate",
+            "a waterfall",
+        ]);
+        // 4s × 0.08 + 2 frames × 0.01 = 0.34; the old code charged one frame.
+        expect(result.pollen).toBeCloseTo(0.34);
     });
 
     it("reads public pricing even when a key is configured", async () => {

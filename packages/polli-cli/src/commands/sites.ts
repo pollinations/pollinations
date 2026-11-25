@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { readdirSync, readFileSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { extname, join, relative, resolve, sep } from "node:path";
 import { setTimeout } from "node:timers/promises";
 import chalk from "chalk";
@@ -70,6 +70,15 @@ export function collectSiteFiles(dir: string): SiteFile[] {
     };
     walk(dir);
     return files;
+}
+
+/** The folder to publish, with a clear error instead of walk()'s raw ENOENT. */
+export function siteRoot(dir: string): string {
+    const root = resolve(dir);
+    if (!statSync(root, { throwIfNoEntry: false })?.isDirectory()) {
+        throw new Error(`Not a directory: ${root}`);
+    }
+    return root;
 }
 
 /** As wrangler uploads assets, an unknown type is sent as "application/null",
@@ -172,15 +181,15 @@ const deploy = new Command("deploy")
     .option("--verify", "Check every published file against the local build")
     .action(async (dir: string, opts: { name: string; verify?: boolean }) => {
         const key = requireKey();
-        const files = collectSiteFiles(resolve(dir));
-        const manifest = Object.fromEntries(
-            files.map((file) => [
-                file.path,
-                { hash: file.hash, size: file.size },
-            ]),
-        );
         let site: Site | undefined;
         try {
+            const files = collectSiteFiles(siteRoot(dir));
+            const manifest = Object.fromEntries(
+                files.map((file) => [
+                    file.path,
+                    { hash: file.hash, size: file.size },
+                ]),
+            );
             const path = `/account/sites/${encodeURIComponent(opts.name)}`;
             const session = await gen<UploadSession>(`${path}/upload`, {
                 method: "POST",

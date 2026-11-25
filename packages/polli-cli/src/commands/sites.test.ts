@@ -4,7 +4,12 @@ import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { assetType, collectSiteFiles, verifySiteFiles } from "./sites.js";
+import {
+    assetType,
+    collectSiteFiles,
+    siteRoot,
+    verifySiteFiles,
+} from "./sites.js";
 
 describe("collectSiteFiles", () => {
     let dir: string;
@@ -45,6 +50,29 @@ describe("collectSiteFiles", () => {
         const hashes = new Set(collectSiteFiles(dir).map((file) => file.hash));
 
         expect(hashes.size).toBe(3);
+    });
+});
+
+describe("siteRoot", () => {
+    it("rejects a missing folder with a clear message", () => {
+        const dir = mkdtempSync(join(tmpdir(), "polli-site-"));
+        const missing = join(dir, "missing");
+        rmSync(dir, { recursive: true, force: true });
+
+        expect(() => siteRoot(missing)).toThrow("Not a directory");
+    });
+
+    it("rejects a file and accepts the folder", () => {
+        const dir = mkdtempSync(join(tmpdir(), "polli-site-"));
+        try {
+            const file = join(dir, "index.html");
+            writeFileSync(file, "<h1>hi</h1>");
+
+            expect(() => siteRoot(file)).toThrow("Not a directory");
+            expect(siteRoot(dir)).toBe(dir);
+        } finally {
+            rmSync(dir, { recursive: true, force: true });
+        }
     });
 });
 

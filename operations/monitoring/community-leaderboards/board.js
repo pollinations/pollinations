@@ -90,7 +90,8 @@ function buildHtml(kind, { rows, speedChampions, totals, date }) {
         })
         .join("\n");
 
-    const best = speedChampions[0][kind.speed];
+    // No champion when no ranked model has a recorded speed.
+    const best = speedChampions[0]?.[kind.speed];
     const cards = speedChampions
         .map((c, i) => {
             const [owner, ...rest] = c.model.split("/");
@@ -111,6 +112,21 @@ function buildHtml(kind, { rows, speedChampions, totals, date }) {
         .join("\n");
 
     const countDisplay = totals[kind.count].toLocaleString("en-US");
+
+    // Omit the panel entirely when no model has a recorded speed, rather than
+    // shipping a board with an empty FASTEST header.
+    const bonus = cards
+        ? `<div class="bonus">
+  <div class="bonus-title">
+    <span class="px">FASTEST</span>
+    <div class="dash"></div>
+    <span class="px" style="font-size:8px;color:#6b5f80">${kind.speedNote} &middot; 24H</span>
+  </div>
+  <div class="cards">
+${cards}
+  </div>
+</div>`
+        : "";
 
     return `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>Community ${kind.name} Model Leaderboard</title>
@@ -217,16 +233,7 @@ function buildHtml(kind, { rows, speedChampions, totals, date }) {
   <div class="thead"><span>${NOUN} &middot; 24H</span><span>MODEL</span><span class="r">${kind.speedHead}</span><span class="c">SUCCESS</span></div>
 ${bodyRows}
 </div>
-<div class="bonus">
-  <div class="bonus-title">
-    <span class="px">FASTEST</span>
-    <div class="dash"></div>
-    <span class="px" style="font-size:8px;color:#6b5f80">${kind.speedNote} &middot; 24H</span>
-  </div>
-  <div class="cards">
-${cards}
-  </div>
-</div>
+${bonus}
 <div class="footer">
   <div class="legend">
     <span class="cap">SUCCESS RATE</span>
@@ -246,8 +253,6 @@ function buildDiscordMarkdown(kind, { date, totals, rows, speedChampions }) {
     const [topOwner, ...topRest] = top.model.split("/");
     const topModel = topRest.join("/");
     const fastest = speedChampions[0];
-    const [fastOwner, ...fastRest] = fastest.model.split("/");
-    const fastModel = fastRest.join("/");
 
     const perfectCount = rows.filter((r) => r.success >= 100).length;
     const mostRequests = [...rows].sort((a, b) => b.requests - a.requests)[0];
@@ -260,8 +265,13 @@ function buildDiscordMarkdown(kind, { date, totals, rows, speedChampions }) {
         `**${totals[kind.count].toLocaleString("en-US")} ${kind.noun}** ${kind.verb} in 24 hours across ${totals.models} models (${totals.requests.toLocaleString("en-US")} requests).`,
         "",
         `👑 \`${topOwner}/${topModel}\` — ${top[kind.count].toLocaleString("en-US")} ${kind.noun} · ${top.success}% success`,
-        `⚡ fastest: \`${fastOwner}/${fastModel}\` — **${fastest[kind.speed]} ${kind.speedPost}** median`,
     ];
+    if (fastest) {
+        const [fastOwner, ...fastRest] = fastest.model.split("/");
+        lines.push(
+            `⚡ fastest: \`${fastOwner}/${fastRest.join("/")}\` — **${fastest[kind.speed]} ${kind.speedPost}** median`,
+        );
+    }
     if (mostRequests.model !== top.model) {
         lines.push(
             `🐝 workhorse: \`${mrOwner}/${mrModel}\` — ${mostRequests.requests.toLocaleString("en-US")} requests`,

@@ -19,6 +19,13 @@ const text = (model, requests, total_tokens, median_tps, success = 100) => ({
     median_tps,
     success,
 });
+const image = (model, requests, images, median_seconds, success) => ({
+    model,
+    requests,
+    images,
+    median_seconds,
+    success,
+});
 
 test("the text board ranks busy public models by tokens, with totals over all public ones", () => {
     const board = textBoard(
@@ -53,13 +60,6 @@ test("the text board ranks busy public models by tokens, with totals over all pu
 });
 
 test("the image board ranks models with images, fastest first", () => {
-    const image = (model, requests, images, median_seconds, success) => ({
-        model,
-        requests,
-        images,
-        median_seconds,
-        success,
-    });
     const board = imageBoard(
         [
             image("a/flux", 500, 480, 9.4, 100),
@@ -83,5 +83,33 @@ test("the image board ranks models with images, fastest first", () => {
     assert.equal(
         imageBoard([image("c/broken", 30, 0, 0, 0)], DATE, LISTED),
         null,
+    );
+});
+
+test("the image board still posts when no ranked model has a recorded speed", () => {
+    // A model can generate images without a measured response_time, so
+    // median_seconds is 0. It stays on the board by images, but there is no
+    // champion to race — the post and the board must still render.
+    const board = imageBoard(
+        [image("a/flux", 500, 480, 0, 100), image("b/sdxl", 20, 18, 0, 90)],
+        DATE,
+        LISTED,
+    );
+    const lines = board.markdown.split("\n");
+    assert.equal(lines[4], "👑 `a/flux` — 480 images · 100% success");
+    assert.doesNotMatch(board.markdown, /⚡ fastest/);
+    assert.doesNotMatch(board.html, /class="bonus"/);
+    assert.match(board.html, /a<\/b>\/flux/);
+
+    // Contrast: a measured speed still earns the panel.
+    const raced = imageBoard(
+        [image("a/flux", 500, 480, 9.4, 100)],
+        DATE,
+        LISTED,
+    );
+    assert.match(raced.html, /class="bonus"/);
+    assert.match(
+        raced.markdown,
+        /⚡ fastest: `a\/flux` — \*\*9\.4 sec\/image\*\*/,
     );
 });

@@ -3,6 +3,7 @@ set -e
 
 manager_dir="$(dirname "$0")"
 if [ "$GITHUB_EVENT_NAME" != "workflow_dispatch" ]; then
+  export PROJECT_MANAGER_EVENT_PATH="$GITHUB_EVENT_PATH"
   exec python "$manager_dir/project_manager.py"
 fi
 if [ "$MODEL_QUEUES_ONLY" = "true" ]; then

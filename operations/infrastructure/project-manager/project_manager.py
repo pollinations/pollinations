@@ -18,7 +18,7 @@ POLLINATIONS_TOKEN = os.getenv("POLLINATIONS_TOKEN")
 try:
     if payload := os.getenv("GITHUB_EVENT"):
         GITHUB_EVENT = json.loads(payload)
-    elif event_path := os.getenv("GITHUB_EVENT_PATH"):
+    elif event_path := os.getenv("PROJECT_MANAGER_EVENT_PATH"):
         with open(event_path) as event_file:
             GITHUB_EVENT = json.load(event_file)
     else:

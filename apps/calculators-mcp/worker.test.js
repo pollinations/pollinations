@@ -76,6 +76,7 @@ for (const modern of [false, true])
                 "inspect_unicode",
                 "next_cron_runs",
                 "rank_palette",
+                "test_regex",
                 "time_convert",
                 "time_math",
             ].sort(),
@@ -944,6 +945,42 @@ test("integer_math rejects what is not integer arithmetic", async (t) => {
     ]) {
         assert.equal(
             (await client.callTool({ name: "integer_math", arguments: args }))
+                .isError,
+            true,
+            JSON.stringify(args),
+        );
+    }
+});
+
+test("test_regex matches groups, named groups, and performs replacement", async (t) => {
+    const client = await clientFor(t);
+    const res = await call(client, "test_regex", {
+        pattern: "(?<word>[a-z]+)-(\\d+)",
+        text: "item-12 and box-34",
+        flags: "g",
+        replacement: "$<word>:#$2",
+    });
+    assert.equal(res.matched, true);
+    assert.equal(res.count, 2);
+    assert.equal(res.truncated, false);
+    assert.deepEqual(res.matches[0], {
+        match: "item-12",
+        index: 0,
+        groups: ["item", "12"],
+        named_groups: { word: "item" },
+    });
+    assert.equal(res.replaced, "item:#12 and box:#34");
+});
+
+test("test_regex rejects invalid patterns and unsupported flags", async (t) => {
+    const client = await clientFor(t);
+    for (const args of [
+        { pattern: "[unclosed", text: "abc" },
+        { pattern: "abc", text: "abc", flags: "z" },
+        { pattern: "abc", text: "abc", flags: "gg" },
+    ]) {
+        assert.equal(
+            (await client.callTool({ name: "test_regex", arguments: args }))
                 .isError,
             true,
             JSON.stringify(args),

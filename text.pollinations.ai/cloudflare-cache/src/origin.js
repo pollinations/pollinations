@@ -14,7 +14,7 @@ import {
     withScreen,
 } from "../../../shared/messages.js";
 import { BLOCKED_PREFIXES } from "./blocked-prefixes.js";
-import { nextMidnight, takeQuota, usedUp } from "./daily-quota.js";
+import { nextMidnight, refundQuota, takeQuota, usedUp } from "./daily-quota.js";
 // index.js imports this module too; the function is only called per request
 import { prepareForwardedHeaders } from "./index.js";
 
@@ -663,12 +663,16 @@ async function generation(
         logFailure(route, { error: "ip_slot", type: error.name });
         return sendGenAnswer(failure(503));
     }
+    // The booked reply's start, in the slot's own clock: the quota counts it
+    // on that UTC day
+    const start = slot.until - FREE_INTERVAL_MS;
+    // Whether the quota counted this reply, so a failed one gives it back
+    let counted = false;
     if (served && (slot.action === "go" || slot.action === "wait")) {
-        // Counted on the day the booked reply starts
-        const start = Date.now() + slot.waitMs;
         let free = true;
         try {
             free = await takeQuota(env.DAILY_QUOTA, ip, FREE_PER_DAY, start);
+            counted = free;
         } catch (error) {
             // A cost cap, not a safety check: the reply stays free
             logFailure(route, { error: "daily_quota", type: error.name });
@@ -743,6 +747,22 @@ async function generation(
         return generate(env, job, undefined, ended);
     })();
     ctx.waitUntil(response);
+    // The quota counts replies: an error answer gives its count back
+    if (counted) {
+        ctx.waitUntil(
+            response
+                .then(
+                    (answer) =>
+                        answer.ok || refundQuota(env.DAILY_QUOTA, ip, start),
+                )
+                .catch((error) =>
+                    logFailure(route, {
+                        error: "daily_quota_refund",
+                        type: error.name,
+                    }),
+                ),
+        );
+    }
     return response;
 }
 

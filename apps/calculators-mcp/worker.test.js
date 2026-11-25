@@ -78,6 +78,7 @@ for (const modern of [false, true])
                 "rank_palette",
                 "time_convert",
                 "time_math",
+                "transform_encoding",
             ].sort(),
         );
         const converted = await call(client, "time_convert", {
@@ -949,4 +950,41 @@ test("integer_math rejects what is not integer arithmetic", async (t) => {
             JSON.stringify(args),
         );
     }
+});
+
+test("transform_encoding round-trips base64, base64url, url, and html", async (t) => {
+    const client = await clientFor(t);
+    for (const [format, sample, encoded] of [
+        ["base64", "Hello, دنیا!", "SGVsbG8sINiv2YbbjNinIQ=="],
+        ["base64url", "a+b/c=?", "YStiL2M9Pw"],
+        ["url", "a b&c=1", "a%20b%26c%3D1"],
+        ["html", '<tag attr="1">&\'2\'', "&lt;tag attr=&quot;1&quot;&gt;&amp;&#39;2&#39;"],
+    ]) {
+        const enc = await call(client, "transform_encoding", {
+            text: sample,
+            format,
+            direction: "encode",
+        });
+        assert.equal(enc.output, encoded);
+        const dec = await call(client, "transform_encoding", {
+            text: encoded,
+            format,
+            direction: "decode",
+        });
+        assert.equal(dec.output, sample);
+    }
+
+    assert.equal(
+        (
+            await client.callTool({
+                name: "transform_encoding",
+                arguments: {
+                    text: "not!valid!b64",
+                    format: "base64",
+                    direction: "decode",
+                },
+            })
+        ).isError,
+        true,
+    );
 });

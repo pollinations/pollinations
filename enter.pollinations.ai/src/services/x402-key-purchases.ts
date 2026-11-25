@@ -104,7 +104,7 @@ export async function getPurchase(
 // its key; a stored key is never returned and a recorded payment never
 // resumed. Support checks wallet ownership and payment terms instead.
 export const PAYMENT_USED =
-    "x402 payment already used. If it was charged and you have no key, contact hello@pollinations.ai with the transaction.";
+    "x402 payment already used. If it was charged and you have no key, contact billing@pollinations.ai with the transaction.";
 
 export async function preparePurchase(
     env: Env["Bindings"],

@@ -299,7 +299,7 @@ for (const [status, body, notice] of [
     [
         503,
         {
-            error: "Payment settled but key activation failed. Contact hello@pollinations.ai with the transaction.",
+            error: "Payment settled but key activation failed. Contact billing@pollinations.ai with the transaction.",
         },
         "We received your payment",
     ],

@@ -467,7 +467,7 @@ describe("x402 prepaid API keys", () => {
                 expect(response.status).toBe(409);
                 const body = await response.text();
                 expect(body).not.toContain("sk_");
-                expect(body).toContain("hello@pollinations.ai");
+                expect(body).toContain("billing@pollinations.ai");
             }
             expect(calls).not.toContain("/verify");
             expect(calls).not.toContain("/settle");

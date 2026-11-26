@@ -19,6 +19,7 @@ import type { Env } from "@/env.ts";
 import {
     applyGuardrail,
     type BedrockResponse,
+    checkShield,
     resolveBedrockGuardrailEnv,
 } from "@/utils/bedrock-guardrail.ts";
 import { classifyTriggers } from "@/utils/safety-features.ts";
@@ -85,11 +86,22 @@ async function checkSafetyTexts(
         (length, text) => length + text.length,
         0,
     );
-    const guardrailEnv = resolveBedrockGuardrailEnv(c.env, features);
+    const inlineShield =
+        c.env.BEDROCK_SHIELD_INLINE === "on" && features.has("shield");
+    const sensitiveFeatures = new Set(
+        [...features].filter(
+            (feature) => feature === "privacy" || feature === "secrets",
+        ),
+    );
+    const guardrailEnv = resolveBedrockGuardrailEnv(
+        c.env,
+        inlineShield && sensitiveFeatures.size ? sensitiveFeatures : features,
+    );
 
     setSafetyHeader(c, "X-Safety-Applied", [...features].join(","));
 
-    let response: BedrockResponse;
+    let response: BedrockResponse | undefined;
+    let shield: Awaited<ReturnType<typeof checkShield>> | undefined;
     const scanStartedAt = Date.now();
     try {
         if (!guardrailEnv) {
@@ -98,7 +110,20 @@ async function checkSafetyTexts(
                 message: "Safety service not configured",
             });
         }
-        response = await applyGuardrail(scannedTexts, "INPUT", guardrailEnv);
+        if (inlineShield) {
+            [shield, response] = await Promise.all([
+                checkShield(scannedTexts, features, guardrailEnv),
+                sensitiveFeatures.size
+                    ? applyGuardrail(scannedTexts, "INPUT", guardrailEnv)
+                    : undefined,
+            ]);
+        } else {
+            response = await applyGuardrail(
+                scannedTexts,
+                "INPUT",
+                guardrailEnv,
+            );
+        }
     } catch (error) {
         if (error instanceof HTTPException) throw error;
         c.get("log").error("Bedrock guardrail failed: {error}", {
@@ -111,14 +136,21 @@ async function checkSafetyTexts(
     }
 
     const { blockedFeatures, redactedIds } = classifyTriggers(
-        response,
+        response ?? {},
         features,
     );
+    for (const feature of shield?.blockedFeatures ?? []) {
+        blockedFeatures.add(feature);
+    }
     const userId = c.var.auth?.user?.id;
     const inputFingerprint =
         userId && c.env.BETTER_AUTH_SECRET
             ? createHmac("sha256", c.env.BETTER_AUTH_SECRET)
-                  .update("guardrail-input:v1\0")
+                  .update(
+                      inlineShield
+                          ? "guardrail-input:inline-shield-v1\0"
+                          : "guardrail-input:v1\0",
+                  )
                   .update(
                       JSON.stringify([
                           c.env.ENVIRONMENT,
@@ -146,14 +178,21 @@ async function checkSafetyTexts(
         requiredFeatures,
         scannedCharacters,
         scannedParts: guardrailInputs.length,
-        guardrailAction: response.action,
+        guardrailAction:
+            shield && blockedFeatures.size > 0
+                ? "GUARDRAIL_INTERVENED"
+                : (response?.action ?? "NONE"),
         blockedFeatures: [...blockedFeatures],
-        contentPolicyUnits: response.usage?.contentPolicyUnits,
+        contentPolicyUnits: response?.usage?.contentPolicyUnits,
         sensitiveInformationPolicyUnits:
-            response.usage?.sensitiveInformationPolicyUnits,
+            response?.usage?.sensitiveInformationPolicyUnits,
+        ...(shield && {
+            promptAttackPolicyUnits: shield.promptAttackPolicyUnits,
+            inlineContentPolicyUnits: shield.inlineContentPolicyUnits,
+        }),
     });
 
-    if (response.action !== "GUARDRAIL_INTERVENED") return texts;
+    if (!shield && response?.action !== "GUARDRAIL_INTERVENED") return texts;
 
     if (blockedFeatures.size > 0) {
         throw new UpstreamError(400, {
@@ -162,7 +201,8 @@ async function checkSafetyTexts(
         });
     }
 
-    if (!features.has("privacy")) return texts;
+    if (!features.has("privacy") || response?.action !== "GUARDRAIL_INTERVENED")
+        return texts;
 
     const safeTexts = [...texts];
     let changed = false;
@@ -190,8 +230,8 @@ function selectGuardrailInputs(texts: string[]) {
     let remainingChars = SAFETY_MAX_TEXT_CHARS;
     let remainingParts = SAFETY_MAX_TEXT_PARTS;
 
-    // Keep safety to one Bedrock call. For large requests, scan the latest
-    // text window and leave earlier context unchanged.
+    // For large requests, scan the latest text window and leave earlier
+    // context unchanged.
     for (
         let index = texts.length - 1;
         index >= 0 && remainingChars > 0 && remainingParts > 0;

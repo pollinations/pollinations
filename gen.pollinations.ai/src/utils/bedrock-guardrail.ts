@@ -3,6 +3,7 @@
  */
 
 import type { SafetyFeature } from "@shared/schemas/safety.ts";
+import { signBedrockHeaders } from "@/text/auth/bedrock.ts";
 
 interface PIIFilter {
     action: "ANONYMIZED" | "BLOCKED";
@@ -137,4 +138,117 @@ export async function applyGuardrail(
             })),
         }),
     ) as Promise<BedrockResponse>;
+}
+
+const SHIELD_CATEGORIES = [
+    "JAILBREAK",
+    "PROMPT_INJECTION",
+    "PROMPT_LEAKAGE",
+] as const;
+const INLINE_CONTENT_CATEGORIES = {
+    MISCONDUCT: "shield",
+    SEXUAL: "sexual",
+    VIOLENCE: "violence",
+    HATE: "violence",
+    INSULTS: "violence",
+} as const satisfies Record<string, SafetyFeature>;
+
+type InlinePolicy = "promptAttack" | "contentFilter";
+type InlineScore = { category: string; severityScore: number };
+type InlineResponse = {
+    results?: Partial<Record<InlinePolicy, { results?: InlineScore[] }>>;
+    usage?: Partial<Record<InlinePolicy, { textUnits?: number }>>;
+};
+
+export async function checkShield(
+    texts: string[],
+    features: Set<SafetyFeature>,
+    env: BedrockGuardrailEnv,
+) {
+    const messages: { role: "user"; content: { text: string }[] }[] = [];
+    // API callers control the text for every role. Screen it all as untrusted.
+    // Bedrock allows at most 10 content blocks per message.
+    for (let index = 0; index < texts.length; index += 10) {
+        messages.push({
+            role: "user",
+            content: texts.slice(index, index + 10).map((text) => ({ text })),
+        });
+    }
+
+    const categories = (
+        Object.keys(
+            INLINE_CONTENT_CATEGORIES,
+        ) as (keyof typeof INLINE_CONTENT_CATEGORIES)[]
+    ).filter((category) => features.has(INLINE_CONTENT_CATEGORIES[category]));
+    const body = JSON.stringify({
+        messages,
+        checks: {
+            promptAttack: {
+                categories: SHIELD_CATEGORIES.map((category) => ({ category })),
+            },
+            contentFilter: {
+                categories: categories.map((category) => ({ category })),
+            },
+        },
+    });
+    const url = new URL(
+        `https://bedrock-runtime.${env.region}.amazonaws.com/guardrail-checks/invoke`,
+    );
+    const headers = await signBedrockHeaders(
+        url,
+        body,
+        { "content-type": "application/json" },
+        env,
+    );
+    const result = await fetch(
+        new Request(url, {
+            method: "POST",
+            body,
+            headers,
+            signal: AbortSignal.timeout(10_000),
+        }),
+    );
+    if (!result.ok) {
+        await result.body?.cancel();
+        throw new Error(`Bedrock inline checks returned HTTP ${result.status}`);
+    }
+    const response = await result.json<InlineResponse>();
+
+    const blockedFeatures = new Set<SafetyFeature>();
+    for (const category of SHIELD_CATEGORIES) {
+        if (
+            severity(response.results?.promptAttack?.results, category) >= 0.8
+        ) {
+            blockedFeatures.add("shield");
+        }
+    }
+    for (const category of categories) {
+        if (
+            severity(response.results?.contentFilter?.results, category) >= 0.6
+        ) {
+            blockedFeatures.add(INLINE_CONTENT_CATEGORIES[category]);
+        }
+    }
+    return {
+        blockedFeatures,
+        promptAttackPolicyUnits: response.usage?.promptAttack?.textUnits,
+        inlineContentPolicyUnits: response.usage?.contentFilter?.textUnits,
+    };
+}
+
+function severity(results: InlineScore[] | undefined, category: string) {
+    const score = results?.find(
+        (result) => result.category === category,
+    )?.severityScore;
+    if (
+        score === undefined ||
+        !Number.isFinite(score) ||
+        score < 0 ||
+        score > 1
+    ) {
+        throw new Error(
+            `Bedrock did not return a valid severity score for ${category}`,
+        );
+    }
+    return score;
 }

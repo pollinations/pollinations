@@ -673,6 +673,191 @@ describe("applySafetyToInput text", { timeout: 30000 }, () => {
         expect(calledGuardrail()).toBe("test-guardrail");
     });
 
+    describe("inline Shield", () => {
+        const inlineEnv = {
+            ...configuredEnv,
+            BEDROCK_SHIELD_INLINE: "on",
+            TINYBIRD_INGEST_URL: "https://tinybird.test/v0/events",
+        } as const;
+        const messages = [
+            { role: "system", content: "You are a helpful assistant." },
+            { role: "user", content: "What is 2 + 2?" },
+        ];
+
+        async function chat(safe: string, input = messages) {
+            const context = createExecutionContext();
+            const response = await safetyApp()
+                .onError(handleError)
+                .fetch(
+                    new Request("https://test/chat", {
+                        method: "POST",
+                        body: JSON.stringify({ messages: input, safe }),
+                    }),
+                    inlineEnv,
+                    context,
+                );
+            await waitOnExecutionContext(context);
+            return response;
+        }
+
+        function stubScores(scores: Record<string, number | undefined> = {}) {
+            fetchMock.mockImplementation(async (request) => {
+                if (!(request instanceof Request))
+                    throw new Error("Expected Request");
+                if (request.url.startsWith("https://tinybird.test/")) {
+                    return Response.json({ successful_rows: 1 });
+                }
+                if (request.url.includes("/guardrail/")) {
+                    return Response.json(guardrailResponse);
+                }
+                const { checks } = (await request.clone().json()) as {
+                    checks: Record<
+                        string,
+                        { categories: { category: string }[] }
+                    >;
+                };
+                return Response.json({
+                    results: Object.fromEntries(
+                        Object.entries(checks).map(([name, { categories }]) => [
+                            name,
+                            {
+                                results: categories.map(({ category }) => ({
+                                    category,
+                                    severityScore:
+                                        category in scores
+                                            ? scores[category]
+                                            : 0,
+                                })),
+                            },
+                        ]),
+                    ),
+                    usage: {
+                        promptAttack: { textUnits: 2 },
+                        contentFilter: { textUnits: 2 },
+                    },
+                });
+            });
+        }
+
+        it("allows ordinary system instructions and scans them along with the user prompt", async () => {
+            stubScores();
+            const response = await chat("shield");
+
+            expect(response.status).toBe(200);
+            expect(response.headers.get("X-Safety-Applied")).toBe("shield");
+            expect(fetchMock).toHaveBeenCalledOnce();
+            const request = fetchMock.mock.calls[0][0] as Request;
+            expect(request.url).toContain("/guardrail-checks");
+            expect(await request.json()).toMatchObject({
+                messages: [
+                    {
+                        role: "user",
+                        content: messages.map(({ content }) => ({
+                            text: content,
+                        })),
+                    },
+                ],
+                checks: {
+                    promptAttack: {
+                        categories: [
+                            { category: "JAILBREAK" },
+                            { category: "PROMPT_INJECTION" },
+                            { category: "PROMPT_LEAKAGE" },
+                        ],
+                    },
+                    contentFilter: { categories: [{ category: "MISCONDUCT" }] },
+                },
+            });
+        });
+
+        it("keeps content blocking active alongside Shield", async () => {
+            stubScores({ PROMPT_INJECTION: 1, SEXUAL: 1, HATE: 0.6 });
+
+            const response = await chat("shield,sexual,violence");
+
+            expect(response.status).toBe(400);
+            expect(await response.json()).toMatchObject({
+                error: {
+                    code: "content_blocked",
+                    message:
+                        "Request blocked by safety filter: shield, sexual, violence",
+                },
+            });
+        });
+
+        it("sends all selected parts in groups that fit the Bedrock message limit", async () => {
+            stubScores();
+            const input = Array.from({ length: 26 }, (_, index) => ({
+                role: "user",
+                content: `Message ${index}`,
+            }));
+
+            expect((await chat("shield", input)).status).toBe(200);
+
+            const request = fetchMock.mock.calls[0][0] as Request;
+            const { messages } = await request.json<{
+                messages: { content: { text: string }[] }[];
+            }>();
+            expect(messages.map(({ content }) => content.length)).toEqual([
+                10, 10, 5,
+            ]);
+            expect(
+                messages.flatMap(({ content }) =>
+                    content.map(({ text }) => text),
+                ),
+            ).toEqual(input.slice(-25).map(({ content }) => content));
+        });
+
+        it("uses the sensitive-information guardrail to redact alongside Shield", async () => {
+            stubScores();
+            guardrailResponse = intervened(
+                {
+                    sensitiveInformationPolicy: {
+                        piiEntities: [{ action: "ANONYMIZED", type: "EMAIL" }],
+                    },
+                },
+                [
+                    { text: messages[0].content },
+                    { text: "My email is {EMAIL}." },
+                ],
+            );
+
+            const response = await chat("privacy,secrets,shield", [
+                messages[0],
+                { role: "user", content: "My email is example@example.com." },
+            ]);
+
+            expect(response.status).toBe(200);
+            expect(response.headers.get("X-Safety-Redacted")).toBe("EMAIL");
+            expect(await response.json()).toMatchObject({
+                messages: [
+                    messages[0],
+                    { role: "user", content: "My email is {EMAIL}." },
+                ],
+            });
+            expect(
+                fetchMock.mock.calls.map(
+                    ([request]) => (request as Request).url,
+                ),
+            ).toEqual(
+                expect.arrayContaining([
+                    expect.stringContaining(
+                        "/guardrail/test-sensitive-guardrail/",
+                    ),
+                ]),
+            );
+            expect(fetchMock).toHaveBeenCalledTimes(2);
+        });
+
+        it("fails closed if an inline check has no score", async () => {
+            stubScores({ JAILBREAK: undefined });
+
+            const response = await chat("shield");
+
+            expect(response.status).toBe(503);
+        });
+    });
+
     it("fails closed when safe is requested but guardrails are not configured", async () => {
         const response = await safetyApp().request(
             "/scan/hello?safe=privacy",

@@ -428,6 +428,7 @@ new_sqlite_classes = ["AzurePortWake"]
 
 [env.staging.vars]
 ENVIRONMENT = "staging"
+BEDROCK_SHIELD_INLINE = "on"
 D1_CALL_TELEMETRY = "on"
 SITES_HOST_SUFFIX = "--staging.pollinations.app"
 SANDBOX_DOMAIN = "pollinations.app"

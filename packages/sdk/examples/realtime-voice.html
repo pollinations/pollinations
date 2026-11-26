@@ -1,260 +1,122 @@
 <!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Pollinations realtime voice</title>
-        <style>
-            :root { color-scheme: dark; font-family: system-ui, sans-serif; }
-            body { margin: 0; padding: 2rem; background: #111; color: #eee; }
-            main { max-width: 44rem; margin: 0 auto; display: grid; gap: 1rem; }
-            h1 { font-size: 1.25rem; margin: 0; }
-            p { margin: 0; font-size: 0.9rem; color: #aaa; }
-            input,
-            button {
-                font: inherit;
-                padding: 0.6rem 0.8rem;
-                border-radius: 0.5rem;
-                border: 1px solid #333;
-                background: #1b1b1b;
-                color: inherit;
-            }
-            button:disabled { opacity: 0.5; }
-            .row { display: flex; gap: 0.5rem; }
-            .row input { flex: 1; }
-            #status { font-size: 0.85rem; color: #9ae6b4; }
-            #transcript {
-                min-height: 4rem;
-                font-size: 0.95rem;
-                white-space: pre-wrap;
-            }
-            #log {
-                font: 0.8rem/1.5 ui-monospace, monospace;
-                background: #1b1b1b;
-                border: 1px solid #333;
-                border-radius: 0.5rem;
-                padding: 0.8rem;
-                height: 12rem;
-                overflow: auto;
-                white-space: pre-wrap;
-            }
-        </style>
-    </head>
-    <body>
-        <main>
-            <h1>Pollinations realtime voice</h1>
-            <p>
-                Paste a secret key (<code>sk_...</code>) and press Start. The
-                page streams your microphone as PCM16 and plays the model's
-                reply. Talk to it, it answers out loud.
-            </p>
-            <div class="row">
-                <input
-                    id="key"
-                    type="password"
-                    placeholder="sk_..."
-                    autocomplete="off"
-                />
-                <button id="start" type="button">Start</button>
-                <button id="stop" type="button" disabled>Stop</button>
-            </div>
-            <div id="status">idle</div>
-            <div id="transcript"></div>
-            <pre id="log"></pre>
-        </main>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Talk with gpt-realtime-2.1</title>
+<style>
+  body { font: 16px/1.5 system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; }
+  #log p { margin: 0.25rem 0; }
+</style>
+</head>
+<body>
+<h1>Talk with gpt-realtime-2.1</h1>
+<p>Sign in with Pollinations, press Talk, and speak. Server voice detection ends your turn, and talking over a reply stops it. Usage is billed when the session closes.</p>
+<p><small>Serve this file over http(s), for example <code>npx serve</code>: sign-in redirects back to the page, and browsers allow the microphone only there.</small></p>
+<button type="button" id="signin">Sign in</button>
+<button type="button" id="talk" disabled>Talk</button>
+<button type="button" id="stop" disabled>Stop</button>
+<p id="status"></p>
+<div id="log"></div>
+<!-- The model's voice plays through an <audio> element, which browsers use as the echo-cancellation reference. -->
+<!-- biome-ignore lint/a11y/useMediaCaption: the transcript is shown as text above the player -->
+<audio id="speaker" autoplay></audio>
 
-        <!-- biome-ignore lint/a11y/useMediaCaption: the transcript is shown as text under the player -->
-        <audio id="speaker" autoplay></audio>
+<!-- The browser bundle of the SDK. To try this page against the source in this
+     repository, run `npm run build` in packages/sdk first. -->
+<script src="../dist/index.browser.min.js"></script>
+<script>
+const P = window.Pollinations;
+const MODEL = "openai/gpt-realtime-2.1";
+const $ = (id) => document.getElementById(id);
+const back = new URLSearchParams(location.hash.slice(1));
+const apiKey = back.get("api_key");
+if (back.get("error")) $("status").textContent = `Sign-in failed: ${back.get("error")}`;
+history.replaceState(null, "", location.pathname + location.search);
+$("talk").disabled = !apiKey;
+$("signin").onclick = () => {
+  location.href = P.authorizeUrl({ redirectUrl: location.href.split("#")[0], models: [MODEL], budget: 1, expiry: 1 });
+};
 
-        <!-- The browser bundle of the SDK. To try this page against the source
-             in this repository, run `npm run build` in packages/sdk first; the
-             bundle is then at ../dist/index.browser.min.js. -->
-        <script src="../dist/index.browser.min.js"></script>
-        <script>
-            const { base64ToPcm16, connectRealtime, pcm16ToBase64 } =
-                window.Pollinations;
+let session, mic, ctx;
 
-            const keyInput = document.querySelector("#key");
-            const startButton = document.querySelector("#start");
-            const stopButton = document.querySelector("#stop");
-            const statusLine = document.querySelector("#status");
-            const transcriptLine = document.querySelector("#transcript");
-            const log = document.querySelector("#log");
-            const speaker = document.querySelector("#speaker");
+function line() {
+  const p = document.createElement("p");
+  $("log").append(p);
+  return p;
+}
 
-            // The realtime models take and return 24 kHz mono PCM16.
-            const SAMPLE_RATE = 24000;
-            // Audio goes out in 100 ms chunks, so the socket carries ten
-            // messages a second instead of one per audio frame.
-            const CHUNK_SAMPLES = SAMPLE_RATE / 10;
+$("talk").onclick = async () => {
+  $("talk").disabled = true;
+  $("status").textContent = "Connecting…";
+  ctx = new AudioContext({ sampleRate: 24000 }); // PCM16 at 24 kHz both ways
+  const out = ctx.createMediaStreamDestination();
+  $("speaker").srcObject = out.stream;
+  const playing = new Set();
+  let playAt = 0;
+  let reply, source;
+  try {
+    mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+    source = ctx.createMediaStreamSource(mic); // before connecting, so a failure here costs nothing
+    session = await P.connectRealtime({
+      apiKey,
+      model: MODEL,
+      session: {
+        type: "realtime",
+        instructions: "You are a friendly voice assistant. Keep replies short.",
+      },
+    });
+  } catch (err) {
+    return stop(err.message);
+  }
+  const current = session;
+  $("status").textContent = "Listening. Say something.";
+  $("stop").disabled = false;
 
-            const logEvent = (text) => {
-                log.textContent += `${text}\n`;
-                log.scrollTop = log.scrollHeight;
-            };
+  current.on("response.created", () => { reply = line(); });
+  current.on("response.output_audio_transcript.delta", (e) => { reply.textContent += e.delta; });
+  // The reply arrives faster than it plays; when the user starts talking, drop what is queued.
+  current.on("input_audio_buffer.speech_started", () => {
+    for (const node of playing) node.stop();
+    playing.clear();
+    playAt = 0;
+  });
+  current.on("response.output_audio.delta", (e) => {
+    const samples = P.base64ToPcm16(e.delta);
+    const buffer = ctx.createBuffer(1, samples.length, 24000);
+    buffer.copyToChannel(samples, 0);
+    const node = ctx.createBufferSource();
+    node.buffer = buffer;
+    node.connect(out);
+    node.onended = () => playing.delete(node);
+    playing.add(node);
+    playAt = Math.max(playAt, ctx.currentTime);
+    node.start(playAt);
+    playAt += buffer.duration;
+  });
+  current.on("error", (e) => { $("status").textContent = e.error?.message ?? "Error"; });
+  current.closed.then(({ reason }) => { if (session === current) stop(reason || "Session closed."); });
 
-            let session = null;
-            let media = null;
-            let micContext = null;
-            let playContext = null;
-            let playDestination = null;
-            // The next chunk starts where the last one ends, so the reply has
-            // no gaps between the chunks.
-            let playAt = 0;
+  // shortcut: ScriptProcessorNode is deprecated but needs no worklet file; use an AudioWorklet in an app.
+  const tap = ctx.createScriptProcessor(4096, 1, 1);
+  tap.onaudioprocess = (e) => {
+    if (session !== current) return; // stopped; stop() also ends the mic
+    current.send({ type: "input_audio_buffer.append", audio: P.pcm16ToBase64(e.inputBuffer.getChannelData(0)) });
+  };
+  source.connect(tap);
+  tap.connect(ctx.destination); // outputs silence; keeps the processor running
+};
 
-            // Sends microphone frames to the model as PCM16.
-            function micWorklet() {
-                const code = `
-                    class MicProcessor extends AudioWorkletProcessor {
-                        process(inputs) {
-                            const channel = inputs[0] && inputs[0][0];
-                            if (channel) this.port.postMessage(channel.slice(0));
-                            return true;
-                        }
-                    }
-                    registerProcessor("mic-processor", MicProcessor);
-                `;
-                return URL.createObjectURL(
-                    new Blob([code], { type: "text/javascript" }),
-                );
-            }
-
-            // Plays one chunk of the model's audio.
-            function playAudio(base64) {
-                const samples = base64ToPcm16(base64);
-                const buffer = playContext.createBuffer(
-                    1,
-                    samples.length,
-                    SAMPLE_RATE,
-                );
-                buffer.copyToChannel(samples, 0);
-                const source = playContext.createBufferSource();
-                source.buffer = buffer;
-                source.connect(playDestination);
-                playAt = Math.max(playAt, playContext.currentTime);
-                source.start(playAt);
-                playAt += buffer.duration;
-            }
-
-            function handleEvent(event) {
-                if (event.type === "response.output_audio.delta" && event.delta) {
-                    playAudio(event.delta);
-                } else if (
-                    event.type === "response.output_audio_transcript.delta" &&
-                    event.delta
-                ) {
-                    transcriptLine.textContent += event.delta;
-                } else if (event.type === "response.done") {
-                    transcriptLine.textContent += "\n";
-                } else if (event.type === "error") {
-                    logEvent(`error: ${event.error?.message ?? "unknown"}`);
-                }
-            }
-
-            async function start() {
-                const apiKey = keyInput.value.trim();
-                if (!apiKey) return;
-
-                playContext = new AudioContext({ sampleRate: SAMPLE_RATE });
-                // The model's voice plays through an <audio> element: the
-                // browser only takes the element's output as the reference for
-                // echo cancellation, so the microphone does not hear the model
-                // and the model does not answer itself.
-                playDestination = playContext.createMediaStreamDestination();
-                speaker.srcObject = playDestination.stream;
-
-                session = await connectRealtime({
-                    apiKey,
-                    session: {
-                        type: "realtime",
-                        output_modalities: ["audio"],
-                        instructions:
-                            "You are a concise voice assistant. Answer in one or two sentences.",
-                        audio: {
-                            input: {
-                                format: { type: "audio/pcm", rate: SAMPLE_RATE },
-                                turn_detection: { type: "server_vad" },
-                            },
-                            output: {
-                                format: { type: "audio/pcm", rate: SAMPLE_RATE },
-                                voice: "alloy",
-                            },
-                        },
-                    },
-                });
-                session.on("*", handleEvent);
-                session.closed.then(({ code, reason }) => {
-                    logEvent(`session closed (${code}) ${reason}`.trim());
-                    if (session) stop();
-                });
-                statusLine.textContent = "connected";
-
-                media = await navigator.mediaDevices.getUserMedia({
-                    audio: true,
-                });
-                // The context resamples the microphone to the rate the model
-                // expects, so the frames need no conversion beyond PCM16.
-                micContext = new AudioContext({ sampleRate: SAMPLE_RATE });
-                await micContext.audioWorklet.addModule(micWorklet());
-                const source = micContext.createMediaStreamSource(media);
-                const processor = new AudioWorkletNode(
-                    micContext,
-                    "mic-processor",
-                );
-                let pending = new Float32Array(0);
-                processor.port.onmessage = (message) => {
-                    const chunk = message.data;
-                    const merged = new Float32Array(pending.length + chunk.length);
-                    merged.set(pending);
-                    merged.set(chunk, pending.length);
-                    pending = merged;
-                    if (pending.length < CHUNK_SAMPLES) return;
-                    const frame = pending;
-                    pending = new Float32Array(0);
-                    try {
-                        session?.send({
-                            type: "input_audio_buffer.append",
-                            audio: pcm16ToBase64(frame),
-                        });
-                    } catch {
-                        // The session closed while a frame was in flight.
-                    }
-                };
-                source.connect(processor);
-                // The microphone must not play back, but the worklet only runs
-                // when it reaches the destination.
-                const silent = micContext.createGain();
-                silent.gain.value = 0;
-                processor.connect(silent).connect(micContext.destination);
-
-                startButton.disabled = true;
-                stopButton.disabled = false;
-                logEvent("session started");
-            }
-
-            function stop() {
-                session?.close();
-                session = null;
-                for (const track of media?.getTracks() ?? []) track.stop();
-                media = null;
-                micContext?.close();
-                playContext?.close();
-                micContext = null;
-                playContext = null;
-                startButton.disabled = false;
-                stopButton.disabled = true;
-                statusLine.textContent = "idle";
-                logEvent("session stopped");
-            }
-
-            startButton.addEventListener("click", () => {
-                start().catch((error) => {
-                    statusLine.textContent = `error: ${error.message}`;
-                    logEvent(`error: ${error.message}`);
-                    stop();
-                });
-            });
-            stopButton.addEventListener("click", stop);
-        </script>
-    </body>
+function stop(message) {
+  session?.close();
+  for (const track of mic?.getTracks() ?? []) track.stop();
+  ctx?.close();
+  session = mic = ctx = undefined;
+  $("status").textContent = message;
+  $("stop").disabled = true;
+  $("talk").disabled = !apiKey;
+}
+$("stop").onclick = () => stop("Stopped.");
+</script>
+</body>
 </html>

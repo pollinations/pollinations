@@ -506,7 +506,7 @@ export interface UseRealtimeOptions {
     model?: string;
     /** Session config, sent as the first event. */
     session?: Record<string, unknown>;
-    /** Called with every server event. */
+    /** Called with every server event. The latest callback is used. */
     onEvent?: (event: RealtimeEvent) => void;
 }
 
@@ -558,13 +558,18 @@ export function useRealtime(
         setStatus("connecting");
         setError(null);
         try {
-            const { onEvent, ...sessionOptions } = optionsRef.current;
+            const { model, session } = optionsRef.current;
             const next = await connectRealtime({
-                ...sessionOptions,
+                model,
+                session,
                 apiKey,
                 signal: controller.signal,
             });
-            if (onEvent) next.on("*", onEvent);
+            // close() or a newer connect() ran while this one was opening;
+            // the abort already closed its socket.
+            if (controller.signal.aborted) return null;
+            // Read the callback per event, so a rerender's onEvent is used.
+            next.on("*", (event) => optionsRef.current.onEvent?.(event));
             setSession(next);
             setStatus("open");
             void next.closed.then(({ code, reason }) => {

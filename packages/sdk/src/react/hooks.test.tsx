@@ -649,4 +649,160 @@ describe("useRealtime", () => {
 
         expect(FakeSocket.last?.closes).toBe(1);
     });
+
+    it("uses the latest onEvent callback after a rerender", async () => {
+        vi.stubGlobal("WebSocket", FakeSocket);
+        const first = vi.fn();
+        const second = vi.fn();
+        let latest: UseRealtimeValue | null = null;
+        function Probe({
+            onEvent,
+        }: {
+            onEvent: (event: RealtimeEvent) => void;
+        }) {
+            latest = useRealtime({ onEvent });
+            return null;
+        }
+
+        let renderer: ReactTestRenderer;
+        await act(async () => {
+            renderer = create(
+                <AuthContext.Provider value={authValue()}>
+                    <Probe onEvent={first} />
+                </AuthContext.Provider>,
+            );
+        });
+        let connected: Promise<RealtimeSession | null>;
+        await act(async () => {
+            connected = read<UseRealtimeValue>(latest).connect();
+        });
+        await act(async () => {
+            FakeSocket.last?.open();
+            await connected;
+        });
+
+        await act(async () => {
+            renderer.update(
+                <AuthContext.Provider value={authValue()}>
+                    <Probe onEvent={second} />
+                </AuthContext.Provider>,
+            );
+        });
+        await act(async () => {
+            FakeSocket.last?.receive({ type: "response.done" });
+        });
+
+        expect(first).not.toHaveBeenCalled();
+        expect(second).toHaveBeenCalledWith({ type: "response.done" });
+
+        await act(async () => renderer.unmount());
+    });
+
+    it("closes the session when the key changes", async () => {
+        vi.stubGlobal("WebSocket", FakeSocket);
+        let latest: UseRealtimeValue | null = null;
+        function Probe() {
+            latest = useRealtime();
+            return null;
+        }
+
+        let renderer: ReactTestRenderer;
+        await act(async () => {
+            renderer = create(
+                <AuthContext.Provider value={authValue({ apiKey: "sk_first" })}>
+                    <Probe />
+                </AuthContext.Provider>,
+            );
+        });
+        let connected: Promise<RealtimeSession | null>;
+        await act(async () => {
+            connected = read<UseRealtimeValue>(latest).connect();
+        });
+        const active = FakeSocket.last;
+        await act(async () => {
+            active?.open();
+            await connected;
+        });
+
+        await act(async () => {
+            renderer.update(
+                <AuthContext.Provider
+                    value={authValue({ apiKey: "sk_second" })}
+                >
+                    <Probe />
+                </AuthContext.Provider>,
+            );
+        });
+
+        expect(active?.closes).toBe(1);
+        expect(read<UseRealtimeValue>(latest).session).toBeNull();
+    });
+
+    it("a second connect replaces the attempt still opening", async () => {
+        vi.stubGlobal("WebSocket", FakeSocket);
+        let latest: UseRealtimeValue | null = null;
+        function Probe() {
+            latest = useRealtime();
+            return null;
+        }
+
+        await act(async () => {
+            create(
+                <AuthContext.Provider value={authValue()}>
+                    <Probe />
+                </AuthContext.Provider>,
+            );
+        });
+
+        let firstAttempt: Promise<RealtimeSession | null>;
+        let secondAttempt: Promise<RealtimeSession | null>;
+        await act(async () => {
+            firstAttempt = read<UseRealtimeValue>(latest).connect();
+        });
+        const firstSocket = FakeSocket.last;
+        await act(async () => {
+            secondAttempt = read<UseRealtimeValue>(latest).connect();
+        });
+        await act(async () => {
+            FakeSocket.last?.open();
+            await secondAttempt;
+            await expect(firstAttempt).resolves.toBeNull();
+        });
+
+        expect(firstSocket?.closes).toBe(1);
+        expect(FakeSocket.last).not.toBe(firstSocket);
+        expect(read<UseRealtimeValue>(latest).status).toBe("open");
+        expect(read<UseRealtimeValue>(latest).error).toBeNull();
+    });
+
+    it("stays closed when close() runs while the socket is opening", async () => {
+        vi.stubGlobal("WebSocket", FakeSocket);
+        let latest: UseRealtimeValue | null = null;
+        function Probe() {
+            latest = useRealtime();
+            return null;
+        }
+
+        await act(async () => {
+            create(
+                <AuthContext.Provider value={authValue()}>
+                    <Probe />
+                </AuthContext.Provider>,
+            );
+        });
+
+        let connected: Promise<RealtimeSession | null>;
+        await act(async () => {
+            connected = read<UseRealtimeValue>(latest).connect();
+        });
+        await act(async () => {
+            // The socket opens, then close() runs before connect() resumes.
+            FakeSocket.last?.open();
+            read<UseRealtimeValue>(latest).close();
+            await expect(connected).resolves.toBeNull();
+        });
+
+        expect(read<UseRealtimeValue>(latest).status).toBe("closed");
+        expect(read<UseRealtimeValue>(latest).session).toBeNull();
+    });
 });

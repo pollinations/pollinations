@@ -3127,7 +3127,7 @@ export function Playground({ drafts }: { drafts: ConnectDrafts }) {
                                     {customSize && (
                                         <fieldset
                                             aria-labelledby={dimensionsLabelId}
-                                            className="grid min-w-0 grid-cols-[6.5rem_minmax(0,1fr)] items-start gap-x-4 gap-y-2 max-sm:grid-cols-[5.5rem_minmax(0,1fr)] max-sm:gap-x-2"
+                                            className="grid min-w-0 grid-cols-[6.5rem_minmax(0,1fr)] items-center gap-x-4 gap-y-2 max-sm:grid-cols-[5.5rem_minmax(0,1fr)] max-sm:gap-x-2"
                                         >
                                             <Text
                                                 as="span"
@@ -3239,8 +3239,9 @@ export function Playground({ drafts }: { drafts: ConnectDrafts }) {
 
                     {/* Not connected is not a broken state, so the button
                         becomes the connect action. When it genuinely
-                        cannot fire, the line beside it says why. */}
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                        cannot fire, the line beside it says why. Set apart
+                        from the settings above, which sit closer together. */}
+                    <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
                         <Button
                             size="lg"
                             intent="brand"

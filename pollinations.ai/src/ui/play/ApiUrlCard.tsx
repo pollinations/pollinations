@@ -76,7 +76,10 @@ export function ApiUrlCard({
     const example = apiExample(url, fields);
 
     return (
-        <section aria-label="API quickstart" className="mt-6 min-w-0 space-y-3">
+        <section
+            aria-label="API quickstart"
+            className="mt-12 min-w-0 space-y-3"
+        >
             <div className="flex flex-col gap-1">
                 <Eyebrow>For developers</Eyebrow>
                 <Heading as="h2" size="card">

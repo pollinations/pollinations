@@ -11,6 +11,7 @@ import {
     genAnswer,
     promptTooLong,
     REFUSED,
+    withScreen,
 } from "../../../shared/messages.js";
 import { BLOCKED_PREFIXES } from "./blocked-prefixes.js";
 import {
@@ -180,7 +181,12 @@ export const logFailure = (route, details) =>
  * uncached paths.
  */
 export async function origin(request, env, ctx) {
-    return notModified(request, await answer(request, env, ctx));
+    const response = withScreen(
+        request,
+        await answer(request, env, ctx),
+        "text",
+    );
+    return notModified(request, response);
 }
 
 /**

@@ -156,9 +156,9 @@ async function payFor(path, options) {
     });
 }
 
-const ENTER = "https://enter.pollinations.ai/?ref=classic";
+const ENTER = "https://enter.pollinations.ai/?ref=text";
 const NOTICE =
-    /^Free limit reached: 1 reply every 45 seconds per IP\. Please wait \d+ seconds or \[get unlimited replies\]\(https:\/\/enter\.pollinations\.ai\/\?ref=classic\), then try again\./;
+    /^Free limit reached: 1 reply every 45 seconds per IP\. Please wait \d+ seconds or \[get unlimited replies\]\(https:\/\/enter\.pollinations\.ai\/\?ref=text\), then try again\./;
 
 test("a script or app past the free limit gets the notice in the 402, a Retry-After and the VM's challenge, on both hosts and with any query", async () => {
     for (const host of ["text.pollinations.ai", "text.myceli.ai"]) {
@@ -203,7 +203,7 @@ test("a JSON-mode request past the free limit gets gen's error body and the VM's
         success: false,
         error: {
             code: "FREE_LIMIT",
-            message: `Free limit reached: 1 reply every 45 seconds per IP. Retry after ${wait}s, or get unlimited replies with a pollen key at ${ENTER}`,
+            message: `Free limit reached: 1 reply every 45 seconds per IP. Retry after ${wait}s, or get unlimited replies with a Pollinations API key at ${ENTER}`,
             timestamp: body.error.timestamp,
             fixUrl: ENTER,
         },
@@ -248,7 +248,7 @@ test("POST /openai past the free limit gets gen's error body and the challenge",
     const { error } = JSON.parse(text);
     expect(error.code).toBe("FREE_LIMIT");
     expect(error.message).toBe(
-        `Free limit reached: 1 reply every 45 seconds per IP. Retry after ${wait}s, or get unlimited replies with a pollen key at ${ENTER}`,
+        `Free limit reached: 1 reply every 45 seconds per IP. Retry after ${wait}s, or get unlimited replies with a Pollinations API key at ${ENTER}`,
     );
     expect(response.headers.get("payment-required")).not.toBeNull();
 });
@@ -268,7 +268,7 @@ async function quotaOf(ip, used) {
 }
 
 const DAILY_NOTICE =
-    /^Free limit reached: 100 replies a day per IP\. It resets at 00:00 UTC, in \d+ hours?, or \[get unlimited replies\]\(https:\/\/enter\.pollinations\.ai\/\?ref=classic\) now\./;
+    /^Free limit reached: 100 replies a day per IP\. It resets at 00:00 UTC, in \d+ hours?, or \[get unlimited replies\]\(https:\/\/enter\.pollinations\.ai\/\?ref=text\) now\./;
 
 test("the 100th free reply of the day is served and counted, the 101st goes to the paywall until midnight", async () => {
     const ip = nextIp();
@@ -289,7 +289,6 @@ test("the 100th free reply of the day is served and counted, the 101st goes to t
     for (const [path, headers] of [
         ["/quota%20100?stream=true", CURL],
         ["/quota%20100", CURL],
-        ["/quota%20100", BROWSER],
     ]) {
         const { response, text } = await call(path, { ip, headers });
         expect(response.status, path).toBe(402);
@@ -303,6 +302,18 @@ test("the 100th free reply of the day is served and counted, the 101st goes to t
         );
         expect(response.headers.get("payment-required")).not.toBeNull();
     }
+    // A browser gets the daily page, which does not reload until midnight
+    const page = await call("/quota%20100", { ip, headers: BROWSER });
+    expect(page.response.status).toBe(402);
+    expect(page.response.headers.get("content-type")).toBe(
+        "text/html; charset=utf-8",
+    );
+    expect(page.text).toContain("That's today's 100 free replies");
+    expect(page.text).toMatch(
+        /Free replies are back at 00:00 UTC, in \d+ hours?\./,
+    );
+    expect(page.text).toContain("Or let your AI agent pay");
+    expect(page.text).toContain("const reload = 0;");
     expect(events).not.toContain("gen");
     // No reply ran, so the refusal left the slot as it found it: free
     expect(await alarmOf(ip)).toBeNull();
@@ -401,7 +412,7 @@ test("a JSON request past the daily quota gets gen's error body", async () => {
     const { error } = JSON.parse(text);
     expect(error.code).toBe("FREE_LIMIT");
     expect(error.message).toMatch(
-        /^Free limit reached: 100 replies a day per IP\. It resets at 00:00 UTC, in \d+ hours?\. Get unlimited replies with a pollen key at /,
+        /^Free limit reached: 100 replies a day per IP\. It resets at 00:00 UTC, in \d+ hours?\. Get unlimited replies with a Pollinations API key at /,
     );
 });
 
@@ -439,17 +450,17 @@ test("browsers get the free limit's page, which reloads when the wait is over, a
     const [, price] = text.match(/([\d.]+) USD per reply with Weft/) ?? [];
     expect(Math.round(Number(price) * 1e6)).toBe(Number(accepts[0].amount));
     expect(text).toContain(
-        "1 free reply every 45 seconds. Please wait: this page reloads by itself when your next reply is ready.",
+        "1 free reply every 45 seconds. This page reloads by itself when your next reply is ready.",
     );
-    expect(text).toContain("Skip the wait");
+    expect(text).toContain("Get unlimited replies, free to start");
+    expect(text).toContain("Or let your AI agent pay");
     expect(text).not.toContain("undefined");
+    expect(text).not.toContain("{{");
     // No clock to watch: the page reloads by itself when the wait is over
+    expect(text).toContain(`const reload = ${wait};`);
+    // Enter's landing page, with the ref enter records
     expect(text).toContain(
-        `setTimeout(() => location.reload(), ${wait} * 1000);`,
-    );
-    // Straight to GitHub's sign-in, tagged as a Classic visit
-    expect(text).toContain(
-        'href="https://enter.pollinations.ai/sign-in?ref=legacy-text"',
+        'href="https://enter.pollinations.ai/?ref=text"',
     );
     expect(text).not.toContain("{{");
     const vm = capturedHeaders(browserHeaders);

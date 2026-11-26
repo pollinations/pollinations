@@ -223,7 +223,7 @@ test("a model that only runs on enter gets gen's 403 before the free limit, with
         const body = JSON.parse(text);
         expect(body.error.code, model).toBe("FORBIDDEN");
         expect(body.error.message, model).toBe(
-            `${model} isn't part of the Classic API. Use it with a pollen key at https://enter.pollinations.ai/?ref=classic`,
+            `${model} isn't part of the Classic API. Use it with a Pollinations API key at https://enter.pollinations.ai/?ref=image`,
         );
     }
     expect(gen.requests).toHaveLength(0);
@@ -249,9 +249,9 @@ test("a malformed % gets the VM's 500: urldecode's -1 failed its cache key", asy
 });
 
 const AT_CAPACITY =
-    "The Classic API is at its limit right now. Retry after 10s, or get full access to every model with a pollen key at https://enter.pollinations.ai/?ref=classic";
+    "The Classic API is at its limit right now. Retry after 10s, or get full access to every model with a Pollinations API key at https://enter.pollinations.ai/?ref=image";
 const OUR_FAULT =
-    "Something went wrong on our side. Please try again, or use every model with a pollen key at https://enter.pollinations.ai/?ref=classic";
+    "Something went wrong on our side. Please try again, or use every model with a Pollinations API key at https://enter.pollinations.ai/?ref=image";
 
 test("gen's failures get gen's error body and are not stored: 503 when gen is busy, 500 when the fault is ours", async () => {
     for (const [prompt, status, code, message] of [
@@ -274,7 +274,7 @@ test("gen's failures get gen's error body and are not stored: 503 when gen is bu
                 code,
                 message,
                 timestamp: body.error.timestamp,
-                fixUrl: "https://enter.pollinations.ai/?ref=classic",
+                fixUrl: "https://enter.pollinations.ai/?ref=image",
             },
         });
         expect(await storedAt(`/prompt/${prompt}?seed=1`), prompt).toBeNull();
@@ -515,13 +515,22 @@ test("without every WEFT_* value the paywall is off: a running generation gives 
     const off = { ...env, WEFT_SELLER_API_KEY: undefined };
     const ip = await limitedIp();
 
+    // An <img> gets the card of a running image
+    const img = await call("/prompt/weft%20off%20img", {
+        ip,
+        testEnv: off,
+        headers: { accept: "image/avif,image/webp,image/*,*/*;q=0.8" },
+    });
+    expect(img.response.status).toBe(429);
+    expect(img.response.headers.get("content-type")).toBe("image/jpeg");
+
     const held = await call("/prompt/weft%20off", { ip, testEnv: off });
 
     expect(held.response.status).toBe(429);
     const body = JSON.parse(held.text);
     expect(body.error.code).toBe("RATE_LIMITED");
     expect(body.error.message).toBe(
-        "Your previous image is still being made. The Classic API makes 1 image at a time per IP. Wait for it to finish, or make images in parallel with a pollen key at https://enter.pollinations.ai/?ref=classic",
+        "Your previous image is still being made. The Classic API makes 1 image at a time per IP. Wait for it to finish, or make images in parallel with a Pollinations API key at https://enter.pollinations.ai/?ref=image",
     );
 
     // The last free generation started 44.8 s ago and has ended
@@ -541,40 +550,43 @@ test.each([
     ["GET", "application/json"],
     ["GET", "image/*"],
     ["HEAD", "application/json"],
-])("a limiter failure returns 503 without calling gen or releasing a slot (%s, %s)", async (method, accept) => {
-    const gen = recordingGen();
-    const calls: string[] = [];
-    const failing = {
-        getByName: () => ({
-            take: async () => {
-                calls.push("take");
-                throw new Error("IpSlot RPC failed");
-            },
-            release: async () => calls.push("release"),
-        }),
-    };
-    const path = `/prompt/limiter%20down%20${method}%20${encodeURIComponent(accept)}`;
-    const { response, text } = await call(path, {
-        method,
-        headers: { accept },
-        testEnv: { ...gen.testEnv, IP_SLOT: failing },
-    });
-
-    expect(response.status).toBe(503);
-    expect(response.headers.get("retry-after")).toBe("10");
-    expect(gen.requests).toHaveLength(0);
-    expect(calls).toEqual(["take"]);
-    expect(await storedAt(path)).toBeNull();
-    if (accept === "image/*") {
-        expect(response.headers.get("content-type")).toBe("image/jpeg");
-        expect(response.headers.get("cache-control")).toBe("no-store");
-    } else if (method === "GET") {
-        expect(JSON.parse(text)).toMatchObject({
-            status: 503,
-            error: { code: "SERVICE_UNAVAILABLE", message: AT_CAPACITY },
+])(
+    "a limiter failure returns 503 without calling gen or releasing a slot (%s, %s)",
+    async (method, accept) => {
+        const gen = recordingGen();
+        const calls: string[] = [];
+        const failing = {
+            getByName: () => ({
+                take: async () => {
+                    calls.push("take");
+                    throw new Error("IpSlot RPC failed");
+                },
+                release: async () => calls.push("release"),
+            }),
+        };
+        const path = `/prompt/limiter%20down%20${method}%20${encodeURIComponent(accept)}`;
+        const { response, text } = await call(path, {
+            method,
+            headers: { accept },
+            testEnv: { ...gen.testEnv, IP_SLOT: failing },
         });
-    }
-});
+
+        expect(response.status).toBe(503);
+        expect(response.headers.get("retry-after")).toBe("10");
+        expect(gen.requests).toHaveLength(0);
+        expect(calls).toEqual(["take"]);
+        expect(await storedAt(path)).toBeNull();
+        if (accept === "image/*") {
+            expect(response.headers.get("content-type")).toBe("image/jpeg");
+            expect(response.headers.get("cache-control")).toBe("no-store");
+        } else if (method === "GET") {
+            expect(JSON.parse(text)).toMatchObject({
+                status: 503,
+                error: { code: "SERVICE_UNAVAILABLE", message: AT_CAPACITY },
+            });
+        }
+    },
+);
 
 test("an exception on a miss path is Hono's 500", async () => {
     // A side past 2^53 threw outside the VM's try (and crashed it)
@@ -594,4 +606,20 @@ test("a browser's /favicon.ico calls no gen and leaves the free image", async ()
     expect(response.status).toBe(404);
     expect(gen.requests).toHaveLength(0);
     expect(await alarmOf(ip)).toBeNull();
+});
+
+test("a browser gets the page of gen's failure in place of its JSON", async () => {
+    const { response, text } = await call("/prompt/gen:503?seed=2", {
+        headers: {
+            accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        },
+    });
+    expect(response.status).toBe(503);
+    expect(response.headers.get("retry-after")).toBe("10");
+    expect(response.headers.get("content-type")).toBe(
+        "text/html; charset=utf-8",
+    );
+    expect(text).toContain("Busy right now");
+    expect(text).toContain("Get unlimited images, free to start");
+    expect(text).not.toContain("{{");
 });

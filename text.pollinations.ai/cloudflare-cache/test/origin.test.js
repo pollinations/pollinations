@@ -326,9 +326,9 @@ test("a prompt over 16,000 characters is refused before gen and the IP's slot", 
 });
 
 const AT_CAPACITY =
-    "The Classic API is at its limit right now. Retry after 10s, or get full access to every model with a pollen key at https://enter.pollinations.ai/?ref=classic";
+    "The Classic API is at its limit right now. Retry after 10s, or get full access to every model with a Pollinations API key at https://enter.pollinations.ai/?ref=text";
 const OUR_FAULT =
-    "Something went wrong on our side. Please try again, or use every model with a pollen key at https://enter.pollinations.ai/?ref=classic";
+    "Something went wrong on our side. Please try again, or use every model with a Pollinations API key at https://enter.pollinations.ai/?ref=text";
 
 /** gen's error body, as shared/messages.js sends it */
 function expectGenError(text, status, code, message) {
@@ -340,7 +340,7 @@ function expectGenError(text, status, code, message) {
             code,
             message,
             timestamp: body.error.timestamp,
-            fixUrl: "https://enter.pollinations.ai/?ref=classic",
+            fixUrl: "https://enter.pollinations.ai/?ref=text",
         },
     });
 }
@@ -991,7 +991,7 @@ test("while a free generation runs, a stream from the same IP gets a 429", async
         stream.text,
         429,
         "RATE_LIMITED",
-        "Your previous request is still running. The Classic API answers 1 request at a time per IP. Wait for it to finish, or run requests in parallel with a pollen key at https://enter.pollinations.ai/?ref=classic",
+        "Your previous request is still running. The Classic API answers 1 request at a time per IP. Wait for it to finish, or run requests in parallel with a Pollinations API key at https://enter.pollinations.ai/?ref=text",
     );
     expect((await running).text).toBe("ok");
 });
@@ -1147,4 +1147,44 @@ test("a stream gen ends with an error is not stored, so an identical retry reach
 
     const retry = await call(path);
     expect(retry.response.headers.get("x-cache")).not.toBe("HIT");
+});
+
+const BROWSER_ACCEPT =
+    "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
+
+test("a browser gets each error's page with its status and Retry-After; scripts keep the JSON", async () => {
+    const long = JSON.stringify({
+        messages: [{ role: "user", content: "a".repeat(16_100) }],
+    });
+    for (const [path, status, title, post] of [
+        ["/gen:503", 503, "Busy right now"],
+        ["/gen:500", 503, "Busy right now"],
+        ["/gen:401", 500, "Something went wrong on our side"],
+        ["/hi?model=gpt-5", 404, "We don&#x27;t know that model"],
+        ["/", 413, "That message is too long", long],
+        ["/gen:length?json=true", 422, "The reply got too long"],
+    ]) {
+        const { response, text } = await call(path, {
+            headers: {
+                accept: BROWSER_ACCEPT,
+                ...(post && { "content-type": "application/json" }),
+            },
+            ...(post && { method: "POST", body: post }),
+        });
+        expect(response.status, path).toBe(status);
+        expect(response.headers.get("content-type"), path).toBe(
+            "text/html; charset=utf-8",
+        );
+        expect(text.replaceAll("'", "&#x27;"), path).toContain(title);
+        expect(text, path).toContain("Get unlimited replies, free to start");
+        expect(text, path).not.toContain("Or let your AI agent pay");
+        expect(text, path).not.toContain("{{");
+        if (status === 503) {
+            expect(response.headers.get("retry-after")).toBe("10");
+        }
+    }
+    const script = await call("/gen:503");
+    expect(script.response.headers.get("content-type")).toBe(
+        "application/json; charset=utf-8",
+    );
 });

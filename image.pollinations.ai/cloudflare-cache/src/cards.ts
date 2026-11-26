@@ -8,21 +8,24 @@ import {
     resize,
     SamplingFilter,
 } from "@cf-wasm/photon";
-import busySquare from "../assets/cards/busy-square.png";
-import busyTall from "../assets/cards/busy-tall.png";
-import busyWide from "../assets/cards/busy-wide.png";
-import enterSquare from "../assets/cards/enter-square.png";
-import enterTall from "../assets/cards/enter-tall.png";
-import enterWide from "../assets/cards/enter-wide.png";
-import errorSquare from "../assets/cards/error-square.png";
-import errorTall from "../assets/cards/error-tall.png";
-import errorWide from "../assets/cards/error-wide.png";
-import limitSquare from "../assets/cards/limit-square.png";
-import limitTall from "../assets/cards/limit-tall.png";
-import limitWide from "../assets/cards/limit-wide.png";
-import refusedSquare from "../assets/cards/refused-square.png";
-import refusedTall from "../assets/cards/refused-tall.png";
-import refusedWide from "../assets/cards/refused-wide.png";
+import busySquare from "../assets/cards/busy-square.jpg";
+import busyTall from "../assets/cards/busy-tall.jpg";
+import busyWide from "../assets/cards/busy-wide.jpg";
+import enterSquare from "../assets/cards/enter-square.jpg";
+import enterTall from "../assets/cards/enter-tall.jpg";
+import enterWide from "../assets/cards/enter-wide.jpg";
+import errorSquare from "../assets/cards/error-square.jpg";
+import errorTall from "../assets/cards/error-tall.jpg";
+import errorWide from "../assets/cards/error-wide.jpg";
+import limitSquare from "../assets/cards/limit-square.jpg";
+import limitTall from "../assets/cards/limit-tall.jpg";
+import limitWide from "../assets/cards/limit-wide.jpg";
+import refusedSquare from "../assets/cards/refused-square.jpg";
+import refusedTall from "../assets/cards/refused-tall.jpg";
+import refusedWide from "../assets/cards/refused-wide.jpg";
+import runningSquare from "../assets/cards/running-square.jpg";
+import runningTall from "../assets/cards/running-tall.jpg";
+import runningWide from "../assets/cards/running-wide.jpg";
 
 // The image cards built by shared/screens/render.js: what a page's <img> gets
 // in place of a broken image, at the size it asked for. origin.ts loads this
@@ -30,6 +33,7 @@ import refusedWide from "../assets/cards/refused-wide.png";
 
 const CARDS = {
     limit: { square: limitSquare, wide: limitWide, tall: limitTall },
+    running: { square: runningSquare, wide: runningWide, tall: runningTall },
     busy: { square: busySquare, wide: busyWide, tall: busyTall },
     error: { square: errorSquare, wide: errorWide, tall: errorTall },
     enter: { square: enterSquare, wide: enterWide, tall: enterTall },

@@ -681,7 +681,7 @@ function ModelPicker({
     onSelectModel,
     details,
 }: {
-    /** The selected model's description and badges, shown inside the selector card under its name. */
+    /** The selected model's description and badges, shown under the selector, in line with its name. */
     details?: ReactNode;
     models: PlaygroundModel[];
     stats: ModelRunStat[];
@@ -749,230 +749,244 @@ function ModelPicker({
                 onClick={() => step(direction)}
             >
                 <ChevronIcon
-                    className={direction === -1 ? "rotate-180" : undefined}
+                    className={direction === -1 ? "rotate-90" : "-rotate-90"}
                 />
             </Button>
         );
     }
 
     return (
-        <div className="flex min-w-0 items-center gap-2">
-            <div className="relative min-w-0 flex-1 rounded-card bg-theme-bg-subtle outline-offset-2 outline-(--polli-color-focus) has-[[aria-haspopup]:focus-visible]:outline-2">
-                <Dropdown
-                    portalled={false}
-                    onOpenChange={(open) => {
-                        if (!open) {
-                            setFilter("All");
-                            setQuestOnly(false);
-                        }
-                    }}
-                    className="w-[var(--reference-width)] overscroll-y-contain data-[placement^=bottom]:-mt-2 data-[placement^=bottom]:border-t border-theme-text-muted/20 data-[placement^=bottom]:rounded-t-none! data-[placement^=bottom]:rounded-b-card! data-[placement^=top]:-mb-2 data-[placement^=top]:rounded-t-card! data-[placement^=top]:rounded-b-none! bg-[linear-gradient(var(--polli-color-bg-subtle),var(--polli-color-bg-subtle)),linear-gradient(var(--polli-color-surface-block),var(--polli-color-surface-block))]! p-2"
-                    trigger={(open) => (
-                        <Button
-                            type="button"
-                            intent="neutral"
-                            size="lg"
-                            disabled={isLoading || models.length === 0}
-                            className="static! w-full touch-pan-y justify-between gap-2 bg-transparent! px-5 text-lg font-semibold before:absolute before:inset-0 before:rounded-card before:transition-colors hover:bg-transparent! hover:filter-none! focus-visible:outline-none! hover:before:bg-theme-text-muted/15"
-                            title={selected?.title}
-                            aria-label={`Model: ${selected?.title ?? (models.length ? "Choose a model" : "Unavailable")}`}
-                            aria-description={
-                                selected &&
-                                [
-                                    selected.paidOnly
-                                        ? "Uses paid balance only"
-                                        : "Works with any balance",
-                                    selected.publisher,
-                                    isNewModel(selected.addedDate)
-                                        ? "New"
-                                        : undefined,
-                                ]
-                                    .filter(Boolean)
-                                    .join(", ")
+        <div className="flex min-w-0 flex-col gap-3">
+            <div className="flex min-w-0 items-center gap-2">
+                <div className="min-w-0 flex-1">
+                    <Dropdown
+                        portalled={false}
+                        onOpenChange={(open) => {
+                            if (!open) {
+                                setFilter("All");
+                                setQuestOnly(false);
                             }
-                            onPointerDown={(event) => {
-                                swiped.current = false;
-                                swipeStart.current =
-                                    canStep &&
-                                    event.pointerType === "touch" &&
-                                    event.isPrimary
-                                        ? {
-                                              x: event.clientX,
-                                              y: event.clientY,
-                                          }
-                                        : null;
-                            }}
-                            onPointerCancel={() => {
-                                swipeStart.current = null;
-                            }}
-                            onPointerUp={(event) => {
-                                const start = swipeStart.current;
-                                swipeStart.current = null;
-                                if (!start || !canStep) return;
-                                const dx = event.clientX - start.x;
-                                if (
-                                    Math.abs(dx) < 40 ||
-                                    Math.abs(dx) <=
-                                        Math.abs(event.clientY - start.y)
-                                )
-                                    return;
-                                swiped.current = true;
-                                step(dx < 0 ? 1 : -1);
-                            }}
-                            onClickCapture={(event) => {
-                                if (swiped.current && event.detail > 0) {
-                                    event.preventDefault();
-                                    event.stopPropagation();
+                        }}
+                        className="w-[var(--reference-width)] overscroll-y-contain rounded-card! bg-[linear-gradient(var(--polli-color-bg-subtle),var(--polli-color-bg-subtle)),linear-gradient(var(--polli-color-surface-block),var(--polli-color-surface-block))]! p-2"
+                        trigger={(open) => (
+                            <Button
+                                type="button"
+                                intent="neutral"
+                                size="lg"
+                                disabled={isLoading || models.length === 0}
+                                className="w-full touch-pan-y justify-between gap-2 px-5 text-lg font-semibold"
+                                title={selected?.title}
+                                aria-label={`Model: ${selected?.title ?? (models.length ? "Choose a model" : "Unavailable")}`}
+                                aria-description={
+                                    selected &&
+                                    [
+                                        selected.paidOnly
+                                            ? "Uses paid balance only"
+                                            : "Works with any balance",
+                                        selected.publisher,
+                                        isNewModel(selected.addedDate)
+                                            ? "New"
+                                            : undefined,
+                                    ]
+                                        .filter(Boolean)
+                                        .join(", ")
                                 }
-                                swiped.current = false;
-                            }}
-                        >
-                            <span
-                                className="flex min-w-0 flex-1 text-left"
-                                aria-live="polite"
+                                onPointerDown={(event) => {
+                                    swiped.current = false;
+                                    swipeStart.current =
+                                        canStep &&
+                                        event.pointerType === "touch" &&
+                                        event.isPrimary
+                                            ? {
+                                                  x: event.clientX,
+                                                  y: event.clientY,
+                                              }
+                                            : null;
+                                }}
+                                onPointerCancel={() => {
+                                    swipeStart.current = null;
+                                }}
+                                onPointerUp={(event) => {
+                                    const start = swipeStart.current;
+                                    swipeStart.current = null;
+                                    if (!start || !canStep) return;
+                                    const dx = event.clientX - start.x;
+                                    if (
+                                        Math.abs(dx) < 40 ||
+                                        Math.abs(dx) <=
+                                            Math.abs(event.clientY - start.y)
+                                    )
+                                        return;
+                                    swiped.current = true;
+                                    step(dx < 0 ? 1 : -1);
+                                }}
+                                onClickCapture={(event) => {
+                                    if (swiped.current && event.detail > 0) {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                    }
+                                    swiped.current = false;
+                                }}
                             >
-                                {isLoading ? (
-                                    "Loading models…"
-                                ) : selected ? (
-                                    <MediaModelOption
-                                        model={selected}
-                                        showIcon={false}
-                                        showPricing={false}
-                                    />
-                                ) : models.length ? (
-                                    "Choose a model"
-                                ) : (
-                                    "No models available"
-                                )}
-                            </span>
-                            <ChevronIcon expanded={open} />
-                        </Button>
-                    )}
-                >
-                    {(close) => (
-                        <ScrollArea
-                            ref={modelMenu}
-                            className="max-h-[min(26rem,60dvh)] overscroll-y-contain"
-                        >
-                            {filters.length > 1 && (
-                                <fieldset
-                                    aria-label={`Filter ${category} models`}
-                                    className="sticky top-0 z-10 mb-1 flex flex-wrap gap-1 border-b border-theme-text-muted/20 bg-[linear-gradient(var(--polli-color-bg-subtle),var(--polli-color-bg-subtle)),linear-gradient(var(--polli-color-surface-block),var(--polli-color-surface-block))] pt-1 pr-px pb-2 pl-1"
+                                <span
+                                    className="flex min-w-0 flex-1 text-left"
+                                    aria-live="polite"
                                 >
-                                    {filters.map((value) => (
+                                    {isLoading ? (
+                                        "Loading models…"
+                                    ) : selected ? (
+                                        <MediaModelOption
+                                            model={selected}
+                                            showIcon={false}
+                                            showPricing={false}
+                                        />
+                                    ) : models.length ? (
+                                        "Choose a model"
+                                    ) : (
+                                        "No models available"
+                                    )}
+                                </span>
+                                <ChevronIcon expanded={open} />
+                            </Button>
+                        )}
+                    >
+                        {(close) => (
+                            <ScrollArea
+                                ref={modelMenu}
+                                className="max-h-[min(26rem,60dvh)] overscroll-y-contain"
+                            >
+                                {filters.length > 1 && (
+                                    <fieldset
+                                        aria-label={`Filter ${category} models`}
+                                        className="sticky top-0 z-10 mb-1 flex flex-wrap gap-1 border-b border-theme-text-muted/20 bg-[linear-gradient(var(--polli-color-bg-subtle),var(--polli-color-bg-subtle)),linear-gradient(var(--polli-color-surface-block),var(--polli-color-surface-block))] pt-1 pr-px pb-2 pl-1"
+                                    >
+                                        {filters.map((value) => (
+                                            <TabButton
+                                                key={value}
+                                                active={value === activeFilter}
+                                                title={
+                                                    value === "Fast"
+                                                        ? "Fastest quarter by measured response time"
+                                                        : undefined
+                                                }
+                                                className="max-sm:px-2 max-sm:text-xs"
+                                                size="sm"
+                                                disabled={
+                                                    questOnly &&
+                                                    !eligibleModels.some(
+                                                        (model) =>
+                                                            matches(
+                                                                model,
+                                                                value,
+                                                            ),
+                                                    )
+                                                }
+                                                onClick={() => {
+                                                    setFilter(value);
+                                                    modelMenu.current?.scrollTo(
+                                                        0,
+                                                        0,
+                                                    );
+                                                }}
+                                            >
+                                                {value}
+                                            </TabButton>
+                                        ))}
                                         <TabButton
-                                            key={value}
-                                            active={value === activeFilter}
-                                            title={
-                                                value === "Fast"
-                                                    ? "Fastest quarter by measured response time"
-                                                    : undefined
-                                            }
-                                            className="max-sm:px-2 max-sm:text-xs"
+                                            active={questOnly}
                                             size="sm"
+                                            intent="green"
+                                            ariaLabel="Quests"
+                                            className="ml-auto size-9 shrink-0 p-0"
+                                            title="Show models that accept Quest balance"
                                             disabled={
-                                                questOnly &&
-                                                !eligibleModels.some((model) =>
-                                                    matches(model, value),
+                                                !questOnly &&
+                                                !visible.some(
+                                                    (model) => !model.paidOnly,
                                                 )
                                             }
                                             onClick={() => {
-                                                setFilter(value);
+                                                setQuestOnly(!questOnly);
                                                 modelMenu.current?.scrollTo(
                                                     0,
                                                     0,
                                                 );
                                             }}
                                         >
-                                            {value}
-                                        </TabButton>
-                                    ))}
-                                    <TabButton
-                                        active={questOnly}
-                                        size="sm"
-                                        intent="green"
-                                        ariaLabel="Quests"
-                                        className="ml-auto size-9 shrink-0 p-0"
-                                        title="Show models that accept Quest balance"
-                                        disabled={
-                                            !questOnly &&
-                                            !visible.some(
-                                                (model) => !model.paidOnly,
-                                            )
-                                        }
-                                        onClick={() => {
-                                            setQuestOnly(!questOnly);
-                                            modelMenu.current?.scrollTo(0, 0);
-                                        }}
-                                    >
-                                        <WalletKindIcon
-                                            kind="tier"
-                                            className="size-4"
-                                        />
-                                    </TabButton>
-                                </fieldset>
-                            )}
-                            <div className="flex flex-col gap-1">
-                                {visible.map((model, index) => (
-                                    <Fragment key={model.id}>
-                                        {isCommunityRun(model) &&
-                                            !(
-                                                index > 0 &&
-                                                isCommunityRun(
-                                                    visible[index - 1],
-                                                )
-                                            ) && (
-                                                <p className="flex items-center gap-2 px-3 pt-2 pb-1 text-xs text-theme-text-muted before:h-px before:w-3 before:bg-theme-text-muted/30 after:h-px after:flex-1 after:bg-theme-text-muted/30">
-                                                    Community · run by their
-                                                    publishers
-                                                </p>
-                                            )}
-                                        <TabButton
-                                            active={model.id === selectedModel}
-                                            size="sm"
-                                            variant="ghost"
-                                            aria-description={model.publisher}
-                                            className="play-model-option w-full justify-start pr-0 text-left"
-                                            onClick={() => {
-                                                onSelectModel(
-                                                    model,
-                                                    activeFilter !== "All" &&
-                                                        activeFilter !==
-                                                            "Fast" &&
-                                                        (imageModels ||
-                                                            category ===
-                                                                "video")
-                                                        ? activeFilter
-                                                        : undefined,
-                                                );
-                                                close();
-                                            }}
-                                        >
-                                            <MediaModelOption
-                                                model={model}
-                                                perDollar={estimatePerDollar(
-                                                    model,
-                                                    costByModel.get(model.id),
-                                                )}
+                                            <WalletKindIcon
+                                                kind="tier"
+                                                className="size-4"
                                             />
                                         </TabButton>
-                                    </Fragment>
-                                ))}
-                            </div>
-                        </ScrollArea>
-                    )}
-                </Dropdown>
-                {details && (
-                    // Same left edge as the model name in the trigger (its padding plus border).
-                    <div className="flex flex-col gap-2 border-t border-theme-text-muted/20 px-[calc(1.25rem+1px)] pt-3 pb-4">
-                        {details}
-                    </div>
-                )}
-            </div>
-            <div className="flex flex-col gap-1 self-start">
+                                    </fieldset>
+                                )}
+                                <div className="flex flex-col gap-1">
+                                    {visible.map((model, index) => (
+                                        <Fragment key={model.id}>
+                                            {isCommunityRun(model) &&
+                                                !(
+                                                    index > 0 &&
+                                                    isCommunityRun(
+                                                        visible[index - 1],
+                                                    )
+                                                ) && (
+                                                    <p className="flex items-center gap-2 px-3 pt-2 pb-1 text-xs text-theme-text-muted before:h-px before:w-3 before:bg-theme-text-muted/30 after:h-px after:flex-1 after:bg-theme-text-muted/30">
+                                                        Community · run by their
+                                                        publishers
+                                                    </p>
+                                                )}
+                                            <TabButton
+                                                active={
+                                                    model.id === selectedModel
+                                                }
+                                                size="sm"
+                                                variant="ghost"
+                                                aria-description={
+                                                    model.publisher
+                                                }
+                                                className="play-model-option w-full justify-start pr-0 text-left"
+                                                onClick={() => {
+                                                    onSelectModel(
+                                                        model,
+                                                        activeFilter !==
+                                                            "All" &&
+                                                            activeFilter !==
+                                                                "Fast" &&
+                                                            (imageModels ||
+                                                                category ===
+                                                                    "video")
+                                                            ? activeFilter
+                                                            : undefined,
+                                                    );
+                                                    close();
+                                                }}
+                                            >
+                                                <MediaModelOption
+                                                    model={model}
+                                                    perDollar={estimatePerDollar(
+                                                        model,
+                                                        costByModel.get(
+                                                            model.id,
+                                                        ),
+                                                    )}
+                                                />
+                                            </TabButton>
+                                        </Fragment>
+                                    ))}
+                                </div>
+                            </ScrollArea>
+                        )}
+                    </Dropdown>
+                </div>
                 {stepButton(-1)}
                 {stepButton(1)}
             </div>
+            {details && (
+                // Same left edge as the model name in the trigger (its padding plus border).
+                <div className="flex flex-col gap-2 px-[calc(1.25rem+1px)]">
+                    {details}
+                </div>
+            )}
         </div>
     );
 }
@@ -996,9 +1010,7 @@ function RunStatBadge({
     const hidePanel = () => panel.current?.hidePopover();
 
     return (
-        // Above the selector card's click area.
         <div
-            className="relative z-10"
             onPointerEnter={(event) => {
                 if (event.pointerType === "mouse") panel.current?.showPopover();
             }}
@@ -1019,7 +1031,7 @@ function RunStatBadge({
                 aria-label={`Typical cost ${cost ?? "unavailable"}, typical time ${time ?? "unavailable"}`}
                 className="flex cursor-help rounded-lg"
             >
-                <span className="inline-flex items-center gap-1 tabular-nums text-theme-text-muted">
+                <Chip size="md" data-theme="neutral" className="tabular-nums">
                     {cost || time ? (
                         <>
                             <span className="text-theme-text-muted">
@@ -1051,7 +1063,7 @@ function RunStatBadge({
                             <WalletKindIcon kind={walletKind} />
                         </>
                     )}
-                </span>
+                </Chip>
             </button>
             <div
                 ref={panel}
@@ -2636,26 +2648,44 @@ export function Playground({ drafts }: { drafts: ConnectDrafts }) {
                                             </Text>
                                         )}
                                         <div className="flex flex-wrap items-center gap-2 text-xs">
-                                            {modelAbilities(currentModel)
-                                                .length > 0 && (
+                                            {modelAbilities(currentModel).some(
+                                                (ability) =>
+                                                    !ability.shownByUploads,
+                                            ) && (
                                                 <ul
                                                     aria-label="Abilities"
-                                                    className="m-0 flex list-none flex-wrap items-center gap-x-3 gap-y-1 p-0 pr-1 text-theme-text-muted"
+                                                    className="m-0 flex list-none flex-wrap items-center gap-2 p-0"
                                                 >
                                                     {modelAbilities(
                                                         currentModel,
-                                                    ).map(({ label, Icon }) => (
-                                                        <li
-                                                            key={label}
-                                                            className="inline-flex items-center gap-1"
-                                                        >
-                                                            <Icon
-                                                                aria-hidden="true"
-                                                                className="size-3.5"
-                                                            />
-                                                            {label}
-                                                        </li>
-                                                    ))}
+                                                    )
+                                                        .filter(
+                                                            (ability) =>
+                                                                !ability.shownByUploads,
+                                                        )
+                                                        .map(
+                                                            ({
+                                                                label,
+                                                                Icon,
+                                                            }) => (
+                                                                <li
+                                                                    key={label}
+                                                                    className="flex"
+                                                                >
+                                                                    <Chip
+                                                                        size="md"
+                                                                        data-theme="neutral"
+                                                                        className="gap-1"
+                                                                    >
+                                                                        <Icon
+                                                                            aria-hidden="true"
+                                                                            className="size-3.5"
+                                                                        />
+                                                                        {label}
+                                                                    </Chip>
+                                                                </li>
+                                                            ),
+                                                        )}
                                                 </ul>
                                             )}
                                             <RunStatBadge

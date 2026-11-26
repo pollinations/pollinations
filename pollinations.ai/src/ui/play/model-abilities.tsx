@@ -30,6 +30,8 @@ type AbilityModel = {
 type Ability = {
     label: string;
     Icon: typeof ImageIcon;
+    /** The upload tiles already say it, so the row under the picker leaves it out. */
+    shownByUploads?: true;
     applies: (model: AbilityModel) => boolean;
 };
 
@@ -96,14 +98,18 @@ const ABILITIES: Ability[] = [
 // new server fails the build until it has a label and icon here.
 const MCP_SERVER_ABILITIES: Record<
     Exclude<McpServerId, "composio">,
-    Pick<Ability, "label" | "Icon">
+    Pick<Ability, "label" | "Icon" | "shownByUploads">
 > = {
     pollinations: {
         label: "Makes images, audio and video",
         Icon: SparklesIcon,
     },
     exa: { label: "Web search", Icon: GlobeIcon },
-    ffmpeg: { label: "Edits audio and video", Icon: VideoIcon },
+    ffmpeg: {
+        label: "Edits audio and video",
+        Icon: VideoIcon,
+        shownByUploads: true,
+    },
     computer: { label: "Own computer", Icon: TerminalIcon },
     machines: { label: "Runs code in sandboxes", Icon: CubeIcon },
     research: { label: "Research sources", Icon: BookIcon },

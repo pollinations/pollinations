@@ -16,6 +16,42 @@
 
 <p align="center"><img src="https://media.pollinations.ai/e3273375-166e-49d5-bd78-b6bcc50494cf" alt="Polli sets a flower tile in a tabletop press while Monitor Robot lifts the fresh lime-green print." width="800" /></p>
 
+## 🆕 Recent Apps
+
+| Name | Description | Author |
+|------|-------------|--------|
+| [🎬 Creator Studio for TikTok](https://www.mrpaloma.com/en/creator-studio-tiktok) | Edit subtitles and export videos for TikTok in your browser. Sign in with Pollinations to generate vertical covers, titles, and descriptions using your own balance. | [@rapidbuildlabai](https://github.com/rapidbuildlabai) |
+| [🖼️ Pollinations Image Studio](https://palmunix.github.io/pollinations-image-studio) | Gere imagens com IA direto no navegador usando o seu próprio saldo Pollinations. Escolha modelo e proporção, conecte sua conta e crie imagens sem precisar colar chaves. | [@palmunix](https://github.com/palmunix) |
+| [🛠️ polli-bridge](https://aibridge.bot.nu) | One OpenAI-compatible /v1 endpoint in front of Pollinations: text, images, speech, transcription, video. Self-hosted or try the live demo, one key per caller, MIT. | [@BalTac](https://github.com/BalTac) |
+| [🎮 Decision Arena — Grid Rush](https://decisionarena.edgeone.cool) | A game that AI models play. Decision models on Pollinations play Grid Rush, a deterministic snake-like collection game, and you watch them race. | [@NamanSoni78](https://github.com/NamanSoni78) |
+| [🎮 Herd Check](https://patbing.github.io/herd-check) | Nine models get one question that code can answer. See the anonymous vote, pick the answer you trust, then reveal who was right. 66 recorded rounds: the herd never lost. BYOP. | [@patbing](https://github.com/patbing) |
+| [🎮 Schelling Table](https://tomdacatto.github.io/pollinations-schelling-table) | A game AI agents play over MCP: each picks one option in secret and scores for matching others. Connect any MCP agent, or use your balance to seat Pollinations models. | [@tomdacatto](https://github.com/tomdacatto) |
+| [📚 Where It Slips](https://tomdacatto.github.io/pollinations-where-it-slips) | A tiny real computer written in code checks a model playing it: every step is diffed cell by cell, so you see where each model first slips. You pay from your own balance. | [@tomdacatto](https://github.com/tomdacatto) |
+| [🎮 Idle Hands](https://tomdacatto.github.io/pollinations-idle-hands) | Put up to four Pollinations models on a small island with nothing to do. Plain code runs the world and counts what each one did; a timeline shows every turn. You pay from your own balance. | [@tomdacatto](https://github.com/tomdacatto) |
+| [🎮 Read On](https://patbing.github.io/read-on) | Three paragraphs on one topic: one by a person before LLMs, two by a model, one told to write plainly. Find the person, blind. A slop-score detector plays the same round against you. BYOP. | [@patbing](https://github.com/patbing) |
+| [🎮 Under Oath](https://patbing.github.io/under-oath) | One AI keeps a sealed word, another gets 20 yes/no questions. Code judges the guess, a referee model re-checks every answer, a hash seals the word. Race the Asker. BYOP. | [@patbing](https://github.com/patbing) |
+
+[Browse all apps →](https://pollinations.ai/apps)
+<!-- recent-apps:end -->
+
+## 🆕 Latest News
+
+<!-- Updated daily by .github/workflows/repo-update-readme.yml from the news index. -->
+<!-- news:start -->
+- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **HeyGen Decision 1**](https://enter.pollinations.ai/models?q=heygen/heygen-decision-1) <sub>Nov 24</sub><br>Use paid-only `heygen/heygen-decision-1` to get typed Yes/No, Choice, or Score decisions from text, image, audio, or video input through `/alpha/decisions` or chat completions.
+- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **Inkling 2 Mini**](https://enter.pollinations.ai/models?q=thinkingmachines/inkling-2-mini) <sub>Nov 24</sub><br>Use paid-only `thinkingmachines/inkling-2-mini` with text or image input, tools, JSON responses, reasoning parameters, and a 1,048,576-token context window.
+- [<img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Auto mode for sandboxes**](https://gen.pollinations.ai/docs) <sub>Nov 24</sub><br>Choose opt-in Auto mode to let an Azure sandbox suspend when idle and resume on a request to a shared port. Leases are prepaid, and the UI has a 10-minute minimum duration.
+- <img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Opposite Prompt agent** <sub>Nov 24</sub><br>Give Opposite Prompt text or an image and ask for a visual opposite. It can make an image, video, GIF, or vector graphic.
+- [<img src="https://img.shields.io/badge/API-0ea5e9?style=flat-square" alt="API" align="top"> **Discord commands for sandbox ports**](https://gen.pollinations.ai/docs) <sub>Nov 24</sub><br>Share an Azure sandbox port with a Discord application's `discordPublicKey` to accept signed interactions. Verification pings leave the sandbox asleep; slash commands are acknowledged before it wakes and receives the request.
+- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **Kling 4.0 Flash video**](https://enter.pollinations.ai/models?q=kwaivgi/kling-v4.0-flash) <sub>Nov 23</sub><br>Generate paid-only 720p videos with native audio from text or a start image using `kwaivgi/kling-v4.0-flash`, with durations from 3 to 20 seconds.
+- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **Gemini live transcription**](https://enter.pollinations.ai/models?q=google/gemini-3.5-transcribe-live) <sub>Nov 23</sub><br>Stream mono PCM16 audio to paid-only `google/gemini-3.5-transcribe-live` and manually commit each utterance to get interim text and a final verbatim transcript.
+- [<img src="https://img.shields.io/badge/API-0ea5e9?style=flat-square" alt="API" align="top"> **File links for hosted agents**](https://gen.pollinations.ai/docs) <sub>Nov 23</sub><br>Send a public HTTPS `file_url` as an `input_file` part on `/v1/responses` so hosted agents can pass the link to their tools; the file is not fetched, and the full URL reaches the model.
+- <img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Fresh models for Discord bots** <sub>Nov 23</sub><br>CatGPT now uses GPT-6.1 Terra, while Opposite Prompt uses GPT-6 Luna. Both generate images with GPT Image 2.5 Sunburst and attach them as JPEGs.
+- [<img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Record and create in Play**](https://pollinations.ai/play) <sub>Nov 20</sub><br>Record, import, and preview media in Play. Image, Video, and Audio keep their drafts when you switch tabs, and model-specific controls cover options such as GIF frames, video sound, and audio stem separation.
+<!-- news:end -->
+
+[More news on enter.pollinations.ai →](https://enter.pollinations.ai/news)
+
 ## Ecosystem
 
 Try a model in the [playground](https://pollinations.ai/play), build it into an app, or publish your own model or agent. This repository holds the code that runs Pollinations.ai.
@@ -79,42 +115,6 @@ Keep your `sk_` key on your server or in your shell. A public `pk_` key identifi
 **Client guides:** [Python and Node.js](APIDOCS.md#-use-any-openai-sdk) · [Vercel AI SDK](APIDOCS.md#-vercel-ai-sdk) · [MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers) · [Index for agents](https://gen.pollinations.ai/llms.txt)
 
 <!-- recent-apps:start -->
-## 🆕 Recent Apps
-
-| Name | Description | Author |
-|------|-------------|--------|
-| [🎬 Creator Studio for TikTok](https://www.mrpaloma.com/en/creator-studio-tiktok) | Edit subtitles and export videos for TikTok in your browser. Sign in with Pollinations to generate vertical covers, titles, and descriptions using your own balance. | [@rapidbuildlabai](https://github.com/rapidbuildlabai) |
-| [🖼️ Pollinations Image Studio](https://palmunix.github.io/pollinations-image-studio) | Gere imagens com IA direto no navegador usando o seu próprio saldo Pollinations. Escolha modelo e proporção, conecte sua conta e crie imagens sem precisar colar chaves. | [@palmunix](https://github.com/palmunix) |
-| [🛠️ polli-bridge](https://aibridge.bot.nu) | One OpenAI-compatible /v1 endpoint in front of Pollinations: text, images, speech, transcription, video. Self-hosted or try the live demo, one key per caller, MIT. | [@BalTac](https://github.com/BalTac) |
-| [🎮 Decision Arena — Grid Rush](https://decisionarena.edgeone.cool) | A game that AI models play. Decision models on Pollinations play Grid Rush, a deterministic snake-like collection game, and you watch them race. | [@NamanSoni78](https://github.com/NamanSoni78) |
-| [🎮 Herd Check](https://patbing.github.io/herd-check) | Nine models get one question that code can answer. See the anonymous vote, pick the answer you trust, then reveal who was right. 66 recorded rounds: the herd never lost. BYOP. | [@patbing](https://github.com/patbing) |
-| [🎮 Schelling Table](https://tomdacatto.github.io/pollinations-schelling-table) | A game AI agents play over MCP: each picks one option in secret and scores for matching others. Connect any MCP agent, or use your balance to seat Pollinations models. | [@tomdacatto](https://github.com/tomdacatto) |
-| [📚 Where It Slips](https://tomdacatto.github.io/pollinations-where-it-slips) | A tiny real computer written in code checks a model playing it: every step is diffed cell by cell, so you see where each model first slips. You pay from your own balance. | [@tomdacatto](https://github.com/tomdacatto) |
-| [🎮 Idle Hands](https://tomdacatto.github.io/pollinations-idle-hands) | Put up to four Pollinations models on a small island with nothing to do. Plain code runs the world and counts what each one did; a timeline shows every turn. You pay from your own balance. | [@tomdacatto](https://github.com/tomdacatto) |
-| [🎮 Read On](https://patbing.github.io/read-on) | Three paragraphs on one topic: one by a person before LLMs, two by a model, one told to write plainly. Find the person, blind. A slop-score detector plays the same round against you. BYOP. | [@patbing](https://github.com/patbing) |
-| [🎮 Under Oath](https://patbing.github.io/under-oath) | One AI keeps a sealed word, another gets 20 yes/no questions. Code judges the guess, a referee model re-checks every answer, a hash seals the word. Race the Asker. BYOP. | [@patbing](https://github.com/patbing) |
-
-[Browse all apps →](https://pollinations.ai/apps)
-<!-- recent-apps:end -->
-
-## 🆕 Latest News
-
-<!-- Updated daily by .github/workflows/repo-update-readme.yml from the news index. -->
-<!-- news:start -->
-- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **HeyGen Decision 1**](https://enter.pollinations.ai/models?q=heygen/heygen-decision-1) <sub>Nov 24</sub><br>Use paid-only `heygen/heygen-decision-1` to get typed Yes/No, Choice, or Score decisions from text, image, audio, or video input through `/alpha/decisions` or chat completions.
-- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **Inkling 2 Mini**](https://enter.pollinations.ai/models?q=thinkingmachines/inkling-2-mini) <sub>Nov 24</sub><br>Use paid-only `thinkingmachines/inkling-2-mini` with text or image input, tools, JSON responses, reasoning parameters, and a 1,048,576-token context window.
-- [<img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Auto mode for sandboxes**](https://gen.pollinations.ai/docs) <sub>Nov 24</sub><br>Choose opt-in Auto mode to let an Azure sandbox suspend when idle and resume on a request to a shared port. Leases are prepaid, and the UI has a 10-minute minimum duration.
-- <img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Opposite Prompt agent** <sub>Nov 24</sub><br>Give Opposite Prompt text or an image and ask for a visual opposite. It can make an image, video, GIF, or vector graphic.
-- [<img src="https://img.shields.io/badge/API-0ea5e9?style=flat-square" alt="API" align="top"> **Discord commands for sandbox ports**](https://gen.pollinations.ai/docs) <sub>Nov 24</sub><br>Share an Azure sandbox port with a Discord application's `discordPublicKey` to accept signed interactions. Verification pings leave the sandbox asleep; slash commands are acknowledged before it wakes and receives the request.
-- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **Kling 4.0 Flash video**](https://enter.pollinations.ai/models?q=kwaivgi/kling-v4.0-flash) <sub>Nov 23</sub><br>Generate paid-only 720p videos with native audio from text or a start image using `kwaivgi/kling-v4.0-flash`, with durations from 3 to 20 seconds.
-- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> **Gemini live transcription**](https://enter.pollinations.ai/models?q=google/gemini-3.5-transcribe-live) <sub>Nov 23</sub><br>Stream mono PCM16 audio to paid-only `google/gemini-3.5-transcribe-live` and manually commit each utterance to get interim text and a final verbatim transcript.
-- [<img src="https://img.shields.io/badge/API-0ea5e9?style=flat-square" alt="API" align="top"> **File links for hosted agents**](https://gen.pollinations.ai/docs) <sub>Nov 23</sub><br>Send a public HTTPS `file_url` as an `input_file` part on `/v1/responses` so hosted agents can pass the link to their tools; the file is not fetched, and the full URL reaches the model.
-- <img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Fresh models for Discord bots** <sub>Nov 23</sub><br>CatGPT now uses GPT-6.1 Terra, while Opposite Prompt uses GPT-6 Luna. Both generate images with GPT Image 2.5 Sunburst and attach them as JPEGs.
-- [<img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> **Record and create in Play**](https://pollinations.ai/play) <sub>Nov 20</sub><br>Record, import, and preview media in Play. Image, Video, and Audio keep their drafts when you switch tabs, and model-specific controls cover options such as GIF frames, video sound, and audio stem separation.
-<!-- news:end -->
-
-[More news on enter.pollinations.ai →](https://enter.pollinations.ai/news)
-
 ## 🗂️ Project Structure
 
 - [`pollinations.ai/`](./pollinations.ai/) — React website.

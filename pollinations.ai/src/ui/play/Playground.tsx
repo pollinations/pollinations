@@ -837,7 +837,7 @@ function ModelPicker({
                                     ) : selected ? (
                                         <MediaModelOption
                                             model={selected}
-                                            showIcon={false}
+                                            iconClassName="size-6"
                                             showPricing={false}
                                         />
                                     ) : models.length ? (

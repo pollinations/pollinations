@@ -69,6 +69,7 @@ for (const modern of [false, true])
                 "to_fraction",
                 "convert_number_base",
                 "check_digit",
+                "inverse_planar_arm",
                 "integer_math",
                 "diff_text",
                 "create_qr",
@@ -950,3 +951,16 @@ test("integer_math rejects what is not integer arithmetic", async (t) => {
         );
     }
 });
+
+test("inverse_planar_arm returns both reachable configurations and reports unreachable targets", async (t) => {
+    const client = await clientFor(t);
+    const result = await call(client, "inverse_planar_arm", {x: 1, y: 1, link1: 1, link2: 1});
+    assert.equal(result.solutions.length, 2);
+    for (const {joint1_radians: a, joint2_radians: b} of result.solutions) {
+        assert.ok(Math.abs(Math.cos(a) + Math.cos(a+b) - 1) < 1e-10);
+        assert.ok(Math.abs(Math.sin(a) + Math.sin(a+b) - 1) < 1e-10);
+    }
+    assert.equal((await call(client, "inverse_planar_arm", {x: 3, y: 0, link1: 1, link2: 1})).reachable, false);
+    assert.equal((await call(client, "inverse_planar_arm", {x: 0, y: 0, link1: 1, link2: 1})).singular, true);
+});
+

@@ -45,6 +45,10 @@ export const ModelListQueryParamsSchema = z.object({
         description:
             "`true`/`1` returns only agents, `false`/`0` excludes agents. Omit for both.",
     }),
+    min_success_rate: z.coerce.number().int().min(0).max(100).optional().meta({
+        description:
+            "Minimum success rate (0-100) for public community proxy models. Models with no measured success rate are excluded when this is set. Official models, agents, and private models are unaffected.",
+    }),
     limit: z.coerce.number().int().min(1).max(500).optional().meta({
         description:
             "Return at most this many models (1-500), after every other filter and in catalog order.",

@@ -113,14 +113,20 @@ export async function filterCatalogEntries(
         query.reliability ??
         headers["pollinations-model-reliability"] ??
         "reliable";
+    const minSuccessRate = query.min_success_rate;
     const reliable = filtered
         .map((entry) => attachModelHealth(entry, lookup))
         .filter(
             (entry) =>
-                reliability === "all" ||
-                !isCommunityProxy(entry) ||
-                entry.communityEndpoint?.visibility === "private" ||
-                isModelReliable(entry.info.health?.success_rate),
+                (minSuccessRate === undefined ||
+                    !isCommunityProxy(entry) ||
+                    entry.communityEndpoint?.visibility === "private" ||
+                    (entry.info.health?.success_rate != null &&
+                        entry.info.health.success_rate >= minSuccessRate)) &&
+                (reliability === "all" ||
+                    !isCommunityProxy(entry) ||
+                    entry.communityEndpoint?.visibility === "private" ||
+                    isModelReliable(entry.info.health?.success_rate)),
         );
     return query.limit === undefined
         ? reliable

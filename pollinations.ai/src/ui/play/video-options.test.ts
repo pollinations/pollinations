@@ -7,6 +7,15 @@ describe("video controls", () => {
             "1:1",
         );
     });
+    it("offers Kling 4.0 Flash text-to-video ratios with fixed sound", () => {
+        expect(
+            videoOptions("kwaivgi/kling-v4.0-flash", ["audio_output"]),
+        ).toMatchObject({
+            ratios: ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
+            defaultRatio: "16:9",
+            sound: "on",
+        });
+    });
     it("exposes Seedance 2.5 Flash ratios and optional sound", () => {
         expect(
             videoOptions("bytedance/seedance-2.5-flash", ["audio_output"]),

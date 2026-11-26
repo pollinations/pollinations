@@ -471,7 +471,7 @@ function createUpstreamErrorResponse(
 
 /**
  * Remap upstream statuses that are our operational concern (auth, routing,
- * quota, conflicts, proxy timeouts) to 502 Bad Gateway. Leaves input-content
+ * quota, conflicts, deleted upstreams, proxy timeouts) to 502 Bad Gateway. Leaves input-content
  * errors (400/413/415/422) as-is since those can reflect user input we failed to
  * validate.
  */
@@ -479,7 +479,7 @@ export function remapUpstreamStatus(status: number): ContentfulStatusCode {
     // A timeout waiting on our provider is a gateway failure, not a caller's
     // incomplete request. Keep upstreamStatus separately for retry decisions.
     if (status === 408) return 504;
-    const remapTo502 = new Set([401, 402, 403, 404, 409, 429, 524]);
+    const remapTo502 = new Set([401, 402, 403, 404, 409, 410, 429, 524]);
     if (remapTo502.has(status)) return 502;
     return status as ContentfulStatusCode;
 }

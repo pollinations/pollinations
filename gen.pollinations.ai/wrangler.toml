@@ -56,6 +56,10 @@ class_name = "CommunityModelRateLimiter"
 name = "GENERATION_COORDINATOR"
 class_name = "GenerationCoordinator"
 
+[[durable_objects.bindings]]
+name = "AZURE_PORT_WAKE"
+class_name = "AzurePortWake"
+
 [[migrations]]
 tag = "v1"
 new_classes = ["PollenRateLimiter"]
@@ -72,6 +76,10 @@ new_classes = ["CommunityModelRateLimiter"]
 tag = "v4"
 deleted_classes = ["PollenRateLimiter"]
 
+[[migrations]]
+tag = "v5"
+new_sqlite_classes = ["AzurePortWake"]
+
 [vars]
 ENVIRONMENT = "development"
 LOG_LEVEL = "trace"
@@ -80,6 +88,8 @@ TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=g
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
 BEDROCK_GUARDRAIL_VERSION = "2"
+BEDROCK_SENSITIVE_GUARDRAIL_ID = "w8m8kctnvi7b"
+BEDROCK_SENSITIVE_GUARDRAIL_VERSION = "1"
 # Azure sandboxes: local dev uses staging's login and group (its secret is in
 # secrets/dev.vars.json), so Azure templates can be tried before they ship.
 AZURE_SANDBOX_TENANT_ID = "f542dd61-ecf3-4524-8905-30f2e2a2e967"
@@ -228,6 +238,10 @@ class_name = "CommunityModelRateLimiter"
 name = "GENERATION_COORDINATOR"
 class_name = "GenerationCoordinator"
 
+[[env.production.durable_objects.bindings]]
+name = "AZURE_PORT_WAKE"
+class_name = "AzurePortWake"
+
 [[env.production.migrations]]
 tag = "v1"
 new_classes = ["PollenRateLimiter"]
@@ -244,8 +258,13 @@ new_classes = ["CommunityModelRateLimiter"]
 tag = "v4"
 deleted_classes = ["PollenRateLimiter"]
 
+[[env.production.migrations]]
+tag = "v5"
+new_sqlite_classes = ["AzurePortWake"]
+
 [env.production.vars]
 ENVIRONMENT = "production"
+D1_CALL_TELEMETRY = "on"
 SITES_HOST_SUFFIX = ".pollinations.app"
 SANDBOX_DOMAIN = "pollinations.app"
 # Public OAuth app identifier; user credentials stay in their browser tab.
@@ -259,6 +278,8 @@ TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=g
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
 BEDROCK_GUARDRAIL_VERSION = "2"
+BEDROCK_SENSITIVE_GUARDRAIL_ID = "w8m8kctnvi7b"
+BEDROCK_SENSITIVE_GUARDRAIL_VERSION = "1"
 # Azure sandboxes (src/routes/azure-sandboxes.ts): gen's own login, whose
 # secret is AZURE_SANDBOX_CLIENT_SECRET, its sandbox group, and the image
 # operations/infrastructure/azure-sandboxes/build.mjs imported there (CI opens
@@ -333,7 +354,8 @@ binding = "CODE_AGENTS"
 namespace = "pollinations-code-agents-staging"
 
 [env.staging.dispatch_namespaces.outbound]
-service = "pollinations-enter-staging"
+# Keep deploying Gen's outbound bindings independent of the public staging account API.
+service = "pollinations-code-agent-outbound-staging"
 parameters = ["CODE_AGENT_CONTEXT"]
 
 # User sites (src/sites.ts): enter uploads them, gen serves their hosts.
@@ -380,6 +402,10 @@ class_name = "CommunityModelRateLimiter"
 name = "GENERATION_COORDINATOR"
 class_name = "GenerationCoordinator"
 
+[[env.staging.durable_objects.bindings]]
+name = "AZURE_PORT_WAKE"
+class_name = "AzurePortWake"
+
 [[env.staging.migrations]]
 tag = "v1"
 new_classes = ["PollenRateLimiter"]
@@ -396,8 +422,13 @@ new_classes = ["CommunityModelRateLimiter"]
 tag = "v4"
 deleted_classes = ["PollenRateLimiter"]
 
+[[env.staging.migrations]]
+tag = "v5"
+new_sqlite_classes = ["AzurePortWake"]
+
 [env.staging.vars]
 ENVIRONMENT = "staging"
+D1_CALL_TELEMETRY = "on"
 SITES_HOST_SUFFIX = "--staging.pollinations.app"
 SANDBOX_DOMAIN = "pollinations.app"
 GENERATION_EXECUTION_ORIGIN = "https://staging.gen.pollinations.ai"
@@ -407,6 +438,8 @@ TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=g
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
 BEDROCK_GUARDRAIL_VERSION = "2"
+BEDROCK_SENSITIVE_GUARDRAIL_ID = "w8m8kctnvi7b"
+BEDROCK_SENSITIVE_GUARDRAIL_VERSION = "1"
 # Azure sandboxes: as in production, with staging's own login and group.
 AZURE_SANDBOX_TENANT_ID = "f542dd61-ecf3-4524-8905-30f2e2a2e967"
 AZURE_SANDBOX_CLIENT_ID = "e1653f2d-5948-466a-bf34-1addc9f45b15"
@@ -496,6 +529,10 @@ class_name = "CommunityModelRateLimiter"
 name = "GENERATION_COORDINATOR"
 class_name = "GenerationCoordinator"
 
+[[env.test.durable_objects.bindings]]
+name = "AZURE_PORT_WAKE"
+class_name = "AzurePortWake"
+
 [[env.test.migrations]]
 tag = "v1"
 new_classes = ["PollenRateLimiter"]
@@ -511,6 +548,10 @@ new_classes = ["CommunityModelRateLimiter"]
 [[env.test.migrations]]
 tag = "v4"
 deleted_classes = ["PollenRateLimiter"]
+
+[[env.test.migrations]]
+tag = "v5"
+new_sqlite_classes = ["AzurePortWake"]
 
 [env.test.vars]
 ENVIRONMENT = "test"
@@ -555,6 +596,8 @@ XAI_API_KEY = "not-a-secret-workers-test-only"
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "test-guardrail"
 BEDROCK_GUARDRAIL_VERSION = "1"
+BEDROCK_SENSITIVE_GUARDRAIL_ID = "test-sensitive-guardrail"
+BEDROCK_SENSITIVE_GUARDRAIL_VERSION = "1"
 
 [[env.production.services]]
 binding = "NETWORK_MCP"

@@ -76,7 +76,9 @@ export function applyAgentMetadata(
     for (const entry of entries) {
         const baseModel = entry.agentConfig?.baseModel;
         if (baseModel) {
-            applyBaseModelMetadata(entry, byIdOrAlias.get(baseModel));
+            const baseEntry = byIdOrAlias.get(baseModel);
+            entry.baseModelMissing = !baseEntry;
+            applyBaseModelMetadata(entry, baseEntry);
         }
     }
 }

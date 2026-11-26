@@ -28,6 +28,7 @@ type PlaygroundModelOverride = {
     defaultRatio?: string;
     soundToggleDefault?: boolean;
     exclusiveReferences?: boolean;
+    autoDurationWithReferenceVideo?: boolean;
     maxDurationWithReference?: number;
 };
 

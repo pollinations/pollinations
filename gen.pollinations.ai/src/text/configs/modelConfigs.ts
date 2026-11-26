@@ -11,6 +11,7 @@ import {
     createBedrockResponsesConfig,
     createDeepInfraModelConfig,
     createFireworksModelConfig,
+    createInceptionModelConfig,
     createInferencePortModelConfig,
     createMistralModelConfig,
     createNovitaModelConfig,
@@ -262,6 +263,18 @@ export const portkeyConfig: PortkeyConfigMap = {
             provider: {
                 only: ["azure"],
                 ignore: ["cloudflare"],
+                allow_fallbacks: false,
+            },
+        },
+    }),
+    "heygen/heygen-decision-1": () => ({
+        provider: "openrouter",
+        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
+        model: "heygen/heygen-decision-1",
+        defaultOptions: {
+            provider: {
+                only: ["heygen"],
                 allow_fallbacks: false,
             },
         },
@@ -584,10 +597,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         "xiaomi/mimo-v2.5",
         "xiaomi/fp8",
     ),
-    "xiaomi/mimo-v2.5-pro": createPinnedOpenRouterConfig(
-        "xiaomi/mimo-v2.5-pro",
-        "xiaomi/fp8",
-    ),
     "minimax/minimax-m2.7": createPinnedOpenRouterConfig(
         "minimax/minimax-m2.7",
         "novita/fp8",
@@ -823,6 +832,13 @@ export const portkeyConfig: PortkeyConfigMap = {
                     only: ["atlas-cloud/fp8"],
                     allow_fallbacks: false,
                 },
+            },
+        }),
+    "thinkingmachines/inkling-2-mini": () =>
+        createOpenRouterModelConfig({
+            model: "thinkingmachines/inkling-2-mini",
+            defaultOptions: {
+                provider: { sort: "price" },
             },
         }),
     // OpenRouter serves Inkling Small only through DeepInfra (fp8).
@@ -1137,27 +1153,9 @@ export const portkeyConfig: PortkeyConfigMap = {
         "streamlake",
     ),
 
-    // -- OpenRouter (Inception Labs) -----------------------------------------
-    "mercury-2": () =>
-        createOpenRouterModelConfig({
-            model: "inception/mercury-2",
-            defaultOptions: {
-                provider: {
-                    only: ["Inception"],
-                    allow_fallbacks: false,
-                },
-            },
-        }),
-    "inception/mercury-2.5-preview": createPinnedOpenRouterConfig(
-        "inception/mercury-2.5-preview",
-        "Inception",
-        64000,
-    ),
-    "inception/mercury-3": createPinnedOpenRouterConfig(
-        "inception/mercury-3",
-        "Inception",
-        131072,
-    ),
+    // -- Inception Labs -----------------------------------------------------
+    "inception/mercury-2": () => createInceptionModelConfig("mercury-2"),
+    "inception/mercury-3": () => createInceptionModelConfig("mercury-3"),
 
     // -- Fireworks AI (DeepSeek) ---------------------------------------------
     "accounts/fireworks/models/deepseek-v4p1-flash": () =>

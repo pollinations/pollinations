@@ -344,10 +344,15 @@ test("early errors fail on any minute of 25+ failed requests in the window", () 
     );
     assert.deepEqual(earlyErrors(bursts).early, {
         kind: "EARLY_ERRORS",
+        severe: true,
         worst: 232,
+        worstOk: null,
+        worstSeconds: null,
         route: "/*",
         bursts: 2,
+        minutes: [":21", ":32"],
         failures: 318,
+        ok: 0,
         d1: 314,
         r2: 0,
         firstAt: Date.UTC(2026, 10, 8, 15, 21),
@@ -377,6 +382,50 @@ test("early errors open on their first check, ping, and close once clean", () =>
     const closed = renderCard("early", r.actions[0].incident);
     assert.ok(plain(closed.text).includes("232 reqs failed in 1 min"));
     assert.equal(closed.text.split("\n").at(-1), "### ⏱️ 12 min");
+});
+
+// 23 Nov 2026: a 6-second blip at 00:48, then at 13:02 the first of nine bad
+// minutes, each with the requests served in it.
+const sized = (time, failures, ok, error_seconds) => ({
+    ...minute(time, failures),
+    ok,
+    error_seconds,
+    window_ok: 18_000,
+});
+test("a lone small burst is orange and pings nobody; a large or sustained one is red and pings", () => {
+    const blip = step({}, earlyErrors([sized("00:48", 29, 592, 6)]), 1);
+    const card = renderCard("early", blip.state.open.early, { now: 1 });
+    assert.equal(card.ping, false);
+    assert.equal(card.color, 0xd85a30);
+    const text = plain(card.text);
+    assert.ok(text.includes("29 reqs failed in 1 min"));
+    assert.ok(text.includes("5% of requests, in 6 s"));
+    assert.ok(text.includes("1 min of 30, 29 failed (<1%)"));
+    assert.doesNotMatch(text, /AT /);
+
+    // One minute losing a fifth of its requests is severe at once.
+    const large = earlyErrors([sized("13:02", 145, 600, 9)]).early;
+    assert.equal(large.severe, true);
+    // So are three small ones in the window, shown with their rhythm.
+    const sustained = earlyErrors([
+        sized("13:02", 30, 600, 5),
+        sized("13:04", 30, 600, 5),
+        sized("13:06", 30, 600, 5),
+    ]).early;
+    assert.equal(sustained.severe, true);
+    const r = step({}, { early: sustained }, 1);
+    const red = renderCard("early", r.state.open.early, { now: 1 });
+    assert.ok(red.ping);
+    assert.equal(red.color, 0xe24b4a);
+    assert.ok(plain(red.text).includes(":02 :04 :06"));
+});
+
+test("a small burst that turns severe pings, and one that only doubles while small does not", () => {
+    const at = (worst, severe) =>
+        snapshot({ kind: "EARLY_ERRORS", info: { worst, severe } });
+    assert.equal(escalates(at(29, false), at(60, false)), false);
+    assert.equal(escalates(at(29, false), at(40, true)), true);
+    assert.match(noteworthy(at(29, false), at(40, true)), /sustained/);
 });
 
 test("a payments card lists at most three payments", () => {

@@ -17,6 +17,7 @@
  *   gen.pollinations.ai/v1/*          -> OpenAI-compatible generation
  */
 
+import { nameD1Caller, withD1Calls } from "@shared/d1-calls.ts";
 import { handleError } from "@shared/error.ts";
 import { requestId } from "@shared/middleware/request-id.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
@@ -36,7 +37,6 @@ import {
     generationHandoffRoutes,
 } from "@/utils/execute-generation.ts";
 import { refreshCommunityModelRegistryCache } from "./community-models.ts";
-import { nameD1Caller, withD1Calls } from "./d1-calls.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { stopExpiredAzureSandboxes } from "./routes/azure-sandboxes.ts";
 import {
@@ -62,6 +62,7 @@ import { stemSeparationRoutes } from "./routes/stem-separation.ts";
 import { wellKnownRoutes } from "./routes/well-known.ts";
 import { serveSite } from "./sites.ts";
 
+export { AzurePortWake } from "./durable-objects/AzurePortWake.ts";
 export { CommunityModelRateLimiter } from "./durable-objects/CommunityModelRateLimiter.ts";
 export { GenerationCoordinator } from "./durable-objects/GenerationCoordinator.ts";
 
@@ -175,7 +176,7 @@ function llmsTxt(c: Context<Env>): Response {
 
 ## Contribute
 
-- [Quest contributor agent skill](${origin}/.well-known/agent-skills/quest-contributor/SKILL.md): Find a POLLEN-QUEST issue, submit a PR, and claim the Quest reward.
+- [Quest contributor agent skill](${origin}/.well-known/agent-skills/quest-contributor/SKILL.md): Find a community quest, submit a PR, and claim what you earned in Quest balance.
 
 ## Account
 
@@ -362,6 +363,7 @@ app.onError(handleError);
 export default {
     fetch: (request: Request, env, ctx) =>
         withD1Calls(
+            "gen",
             env,
             ctx,
             () => ({ route_path: "", method: request.method }),
@@ -383,6 +385,7 @@ export default {
         ),
     scheduled: (controller, env, ctx) =>
         withD1Calls(
+            "gen",
             env,
             ctx,
             () => ({ route_path: controller.cron, method: "CRON" }),

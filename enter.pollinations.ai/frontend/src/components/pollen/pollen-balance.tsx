@@ -215,7 +215,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                     </InlineLink>{" "}
                                     or{" "}
                                     <InlineLink
-                                        href="mailto:hello@pollinations.ai"
+                                        href="mailto:billing@pollinations.ai"
                                         tone="quiet"
                                         showIcon={false}
                                     >
@@ -275,7 +275,7 @@ export const SidebarEarnings: FC<{ paidWeek: number; tierWeek: number }> = ({
 };
 
 /**
- * One balance on its drawer row: Credits' paid, Quests' Quest Pollen. Without
+ * One balance on its drawer row: Credits' paid, Quests' Quest balance. Without
  * a balance, Pollinations is down: a warning takes the amount's place and the
  * page's outage banner explains.
  */
@@ -309,7 +309,7 @@ export const SidebarBalance: FC<{
                 </span>
             </>
         )}
-        {/* Quest pollen that waits on verification. */}
+        {/* Quest balance that waits on verification. */}
         {restricted && (
             <LockIcon
                 aria-hidden={false}
@@ -397,7 +397,7 @@ export const Footnotes: FC<{ className?: string; children: ReactNode }> = ({
 );
 
 /**
- * Who to ask and the terms of buying, in Billing on the Pollen page. The
+ * Who to ask and the terms of buying, in Billing on the Credits page. The
  * standalone top-up page says it in its footer instead.
  */
 export const PaymentHelp: FC = () => (

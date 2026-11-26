@@ -61,6 +61,7 @@ export const modelStatusRoutes = new Hono<Env>().get(
     "/models/status",
     describeRoute({
         tags: ["🤖 Models"],
+        security: [],
         summary: "Model Health Status",
         description: [
             "Pollinations-specific diagnostics, not part of the OpenAI-compatible surface. Returns the response of the public Tinybird `model_route_health` pipe without private community models: a `data` array of rows plus a `meta` array typing each column.",
@@ -150,6 +151,7 @@ export const modelStatsRoutes = new Hono<Env>().get(
     "/models/stats",
     describeRoute({
         tags: ["🤖 Models"],
+        security: [],
         summary: "Model Usage Stats",
         description: [
             "Pollinations-specific usage statistics for the last 7 days, from the public Tinybird `public_model_stats` pipe: a `data` array with one row per model.",

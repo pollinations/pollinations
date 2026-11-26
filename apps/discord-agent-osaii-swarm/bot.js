@@ -93,6 +93,13 @@ export function answerEmbeds(
     return embeds;
 }
 
+export function footerUserId(footer) {
+    const segment = String(footer || "")
+        .split(" · ")
+        .find((part) => part.startsWith("user="));
+    return segment ? segment.slice("user=".length) : null;
+}
+
 export function messagesFromDiscordHistory(
     messages,
     botUserId,
@@ -110,7 +117,7 @@ export function messagesFromDiscordHistory(
         if (
             !footer.startsWith(CONTEXT_MARKER) ||
             footer.includes(":continuation") ||
-            !footer.includes(`user=${discordUserId}`)
+            footerUserId(footer) !== String(discordUserId)
         )
             continue;
         const question = embed.fields?.find(
@@ -273,7 +280,7 @@ export function createInteractionHandler({
                 }
                 if (isBudgetError(error)) {
                     await interaction.editReply(
-                        "Not enough Pollen for this request. Add Pollen at https://enter.pollinations.ai/quests or https://enter.pollinations.ai/account",
+                        "This request exceeds your balance or your key’s spending limit. [View your balance](https://enter.pollinations.ai/pollen).",
                     );
                     return;
                 }

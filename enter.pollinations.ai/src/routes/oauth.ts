@@ -28,6 +28,7 @@ export const DEVICE_CODE_GRANT = "urn:ietf:params:oauth:grant-type:device_code";
 
 type StoredCode = {
     key: string;
+    /** "" for a keyless client, shown by its redirect hostname. */
     clientId: string;
     redirectUri: string;
     scope: string | null;
@@ -64,7 +65,12 @@ function tokenError(c: Context<Env>, error: string, description?: string) {
 
 const CreateCodeSchema = z.object({
     apiKey: z.string().min(1),
-    clientId: z.string().regex(/^(pk_|https:\/\/)/),
+    // Optional, as in the fragment flow: without one the consent page names
+    // the app by its redirect hostname and PKCE still binds the code.
+    clientId: z
+        .string()
+        .regex(/^(pk_|https:\/\/)/)
+        .optional(),
     redirectUri: z.string().min(1),
     scope: z.string().optional(),
     codeChallenge: z.string().regex(PKCE_S256_CHALLENGE_REGEX),
@@ -98,39 +104,47 @@ export const oauthRoutes = new Hono<Env>()
             // redirect (RFC 6749 §3.1.2). verifyApiKey returns the key row
             // with metadata already parsed. A metadata-document client has
             // no pk_ to check at minting, so this is its only binding check;
-            // its allowlist is the document's redirect_uris.
-            let allowlist: string[] | undefined;
-            if (isClientMetadataUrl(body.clientId)) {
-                allowlist = (await fetchClientMetadata(body.clientId))
-                    ?.redirectUris;
-            } else {
-                const result = await c.var.auth.client.api.verifyApiKey({
-                    body: { key: body.clientId },
-                });
-                if (result.valid && result.key) {
-                    allowlist = getRedirectUris(result.key.metadata ?? {});
+            // its allowlist is the document's redirect_uris. A keyless
+            // client registers nothing: as in the fragment flow, the user
+            // approved the redirect hostname shown on the consent page.
+            if (body.clientId) {
+                let allowlist: string[] | undefined;
+                if (isClientMetadataUrl(body.clientId)) {
+                    allowlist = (await fetchClientMetadata(body.clientId))
+                        ?.redirectUris;
+                } else {
+                    const result = await c.var.auth.client.api.verifyApiKey({
+                        body: { key: body.clientId },
+                    });
+                    if (result.valid && result.key) {
+                        allowlist = getRedirectUris(result.key.metadata ?? {});
+                    }
                 }
-            }
-            if (!allowlist) {
-                throw new HTTPException(400, {
-                    message: "Unknown client_id",
-                });
-            }
-            // Exact matching (incl. query) — the code rides the query string,
-            // so the legacy flow's extra-query leniency doesn't apply here.
-            if (
-                !redirectUriMatchesAllowlistExact(body.redirectUri, allowlist)
-            ) {
-                throw new HTTPException(400, {
-                    message:
-                        "redirect_uri is not registered for this client_id",
-                });
+                if (!allowlist) {
+                    throw new HTTPException(400, {
+                        message: "Unknown client_id",
+                    });
+                }
+                // Exact matching (incl. query) — the code rides the query
+                // string, so the legacy flow's extra-query leniency doesn't
+                // apply here.
+                if (
+                    !redirectUriMatchesAllowlistExact(
+                        body.redirectUri,
+                        allowlist,
+                    )
+                ) {
+                    throw new HTTPException(400, {
+                        message:
+                            "redirect_uri is not registered for this client_id",
+                    });
+                }
             }
 
             const code = generateCode(CODE_LENGTH);
             const stored: StoredCode = {
                 key: body.apiKey,
-                clientId: body.clientId,
+                clientId: body.clientId ?? "",
                 redirectUri: body.redirectUri,
                 // "" is meaningful: the user narrowed a requested scope to
                 // zero, and RFC 6749 §5.1 requires the token response to say so
@@ -169,16 +183,12 @@ export const oauthRoutes = new Hono<Env>()
         // authorization request always carries one. OAuth 2.1 drafts allow
         // omitting it (PKCE binds the transaction); we deliberately keep the
         // stricter rule for maximum client-library compatibility.
-        if (
-            !body.code ||
-            !body.client_id ||
-            !body.code_verifier ||
-            !body.redirect_uri
-        ) {
+        // client_id is empty or absent only for a keyless client's code.
+        if (!body.code || !body.code_verifier || !body.redirect_uri) {
             return tokenError(
                 c,
                 "invalid_request",
-                "code, client_id, redirect_uri, and code_verifier are required.",
+                "code, redirect_uri, and code_verifier are required.",
             );
         }
 
@@ -195,7 +205,7 @@ export const oauthRoutes = new Hono<Env>()
         // failed attempt can't be retried against the same code.
         await c.env.KV.delete(kvKey);
 
-        if (body.client_id !== stored.clientId) {
+        if ((body.client_id ?? "") !== stored.clientId) {
             // Public clients never authenticate here (token auth "none"), so
             // a code issued to another client is a grant error, not a
             // client-authentication failure (RFC 6749 §5.2).

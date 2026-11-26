@@ -33,10 +33,10 @@ Think: the tone of a well-written README, a CCC talk abstract, or a Phrack artic
 ## Quests
 
 Complete Quests to add to your balance: onboarding, using models, growing an app, or GitHub contributions.
-- complete a Quest, claim the reward, it lands in your Quest balance
-- Contribute quests may receive multiple PRs; the author of the selected merged PR claims the fixed reward
-- A quest that asks for an app is completed by submitting the app with the quest number; the submitter claims the reward once the app is approved
-- in alpha; rewards and availability may change
+- complete a Quest, claim what you earned, it lands in your Quest balance
+- Contribute quests may receive multiple PRs; the author of the selected merged PR claims the fixed amount
+- A quest that asks for an app is completed by submitting the app with the quest number; the submitter claims it after the catalog PR merges
+- in alpha; amounts and availability may change
 
 ## Public Content
 

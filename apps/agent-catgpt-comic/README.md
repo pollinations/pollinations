@@ -1,10 +1,11 @@
-# CatGPT Comic
+# CatGPT
 
 CatGPT answers any question with a short, sarcastic feline reply drawn into a single-panel comic. The comic comes back inline through the platform's Markdown image rendering, so any Markdown-capable chat client shows the comic with the reply.
 
 `agent.json` is a **prompt agent** — no code, no scaffolding, no new frontend or backend.
 
-- **Live agent:** `community/Creatneworld/catgpt-comic` (agent ID `c35c537b-5bda-4919-bc30-b8b710674ad5`)
+- **Live agent:** `community/pollinations-ai/catgpt`, the official listing
+- **Original agent:** `community/Creatneworld/catgpt-comic` (agent ID `c35c537b-5bda-4919-bc30-b8b710674ad5`), which this config started from
 - **Public repository:** [Creatneworld/catgpt-comic-agent](https://github.com/Creatneworld/catgpt-comic-agent) — `agent.json` plus three captured transcripts with the rendered comics
 
 ## What it reuses
@@ -24,9 +25,9 @@ The original artwork remains at its old monorepo path because the already-regist
 
 | Field | Value | Why |
 | --- | --- | --- |
-| `baseModel` | `anthropic/claude-haiku-4.5` | The model the CatGPT site already uses for cat replies (`claude-fast` is its alias); supports tool calling. |
+| `baseModel` | `openai/gpt-6.2-sol` | Served from Azure; paid only, like the comic model, so the catalog shows the agent as paid; supports tool calling. |
 | `mcpServers` | `["pollinations"]` | Enables the built-in `generateImage` tool. |
-| image model | `google/gemini-3.1-flash-lite-image` | Accepts a reference image, so the original CatGPT artwork drives the style. |
+| image model | `google/gemini-3.1-flash-lite-image` | Nano Banana 2 Lite, the model the CatGPT site uses. It keeps the artist's style closest; it is paid only, so comics need paid balance. |
 
 The system prompt tells the agent to write only its short spoken line, then call `generateImage` once with the filled-in comic prompt (1024×1024). The platform attaches the tool result to the reply, so nothing else is needed to return the comic inline.
 
@@ -35,8 +36,8 @@ The system prompt tells the agent to write only its short spoken line, then call
 ```bash
 npx @pollinations/cli agents create \
   --config agent.json \
-  --name catgpt-comic \
-  --title "CatGPT Comic"
+  --name catgpt \
+  --title "CatGPT"
 ```
 
 The dashboard route is **My listings → Create → paste `agent.json`**.
@@ -48,16 +49,16 @@ curl https://gen.pollinations.ai/v1/chat/completions \
   -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "community/Creatneworld/catgpt-comic",
+    "model": "community/pollinations-ai/catgpt",
     "messages": [{ "role": "user", "content": "Why do boxes call to me?" }]
   }'
 ```
 
-One request takes roughly 30–40 seconds because the comic is generated inside the same call.
+One request takes roughly 10–20 seconds because the comic is generated inside the same call.
 
 ## Verified examples
 
-Three live responses captured from the registered agent, with the rendered comics and raw transcripts, in [Creatneworld/catgpt-comic-agent/examples](https://github.com/Creatneworld/catgpt-comic-agent/tree/main/examples):
+Three live responses captured from the original community agent, with the rendered comics and raw transcripts, in [Creatneworld/catgpt-comic-agent/examples](https://github.com/Creatneworld/catgpt-comic-agent/tree/main/examples):
 
 | Question | CatGPT says | Comic |
 | --- | --- | --- |

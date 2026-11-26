@@ -1,5 +1,8 @@
 import { getLogger } from "@logtape/logtape";
-import { requireAccountPermission } from "@shared/auth/account-permissions.ts";
+import {
+    hasAccountPermission,
+    requireAccountPermission,
+} from "@shared/auth/account-permissions.ts";
 import {
     BannedAccountError,
     extractApiKey,
@@ -31,7 +34,7 @@ import {
     priceToEventParams,
     usageToEventParams,
 } from "@shared/schemas/generation-event.ts";
-import { and, eq, inArray, lte } from "drizzle-orm";
+import { and, eq, gt, inArray, lte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { type Context, Hono, type MiddlewareHandler, type Next } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -50,16 +53,21 @@ import {
     azureConfigured,
     azureDomain,
     azureE2b,
+    azureIngressToken,
     azureLeaseEnd,
     ENVD_PORT,
     isAzurePath,
     isAzureSandbox,
     OWNER_KEY,
+    protectAzurePort,
     proxyEnvd,
     rawSandboxId,
+    removeAzurePort,
+    SSH_PORT,
     sandboxHost,
 } from "./azure-sandboxes.ts";
 import { sandboxDocs } from "./e2b-docs.ts";
+import { receiveDiscordInteraction } from "./sandbox-discord.ts";
 
 // E2B's control API, forwarded under Pollinations keys. The SDKs talk to the
 // sandboxes themselves (commands, files, ports) directly at E2B with the
@@ -104,6 +112,7 @@ type SandboxDetail = {
     cpuCount: number;
     memoryMB: number;
     state: "running" | "paused";
+    idleTimeout?: number;
     metadata?: Record<string, string>;
 };
 
@@ -235,22 +244,28 @@ async function ownedSandbox(c: E2bContext): Promise<SandboxDetail> {
 // As on an E2B team with a longer limit, a kept sandbox's `endAt` says when
 // its timeout ends, not when the 10 minutes paid so far do.
 async function showKeeps(env: CloudflareBindings, sandboxes: SandboxDetail[]) {
-    const running = sandboxes.filter((sandbox) => sandbox.state === "running");
-    const keeps = running.length
+    const keeps = sandboxes.length
         ? await drizzle(env.DB)
               .select()
               .from(sandboxKeep)
               .where(
                   inArray(
                       sandboxKeep.sandboxId,
-                      running.map((sandbox) => sandbox.sandboxID),
+                      sandboxes.map((sandbox) => sandbox.sandboxID),
                   ),
               )
         : [];
-    const until = new Map(keeps.map((keep) => [keep.sandboxId, keep.until]));
+    const byId = new Map(keeps.map((keep) => [keep.sandboxId, keep]));
     return sandboxes.map((sandbox) => {
-        const end = sandbox.state === "running" && until.get(sandbox.sandboxID);
-        return end ? { ...sandbox, endAt: end.toISOString() } : sandbox;
+        const keep = byId.get(sandbox.sandboxID);
+        if (!keep) return sandbox;
+        return {
+            ...sandbox,
+            ...(sandbox.state === "running" && {
+                endAt: keep.until.toISOString(),
+            }),
+            ...(keep.idleTimeout && { idleTimeout: keep.idleTimeout }),
+        };
     });
 }
 
@@ -367,6 +382,7 @@ async function extendLease(
     c: E2bContext,
     sandbox: SandboxDetail,
     timeout: unknown,
+    idleTimeout?: number | null,
 ) {
     const startTime = new Date();
     if (typeof timeout !== "number" || !(timeout >= 0)) {
@@ -387,10 +403,27 @@ async function extendLease(
         : Math.min(until, runEnd(sandbox, now));
     const bill = lease(sandbox, Math.max(0, endAt - paidUntil) / 1000);
     if (bill.price > 0) await requireAccountFunds(c, bill.price);
+    const azure = isAzureSandbox(sandbox.sandboxID);
+    if (azure && sandbox.state === "paused" && idleTimeout === undefined) {
+        const keep = await drizzle(c.env.DB)
+            .select({ idleTimeout: sandboxKeep.idleTimeout })
+            .from(sandboxKeep)
+            .where(
+                and(
+                    eq(sandboxKeep.sandboxId, sandbox.sandboxID),
+                    gt(sandboxKeep.until, new Date(now)),
+                ),
+            )
+            .get();
+        idleTimeout = keep?.idleTimeout ?? null;
+    }
     const response = await e2b(c.env, c.req.path.slice(E2B_PATH.length), {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ timeout }),
+        body: JSON.stringify({
+            timeout,
+            ...(azure && { idleTimeout }),
+        }),
     });
     if (response.ok && bill.price > 0) await charge(c, bill, startTime);
     return relay(response);
@@ -413,24 +446,21 @@ function keepUntil(timeout: unknown): Date | null {
         : null;
 }
 
-// Opt-in, for a kept E2B sandbox: the cron pauses it after `idleTimeout`
+// Opt-in for a kept sandbox: Azure suspends itself, and cron pauses E2B
+// after `idleTimeout`
 // seconds without activity and leaves the keep, so the next request to a
 // shared port or connect resumes it. Without it, a keep runs until its
 // timeout. It comes with the timeout that sets a keep; left out, a call keeps
 // the keep's setting, as E2B's SDKs know nothing of it (undefined), and 0
 // turns it off (null).
-function idleTimeoutOf(
-    idleTimeout: unknown,
-    until: Date | null,
-    azure: boolean,
-) {
+function idleTimeoutOf(idleTimeout: unknown, until: Date | null) {
     if (idleTimeout === undefined) return undefined;
+    if (idleTimeout === 0) return null;
     if (!until) {
         throw new HTTPException(400, {
             message: `idleTimeout needs a timeout longer than ${KEEP_LEASE_SECONDS} seconds`,
         });
     }
-    if (idleTimeout === 0) return null;
     if (
         typeof idleTimeout !== "number" ||
         !Number.isInteger(idleTimeout) ||
@@ -439,11 +469,6 @@ function idleTimeoutOf(
     ) {
         throw new HTTPException(400, {
             message: `idleTimeout must be 0 or a whole number of seconds, at least ${CRON_SECONDS}`,
-        });
-    }
-    if (azure) {
-        throw new HTTPException(400, {
-            message: "Azure sandboxes have no idleTimeout.",
         });
     }
     return idleTimeout;
@@ -629,7 +654,7 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
             const template = sandboxTemplate(body.templateID);
             const azure = template?.provider === "azure";
             const until = keepUntil(body.timeout);
-            const idle = idleTimeoutOf(idleTimeout, until, azure);
+            const idle = idleTimeoutOf(idleTimeout, until);
             // An empty wallet cannot pay for any lease.
             await requireAccountFunds(c, 0);
             await requireCapacity(c);
@@ -643,6 +668,7 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
                     headers: { "content-type": "application/json" },
                     body: JSON.stringify({
                         ...body,
+                        ...(azure && { idleTimeout: idle }),
                         // A lease that runs out pauses the sandbox, as polli and
                         // the dashboard ask; E2B's SDKs omit this unless told
                         // `lifecycle.onTimeout`, and E2B then kills it.
@@ -758,15 +784,12 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
                 idleTimeout: number;
             }>(c);
             const until = keepUntil(timeout);
-            const idle = idleTimeoutOf(
-                idleTimeout,
-                until,
-                isAzureSandbox(sandbox.sandboxID),
-            );
+            const idle = idleTimeoutOf(idleTimeout, until);
             const response = await extendLease(
                 c,
                 sandbox,
                 until ? keepLease(sandbox) : timeout,
+                !keeper && !until && idle === undefined ? null : idle,
             );
             if (response.ok && !keeper) {
                 await setKeep(c, sandbox.sandboxID, until, idle);
@@ -780,30 +803,32 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
             ["/sandboxes/:id/connect", "/v2/sandboxes/:id/connect"],
             async (c) => {
                 const sandbox = await ownedSandbox(c);
-                if (sandbox.state === "paused") await requireCapacity(c);
+                const paused = sandbox.state === "paused";
+                if (paused) await requireCapacity(c);
                 const { timeout, idleTimeout } = await readJson<{
                     timeout: number;
                     idleTimeout: number;
                 }>(c);
                 const until = keepUntil(timeout);
-                const idle = idleTimeoutOf(
-                    idleTimeout,
-                    until,
-                    isAzureSandbox(sandbox.sandboxID),
-                );
+                const idle = idleTimeoutOf(idleTimeout, until);
                 const response = await extendLease(
                     c,
                     sandbox,
                     until
                         ? keepLease(sandbox)
                         : (timeout ?? DEFAULT_TIMEOUT_SECONDS),
+                    idle,
                 );
-                // Connect never shortens a lease, so it never ends a keep. Any
-                // other connect by the owner (polli ssh renews this way) is
-                // activity; the cron's and a wake's are not.
+                // A running connect never ends a keep. A paused sandbox
+                // explicitly resuming as Fixed starts a new, finite lease.
                 if (!response.ok) return response;
-                if (until) {
+                if (until || (paused && idle === null)) {
                     await setKeep(c, sandbox.sandboxID, until, idle);
+                } else if (idle === null) {
+                    await drizzle(c.env.DB)
+                        .update(sandboxKeep)
+                        .set({ idleTimeout: null })
+                        .where(eq(sandboxKeep.sandboxId, sandbox.sandboxID));
                 } else if (!keeper) {
                     noteRequestActivity(
                         c.env,
@@ -830,22 +855,40 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
                 });
             }
             const { sandboxID } = await ownedSandbox(c);
-            if (isAzureSandbox(sandboxID)) {
+            const port = sharedPort(c.req.param("port"));
+            const azure = isAzureSandbox(sandboxID);
+            if (azure && port === SSH_PORT) {
                 throw new HTTPException(400, {
-                    message: "Only E2B sandboxes can share a port.",
+                    message: `Azure's SSH port ${SSH_PORT} can't be shared.`,
                 });
             }
-            const port = sharedPort(c.req.param("port"));
             if (port === ENVD_PORT) {
                 throw new HTTPException(400, {
                     message: `envd's port ${ENVD_PORT} checks its own token and can't be shared.`,
                 });
             }
-            const { secret, header = PORT_SECRET_HEADER } = await readJson<{
+            const {
+                secret,
+                header = PORT_SECRET_HEADER,
+                discordPublicKey,
+            } = await readJson<{
                 secret: string;
                 header: string;
+                discordPublicKey: string;
             }>(c);
-            if (
+            if (discordPublicKey !== undefined) {
+                if (
+                    !azure ||
+                    typeof discordPublicKey !== "string" ||
+                    !/^[a-f0-9]{64}$/i.test(discordPublicKey) ||
+                    secret !== undefined
+                ) {
+                    throw new HTTPException(400, {
+                        message:
+                            "Discord webhooks need an Azure sandbox and the Discord application's 64-character public key.",
+                    });
+                }
+            } else if (
                 typeof secret !== "string" ||
                 !/^[\x21-\x7e]{16,256}$/.test(secret) ||
                 typeof header !== "string" ||
@@ -857,9 +900,14 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
             }
             const share = {
                 apiKeyId: c.var.auth.apiKey?.id ?? null,
-                header: header.toLowerCase(),
-                secretHash: await sha256(secret),
+                header:
+                    typeof header === "string"
+                        ? header.toLowerCase()
+                        : PORT_SECRET_HEADER,
+                secretHash: secret === undefined ? "" : await sha256(secret),
+                discordPublicKey: discordPublicKey?.toLowerCase() ?? null,
             };
+            if (azure) await protectAzurePort(c.env, sandboxID, port);
             wokenPorts.delete(`${port}-${sandboxID}`);
             await drizzle(c.env.DB)
                 .insert(sandboxPort)
@@ -878,6 +926,12 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
             async (c) => {
                 const { sandboxID } = await ownedSandbox(c);
                 const port = sharedPort(c.req.param("port"));
+                if (
+                    isAzureSandbox(sandboxID) &&
+                    (await findSharedPort(c.env, sandboxID, port))
+                ) {
+                    await removeAzurePort(c.env, sandboxID, port);
+                }
                 await unsharePort(c.env, sandboxID, port);
                 return c.body(null, 204);
             },
@@ -969,7 +1023,7 @@ async function loadPayer(
 // charged like the payer's own.
 function payerApi(
     env: CloudflareBindings,
-    ctx: ExecutionContext,
+    ctx: Pick<ExecutionContext, "waitUntil">,
     payer: GenerationAuthSnapshot,
 ) {
     const api = new Hono<Env>()
@@ -987,7 +1041,11 @@ function payerApi(
                 },
             ),
             env,
-            ctx,
+            {
+                waitUntil: (promise) => ctx.waitUntil(promise),
+                passThroughOnException() {},
+                props: {},
+            },
         );
 }
 
@@ -1004,7 +1062,7 @@ const sha256 = async (text: string) =>
         await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)),
     );
 
-type SharedPort = typeof sandboxPort.$inferSelect;
+export type SharedPort = typeof sandboxPort.$inferSelect;
 
 type WokenPort = { origin: string; token?: string; until: number };
 
@@ -1015,6 +1073,23 @@ type WokenPort = { origin: string; token?: string; until: number };
 // connection sends none). Move it to a Durable Object per sandbox if that
 // matters.
 const wokenPorts = new Map<string, WokenPort>();
+
+export function findSharedPort(
+    env: CloudflareBindings,
+    sandboxID: string,
+    port: number,
+) {
+    return drizzle(env.DB)
+        .select()
+        .from(sandboxPort)
+        .where(
+            and(
+                eq(sandboxPort.sandboxId, sandboxID),
+                eq(sandboxPort.port, port),
+            ),
+        )
+        .get();
+}
 
 async function unsharePort(
     env: CloudflareBindings,
@@ -1083,23 +1158,36 @@ export function sandboxPortHost(env: Env["Bindings"], hostname: string) {
 
 // Wakes a shared port's sandbox with a connect as the port's payer, so the
 // lease is paid in advance and capped like the payer's own connect.
-async function wakePort(
+export async function wakePort(
     env: CloudflareBindings,
-    ctx: ExecutionContext,
+    ctx: Pick<ExecutionContext, "waitUntil">,
     { sandboxId: sandboxID, port, apiKeyId }: SharedPort,
+    coordinateWake?: () => PromiseLike<WokenPort | Response>,
 ): Promise<WokenPort | Response> {
     // A port of a sandbox that is gone, or whose payer is, stops being shared.
     const sandbox = await getSandbox(env, sandboxID);
+    const now = Date.now();
+    const paidUntil =
+        sandbox?.state === "running" ? Date.parse(sandbox.endAt) : 0;
+    const origin = providerOrigin(env, sandboxID, port);
+    const azure = isAzureSandbox(sandboxID);
     const payer = sandbox
         ? await loadPayer(env, apiKeyId, sandbox.metadata?.[OWNER_KEY])
         : null;
-    if (!sandbox || !payer) {
+    if (
+        !sandbox ||
+        !payer ||
+        (azure && !hasAccountPermission(payer.apiKey, "machines"))
+    ) {
         await unsharePort(env, sandboxID, port);
         return notShared();
     }
-    const now = Date.now();
-    const paidUntil =
-        sandbox.state === "running" ? Date.parse(sandbox.endAt) : 0;
+    if (azure && paidUntil - now >= WAKE_MARGIN_MS) {
+        return { origin, until: paidUntil };
+    }
+    // Only the operation that can renew or resume a lease needs coordination.
+    // The Durable Object rechecks state and payer under its wake lock.
+    if (coordinateWake) return coordinateWake();
     // Connect cannot shorten a running lease. Its minimum timeout gets a
     // traffic token without buying more time, with the renewal margin left
     // for the provider calls rather than copying a stale remaining duration.
@@ -1128,12 +1216,14 @@ async function wakePort(
     }
     const connected = await response.json<CreatedSandbox>();
     const woken = {
-        origin: providerOrigin(env, sandboxID, port),
+        origin,
         token: connected.trafficAccessToken ?? undefined,
         // Connect never shortens a running sandbox's lease.
         until: Math.max(now + timeout * 1000, resumed ? 0 : paidUntil),
     };
-    wokenPorts.set(`${port}-${sandboxID}`, woken);
+    if (!azure) {
+        wokenPorts.set(`${port}-${sandboxID}`, woken);
+    }
     return woken;
 }
 
@@ -1233,20 +1323,22 @@ async function forwardPort(
         }
         return response;
     }
-    const shared = await drizzle(env.DB)
-        .select()
-        .from(sandboxPort)
-        .where(
-            and(
-                eq(sandboxPort.sandboxId, sandboxID),
-                eq(sandboxPort.port, port),
-            ),
-        )
-        .get();
+    const shared = await findSharedPort(env, sandboxID, port);
     if (!shared) {
         return (await madeByGen(env, sandboxID))
             ? send(request, providerOrigin(env, sandboxID, port))
             : notGens();
+    }
+    if (shared.discordPublicKey) {
+        return receiveDiscordInteraction(
+            request,
+            shared.discordPublicKey,
+            (job) =>
+                env.AZURE_PORT_WAKE.getByName(sandboxID).enqueueDiscord(
+                    shared,
+                    job,
+                ),
+        );
     }
     const secret = await sha256(request.headers.get(shared.header) ?? "");
     if (secret !== shared.secretHash) {
@@ -1254,6 +1346,16 @@ async function forwardPort(
             403,
             `This port needs the secret it was shared with in ${shared.header}.`,
         );
+    }
+    if (isAzureSandbox(sandboxID)) {
+        // Native Azure suspension can happen before a paid lease ends.
+        // Resolve the provider state before sending the first request.
+        const woken =
+            await env.AZURE_PORT_WAKE.getByName(sandboxID).wake(shared);
+        if (woken instanceof Response) return woken;
+        const headers = new Headers(request.headers);
+        headers.set("authorization", `Bearer ${await azureIngressToken(env)}`);
+        return send(new Request(request, { headers }), woken.origin);
     }
     const key = `${port}-${sandboxID}`;
     const wake = () => wakePort(env, ctx, shared);
@@ -1386,12 +1488,16 @@ export async function keepSandboxes(
         const sandbox = await getSandbox(env, sandboxID);
         if (!sandbox) return end(sandboxID, "it is gone");
         const paused = sandbox.state === "paused";
+        const nativeIdle = isAzureSandbox(sandboxID) && idleTimeout !== null;
+        if (paused && nativeIdle) return;
         const measured =
             !paused &&
+            !nativeIdle &&
             idleTimeout !== null &&
             (await noteBusyCpu(env, sandboxID));
         const quiet =
             idleTimeout !== null &&
+            !nativeIdle &&
             (await lastActive(env, sandbox)) <= now - idleTimeout * 1000;
         // Paused while quiet, it waits for a request to a shared port or a
         // connect to wake it. Paused otherwise (a failed restart, a missed

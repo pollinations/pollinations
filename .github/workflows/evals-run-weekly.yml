@@ -4,8 +4,8 @@ name: Evals / Run weekly model evals
 # operations/monitoring/model-evals and publishes the results to the `evals` data branch,
 # which Community → Trust on model-monitor.pollinations.ai reads. Needs
 # PLN_GITHUB_EVALS_KEY in the encrypted evals secrets file: a pollinationsagent
-# key with no model limit, on an account with ~20 Pollen, some of it paid
-# Pollen for the paid-only models.
+# key with no model limit, on an account with around $20 in balance,
+# including paid balance for models that require it.
 
 on:
   schedule:
@@ -27,7 +27,7 @@ on:
         type: string
         default: '10'
       budget:
-        description: 'Stop asking questions after this many Pollen'
+        description: 'Budget in USD'
         required: false
         type: string
         default: '12'

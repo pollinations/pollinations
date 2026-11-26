@@ -89,9 +89,9 @@ function entry(
 
 // Not E2B's: the opt-in idle pause of a keep.
 const IDLE =
-    "With such a timeout, `idleTimeout` (seconds, at least 300) pauses an E2B sandbox after that long without activity instead, checked every 5 minutes, and keeps it for the next connect or request to a shared port to resume. Activity is a request to a shared port, a connect, an API request with the sandbox's own key, a successful authenticated SDK operation, or CPU use of 5% or more. Health probes and failed SDK operations do not count as activity. Left out, the current setting stays; 0 turns it off.";
+    "With such a timeout, `idleTimeout` (seconds, at least 300) pauses a sandbox after that long without activity and keeps it for the next connect or request to a shared port to resume. Azure uses its native idle policy. For E2B, activity is checked every 5 minutes and includes a request to a shared port, a connect, an API request with the sandbox's own key, a successful authenticated SDK operation, or CPU use of 5% or more. Health probes and failed SDK operations do not count as activity. Left out, the current setting stays; 0 turns it off.";
 const CREATE = `Pollinations turns auto-pause on by default, enforces secured access and prepays the first lease from your credits. A timeout over 600 seconds keeps the sandbox running until then, prepaid 10 minutes at a time. ${IDLE} Enabled \`autoResume\`, an \`iam\` configuration or non-empty \`volumeMounts\` return 400. Pollinations templates come logged in to polli with a key of their own; when your key has a budget, that key starts with a $0 budget and the response's \`notice\` links the page to give it a budget.`;
-const CONNECT = `Resumes a paused sandbox. Only \`timeout\` and \`idleTimeout\` are used, \`timeout\` 300 seconds if omitted. You prepay only the time beyond the current lease, and a timeout over 600 seconds keeps the sandbox running until then. ${IDLE}`;
+const CONNECT = `Resumes a paused sandbox. Only \`timeout\` and \`idleTimeout\` are used, \`timeout\` 300 seconds if omitted. You prepay only the time beyond the current lease, and a timeout over 600 seconds keeps the sandbox running until then. ${IDLE} With a timeout of 600 seconds or less, \`idleTimeout: 0\` ends scheduled renewals when resuming a paused sandbox. On a running sandbox it only turns off idle suspension.`;
 
 const port = {
     name: "port",
@@ -192,7 +192,7 @@ export const sandboxDocs = {
         tags: ["Sandboxes API"],
         summary: "Share sandbox port",
         description:
-            "Not part of E2B's API. Makes the port at `https://{port}-{id}.pollinations.app`, returned as `url`, take only requests that carry `secret` (16 to 256 visible ASCII characters) in the `header` you name, `X-Pollinations-Secret` if you don't; others get 403. Sharing again replaces the secret. A request there resumes a paused sandbox first and extends a lease that ends within a minute, both prepaid like a connect by the key that shared the port. For a Telegram webhook, pass the webhook's `secret_token` with `X-Telegram-Bot-Api-Secret-Token`. E2B sandboxes only; envd's port 49983 can't be shared.",
+            "Not part of E2B's API. Makes the port at `https://{port}-{id}.pollinations.app`, returned as `url`, take only requests that carry `secret` (16 to 256 visible ASCII characters) in the `header` you name, `X-Pollinations-Secret` if you don't; others get 403. Sharing again replaces the secret. A request there resumes a paused sandbox first and extends a lease that ends within a minute, both prepaid like a connect by the key that shared the port. For a Telegram webhook, pass the webhook's `secret_token` with `X-Telegram-Bot-Api-Secret-Token`. Port 49983 and Azure SSH port 8022 cannot be shared. Azure reserves the Authorization header for ingress authentication. On Azure, pass `discordPublicKey` instead of a secret to accept signed Discord interactions. Verification pings are answered without a wake. Slash commands are acknowledged immediately and the original JSON is delivered by POST to the root of your sandbox port after the normal paid wake. The sandbox edits the deferred Discord response.",
         security: [{ bearerAuth: [] }],
         parameters: [id, port],
         requestBody: {
@@ -211,13 +211,17 @@ export const sandboxDocs = {
             200: { description: "`url`: where the port is served." },
             400: {
                 description:
-                    "Invalid port, secret or header, port 49983, or an Azure sandbox.",
+                    "Invalid port, secret or header, port 49983, or Azure SSH port 8022.",
             },
             401: { description: "Missing or invalid Pollinations API key." },
             403: {
                 description: "The key lacks the `account:machines` permission.",
             },
             404: { description: "No sandbox with this ID in your account." },
+            409: {
+                description:
+                    "The Azure sandbox is paused or the port is already configured separately.",
+            },
         },
     }),
     unsharePort: describeRoute({

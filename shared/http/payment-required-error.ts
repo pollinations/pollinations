@@ -10,7 +10,7 @@ export class PaymentRequiredError extends HTTPException {
         message: string,
         /** The page where the key's owner fixes this. */
         readonly fixUrl: string,
-        /** Only paid Pollen can cover this model, so quests are no remedy. */
+        /** Only paid balance can cover this model, so quests are no remedy. */
         readonly paidOnly = false,
     ) {
         super(402, { message });

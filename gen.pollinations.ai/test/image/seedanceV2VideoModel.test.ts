@@ -143,6 +143,7 @@ describe("Seedance 2.0 family via Replicate", () => {
                         id: "pred",
                         status: "succeeded",
                         output: VIDEO_URL,
+                        metrics: { video_output_duration_seconds: 6 },
                     }),
                     { status: 201 },
                 );
@@ -161,10 +162,16 @@ describe("Seedance 2.0 family via Replicate", () => {
             ...baseParams,
             model: "bytedance/seedance-2.0",
             image: [],
+            aspectRatio: undefined,
+            duration: undefined,
             ...REFERENCE_MEDIA,
         });
 
-        expect(inputs[0]).toMatchObject(REFERENCE_MEDIA);
+        expect(inputs[0]).toMatchObject({
+            ...REFERENCE_MEDIA,
+            aspect_ratio: "adaptive",
+            duration: -1,
+        });
     });
 
     it("takes the aspect ratio from an explicit width and height", async () => {
@@ -192,6 +199,7 @@ describe("Seedance 2.0 family via Replicate", () => {
                     id: "pred",
                     status: "succeeded",
                     output: VIDEO_URL,
+                    metrics: { video_output_duration_seconds: 4 },
                 }),
                 { status: 201 },
             );
@@ -212,19 +220,44 @@ describe("Seedance 2.0 family via Replicate", () => {
         await callSeedanceV2API("a skyscraper", params);
         await callSeedanceV2API("a skyscraper", {
             ...params,
+            duration: undefined,
+            reference_videos: REFERENCE_MEDIA.reference_videos,
+        });
+        await callSeedanceV2API("a skyscraper", {
+            ...params,
+            duration: 7,
+            reference_videos: REFERENCE_MEDIA.reference_videos,
+        });
+        await callSeedanceV2API("a skyscraper", {
+            ...params,
+            aspectRatio: "adaptive",
+            duration: 7,
+            reference_videos: REFERENCE_MEDIA.reference_videos,
+        });
+        await callSeedanceV2API("a skyscraper", {
+            ...params,
+            dimensionsExplicit: true,
+            duration: 7,
             reference_videos: REFERENCE_MEDIA.reference_videos,
         });
         await callSeedanceV2API("a skyscraper", {
             ...params,
             dimensionsExplicit: true,
             aspectRatio: "4:3",
+            reference_videos: REFERENCE_MEDIA.reference_videos,
         });
 
         expect(inputs.map((input) => input.aspect_ratio)).toEqual([
             "9:16",
             "16:9",
+            "adaptive",
             "16:9",
+            "adaptive",
+            "9:16",
             "4:3",
+        ]);
+        expect(inputs.map((input) => input.duration)).toEqual([
+            4, 4, -1, 7, 7, 7, 4,
         ]);
     });
 });

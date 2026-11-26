@@ -6,6 +6,21 @@ import { ImageParamsSchema } from "../../src/image/params.ts";
 import { SENTINEL_SEED } from "../../src/util.ts";
 
 describe("ImageParamsSchema", () => {
+    it("uses Hotshot-XL's fixed GIF dimensions when size is omitted", () => {
+        const model = "hotshotco/hotshot-xl";
+        expect(ImageParamsSchema.parse({ model })).toMatchObject({
+            width: 512,
+            height: 512,
+        });
+        expect(
+            ImageParamsSchema.safeParse({ model, width: 1024 }).success,
+        ).toBe(false);
+        expect(
+            ImageParamsSchema.safeParse({ model, output_format: "png" })
+                .success,
+        ).toBe(false);
+    });
+
     it("normalizes seed -1 to the sentinel seed", () => {
         const result = ImageParamsSchema.parse({
             model: "black-forest-labs/flux.1-schnell",
@@ -209,6 +224,14 @@ describe("ImageParamsSchema", () => {
     it.each(getVideoModelIds())(
         "accepts only the registry durations for %s",
         (model) => {
+            // Avatar 6 Turbo derives length from supplied speech audio.
+            if (
+                model === "heygen/heygen-avatar-6" ||
+                model === "heygen/heygen-avatar-6:openrouter" ||
+                model === "heygen/heygen-avatar-6-turbo" ||
+                model === "heygen/heygen-avatar-6-turbo:openrouter"
+            )
+                return;
             const {
                 minDuration,
                 maxDuration,
@@ -547,7 +570,7 @@ describe("image dimensions", () => {
     });
 });
 
-describe("GPT Image 2.6 Flare output format validation", () => {
+describe("GPT Image 2.6 output format validation", () => {
     const model = "openai/gpt-image-2.6-flare";
     const gif = {
         model,
@@ -587,6 +610,20 @@ describe("GPT Image 2.6 Flare output format validation", () => {
         ]) {
             expect(ImageParamsSchema.safeParse(value).success).toBe(false);
         }
+    });
+
+    it.each([
+        "openai/gpt-image-2.6-sunburst",
+        "openai/gpt-image-2.6-sunburst:fal",
+    ])("accepts GIF and rejects WebP for %s", (model) => {
+        expect(ImageParamsSchema.parse({ ...gif, model })).toMatchObject({
+            ...gif,
+            model,
+        });
+        expect(
+            ImageParamsSchema.safeParse({ model, output_format: "webp" })
+                .success,
+        ).toBe(false);
     });
 
     it("bounds frame count, frame timing, and total duration", () => {

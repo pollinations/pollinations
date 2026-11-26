@@ -66,6 +66,13 @@ export function buildDirectResponsesRequestBody(
     delete body.safe;
     delete body.client_metadata;
 
+    if (target.reasoningEffortOverride !== undefined) {
+        body.reasoning = {
+            ...request.reasoning,
+            effort: target.reasoningEffortOverride,
+        };
+    }
+
     const toolChoice = body.tool_choice;
     if (
         target.disableReasoningForForcedTools &&

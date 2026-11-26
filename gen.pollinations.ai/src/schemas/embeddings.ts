@@ -6,7 +6,7 @@ import { MAX_EMBEDDING_BATCH_SIZE } from "@/embeddings/limits.ts";
 
 const TextContentPartSchema = z.object({
     type: z.literal("text"),
-    text: z.string(),
+    text: z.string().min(1),
 });
 
 const ImageUrlContentPartSchema = z.object({
@@ -25,10 +25,30 @@ const AudioContentPartSchema = z.object({
         data: z
             .string()
             .meta({ description: "Base64-encoded audio data. Max 180s." }),
-        format: z.string().meta({
-            description: "Audio format (e.g. mp3, wav)",
-            example: "mp3",
-        }),
+        // The MIME type is built as `audio/${format}`. An unknown subtype made
+        // Vertex fail with a 500 instead of a caller error, so accept only the
+        // audio containers the embeddings route handles.
+        format: z
+            .enum([
+                "mp3",
+                "mpeg",
+                "wav",
+                "x-wav",
+                "aiff",
+                "aac",
+                "ogg",
+                "oga",
+                "flac",
+                "mp4",
+                "m4a",
+                "webm",
+                "opus",
+            ])
+            .meta({
+                description:
+                    "Audio container of `data`: mp3, mpeg, wav, x-wav, aiff, aac, ogg, oga, flac, mp4, m4a, webm, or opus",
+                example: "mp3",
+            }),
     }),
 });
 
@@ -63,10 +83,10 @@ export const CreateEmbeddingRequestSchema = z
         }),
         input: z
             .union([
-                z.string(),
-                z.array(z.string()).max(MAX_EMBEDDING_BATCH_SIZE),
+                z.string().min(1),
+                z.array(z.string().min(1)).min(1).max(MAX_EMBEDDING_BATCH_SIZE),
                 ContentPartSchema,
-                z.array(ContentPartSchema),
+                z.array(ContentPartSchema).min(1),
             ])
             .meta({
                 description: `Input text or content parts to embed. Supports strings, arrays of strings (max ${MAX_EMBEDDING_BATCH_SIZE} inputs), or multimodal content parts (text, image_url, input_audio, video_url). Gemini supports every listed modality; Cohere Embed v4 supports text and one image per input.`,

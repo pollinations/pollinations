@@ -246,15 +246,15 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe("global.anthropic.claude-opus-5");
     });
 
-    it("routes the GPT-OSS 20B fallback to DeepInfra", () => {
+    it("routes GPT-OSS 20B to our Vast GPU", () => {
         const result = resolveModelConfig(messages, {
-            model: "openai/gpt-oss-20b:deepinfra",
+            model: "openai/gpt-oss-20b",
         });
 
-        expect(result.options.model).toBe("openai/gpt-oss-20b");
         expect(result.options.modelConfig).toMatchObject({
             provider: "openai",
-            "custom-host": "https://api.deepinfra.com/v1/openai",
+            "custom-host": "https://gpt-oss-vast.myceli.ai/v1",
+            model: "openai/gpt-oss-20b",
         });
     });
 

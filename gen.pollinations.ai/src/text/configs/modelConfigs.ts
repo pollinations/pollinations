@@ -1608,16 +1608,17 @@ export const portkeyConfig: PortkeyConfigMap = {
     "inferenceport-lightning-text-v2.1": () =>
         createInferencePortModelConfig({ model: "lightning-text-v2.1" }),
 
+    // -- Our Vast GPU (operations/infrastructure/gpu/gpt-oss) ------------------
+    "gpt-oss-20b": () => ({
+        provider: "openai",
+        "custom-host": "https://gpt-oss-vast.myceli.ai/v1",
+        authKey: textEnvironmentValue("PLN_GPU_TOKEN"),
+        model: "openai/gpt-oss-20b",
+        "max-tokens": 1500,
+        responsesEndpoint: "https://gpt-oss-vast.myceli.ai/v1/responses",
+    }),
+
     // -- OVHcloud -------------------------------------------------------------
-    "gpt-oss-20b": () =>
-        createOVHcloudOAIConfig({
-            model: "gpt-oss-20b",
-            "max-tokens": 1500,
-            responsesEndpoint:
-                "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/responses",
-        }),
-    "openai/gpt-oss-20b:deepinfra": () =>
-        createDeepInfraModelConfig({ model: "openai/gpt-oss-20b" }),
     "Qwen3Guard-Gen-8B": () =>
         createOVHcloudOAIConfig({ model: "Qwen3Guard-Gen-8B" }),
 };

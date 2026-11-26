@@ -134,7 +134,10 @@ const TEXT_BASE_SERVICES = {
     "openai/gpt-oss-20b": {
         supportedParameters: CHAT_PARAMETERS.ovhGptOss,
         aliases: ["gpt-oss-20b", "ovh-reasoning", "gpt-oss"],
-        provider: "ovhcloud",
+        // Our own Vast GPU, sized for the Classic API: hidden from catalogs
+        // because its capacity is capped, still callable by name.
+        hidden: true,
+        provider: "vast",
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),

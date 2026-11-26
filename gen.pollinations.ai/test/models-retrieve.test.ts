@@ -716,12 +716,6 @@ test("exposes supported Chat parameters across rich listings", async () => {
                 "top_p",
             ]),
         });
-        expect(byName("openai/gpt-oss-20b")).toMatchObject({
-            supported_parameters: expect.arrayContaining([
-                "temperature",
-                "top_p",
-            ]),
-        });
         expect(byName("anthropic/claude-sonnet-4.6")).toMatchObject({
             supported_parameters: expect.arrayContaining([
                 "temperature",

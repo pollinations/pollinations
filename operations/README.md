@@ -39,9 +39,14 @@ support. The catalog lists each job’s cadence, scope and runbook.
 
 ## App management
 
-| Folder | What it is |
-| --- | --- |
-| [`app-management`](app-management/README.md) | Community app list (`app.json`), submission reviews, screenshots, metrics and the README app table |
+- [App catalog](app-management/app.json), [validation](app-management/app.js),
+  [README table](app-management/update-readme.js), [metrics](app-management/performance/update-metrics.js),
+  and [screenshot keepalive](app-management/keepalive-screenshots.js).
+- [Submission process](../AGENTS.md#app-submission-handling) and [form rules](app-management/ingestion/submission.js).
+  [Pre-review](../.github/workflows/apps-review-submissions.yml) supports a `dry_run` preview
+  and calls [run-review.sh](app-management/ingestion/run-review.sh).
+  [Publication](../.github/workflows/apps-publish-submissions.yml) calls
+  [run-publication.sh](app-management/ingestion/run-publication.sh).
 
 ## Infrastructure
 

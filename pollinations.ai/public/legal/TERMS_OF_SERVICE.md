@@ -1,6 +1,6 @@
 # Terms of Service
 
-**Last updated: 2026-11-17**
+**Last updated: 2026-11-26**
 
 ## About Pollinations
 
@@ -60,6 +60,8 @@ You retain all rights to data you submit ("Customer Data"). How personal data is
 ## 5) Acceptable Use & Safety
 
 Do not violate law; infringe IP/likeness/privacy; attack the Service; evade rate limits or spending controls; abuse credit grants, app attribution, or developer earnings; or replicate non-public features to build a competing hosted service. **No deepfakes of real people without consent. No CSAM (real or fictional).**
+
+You may not use Pollinations.ai or its APIs, directly or through a third-party app, to generate, offer, or distribute pornography or other mature content intended for sexual gratification.
 
 If you publish an externally hosted community model, you are responsible for the endpoint and the caller data it receives. Identify the provider accurately, keep its privacy information current, use appropriate security and retention controls, and comply with applicable law. Clearly disclose how you store, share, train on, or otherwise use caller data. Do not mislead callers about the endpoint or its data practices.
 

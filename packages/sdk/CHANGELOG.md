@@ -2,12 +2,18 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
-## [5.1.0-alpha.35] - 2026-11-20
+## [5.1.0-alpha.37] - 2026-11-26
 
 ### Changed
 
 - The Responses chat transport reports every server-run tool call, not only `mcp__` ones, and emits `tool-input-start` as soon as a call begins. Calls to the caller's own `tools` are still ignored.
 - The Responses chat transport sends `file` parts with an image media type as `input_image` links, and other `file` parts as `input_file` links.
+
+## [5.1.0-alpha.36] - 2026-11-24
+
+### Changed
+
+- Reverts alpha.35's cross-tab key handling. The provider reads the saved key once on page load again; after a 401 it signs out as in alpha.34.
 
 ## [5.1.0-alpha.34] - 2026-11-19
 

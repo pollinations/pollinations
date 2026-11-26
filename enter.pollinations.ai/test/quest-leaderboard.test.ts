@@ -9,7 +9,7 @@ import * as schema from "@shared/db/better-auth.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { expect } from "vitest";
+import { expect, vi } from "vitest";
 import type { QuestLeaderboardData } from "../../pollinations.ai/src/data/community";
 import { QuestLeaderboard } from "../../pollinations.ai/src/ui/components/QuestLeaderboard";
 import { QuestStandings } from "../frontend/src/components/quests/quest-standings.tsx";
@@ -381,6 +381,62 @@ test("monthly standings show the podium and the rows around the viewer", async (
     const publicView = (await anonymous.json()) as QuestStandingsResponse;
     expect(publicView.you).toBeNull();
     expect(publicView.rows.map((row) => row.rank)).toEqual([1, 2, 3]);
+});
+
+test("standings still answer when the shared cache write is rejected", async ({
+    sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const viewer = await db.query.user.findFirst();
+    if (!viewer?.githubUsername) throw new Error("Viewer has no GitHub login");
+    await db.insert(schema.user).values({
+        id: "cache-rival",
+        name: "Cache Rival",
+        email: "cache-rival@example.com",
+        githubId: 9_000_000,
+        githubUsername: "cache-rival",
+    });
+    const reward = (id: string, userId: string, pollenAmount: number) => ({
+        id,
+        idempotencyKey: id,
+        userId,
+        questId: "merged_pr",
+        title: id,
+        pollenAmount,
+        balanceBucket: "tier",
+        earnedAt: new Date(),
+    });
+    await db
+        .insert(schema.rewards)
+        .values([
+            reward("cache-rival-reward", "cache-rival", 30),
+            reward("cache-viewer-reward", viewer.id, 10),
+        ]);
+    // A second viewer rebuilding in the same second gets this from KV.
+    const put = vi
+        .spyOn(env.KV, "put")
+        .mockRejectedValueOnce(
+            new Error("KV PUT failed: 429 Too Many Requests"),
+        );
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/quests/standings",
+        { headers: { cookie: `better-auth.session_token=${sessionToken}` } },
+    );
+
+    expect(put).toHaveBeenCalledOnce();
+    expect(response.status).toBe(200);
+    const payload = (await response.json()) as QuestStandingsResponse;
+    const login = viewer.githubUsername.toLowerCase();
+    expect(payload.you).toEqual({
+        githubLogin: login,
+        rank: 2,
+        totalPollen: 10,
+    });
+    expect(payload.rows.map((row) => [row.rank, row.githubLogin])).toEqual([
+        [1, "cache-rival"],
+        [2, login],
+    ]);
 });
 
 test("rendered standings point the viewer at the quest that passes the next row", () => {

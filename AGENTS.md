@@ -31,7 +31,6 @@ Guild ID `885844321461485618` (https://discord.gg/k9F7SyTgqn) — use for Discor
 - `operations/app-management/` — Community app catalog and automation
 - `operations/` — Internal dashboards, monitoring, data sync, news, app management and infrastructure; folder map in `operations/README.md`
 - `operations/news/` — News pipeline: daily, weekly and monthly posts, per-PR Discord posts and the News page data
-- `operations/community-monitor/` — Community model monitor agent; runs with the Discord bots on the `monitoring-agents` EC2 box (see `operations/infrastructure/gpu/GPU_INSTANCES.md`)
 
 ## API Gateway
 
@@ -114,6 +113,14 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - Never run `wrangler deploy --env production`, a production deployment npm script, or a direct production Worker upload from a local machine or agent session.
 - If CI credentials lack a required permission, follow the Secret Mutation Safety approval gate before updating the scoped GitHub Actions secret and rerunning the workflow. Never bypass CI with a local Cloudflare OAuth session.
 - After the workflow succeeds, verify the active Worker version and required bindings before testing production traffic.
+
+## Production D1 Query Safety (CRITICAL)
+
+- Gen and Enter share the production D1 database. A slow query can delay requests that use D1. If the queue fills, D1 returns `D1_OVERLOADED` errors.
+- Query production D1 directly (`wrangler d1 execute --env production --remote` or the D1 REST API) only for live support or incident checks: one read-only `SELECT` for one known record or account, by equality on an indexed column such as a primary key, `user.email` or `apikey.user_id`. Select only the columns you need. For non-unique keys, use the smallest `LIMIT` needed for the check. Never batch, loop, run production queries in parallel, or retry on overload. Writes follow the existing production approval and migration rules.
+- Before a new query shape, run `EXPLAIN QUERY PLAN` for the exact SQL on staging. Use it on production only if the plan shows `SEARCH` on the lookup key; any `SCAN`, including `SCAN … USING COVERING INDEX`, is not allowed. Staging plans are a screening check, not a guarantee.
+- Run counts, joins, `json_extract` filters and exploration on staging D1 or on the Tinybird snapshots (`d1_user`, `d1_apikey`, `d1_account`, `d1_session`), which lag production.
+- To find a slow query, use D1 Query Insights for timing (it is sampled) and the Cloudflare account audit log to see who sent it.
 
 ## Tinybird Deployment Safety (CRITICAL)
 

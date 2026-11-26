@@ -191,7 +191,7 @@ export const x402KeysRoutes = new Hono<Env>()
                 // would be ignored and the unfunded key sent with a 200.
                 c.res = c.json(
                     {
-                        error: "Payment settled but key activation failed. Contact hello@pollinations.ai with the transaction.",
+                        error: "Payment settled but key activation failed. Contact billing@pollinations.ai with the transaction hash.",
                     },
                     503,
                 );

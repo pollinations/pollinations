@@ -36,7 +36,7 @@ export async function generateDecision(c: Context<Env>): Promise<Response> {
             const { options } = resolveModelConfig([], {
                 model: candidate.id,
             });
-            const { result, requestUrl } = await requestDecision(
+            const { result, requestUrl, reportedCost } = await requestDecision(
                 { state, questions },
                 options,
             );
@@ -60,12 +60,22 @@ export async function generateDecision(c: Context<Env>): Promise<Response> {
                 },
             };
 
-            return Response.json(body, {
-                headers: buildUsageHeaders(
-                    candidate.id,
-                    openaiUsageToUsage(decisionCompletionUsage(result.usage)),
-                ),
-            });
+            const headers = buildUsageHeaders(
+                candidate.id,
+                openaiUsageToUsage(decisionCompletionUsage(result.usage)),
+            );
+            if (reportedCost !== undefined) {
+                c.var.track?.overrideResponseTracking(
+                    Response.json(
+                        {
+                            ...body,
+                            usage: { ...body.usage, cost: reportedCost },
+                        },
+                        { headers },
+                    ),
+                );
+            }
+            return Response.json(body, { headers });
         },
         c.var.track?.attempts,
         (candidate) => requireModelAttemptAccess(c, candidate),

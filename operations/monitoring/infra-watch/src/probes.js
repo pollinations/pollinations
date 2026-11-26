@@ -1,7 +1,4 @@
-// Probes of community models, ported from the retired community monitor
-// (operations/community-monitor: probe.mjs, chat-stream.mjs, image-probe.mjs
-// and probe-schedule.mjs). No Cloudflare imports, so it is testable with
-// plain Node.
+// Community model probes with no Cloudflare imports, so they can run in plain Node.
 import { withTimeout } from "./delivery.js";
 
 const HOUR_MS = 60 * 60 * 1000;

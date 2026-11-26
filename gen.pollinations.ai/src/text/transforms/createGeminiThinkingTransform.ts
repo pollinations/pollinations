@@ -16,6 +16,7 @@ const EFFORT_TO_BUDGET: Record<string, number> = {
     medium: 4096,
     high: 8192,
     xhigh: 8192,
+    max: 8192,
 };
 
 function normalizeEffort(value: unknown): string | undefined {

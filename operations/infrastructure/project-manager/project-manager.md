@@ -25,11 +25,11 @@ Which models we serve, through which providers, at what price: registry entries 
 Not here: community-published models → Community models; a request charged the wrong amount → Billing & payments; which keys may use a model → Accounts & keys.
 
 ### Community models
-What community members publish (models, agents, MCP servers) and keeping it healthy: publisher access and the publisher allowlist ("Add X to the list"), the community catalog, the community monitor (`operations/community-monitor/`), community agents in `apps/agent-*`.
+What community members publish (models, agents, MCP servers) and keeping it healthy: publisher access and the publisher allowlist ("Add X to the list"), the community catalog, the community model posts from infra-watch (fallback notices, listing changes, leaderboards), community agents in `apps/agent-*`.
 Not here: payouts to publishers → Billing & payments.
 
 ### Agents & agent tools
-Agents we host and the tools they use: hosted and prompt agents (Floret in `apps/floret/`), agent harnesses (Claude Code, Hermes, Codex), the agent computer (shell, git, sandboxes), hosted MCP servers in `apps/`, client tools.
+Agents we host and the tools they use: hosted and prompt agents (Floret in `apps/agent-floret/`), agent harnesses (Claude Code, Hermes, Codex), the agent computer (shell, git, sandboxes), hosted MCP servers in `apps/`, client tools.
 Not here: the `@pollinations/mcp` package → Developer tools; bots that run our own work → Internal automation.
 
 ### Developer tools

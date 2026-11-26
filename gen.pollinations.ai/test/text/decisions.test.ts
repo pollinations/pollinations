@@ -206,6 +206,79 @@ function post(path: string, key: string, body: unknown) {
     });
 }
 
+const heyGenListCost = (480 * 0.1477) / 1_000_000;
+
+test.for(
+    [
+        { path: "/alpha/decisions", stream: false },
+        { path: "/v1/systemone", stream: false },
+        { path: "/v1/chat/completions", stream: false },
+        { path: "/v1/chat/completions", stream: true },
+    ].flatMap((route) => [
+        { ...route, cost: 0.0000336, expectedCost: 0.0000336 * 1.055 },
+        { ...route, cost: undefined, expectedCost: heyGenListCost },
+        { ...route, cost: "0.0000336", expectedCost: heyGenListCost },
+        { ...route, cost: -0.0000336, expectedCost: heyGenListCost },
+    ]),
+)(
+    "bills HeyGen on $path (stream: $stream, receipt: $cost)",
+    async ({ path, stream, cost, expectedCost }, { mocks }) => {
+        const model = "heygen/heygen-decision-1";
+        const upstreamModel = "heygen/heygen-decision-1-20261112";
+        const expectedCharge = Number(expectedCost.toFixed(8));
+        const { key, userId } = await createTestApiKey({
+            user: { tierBalance: 0, packBalance: 10 },
+        });
+        const payload = { state: "The invoice needs a reminder.", questions };
+        mocks.decisions.state.response = Response.json({
+            model: upstreamModel,
+            answers,
+            usage: { input_tokens: 480, output_tokens: 0, cost },
+        });
+        const { response, wait } = await post(
+            path,
+            key,
+            path === "/v1/chat/completions"
+                ? {
+                      model,
+                      stream,
+                      messages: [
+                          { role: "user", content: JSON.stringify(payload) },
+                      ],
+                  }
+                : { model, ...payload },
+        );
+        expect(response.status).toBe(200);
+        const body = await response.text();
+        expect(body).toContain(`"model":"${model}"`);
+        expect(body).not.toContain(upstreamModel);
+        expect(body).not.toContain('"cost":');
+        expect(mocks.decisions.state.requests).toHaveLength(1);
+        expect(mocks.decisions.state.requests[0]).toMatchObject({
+            pathname: "/api/alpha/decisions",
+            body: {
+                model,
+                provider: { only: ["heygen"], allow_fallbacks: false },
+            },
+        });
+        await wait();
+        expect(mocks.tinybird.state.events).toHaveLength(1);
+        expect(mocks.tinybird.state.events[0]).toMatchObject({
+            modelUsed: model,
+            modelProviderUsed: "openrouter",
+            tokenCountPromptText: 480,
+            totalPrice: expectedCharge,
+            isBilledUsage: true,
+        });
+        expect(mocks.tinybird.state.events[0].totalCost).toBeCloseTo(
+            expectedCost,
+            12,
+        );
+        const balance = await getUserBalance(drizzle(env.DB), userId);
+        expect(10 - balance.packBalance).toBeCloseTo(expectedCharge, 10);
+    },
+);
+
 test("answers a decision, forwards the native body, and bills input tokens", async ({
     paidApiKey: apiKey,
     mocks,

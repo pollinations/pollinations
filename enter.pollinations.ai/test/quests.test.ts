@@ -2833,6 +2833,39 @@ test("a later PR closing an already-paid multi-winner quest earns its own merged
     expect(await checkPrRewards(user.id)).toEqual(paid);
 });
 
+test("PRs closing one quest that merge before a check each pay: the earliest the quest, the rest their merged-PR reward", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const user = await getOnlyUser();
+    await mocks.enable("github", "tinybird");
+    const login = user.githubUsername ?? "";
+
+    seedQuestIssue(mocks.github.state, {
+        issueNumber: 19174,
+        title: "[QUEST] Extend our MCP servers or add a new one",
+        goal: "Add a new MCP server or extend one of ours.",
+        reward: 5,
+        reopened: true,
+    });
+    mocks.github.state.mergedPullRequests.push(
+        ...[19503, 19519, 19520].map((number, i) => ({
+            number,
+            authorLogin: login,
+            mergedAt: `2026-11-12T0${i}:00:00Z`,
+            closingIssues: [19174],
+        })),
+    );
+
+    const paid = [
+        { questId: "github:issue:19174", pollenAmount: 5 },
+        { questId: "github:merged_pr:19519", pollenAmount: 5 },
+        { questId: "github:merged_pr:19520", pollenAmount: 5 },
+    ];
+    expect(await checkPrRewards(user.id)).toEqual(paid);
+    expect(await checkPrRewards(user.id)).toEqual(paid);
+});
+
 test("Bee Census quest pays 3 Pollen once for the user's own labelled survey issue with enough written answers", async ({
     mocks,
     sessionToken: _sessionToken,

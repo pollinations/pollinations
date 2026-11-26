@@ -703,24 +703,15 @@ export function pollenBoughtSql(userId: string | SQL): SQL {
              WHERE user_id = ${userId}))`;
 }
 
-// Quest ids the account already earned, each with the earliest time it was
-// recorded (Unix seconds, as stored). The time tells the PR that earned a
-// quest reward apart from later PRs closing the same quest.
+// Quest ids the account already earned.
 async function earnedQuestIds(
     db: QuestDb,
     userId: string,
-): Promise<Map<string, number>> {
-    const rows = await db.all<{ quest_id: string; earned_at: number }>(
-        sql`SELECT quest_id, earned_at FROM rewards WHERE user_id = ${userId}`,
+): Promise<Set<string>> {
+    const rows = await db.all<{ quest_id: string }>(
+        sql`SELECT quest_id FROM rewards WHERE user_id = ${userId}`,
     );
-    const earned = new Map<string, number>();
-    for (const row of rows) {
-        const previous = earned.get(row.quest_id);
-        if (previous === undefined || row.earned_at < previous) {
-            earned.set(row.quest_id, row.earned_at);
-        }
-    }
-    return earned;
+    return new Set(rows.map((row) => row.quest_id));
 }
 
 async function pollenBought(db: QuestDb, userId: string): Promise<number> {
@@ -768,9 +759,27 @@ export async function evaluateUser(
         }));
 
     // A PR's own reward label wins, then the highest bounty among the quests
-    // it closes, then 5; never a sum. A quest pays each author once, however
-    // many of their PRs close it.
+    // it closes, then 5; never a sum. A quest pays each author once: their
+    // earliest merged PR closing it earns the quest reward, and each later PR
+    // closing it earns its own merged-PR reward.
     const quests = new Map(issues.map((issue) => [issue.issueNumber, issue]));
+    const closes = new Map(
+        mergedPrs.map((pr) => [
+            pr,
+            pr.closingIssuesReferences.nodes
+                .filter((issue) => issue.repository.nameWithOwner === REPO)
+                .map((issue) => issue.number),
+        ]),
+    );
+    const firstCloser = new Map<number, MergedPrNode>();
+    for (const [pr, numbers] of closes) {
+        for (const number of numbers) {
+            const first = firstCloser.get(number);
+            if (!first || pr.mergedAt < first.mergedAt) {
+                firstCloser.set(number, pr);
+            }
+        }
+    }
     // Until this change deploys, Enter pays the one-time reward for any first
     // merged PR. Without a PR from before REWARDS_START, that paid the earliest
     // PR since, which must not pay again.
@@ -782,36 +791,28 @@ export async function evaluateUser(
               undefined,
           );
     const prProposals = mergedPrs.flatMap((pr) => {
-        const closes = pr.closingIssuesReferences.nodes
-            .filter((issue) => issue.repository.nameWithOwner === REPO)
-            .map((issue) => issue.number);
-        // An id only this PR can earn is recorded only if this PR has paid.
-        if (earned.has(`github:merged_pr:${pr.number}`)) return [];
-        if (pr === firstPr && earned.has(mergedPrQuest.id)) return [];
-        // A quest pays each author once, recorded under the quest's id. A
-        // quest reward recorded after this PR merged may be this PR's own
-        // payment (labels, quests and closing issues can change after a PR
-        // paid), so the PR stays unpaid. One recorded before this PR merged
-        // was earned by an earlier PR; this PR then falls back to its own
-        // merged-PR reward below instead of earning nothing.
-        const mergedAt = Math.floor(Date.parse(pr.mergedAt) / 1000);
-        const alreadyPaid = closes.some((number) => {
-            const earnedAt = earned.get(`github:issue:${number}`);
-            return earnedAt !== undefined && earnedAt >= mergedAt;
-        });
-        if (alreadyPaid) return [];
-        const quest = closes
+        const firstCloses = (closes.get(pr) ?? []).filter(
+            (number) => firstCloser.get(number) === pr,
+        );
+        // Labels, quests and closing issues can change after a PR paid, so a
+        // PR that could map to an id the account earned has already paid.
+        const ids = [
+            `github:merged_pr:${pr.number}`,
+            ...firstCloses.map((number) => `github:issue:${number}`),
+            ...(pr === firstPr ? [mergedPrQuest.id] : []),
+        ];
+        if (ids.some((id) => earned.has(id))) return [];
+        const quest = firstCloses
             .flatMap((number) => quests.get(number) ?? [])
             .sort((a, b) => b.rewardAmount - a.rewardAmount)[0];
-        const definition =
-            quest && !earned.has(`github:issue:${quest.issueNumber}`)
-                ? toIssueQuestDefinition(quest)
-                : {
-                      ...mergedPrQuest,
-                      id: `github:merged_pr:${pr.number}`,
-                      title: `Merged PR #${pr.number}: ${pr.title}`,
-                      url: pr.url,
-                  };
+        const definition = quest
+            ? toIssueQuestDefinition(quest)
+            : {
+                  ...mergedPrQuest,
+                  id: `github:merged_pr:${pr.number}`,
+                  title: `Merged PR #${pr.number}: ${pr.title}`,
+                  url: pr.url,
+              };
         return [
             {
                 quest: {

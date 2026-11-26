@@ -62,6 +62,23 @@ function createDecisionsMock() {
             state.vercelResponse = undefined;
         },
         handlerMap: {
+            "generativelanguage.googleapis.com": async (request: Request) => {
+                const body = (await request.json()) as { model: string };
+                state.requests.push({
+                    pathname: new URL(request.url).pathname,
+                    body,
+                });
+                if (state.failModel === body.model)
+                    return new Response(null, { status: 503 });
+                return Response.json({
+                    answers,
+                    usage: {
+                        total_input_tokens: 452,
+                        total_output_tokens: 0,
+                        total_tokens: 452,
+                    },
+                });
+            },
             "api.openai.com": async (request: Request) => {
                 state.requests.push({ body: await request.json() });
                 if (!state.response)
@@ -142,6 +159,7 @@ const test = baseTest.extend<{
         env.OPENROUTER_API_KEY = "openrouter-test-key";
         env.OPENAI_API_KEY = "openai-test-key";
         env.AI_GATEWAY_API_KEY = "vercel-test-key";
+        env.GEMINI_API_KEY = "gemini-test-key";
         env.D3_KEY = "d3-test-key";
         const tinybird = createMockTinybird();
         const decisions = createDecisionsMock();
@@ -187,6 +205,79 @@ function post(path: string, key: string, body: unknown) {
         body: JSON.stringify(body),
     });
 }
+
+const heyGenListCost = (480 * 0.1477) / 1_000_000;
+
+test.for(
+    [
+        { path: "/alpha/decisions", stream: false },
+        { path: "/v1/systemone", stream: false },
+        { path: "/v1/chat/completions", stream: false },
+        { path: "/v1/chat/completions", stream: true },
+    ].flatMap((route) => [
+        { ...route, cost: 0.0000336, expectedCost: 0.0000336 * 1.055 },
+        { ...route, cost: undefined, expectedCost: heyGenListCost },
+        { ...route, cost: "0.0000336", expectedCost: heyGenListCost },
+        { ...route, cost: -0.0000336, expectedCost: heyGenListCost },
+    ]),
+)(
+    "bills HeyGen on $path (stream: $stream, receipt: $cost)",
+    async ({ path, stream, cost, expectedCost }, { mocks }) => {
+        const model = "heygen/heygen-decision-1";
+        const upstreamModel = "heygen/heygen-decision-1-20261112";
+        const expectedCharge = Number(expectedCost.toFixed(8));
+        const { key, userId } = await createTestApiKey({
+            user: { tierBalance: 0, packBalance: 10 },
+        });
+        const payload = { state: "The invoice needs a reminder.", questions };
+        mocks.decisions.state.response = Response.json({
+            model: upstreamModel,
+            answers,
+            usage: { input_tokens: 480, output_tokens: 0, cost },
+        });
+        const { response, wait } = await post(
+            path,
+            key,
+            path === "/v1/chat/completions"
+                ? {
+                      model,
+                      stream,
+                      messages: [
+                          { role: "user", content: JSON.stringify(payload) },
+                      ],
+                  }
+                : { model, ...payload },
+        );
+        expect(response.status).toBe(200);
+        const body = await response.text();
+        expect(body).toContain(`"model":"${model}"`);
+        expect(body).not.toContain(upstreamModel);
+        expect(body).not.toContain('"cost":');
+        expect(mocks.decisions.state.requests).toHaveLength(1);
+        expect(mocks.decisions.state.requests[0]).toMatchObject({
+            pathname: "/api/alpha/decisions",
+            body: {
+                model,
+                provider: { only: ["heygen"], allow_fallbacks: false },
+            },
+        });
+        await wait();
+        expect(mocks.tinybird.state.events).toHaveLength(1);
+        expect(mocks.tinybird.state.events[0]).toMatchObject({
+            modelUsed: model,
+            modelProviderUsed: "openrouter",
+            tokenCountPromptText: 480,
+            totalPrice: expectedCharge,
+            isBilledUsage: true,
+        });
+        expect(mocks.tinybird.state.events[0].totalCost).toBeCloseTo(
+            expectedCost,
+            12,
+        );
+        const balance = await getUserBalance(drizzle(env.DB), userId);
+        expect(10 - balance.packBalance).toBeCloseTo(expectedCharge, 10);
+    },
+);
 
 test("answers a decision, forwards the native body, and bills input tokens", async ({
     paidApiKey: apiKey,
@@ -312,6 +403,69 @@ test("routes Kev 4B under its own id and publisher", async ({ mocks }) => {
         packBalance: 0.99997997,
     });
 });
+
+test.for([false, true])(
+    "bills Gemini Decision 1 at the direct price (fallback %s)",
+    async (fallback, { mocks }) => {
+        if (fallback) mocks.decisions.state.failModel = "gemini-decision-1";
+        const { key, userId } = await createTestApiKey({
+            user: { tierBalance: 1, packBalance: 1 },
+        });
+        mocks.decisions.state.response = Response.json({
+            id: "dec-gemini-1",
+            model: "google/gemini-decision-1",
+            provider: "Google",
+            answers: {
+                act: { type: "noul", noul: 0.95 },
+            },
+            usage: { input_tokens: 452, output_tokens: 0 },
+        });
+        const { response, wait } = await post("/alpha/decisions", key, {
+            model: "google/gemini-decision-1",
+            state: "Disk at 93%.",
+            questions: { act: { type: "noul", instructions: "Act now?" } },
+        });
+        expect(response.status).toBe(200);
+        await expect(response.json()).resolves.toMatchObject({
+            model: "google/gemini-decision-1",
+            provider: "Google",
+        });
+        expect(mocks.decisions.state.requests[0]).toMatchObject({
+            pathname: "/v1beta/decisions",
+            body: { model: "gemini-decision-1", input: "Disk at 93%." },
+        });
+        await wait();
+        expect(mocks.decisions.state.requests).toHaveLength(fallback ? 2 : 1);
+        if (fallback)
+            expect(mocks.decisions.state.requests[1]).toMatchObject({
+                pathname: "/api/alpha/decisions",
+                body: { provider: { only: ["google-ai-studio"] } },
+            });
+        const billed = mocks.tinybird.state.events.filter(
+            (event) => event.isBilledUsage,
+        );
+        expect(billed).toHaveLength(1);
+        const [event] = billed;
+        expect(event).toMatchObject({
+            eventType: "generate.text",
+            responseStatus: 200,
+            modelRequested: "google/gemini-decision-1",
+            modelProviderUsed: fallback ? "openrouter" : "google",
+            tokenCountPromptText: 452,
+            tokenCountCompletionText: 0,
+            isBilledUsage: true,
+        });
+        expect(event.totalCost).toBeCloseTo(
+            (452 * 0.1 * (fallback ? 1.055 : 1)) / 1_000_000,
+            12,
+        );
+        expect(event.totalPrice).toBe(0.0000452);
+        expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+            tierBalance: 1,
+            packBalance: 0.9999548,
+        });
+    },
+);
 
 test("routes Span-01 Lite under its own id and bills nothing", async ({
     mocks,
@@ -643,7 +797,7 @@ test("rejects Quest-only Liquid D1 calls before reaching the provider", async ({
                 usage: { total_tokens: number };
             };
             expect(notice.choices[0].message.content).toContain(
-                "This model needs paid Pollen",
+                "This model needs the paid balance",
             );
             expect(notice.usage.total_tokens).toBe(0);
             expect(response.headers.get("cache-control")).toBe(

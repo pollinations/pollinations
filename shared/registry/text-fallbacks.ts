@@ -30,6 +30,12 @@ const OPENAI_CHAT_AUDIO_VOICES = [
 
 /** Exact-checkpoint provider routes used when a text model's primary fails. */
 export const TEXT_FALLBACKS = {
+    "stealth/glyph-cluster": {
+        "stealth/glyph-cluster:kilo": {
+            provider: "kilo",
+            fallbackOnStatuses: [429],
+        },
+    },
     "openai/gpt-5.5": {
         // Global rates are inferred by removing AWS's documented 10% regional
         // premium; using them before confirmation is a maintainer-approved risk.
@@ -140,6 +146,18 @@ export const TEXT_FALLBACKS = {
         "anthropic/claude-opus-5:anthropic": {
             provider: "anthropic",
             addedDate: new Date("2026-10-24").getTime(),
+        },
+    },
+    "google/gemini-decision-1": {
+        "google/gemini-decision-1:openrouter:ai-studio": {
+            provider: "openrouter",
+            cost: {
+                promptAudioTokens: perMillion(0.1) * 1.055,
+                promptImageTokens: perMillion(0.1) * 1.055,
+                promptVideoTokens: perMillion(0.1) * 1.055,
+                promptTextTokens: perMillion(0.1) * 1.055,
+                completionTextTokens: perMillion(0),
+            },
         },
     },
     "openai/gpt-6-luna-decisions": {
@@ -253,6 +271,20 @@ export const TEXT_FALLBACKS = {
         "openai/gpt-5.6-luna:aws": {
             provider: "aws",
             priceMultiplier: 1,
+        },
+    },
+    "qwen/qwen4-max": {
+        // Vercel AI Gateway lists the same Alibaba rates, with no gateway fee.
+        "qwen/qwen4-max:vercel": {
+            supportedParameters: CHAT_PARAMETERS.vercelQwen4Max,
+            provider: "vercel",
+            addedDate: new Date("2026-11-16").getTime(),
+            cost: {
+                promptTextTokens: perMillion(1.5),
+                promptCachedTokens: perMillion(0.075),
+                promptCacheWriteTokens: perMillion(1.875),
+                completionTextTokens: perMillion(4.5),
+            },
         },
     },
     "qwen/qwen3.8-max": {
@@ -425,15 +457,15 @@ export const TEXT_FALLBACKS = {
         },
     },
     "deepseek/deepseek-v4.1-flash-1017": {
-        "deepseek/deepseek-v4.1-flash-1017:deepinfra": {
-            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
-            provider: "deepinfra",
-            addedDate: new Date("2026-10-18").getTime(),
+        // Fireworks standard serverless rates (2026-10-18).
+        "deepseek/deepseek-v4.1-flash-1017:fireworks": {
+            supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+            provider: "fireworks",
+            addedDate: new Date("2026-11-16").getTime(),
             cost: {
-                // DeepInfra current 51% promotion (2026-10-24), no announced end.
-                promptTextTokens: perMillion(0.2) * 0.49,
-                promptCachedTokens: perMillion(0.006) * 0.49,
-                completionTextTokens: perMillion(0.6) * 0.49,
+                promptTextTokens: perMillion(0.3),
+                promptCachedTokens: perMillion(0.006),
+                completionTextTokens: perMillion(1.2),
             },
         },
     },
@@ -654,6 +686,18 @@ export const TEXT_FALLBACKS = {
             supportedParameters: CHAT_PARAMETERS.vercelMistralLarge4,
             provider: "vercel",
             addedDate: new Date("2026-10-06").getTime(),
+        },
+    },
+    "tencent/hy4-flash": {
+        // OpenRouter's route for the same model, with its 5.5% credit fee.
+        "tencent/hy4-flash:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-11-16").getTime(),
+            cost: {
+                promptTextTokens: perMillion(0.035) * 1.055,
+                promptCachedTokens: perMillion(0.0015) * 1.055,
+                completionTextTokens: perMillion(0.1405) * 1.055,
+            },
         },
     },
     "mistralai/mistral-small-3.2": {
@@ -947,6 +991,19 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "meta/muse-ember": {
+        "meta/muse-ember:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-11-09").getTime(),
+            // OpenRouter list rates (2026-11-09) with the 5.5% credit fee applied.
+            cost: {
+                promptTextTokens: perMillion(0.1) * 1.055,
+                promptCachedTokens: perMillion(0.004) * 1.055,
+                promptCacheWriteTokens: perMillion(0.125) * 1.055,
+                completionTextTokens: perMillion(0.5) * 1.055,
+            },
+        },
+    },
     "anthropic/claude-fable-5.2": {
         "anthropic/claude-fable-5.2:anthropic": {
             provider: "anthropic",
@@ -1048,6 +1105,58 @@ export const TEXT_FALLBACKS = {
                 ...openRouterGeminiBilling({
                     searchCostPerThousandRequests: 7 * 1.055,
                     storageCostPerMillionTokenHours: 2.25 * 1.055,
+                }),
+                resolveTotalCost: reportedTextCost(1.055),
+            },
+        },
+    },
+    "google/gemini-4-hydrogen": {
+        "google/gemini-4-hydrogen:openrouter:vertex-global": {
+            supportedParameters: CHAT_PARAMETERS.gemini35,
+            provider: "openrouter",
+            priceMultiplier: 1,
+            addedDate: new Date("2026-11-12").getTime(),
+            // OpenRouter Vertex global standard rates, plus OpenRouter's 5.5% credit fee.
+            // Keep the direct Vertex quote; bill actual provider receipts if available.
+            cost: {
+                promptTextTokens: perMillion(1.5) * 1.055,
+                promptCachedTokens: perMillion(0.075) * 1.055,
+                promptCacheWriteTokens: perMillion(1.5) * 1.055,
+                promptAudioTokens: perMillion(1.5) * 1.055,
+                promptImageTokens: perMillion(1.5) * 1.055,
+                promptVideoTokens: perMillion(1.5) * 1.055,
+                completionTextTokens: perMillion(7.5) * 1.055,
+            },
+            billing: {
+                ...openRouterGeminiBilling({
+                    searchCostPerThousandRequests: 14 * 1.055,
+                    storageCostPerMillionTokenHours: 1 * 1.055,
+                }),
+                resolveTotalCost: reportedTextCost(1.055),
+            },
+        },
+    },
+    "google/gemini-4-neon": {
+        "google/gemini-4-neon:openrouter:vertex-global": {
+            supportedParameters: CHAT_PARAMETERS.gemini35,
+            provider: "openrouter",
+            priceMultiplier: 1,
+            addedDate: new Date("2026-11-18").getTime(),
+            // OpenRouter Vertex global standard rates, plus OpenRouter's 5.5% credit fee.
+            // Keep the direct Vertex quote; bill actual provider receipts if available.
+            cost: {
+                promptTextTokens: perMillion(3) * 1.055,
+                promptCachedTokens: perMillion(0.15) * 1.055,
+                promptCacheWriteTokens: perMillion(3) * 1.055,
+                promptAudioTokens: perMillion(3) * 1.055,
+                promptImageTokens: perMillion(3) * 1.055,
+                promptVideoTokens: perMillion(3) * 1.055,
+                completionTextTokens: perMillion(15) * 1.055,
+            },
+            billing: {
+                ...openRouterGeminiBilling({
+                    searchCostPerThousandRequests: 14 * 1.055,
+                    storageCostPerMillionTokenHours: 1 * 1.055,
                 }),
                 resolveTotalCost: reportedTextCost(1.055),
             },

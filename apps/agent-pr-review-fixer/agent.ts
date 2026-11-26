@@ -494,7 +494,7 @@ function outputText(data: Body): string {
     return text;
 }
 
-/** Cost of the review call from the live catalog prices (Pollen). */
+/** Cost of the review call from the live USD catalog prices. */
 async function reviewCost(
     pollinations: Pollinations,
     model: string,
@@ -649,7 +649,7 @@ export async function review(
         );
     lines.push(
         "",
-        `Model \`${model}\`, ${usage.input_tokens ?? "?"} in / ${usage.output_tokens ?? "?"} out tokens${cost === null ? "" : `, about ${cost.toFixed(4)} Pollen`}.`,
+        `Model \`${model}\`, ${usage.input_tokens ?? "?"} in / ${usage.output_tokens ?? "?"} out tokens${cost === null ? "" : `, about $${cost.toFixed(4)}`}.`,
     );
     return { report: lines.join("\n"), usage };
 }

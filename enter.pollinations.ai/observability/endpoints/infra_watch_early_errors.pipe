@@ -1,12 +1,14 @@
 TOKEN infra_watch_read READ
 
 DESCRIPTION >
-    infra-watch monitor: requests that failed before any model was known,
-    per minute over the last 30 minutes, with how many of them were the
-    shared database (D1) failing and the route that failed most. Per-model
-    health never sees these. d1_failures covers every D1 error, whether it
+    infra-watch monitor: errors without a model label and shared database
+    (D1) errors, per minute over the last 30 minutes. r2_failures counts
+    failed R2 writes on the generation handoff. d1_failures covers every D1 error, whether it
     surfaced in the message or as the stack's cause, and the balance check
     that answers 503 when its read fails, model known or not.
+    error_seconds is how many seconds of the minute had such an error, and
+    ok the generation requests served in it and window_ok those served in
+    the whole window, to size a burst against traffic.
 
 NODE infra_watch_early_errors_node
 SQL >
@@ -14,11 +16,23 @@ SQL >
         toStartOfMinute(timestamp) AS minute,
         count() AS failures,
         countIf(d1) AS d1_failures,
-        topK(1)(route_path)[1] AS top_route
+        countIf(NOT d1 AND r2_write) AS r2_failures,
+        topK(1)(route_path)[1] AS top_route,
+        uniq(timestamp) AS error_seconds,
+        any(served.ok) AS ok,
+        (
+            SELECT countIf(is_final AND response_status < 400)
+            FROM generation_event_v2
+            WHERE environment = 'production'
+                AND start_time >= toStartOfMinute(now()) - INTERVAL 30 MINUTE
+        ) AS window_ok
     FROM (
         SELECT
             timestamp,
             route_path,
+            startsWith(route_path, '/internal/generation/')
+                AND startsWith(message, 'put: ')
+                AND (endsWith(message, '(10001)') OR endsWith(message, '(10043)')) AS r2_write,
             toInt32(status) >= 500 AS server_error,
             model_requested IN ('', 'undefined')
                 AND resolved_model_requested IN ('', 'undefined') AS no_model,
@@ -28,6 +42,16 @@ SQL >
         WHERE environment = 'production'
             AND timestamp >= toStartOfMinute(now()) - INTERVAL 30 MINUTE
     )
+    AS errors
+    LEFT JOIN (
+        SELECT
+            toStartOfMinute(start_time) AS served_minute,
+            countIf(is_final AND response_status < 400) AS ok
+        FROM generation_event_v2
+        WHERE environment = 'production'
+            AND start_time >= toStartOfMinute(now()) - INTERVAL 30 MINUTE
+        GROUP BY served_minute
+    ) AS served ON served.served_minute = toStartOfMinute(errors.timestamp)
     WHERE d1 OR (server_error AND no_model)
     GROUP BY minute
     ORDER BY minute

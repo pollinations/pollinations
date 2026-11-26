@@ -51,6 +51,12 @@ export interface ImageGenerateOptions extends RequestOptions {
     safe?: boolean;
     /** Output quality (default: 'medium') */
     quality?: ImageQuality;
+    /** Output format on models that accept an explicit format */
+    outputFormat?: "png" | "webp" | "gif";
+    /** Number of frames for animated GIF output */
+    frameCount?: number;
+    /** Display time for each GIF frame in milliseconds */
+    frameDurationMs?: number;
     /** Reference image URL(s) for image-to-image generation */
     referenceImage?: string | string[];
     /** Enable transparent background - outputs PNG (default: false) */
@@ -564,6 +570,12 @@ export interface AudioTransformOptions extends RequestOptions {
     voice?: AudioVoice;
 }
 
+/** Multipart options for the stem separation endpoint. */
+export interface StemSeparationOptions extends RequestOptions {
+    model?: AudioModel;
+    stemVariationId?: "two_stems_v1" | "six_stems_v1";
+}
+
 /** Response from dedicated audio endpoints (binary audio data) */
 export interface AudioBinaryResponse {
     /** The generated audio as a Buffer (Node.js) or ArrayBuffer (browser) */
@@ -855,7 +867,7 @@ export interface AuthorizeOptions {
     authBaseUrl?: string;
     /** Model categories (e.g. `image`, `text`) or model IDs the key can use; a model ID allows only that model */
     models?: string[];
-    /** Numeric pollen cap. Omit for the default cap. */
+    /** Spending cap in US dollars. Omit for the default cap. */
     budget?: number;
     /** Key lifetime in days (default: 30) */
     expiry?: number;
@@ -880,7 +892,7 @@ export interface AccountProfile {
 /** Account balance */
 export interface AccountBalance {
     /**
-     * Pollen remaining for this caller. Budgeted API keys see the key budget
+     * Balance remaining for this caller, in US dollars. Budgeted API keys see the key budget
      * here, not the account total.
      */
     balance: number;
@@ -1089,7 +1101,7 @@ export interface CreateKeyOptions {
     expiresIn?: number;
     /** Restrict to model categories (text, image, ...) or model IDs; a model ID allows only that model */
     allowedModels?: string[];
-    /** Pollen budget cap */
+    /** Budget cap in US dollars */
     pollenBudget?: number;
     /**
      * Account permissions to grant (e.g. `["profile", "usage"]`).
@@ -1098,7 +1110,7 @@ export interface CreateKeyOptions {
      * `"keys"` lets the new key create, list, and revoke keys.
      */
     accountPermissions?: KeyAccountPermission[];
-    /** Never spend paid Pollen; requests stop when Quest Pollen runs out */
+    /** Never spend the paid balance; requests stop when the Quest balance runs out */
     questPollenOnly?: boolean;
     /**
      * Allowed OAuth redirect URIs for publishable app keys. Required when
@@ -1273,6 +1285,11 @@ export interface ModelInfo {
     description?: string;
     aliases?: string[];
     community?: boolean;
+    health?: {
+        status: "healthy" | "degraded" | "down" | "unknown";
+        success_rate: number | null;
+        requests: number;
+    };
     agent?: boolean;
     base_model?: string;
     input_modalities?: ModelInputModality[];
@@ -1300,7 +1317,7 @@ export interface ModelInfo {
     supported_endpoints?: string[];
     supportsSystemMessages?: boolean;
     is_specialized?: boolean;
-    /** True when only Paid Pollen can be spent on this model; false when Quest Pollen also works. */
+    /** True when only the paid balance can be spent on this model; false when the Quest balance also works. */
     paid_only: boolean;
     pricing?: Record<string, string> & { currency: "pollen" };
 }

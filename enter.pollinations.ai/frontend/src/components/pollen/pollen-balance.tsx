@@ -203,7 +203,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 <span>
                                     <span className="font-semibold text-theme-text-strong">
                                         {formatUsd(displayTierBalance)} Quest
-                                        pollen locked.
+                                        balance locked.
                                     </span>{" "}
                                     Verification needed:{" "}
                                     <InlineLink
@@ -215,7 +215,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                     </InlineLink>{" "}
                                     or{" "}
                                     <InlineLink
-                                        href="mailto:hello@pollinations.ai"
+                                        href="mailto:billing@pollinations.ai"
                                         tone="quiet"
                                         showIcon={false}
                                     >
@@ -275,7 +275,7 @@ export const SidebarEarnings: FC<{ paidWeek: number; tierWeek: number }> = ({
 };
 
 /**
- * One balance on its drawer row: Credits' paid, Quests' Quest Pollen. Without
+ * One balance on its drawer row: Credits' paid, Quests' Quest balance. Without
  * a balance, Pollinations is down: a warning takes the amount's place and the
  * page's outage banner explains.
  */
@@ -305,16 +305,16 @@ export const SidebarBalance: FC<{
             <>
                 {formatUsd(normalizeDisplayBalance(balance))}
                 <span className="sr-only">
-                    {kind === "paid" ? " paid" : " Quest"} pollen
+                    {kind === "paid" ? " paid" : " Quest"} balance
                 </span>
             </>
         )}
-        {/* Quest pollen that waits on verification. */}
+        {/* Quest balance that waits on verification. */}
         {restricted && (
             <LockIcon
                 aria-hidden={false}
                 role="img"
-                aria-label="Quest pollen needs verification"
+                aria-label="Quest balance needs verification"
                 className="h-3 w-3 shrink-0 text-theme-text-muted"
             />
         )}
@@ -397,7 +397,7 @@ export const Footnotes: FC<{ className?: string; children: ReactNode }> = ({
 );
 
 /**
- * Who to ask and the terms of buying, in Billing on the Pollen page. The
+ * Who to ask and the terms of buying, in Billing on the Credits page. The
  * standalone top-up page says it in its footer instead.
  */
 export const PaymentHelp: FC = () => (

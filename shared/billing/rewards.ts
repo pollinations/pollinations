@@ -75,7 +75,7 @@ function assertRewardAmount(amount: number): void {
 }
 
 /**
- * Records earned rewards without moving pollen. The unique idempotency key
+ * Records earned rewards without crediting the balance. The unique idempotency key
  * makes scanner retries safe; only claimReward() credits the user's balance.
  */
 export async function recordRewards(

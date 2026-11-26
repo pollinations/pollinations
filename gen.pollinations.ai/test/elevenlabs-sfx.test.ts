@@ -15,70 +15,82 @@ describe("ElevenLabs sound effects", () => {
         vi.useRealTimers();
     });
 
-    it("falls back to fal and bills its reported units instead of the requested duration", async () => {
-        vi.useFakeTimers();
-        const registry = await getGenerationModelRegistry(env);
-        const entry = registry.resolve("elevenlabs/eleven-text-to-sound-v3");
-        if (!entry) throw new Error("Missing SFX v3 registry entry");
-        const fetchSpy = vi
-            .spyOn(globalThis, "fetch")
-            .mockResolvedValueOnce(
-                Response.json({ detail: "Busy" }, { status: 503 }),
-            )
-            .mockResolvedValueOnce(
-                Response.json({
-                    status_url: "https://queue.fal.run/status",
-                    response_url: "https://queue.fal.run/result",
-                }),
-            )
-            .mockResolvedValueOnce(Response.json({ status: "COMPLETED" }))
-            .mockResolvedValueOnce(
-                Response.json(
-                    { audio: { url: "https://fal.media/sfx.mp3" } },
-                    { headers: { "x-fal-billable-units": "2" } },
-                ),
-            )
-            .mockResolvedValueOnce(new Response("ID3audio"));
-        const pending = withModelFallbackResponse(
-            {
-                resolved: entry.id,
-                definition: entry.definition,
-                fallbackEntries: entry.fallbackEntries,
-            },
-            (candidate) =>
-                generateSoundEffect({
-                    modelName: candidate.id as
-                        | "elevenlabs/eleven-text-to-sound-v3"
-                        | "elevenlabs/eleven-text-to-sound-v3:fal",
-                    prompt: "a door closes",
-                    durationSeconds: 1,
-                    loop: true,
-                    promptInfluence: 0.7,
-                    apiKey: "test-eleven",
-                    falKey: "test-fal",
-                    log,
-                }),
-        );
-        await vi.advanceTimersByTimeAsync(5000);
-        const response = await pending;
-        expect(await response.text()).toBe("ID3audio");
-        expect(response.headers.get("x-model-used")).toBe(
+    it.each([
+        [
+            "elevenlabs/eleven-text-to-sound-v2",
+            "elevenlabs/eleven-text-to-sound-v2:fal",
+            "fal-ai/elevenlabs/sound-effects/v2",
+            429,
+        ],
+        [
+            "elevenlabs/eleven-text-to-sound-v3",
             "elevenlabs/eleven-text-to-sound-v3:fal",
-        );
-        expect(response.headers.get("x-usage-completion-audio-seconds")).toBe(
-            "2",
-        );
-        const request = new Request(...fetchSpy.mock.calls[1]);
-        expect(request.url).toBe(
-            "https://queue.fal.run/elevenlabs/sound-effects/v3",
-        );
-        await expect(request.json()).resolves.toEqual({
-            text: "a door closes",
-            duration_seconds: 1,
-            loop: true,
-            prompt_influence: 0.7,
-        });
-    });
+            "elevenlabs/sound-effects/v3",
+            503,
+        ],
+    ] as const)(
+        "falls back for %s and bills fal's reported units",
+        async (model, fallback, endpoint, status) => {
+            vi.useFakeTimers();
+            const registry = await getGenerationModelRegistry(env);
+            const entry = registry.resolve(model);
+            if (!entry) throw new Error("Missing SFX registry entry");
+            const fetchSpy = vi
+                .spyOn(globalThis, "fetch")
+                .mockResolvedValueOnce(
+                    Response.json({ detail: "Busy" }, { status }),
+                )
+                .mockResolvedValueOnce(
+                    Response.json({
+                        status_url: "https://queue.fal.run/status",
+                        response_url: "https://queue.fal.run/result",
+                    }),
+                )
+                .mockResolvedValueOnce(Response.json({ status: "COMPLETED" }))
+                .mockResolvedValueOnce(
+                    Response.json(
+                        { audio: { url: "https://fal.media/sfx.mp3" } },
+                        { headers: { "x-fal-billable-units": "2" } },
+                    ),
+                )
+                .mockResolvedValueOnce(new Response("ID3audio"));
+            const pending = withModelFallbackResponse(
+                {
+                    resolved: entry.id,
+                    definition: entry.definition,
+                    fallbackEntries: entry.fallbackEntries,
+                },
+                (candidate) =>
+                    generateSoundEffect({
+                        modelName: candidate.id as
+                            | typeof model
+                            | typeof fallback,
+                        prompt: "a door closes",
+                        durationSeconds: 1,
+                        loop: true,
+                        promptInfluence: 0.7,
+                        apiKey: "test-eleven",
+                        falKey: "test-fal",
+                        log,
+                    }),
+            );
+            await vi.advanceTimersByTimeAsync(5000);
+            const response = await pending;
+            expect(await response.text()).toBe("ID3audio");
+            expect(response.headers.get("x-model-used")).toBe(fallback);
+            expect(
+                response.headers.get("x-usage-completion-audio-seconds"),
+            ).toBe("2");
+            const request = new Request(...fetchSpy.mock.calls[1]);
+            expect(request.url).toBe(`https://queue.fal.run/${endpoint}`);
+            await expect(request.json()).resolves.toEqual({
+                text: "a door closes",
+                duration_seconds: 1,
+                loop: true,
+                prompt_influence: 0.7,
+            });
+        },
+    );
 
     it.each([
         ["elevenlabs/eleven-text-to-sound-v2", "eleven_text_to_sound_v2"],

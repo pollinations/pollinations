@@ -65,7 +65,7 @@ export function PromptAgentTools({
                     Tools
                 </p>
                 <InfoTip
-                    text="Selected tools are available to this agent. Some may spend Pollen or need a connected account."
+                    text="Selected tools are available to this agent. Some may spend from the balance or need a connected account."
                     label="Tools information"
                 />
             </div>

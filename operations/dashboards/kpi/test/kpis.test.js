@@ -478,10 +478,10 @@ const marginWeek = {
 };
 
 describe("revenue row", () => {
-    it("cycles between Pollen bought, Pollen spent, and ARPA", () => {
+    it("cycles between revenue, balance spent, and ARPA", () => {
         expect([0, 1, 2].map((i) => kpiView(revenue, i).name)).toEqual([
             "Revenue",
-            "Pollen spent",
+            "Balance spent",
             "ARPA",
         ]);
         expect(
@@ -517,7 +517,7 @@ describe("Google signups row", () => {
     });
 });
 
-describe("Paid Pollen share", () => {
+describe("Paid share of spend", () => {
     it("is a precise percent KPI available to the history graph", () => {
         expect(
             formatValue(
@@ -526,7 +526,7 @@ describe("Paid Pollen share", () => {
             ),
         ).toBe("33.90%");
         expect(kpiViewById("paidPollenPct:0")).toMatchObject({
-            name: "Paid Pollen share",
+            name: "Paid share of spend",
             category: "Revenue",
         });
     });

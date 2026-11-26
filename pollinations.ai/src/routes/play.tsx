@@ -3,11 +3,13 @@ import {
     useAuthActions,
     useAuthState,
 } from "@pollinations/sdk/react";
-import { ContentHeader, InlineLink } from "@pollinations/ui";
+import { Alert, ContentHeader } from "@pollinations/ui";
 import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
 import { createFileRoute } from "@tanstack/react-router";
+import { type RefObject, useEffect, useRef, useState } from "react";
 import { ENTER_URL, POLLI_APP_KEY } from "../config";
 import { routeHead } from "../routeMeta";
+import { type ConnectDrafts, takeConnectDraft } from "../ui/play/connect-draft";
 import { Playground } from "../ui/play/Playground";
 import { BottomScene } from "../ui/site/BottomScene";
 import { HeroScene, postHeroSpacingClassName } from "../ui/site/HeroScene";
@@ -32,73 +34,86 @@ export const Route = createFileRoute("/play")({
  * token-driven light/dark choice as every other route.
  */
 function PlayPage() {
+    const connect = useRef<(() => void) | null>(null);
     return (
         <PolliProvider
             appKey={POLLI_APP_KEY}
             enterUrl={ENTER_URL}
             permissions={["profile", "usage"]}
         >
-            <PlayHero />
+            <PlayHero connect={connect} />
             <div className={postHeroSpacingClassName}>
-                <HydratedPlayground />
+                <HydratedPlayground connect={connect} />
             </div>
             <BottomScene page="play" />
         </PolliProvider>
     );
 }
 
+type ConnectProps = { connect: RefObject<(() => void) | null> };
+
 /**
  * The playground reads its inputs from the URL once, on mount. Returning from
  * Connect, the provider first puts back the URL saved before sign-in, so the
  * playground mounts only after that.
  */
-function HydratedPlayground() {
+function HydratedPlayground({ connect }: ConnectProps) {
     const { isHydrated } = useAuthState();
-    return isHydrated ? <Playground /> : null;
+    const restore = useRef<Promise<ConnectDrafts | undefined> | null>(null);
+    const [drafts, setDrafts] = useState<ConnectDrafts>();
+    const [restoreError, setRestoreError] = useState(false);
+    useEffect(() => {
+        if (!isHydrated) return;
+        let active = true;
+        restore.current ??= takeConnectDraft();
+        restore.current.then(
+            (saved) => {
+                if (active) setDrafts(saved ?? {});
+            },
+            () => {
+                if (active) {
+                    setRestoreError(true);
+                    setDrafts({});
+                }
+            },
+        );
+        return () => {
+            active = false;
+        };
+    }, [isHydrated]);
+    return (
+        drafts && (
+            <>
+                {restoreError && (
+                    <Alert intent="warning">
+                        Couldn’t restore the files saved before sign-in.
+                    </Alert>
+                )}
+                <Playground connectRef={connect} drafts={drafts} />
+            </>
+        )
+    );
 }
 
-/**
- * Before connecting, the sentence itself connects (the playground's Generate
- * button does too); once connected, the account menu shows below it.
- */
-function PlayHero() {
-    const { isLoggedIn, isHydrated } = useAuthState();
+function PlayHero({ connect }: ConnectProps) {
     const { login } = useAuthActions();
-    const connect =
-        isHydrated && !isLoggedIn ? (
-            // Connecting leaves for enter, so it carries the external arrow.
-            // Wrapped: login() takes an optional request, not the click event.
-            <InlineLink
-                as="button"
-                type="button"
-                external
-                onClick={() => login()}
-            >
-                Connect your account
-            </InlineLink>
-        ) : (
-            "Connect your account"
-        );
-
+    const { isHydrated } = useAuthState();
     return (
         // The monitor robot, showing off something it just made.
         <HeroScene page="play" compactBottom>
             <ContentHeader
                 eyebrow="Models in the browser"
                 title="Try it out."
-                subtitle={
-                    <>
-                        Create images, video and audio. {connect} to use your
-                        own pollen.
-                    </>
-                }
+                subtitle="Create images, video and audio with your own balance."
                 variant="page"
             />
-            {isLoggedIn && (
-                <div className="self-start">
-                    <AppUserMenu labels={{ logout: "Disconnect app" }} />
-                </div>
-            )}
+            <div className="self-start" inert={!isHydrated}>
+                <AppUserMenu
+                    connectSize="lg"
+                    onConnect={() => (connect.current ?? login)()}
+                    labels={{ logout: "Disconnect app" }}
+                />
+            </div>
         </HeroScene>
     );
 }

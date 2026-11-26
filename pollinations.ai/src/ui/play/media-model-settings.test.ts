@@ -11,6 +11,25 @@ const empty: MediaModelMetadata = {
 };
 
 describe("catalog-only media settings", () => {
+    it("intersects the reference-mode limit with catalog durations", () => {
+        const selection = { duration: 12, durationLimit: 10 };
+        expect(
+            mediaModelSettings(
+                { ...empty, minDuration: 3, maxDuration: 6 },
+                selection,
+            ).duration?.max,
+        ).toBe(6);
+        expect(
+            mediaModelSettings(
+                { ...empty, allowedDurations: [4, 8, 12] },
+                selection,
+            ).duration?.options,
+        ).toEqual([4, 8]);
+        expect(
+            mediaModelSettings({ ...empty, allowedDurations: [12] }, selection)
+                .duration,
+        ).toBeUndefined();
+    });
     it("omits the source resolution sentinel from generation parameters", () => {
         const model = { ...empty, resolutions: ["source"] };
         expect(mediaModelSettings(model).resolution).toBeUndefined();

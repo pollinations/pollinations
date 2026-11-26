@@ -20,7 +20,7 @@ accepts an application name or path and is also restricted to `production`.
 Legacy Chat and React addresses use native Cloudflare Redirect Rules in the
 `pollinations.ai` and `myceli.ai` zones:
 
-- `chat.pollinations.ai` and `chat.myceli.ai` → `https://openwebui.pollinations.ai/`
+- `chat.pollinations.ai` and `chat.myceli.ai` → `https://openwebui.pollinations.ai/` → `https://openwebui.pollinations.app/`
 - `react.pollinations.ai` and `react.myceli.ai` → `https://github.com/pollinations/pollinations/tree/main/packages/ui`
 
 These rules return HTTP 301, discard the old path and preserve query strings.

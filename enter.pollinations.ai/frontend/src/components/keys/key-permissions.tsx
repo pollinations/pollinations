@@ -119,14 +119,14 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                 disabled={disabled}
                 info={
                     <InfoTip
-                        text={`This ${accessContext ?? "key"} never spends paid pollen. Requests stop when Quest pollen runs out.`}
-                        label="Quest pollen only information"
+                        text={`This ${accessContext ?? "key"} never spends paid balance. Requests stop when the Quest balance runs out.`}
+                        label="Quest balance only information"
                     />
                 }
             >
                 <span className="inline-flex items-center gap-1.5">
                     <WalletKindIcon kind="tier" />
-                    Quest pollen only
+                    Quest balance only
                 </span>
             </AuthAccessItem>
             <KeyLimitInput

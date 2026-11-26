@@ -26,6 +26,7 @@ const EFFORT_TO_BUDGET: Record<string, number> = {
     medium: 2048,
     high: 4096,
     xhigh: 8192,
+    max: 8192,
 };
 
 // reasoning_effort -> output_config.effort for adaptive-mode models.
@@ -37,6 +38,7 @@ const EFFORT_TO_OUTPUT_EFFORT: Record<string, string> = {
     medium: "medium",
     high: "high",
     xhigh: "high",
+    max: "high",
 };
 
 function normalizeEffort(value: unknown): string | undefined {
@@ -49,12 +51,15 @@ function normalizeEffort(value: unknown): string | undefined {
  * default; it is only enabled when the caller asks for it.
  * `reasoning_effort:"none"` leaves thinking off. Models that enable adaptive
  * thinking upstream by default can set `disableAdaptiveByDefault` to preserve
- * Pollinations' opt-in reasoning behavior.
+ * Pollinations' opt-in reasoning behavior. `outputEfforts` overrides the
+ * adaptive effort mapping for routes verified to accept a higher level.
  */
 export function createClaudeThinkingTransform(
     mode: ClaudeThinkingMode,
     disableAdaptiveByDefault = false,
+    outputEfforts: Record<string, string> = {},
 ): TransformFn {
+    const effortToOutput = { ...EFFORT_TO_OUTPUT_EFFORT, ...outputEfforts };
     return (messages, options) => {
         const updated: TransformOptions = { ...options };
         const effort = normalizeEffort(updated.reasoning_effort);
@@ -75,7 +80,7 @@ export function createClaudeThinkingTransform(
         if (mode === "adaptive") {
             updated.thinking = { type: "adaptive" };
             updated.output_config = {
-                effort: (effort && EFFORT_TO_OUTPUT_EFFORT[effort]) || "medium",
+                effort: (effort && effortToOutput[effort]) || "medium",
             };
             log("Enabled adaptive thinking, effort=%s", updated.output_config);
         } else {

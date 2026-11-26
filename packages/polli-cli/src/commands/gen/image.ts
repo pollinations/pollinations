@@ -38,7 +38,10 @@ export function createImageCommand() {
             "Reference image URL(s) for editing/i2i (repeatable)",
         )
         .option("--output <path>", "Save to file (extension inferred)")
-        .option("--estimate", "Show the estimated Pollen cost; don't generate")
+        .option(
+            "--estimate",
+            "Show the estimated cost in dollars; don't generate",
+        )
         .action(async (prompt, opts) => {
             const isHuman = getOutputMode() === "human";
 

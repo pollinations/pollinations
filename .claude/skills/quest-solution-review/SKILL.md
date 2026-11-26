@@ -1,6 +1,6 @@
 ---
 name: quest-solution-review
-description: Compare competing pull requests for a Pollinations community quest and select the smallest correct solution. Use when reviewing multiple implementations linked to a POLLEN-QUEST issue.
+description: Compare competing pull requests for a Pollinations community quest and select the smallest correct solution. Use when reviewing multiple implementations linked to a community quest.
 ---
 
 # Quest Solution Review

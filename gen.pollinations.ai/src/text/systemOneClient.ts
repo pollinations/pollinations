@@ -15,6 +15,7 @@ import type {
 import { isPlainObject } from "./utils/objectCleaners.js";
 
 const DOCS_URL = "https://docs.typesafe.ai/api";
+const HEYGEN_DECISION_MODEL = "heygen/heygen-decision-1";
 const REQUEST_EXAMPLE =
     '{"state":"My payouts have been failing for 3 days.","questions":{"department":{"type":"choice","instructions":"Which team should handle this?","criteria":{"billing":"Payment issues","technical":"Product failures"}},"is_urgent":{"type":"noul","instructions":"Does this convey urgency?"}}}';
 
@@ -22,9 +23,13 @@ type SystemOneResponse = {
     model: string;
     answers: Record<string, unknown>;
     usage: {
+        cost?: unknown;
         input_tokens: number;
         output_tokens: number;
         input_tokens_details?: {
+            audio_tokens?: number;
+            image_tokens?: number;
+            video_tokens?: number;
             cached_tokens?: number;
             cache_write_tokens?: number;
         };
@@ -61,7 +66,121 @@ function decisionText(value: unknown): string {
     return typeof value === "string" ? value : JSON.stringify(value);
 }
 
-function toD3Request(request: SystemOneRequest): SystemOneRequest {
+// The public decisions payload uses OpenAI-style media parts. Google accepts
+// inline bytes or a URI in a typed content block.
+function geminiInput(value: unknown): unknown {
+    const parts = Array.isArray(value) ? value : [value];
+    if (
+        !parts.some(
+            (part) =>
+                isPlainObject(part) &&
+                ["text", "image_url", "video_url", "input_audio"].includes(
+                    String(part.type),
+                ),
+        )
+    ) {
+        return decisionText(value);
+    }
+    return parts.map((part) => {
+        if (isPlainObject(part)) {
+            if (part.type === "text") return { type: "text", text: part.text };
+            if (
+                part.type === "input_audio" &&
+                isPlainObject(part.input_audio)
+            ) {
+                return {
+                    type: "audio",
+                    mime_type: `audio/${part.input_audio.format}`,
+                    data: part.input_audio.data,
+                };
+            }
+            if (part.type === "image_url" || part.type === "video_url") {
+                const media = part[part.type];
+                const url = isPlainObject(media) ? media.url : media;
+                if (typeof url !== "string")
+                    throw nativeRequestError("Expected a media URL.");
+                const type = part.type === "image_url" ? "image" : "video";
+                const inline = /^data:([^;,]+);base64,/i.exec(url);
+                if (inline)
+                    return {
+                        type,
+                        mime_type: inline[1],
+                        data: url.slice(inline[0].length),
+                    };
+                return { type, uri: url };
+            }
+        }
+        return { type: "text", text: decisionText(part) };
+    });
+}
+
+function fromGeminiResponse(body: unknown, model: string): SystemOneResponse {
+    if (
+        !isPlainObject(body) ||
+        !isPlainObject(body.answers) ||
+        !isPlainObject(body.usage)
+    ) {
+        throw serviceError(
+            "Gemini returned invalid decision answers or usage.",
+            502,
+        );
+    }
+    const { total_input_tokens, total_output_tokens, total_tokens } =
+        body.usage;
+    if (
+        typeof total_input_tokens !== "number" ||
+        total_output_tokens !== 0 ||
+        total_input_tokens !== total_tokens
+    ) {
+        throw serviceError(
+            "Gemini returned inconsistent decision token counts.",
+            502,
+        );
+    }
+    const details: NonNullable<
+        SystemOneResponse["usage"]["input_tokens_details"]
+    > = {};
+    const breakdown = body.usage.input_tokens_by_modality;
+    if (breakdown !== undefined) {
+        if (!Array.isArray(breakdown))
+            throw serviceError("Invalid Gemini usage breakdown.", 502);
+        let sum = 0;
+        for (const part of breakdown) {
+            if (
+                !isPlainObject(part) ||
+                typeof part.tokens !== "number" ||
+                !Number.isSafeInteger(part.tokens) ||
+                part.tokens < 0
+            )
+                throw serviceError("Invalid Gemini modality usage.", 502);
+            sum += part.tokens;
+            if (
+                part.modality === "image" ||
+                part.modality === "audio" ||
+                part.modality === "video"
+            ) {
+                const field = `${part.modality}_tokens` as const;
+                details[field] = (details[field] ?? 0) + part.tokens;
+            }
+        }
+        if (sum !== total_input_tokens)
+            throw serviceError("Inconsistent Gemini modality usage.", 502);
+    }
+    return {
+        model,
+        answers: body.answers,
+        usage: {
+            input_tokens: total_input_tokens,
+            output_tokens: total_output_tokens,
+            input_tokens_details: details,
+        },
+    };
+}
+
+function toTypedDecisionRequest(
+    request: SystemOneRequest,
+    protocol: "gemini" | "d3",
+) {
     const parsed = CreateDecisionRequestSchema.safeParse(request);
     if (!parsed.success) {
         throw serviceError(
@@ -69,10 +188,12 @@ function toD3Request(request: SystemOneRequest): SystemOneRequest {
             400,
         );
     }
-    const state = decisionText(parsed.data.state);
+    const content = protocol === "gemini" ? geminiInput : decisionText;
+    const state = content(parsed.data.state);
     if (
-        [...state].length > 32000 ||
-        Object.keys(parsed.data.questions).length > 64
+        protocol === "d3" &&
+        ((typeof state === "string" && [...state].length > 32000) ||
+            Object.keys(parsed.data.questions).length > 64)
     ) {
         throw serviceError(
             "d3 accepts up to 32,000 state characters and 64 questions.",
@@ -80,7 +201,7 @@ function toD3Request(request: SystemOneRequest): SystemOneRequest {
         );
     }
     return {
-        state,
+        ...(protocol === "gemini" ? { input: state } : { state }),
         questions: Object.fromEntries(
             Object.entries(parsed.data.questions).map(([name, question]) => {
                 const criteria = question.criteria;
@@ -88,7 +209,7 @@ function toD3Request(request: SystemOneRequest): SystemOneRequest {
                     const count = Object.keys(criteria).length;
                     if (count < 2 || count > 255) {
                         throw serviceError(
-                            "d3 questions require between 2 and 255 criteria.",
+                            `${protocol} questions require between 2 and 255 criteria.`,
                             400,
                         );
                     }
@@ -97,17 +218,17 @@ function toD3Request(request: SystemOneRequest): SystemOneRequest {
                     name,
                     {
                         ...question,
-                        instructions: decisionText(question.instructions),
+                        instructions: content(question.instructions),
                         ...(criteria && {
                             criteria: Array.isArray(criteria)
-                                ? criteria.map(decisionText)
+                                ? criteria.map(content)
                                 : Object.fromEntries(
                                       Object.entries(criteria).map(
                                           ([key, value]) => [
                                               key,
                                               value === null
                                                   ? null
-                                                  : decisionText(value),
+                                                  : content(value),
                                           ],
                                       ),
                                   ),
@@ -282,7 +403,11 @@ function parseNativeRequest(
 export async function requestDecision(
     request: SystemOneRequest,
     options: TransformOptions,
-): Promise<{ result: SystemOneResponse; requestUrl: URL }> {
+): Promise<{
+    result: SystemOneResponse;
+    requestUrl: URL;
+    reportedCost?: number;
+}> {
     const { state, questions } = request;
     if (
         options.requestedModel?.split(":")[0] ===
@@ -300,6 +425,7 @@ export async function requestDecision(
             500,
         );
     }
+    const gemini = options.modelConfig?.decisionsProtocol === "gemini";
     const openai = options.modelConfig?.decisionsProtocol === "openai";
     const d3 = options.modelConfig?.decisionsProtocol === "vllm-sr";
     const requestUrl = new URL(endpoint);
@@ -307,32 +433,40 @@ export async function requestDecision(
         const response = await fetch(requestUrl, {
             method: "POST",
             headers: {
-                ...(options.modelConfig?.directAuthHeader === "api-key"
-                    ? { "api-key": apiKey }
-                    : { Authorization: `Bearer ${apiKey}` }),
+                ...(gemini
+                    ? { "x-goog-api-key": apiKey }
+                    : options.modelConfig?.directAuthHeader === "api-key"
+                      ? { "api-key": apiKey }
+                      : { Authorization: `Bearer ${apiKey}` }),
                 "Content-Type": "application/json",
             },
             body: JSON.stringify(
-                openai
-                    ? {
-                          model,
-                          input: decisionText(state),
-                          questions: toOpenAIQuestions(questions),
-                      }
-                    : {
-                          ...(options.modelConfig?.defaultOptions as
-                              | Record<string, unknown>
-                              | undefined),
-                          ...(d3 ? toD3Request(request) : request),
-                          model,
-                      },
+                gemini
+                    ? { model, ...toTypedDecisionRequest(request, "gemini") }
+                    : openai
+                      ? {
+                            model,
+                            input: decisionText(state),
+                            questions: toOpenAIQuestions(questions),
+                        }
+                      : {
+                            ...(options.modelConfig?.defaultOptions as
+                                | Record<string, unknown>
+                                | undefined),
+                            ...(d3
+                                ? toTypedDecisionRequest(request, "d3")
+                                : request),
+                            model,
+                        },
             ),
         });
         await ensureUpstreamOk(response, requestUrl);
         const body = await response.json();
-        const result = openai
-            ? fromOpenAIResponse(body, questions)
-            : (body as SystemOneResponse);
+        const result = gemini
+            ? fromGeminiResponse(body, String(model))
+            : openai
+              ? fromOpenAIResponse(body, questions)
+              : (body as SystemOneResponse);
         // Billable responses must carry usage; reject rather than bill zero.
         if (
             !isPlainObject(result?.answers) ||
@@ -373,6 +507,10 @@ export async function requestDecision(
                 }
             }
         }
+        const cost = result.usage.cost;
+        if (typeof cost === "number" && Number.isFinite(cost) && cost >= 0) {
+            return { result, requestUrl, reportedCost: cost };
+        }
         return { result, requestUrl };
     } catch (thrown) {
         const error =
@@ -394,7 +532,7 @@ export async function callSystemOne(
     messages: ChatMessage[],
     options: TransformOptions,
 ): Promise<ChatCompletion> {
-    const { result, requestUrl } = await requestDecision(
+    const { result, requestUrl, reportedCost } = await requestDecision(
         parseNativeRequest(messages, options.modelConfig?.model),
         options,
     );
@@ -402,7 +540,10 @@ export async function callSystemOne(
         id: `systemone-${crypto.randomUUID()}`,
         object: "chat.completion",
         created: Math.floor(Date.now() / 1000),
-        model: result.model,
+        model:
+            options.modelConfig?.model === HEYGEN_DECISION_MODEL
+                ? HEYGEN_DECISION_MODEL
+                : result.model,
         choices: [
             {
                 index: 0,
@@ -413,7 +554,10 @@ export async function callSystemOne(
                 finish_reason: "stop",
             },
         ],
-        usage: decisionCompletionUsage(result.usage),
+        usage: {
+            ...decisionCompletionUsage(result.usage),
+            ...(reportedCost !== undefined && { cost: reportedCost }),
+        },
     };
     return withUpstreamRequestUrl(
         // TypeSafe answers arrive in one piece.

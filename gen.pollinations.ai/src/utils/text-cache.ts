@@ -6,7 +6,7 @@
 
 import type { Logger } from "@logtape/logtape";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
-import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
+import { putGenerationResult, refreshR2ObjectTtl } from "@shared/r2-storage.ts";
 import {
     parseSafeFeatures,
     SAFETY_HEADER_NAME,
@@ -299,15 +299,23 @@ export function createCaptureStream<TEnv extends TextCacheEnv>(
                         completeResponse.set(chunk, offset);
                         offset += chunk.byteLength;
                     }
+                    chunks = [];
 
                     if (isStreamingErrorResponse(response, completeResponse)) {
                         resolveWrite();
                         return;
                     }
 
-                    await c.env.TEXT_BUCKET.put(cacheKey, completeResponse, {
-                        customMetadata: prepareMetadata(response),
-                    });
+                    await putGenerationResult(
+                        c.env.TEXT_BUCKET,
+                        cacheKey,
+                        completeResponse,
+                        {
+                            customMetadata: prepareMetadata(response),
+                        },
+                        "TEXT_BUCKET",
+                        c.var.requestId,
+                    );
                     log?.info(
                         "[TEXT-CACHE] Streaming response cached successfully ({size} bytes)",
                         { size: totalSize },
@@ -315,8 +323,6 @@ export function createCaptureStream<TEnv extends TextCacheEnv>(
                     resolveWrite();
                 } catch (error) {
                     rejectWrite(error);
-                } finally {
-                    chunks = [];
                 }
             })();
         },

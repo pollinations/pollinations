@@ -398,7 +398,7 @@ name or an undocumented ratio.
   Unjoined cost stays visible as needs mapping, shared upstream, or missing
   breakdown. Never spread it across models.
 - D1 `user` is authoritative for creator GitHub usernames and current balances.
-  Paid and Quest Pollen are non-cashable usage exposure; Paid serves the full
+  Paid and Quest balances are non-cashable usage exposure; Paid serves the full
   catalog, Quest only the eligible catalog. Never classify either as Revenue
   Share or subtract face value from cash runway.
   A staging snapshot includes positive-balance users plus all Revenue Share

@@ -2641,7 +2641,7 @@ test("a merged PR pays its own reward label, else the highest bounty it closes, 
         pr(9501, { mergedAt: "2026-11-05T00:00:00Z" }),
         pr(9502, { labels: ["reward-15", "BUG"] }),
         pr(9503, { closingIssues: [9400] }),
-        // The same quest pays its author once.
+        // The same quest pays its author once; their next PR closing it earns 5.
         pr(9507, { closingIssues: [9400] }),
         pr(9505, { closingIssues: [9401, 9402] }),
         pr(9506, { labels: ["reward-50"], closingIssues: [9403] }),
@@ -2658,6 +2658,7 @@ test("a merged PR pays its own reward label, else the highest bounty it closes, 
         { questId: "github:issue:9404", pollenAmount: 5 },
         { questId: "github:merged_pr:9501", pollenAmount: 5 },
         { questId: "github:merged_pr:9502", pollenAmount: 15 },
+        { questId: "github:merged_pr:9507", pollenAmount: 5 },
     ];
     expect(await prRewards()).toEqual(paid);
 
@@ -2864,6 +2865,37 @@ test("PRs closing one quest that merge before a check each pay: the earliest the
     ];
     expect(await checkPrRewards(user.id)).toEqual(paid);
     expect(await checkPrRewards(user.id)).toEqual(paid);
+
+    // A PR from before the start date already earned the next quest, so the
+    // PR closing it now earns its own reward.
+    seedQuestIssue(mocks.github.state, {
+        issueNumber: 19175,
+        title: "Quest 19175",
+        goal: "Build it.",
+        reward: 10,
+    });
+    const quest19175 = mocks.github.state.questIssues.at(-1);
+    if (quest19175)
+        quest19175.closedByPullRequestsReferences = [
+            {
+                number: 19400,
+                mergedAt: "2026-11-01T00:00:00Z",
+                author: { databaseId: user.githubId },
+            },
+        ];
+    await env.KV.delete("quests:github-issues:v2");
+    mocks.github.state.mergedPullRequests.push({
+        number: 19521,
+        authorLogin: login,
+        mergedAt: "2026-11-13T00:00:00Z",
+        closingIssues: [19175],
+    });
+    expect(await checkPrRewards(user.id)).toEqual([
+        paid[0],
+        { questId: "github:issue:19175", pollenAmount: 10 },
+        ...paid.slice(1),
+        { questId: "github:merged_pr:19521", pollenAmount: 5 },
+    ]);
 });
 
 test("Bee Census quest pays 3 Pollen once for the user's own labelled survey issue with enough written answers", async ({

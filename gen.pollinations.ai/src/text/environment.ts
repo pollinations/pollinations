@@ -24,7 +24,6 @@ const TEXT_ENV_KEYS = [
     "OPENROUTER_API_KEY",
     "OVHCLOUD_API_KEY",
     "PERPLEXITY_API_KEY",
-    "PLN_GPU_TOKEN",
     "PORTKEY_GATEWAY_URL",
     "XAI_API_KEY",
 ] as const satisfies readonly (keyof CloudflareBindings)[];

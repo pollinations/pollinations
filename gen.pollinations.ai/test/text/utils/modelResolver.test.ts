@@ -255,15 +255,23 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe("gpt-6-luna-classic");
     });
 
-    it("routes GPT-OSS 20B to our Vast GPU", () => {
-        const result = resolveModelConfig(messages, {
+    it("routes GPT-OSS 20B to DeepInfra, then Bedrock Mantle", () => {
+        expect(
+            resolveModelConfig(messages, { model: "openai/gpt-oss-20b" })
+                .options.modelConfig,
+        ).toMatchObject({
+            "custom-host": "https://api.deepinfra.com/v1/openai",
             model: "openai/gpt-oss-20b",
         });
-
-        expect(result.options.modelConfig).toMatchObject({
-            provider: "openai",
-            "custom-host": "https://gpt-oss-vast.myceli.ai/v1",
-            model: "openai/gpt-oss-20b",
+        expect(
+            resolveModelConfig(messages, {
+                model: "openai/gpt-oss-20b:aws",
+            }).options.modelConfig,
+        ).toMatchObject({
+            provider: "bedrock",
+            directEndpoint:
+                "https://bedrock-mantle.us-east-1.api.aws/v1/chat/completions",
+            model: "openai.gpt-oss-20b",
         });
     });
 

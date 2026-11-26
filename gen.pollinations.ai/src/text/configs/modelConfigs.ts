@@ -1614,15 +1614,25 @@ export const portkeyConfig: PortkeyConfigMap = {
     "inferenceport-lightning-text-v2.1": () =>
         createInferencePortModelConfig({ model: "lightning-text-v2.1" }),
 
-    // -- Our Vast GPU (operations/infrastructure/gpu/gpt-oss) ------------------
-    "gpt-oss-20b": () => ({
-        provider: "openai",
-        "custom-host": "https://gpt-oss-vast.myceli.ai/v1",
-        authKey: textEnvironmentValue("PLN_GPU_TOKEN"),
-        model: "openai/gpt-oss-20b",
-        "max-tokens": 1500,
-        responsesEndpoint: "https://gpt-oss-vast.myceli.ai/v1/responses",
-    }),
+    // -- GPT-OSS 20B: DeepInfra, then Bedrock Mantle ----------------------------
+    "gpt-oss-20b": () =>
+        createDeepInfraModelConfig({
+            model: "openai/gpt-oss-20b",
+            "max-tokens": 1500,
+            responsesEndpoint: "https://api.deepinfra.com/v1/openai/responses",
+        }),
+    // Mantle, not bedrock-runtime: the runtime endpoint inlines
+    // <reasoning>...</reasoning> into the message content.
+    "openai/gpt-oss-20b:aws": () =>
+        createBedrockNativeConfig({
+            model: "openai.gpt-oss-20b",
+            "aws-region": "us-east-1",
+            "max-tokens": 1500,
+            directEndpoint:
+                "https://bedrock-mantle.us-east-1.api.aws/v1/chat/completions",
+            responsesEndpoint:
+                "https://bedrock-mantle.us-east-1.api.aws/v1/responses",
+        }),
 
     // -- OVHcloud -------------------------------------------------------------
     "Qwen3Guard-Gen-8B": () =>

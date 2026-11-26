@@ -4408,6 +4408,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000005,
     },
   },
+  "openai/gpt-oss-20b:aws": {
+    "cost": {
+      "completionTextTokens": 0.0000003,
+      "promptTextTokens": 0.00000007,
+    },
+    "price": {
+      "completionTextTokens": 0.0000003,
+      "promptTextTokens": 0.00000007,
+    },
+  },
   "openai/gpt-realtime-2.1": {
     "cost": {
       "completionAudioTokens": 0.000064,

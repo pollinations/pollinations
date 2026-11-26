@@ -444,6 +444,7 @@ test("filters non-Azure and non-Fireworks text models by paid balance", async ({
     // Approved Quest Pollen exceptions outside Azure and Fireworks.
     const questExceptions = [
         "qwen/qwen3guard-gen-8b",
+        "openai/gpt-oss-20b",
         "respan/span-01-lite",
         "vllm-sr/d3",
         "moonshotai/kimi-k3", // Retains Quest access after the AWS move.

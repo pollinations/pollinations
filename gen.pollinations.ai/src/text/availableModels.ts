@@ -338,6 +338,11 @@ const models: ModelDefinition[] = [
         transform: gptOssEffort,
     },
     {
+        name: "openai/gpt-oss-20b:aws",
+        config: portkeyConfig["openai/gpt-oss-20b:aws"],
+        transform: gptOssEffort,
+    },
+    {
         name: "openai/gpt-5.4:aws",
         config: portkeyConfig["gpt-5.4-bedrock"],
         transform: omitOpenAISampling,

@@ -15,17 +15,23 @@ State any intentional capability or access change plainly. Show one complete row
 |---|---|
 | Canonical name | Public model ID after the change |
 | Aliases | Every compatibility alias, or `none` |
-| `priceMultiplier` | Exact multiplier after provider cost |
-| `paidOnly` | Whether purchased pack balance is required |
-| Pollinations GPU | `yes` only if Pollinations operates the production hardware |
 | Registry provider | Configured primary provider |
 | Primary route | Provider, deployment/host, and exact upstream model ID |
+| Provider cost | Per unit, with every fee included, such as OpenRouter's 5.5% |
+| Cost valid until | The discount's end date and the cost after it, or `normal rate` |
+| `priceMultiplier` | Exact multiplier |
+| User price | Provider cost × multiplier, per unit |
+| `paidOnly` | Whether purchased pack balance is required |
+| Pollinations GPU | `yes` only if Pollinations operates the production hardware |
+| Capabilities | What the primary route supports |
 | Best fallback candidate | Provider, deployment/host, exact upstream model ID, and why it is the best viable alternative; or `none found` with the searched routes |
+| Fallback compatibility | Parameters, formats and limits that differ from the primary, or `same` |
+| Fallback cost | Per unit, ending with `= price`, `below price` or `above price ⚠` |
 | Pollinations fallback | `use <candidate>` or `none`, with the reason for declining or lacking a viable candidate |
 
 Ask:
 
-> Please confirm: canonical name **X**, aliases **A/none**, price multiplier **M**, paid-only **yes/no**, Pollinations GPU **yes/no**, registry provider **P**, primary route **R**, best fallback candidate **C/none found**, and Pollinations fallback decision **use C/none**. Are all of these correct?
+> Please confirm: canonical name **X**, aliases **A/none**, registry provider **P**, primary route **R**, provider cost **C** valid until **D**, price multiplier **M**, user price **U**, paid-only **yes/no**, Pollinations GPU **yes/no**, capabilities **K**, best fallback candidate **F/none found** with differences **Δ/same** at cost **G**, and Pollinations fallback decision **use F/none**. Are all of these correct?
 
 An answer approves only the values shown. If a value is unknown, inferred, conflicting, or route-dependent, label it `UNKNOWN`, explain the evidence, and wait for that exact decision. A batch approval is valid only when every row is complete.
 

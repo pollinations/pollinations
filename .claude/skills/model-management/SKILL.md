@@ -29,6 +29,13 @@ defines the defaults for route choice, catalog scope, economics, and fallbacks.
   [applicable test matrix](references/change-and-test-matrix.md) and record the
   evidence in the PR using [verification and PR guidance](references/verification-and-prs.md).
 
+## Adding a model
+
+Read every reference below, in this order: route research, operating policy,
+approval, implementation, test matrix, billing verification, verification and
+PRs. The change is done only when the
+[completion gate](references/verification-and-prs.md#completion-gate) holds.
+
 ## References
 
 | Task | Read |

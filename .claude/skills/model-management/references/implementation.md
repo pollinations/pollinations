@@ -57,15 +57,20 @@ Check the [website’s Playground overrides](../../../../pollinations.ai/src/dat
   publisher model, consolidate them under that model identity and select the
   operation through an explicit endpoint or request field. Do not create a
   second canonical model or make an alias select behavior.
+
+## Reuse and fallbacks
+
 - Reuse existing handlers, transforms, provider configs, schemas, and generic fallback infrastructure.
 - Implement only the explicitly approved fallback decision. Use the shared generic fallback system for an approved pair; do not add a model-specific retry layer or an unapproved fallback.
+
 ## API compatibility
 
-- Expose a confirmed new public capability (per the API-change confirmation above) through two surfaces backed by one implementation: a Pollinations-native route outside `/v1` and a standard-compatible route under `/v1`.
+- Expose a confirmed new public capability (per the [API-change confirmation](change-approval.md#public-api-changes)) through two surfaces backed by one implementation: a Pollinations-native route outside `/v1` and a standard-compatible route under `/v1`.
 - Resolve the compatibility contract in this order: (1) current official OpenAI API; (2) if OpenAI defines no equivalent, the current published OpenRouter contract — a protocol-design reference here, not an inference-provider fallback; (3) if neither defines the capability, stop for an explicit API-contract decision. Document the exact reference checked.
 - Treat `/v1` as a compatibility namespace: match the selected standard's route, transport, request, response, streaming, and event contracts exactly, and keep provider-specific protocols behind the route adapters — never a Pollinations-specific or upstream-provider schema under `/v1`.
 - Prefer the selected standard's schema on the Pollinations-native route too; deliberate native divergence requires its own explicit API-change confirmation.
 - Do not collapse capabilities with materially different inputs, outputs, or transports into one endpoint merely by switching `model`. Keep distinct operations separate while reusing their shared internal handler, authorization, billing, and observability paths.
+
 ## Aliases and stored IDs
 
 - Treat aliases as identity-only: resolve to the canonical model, then discard the requested alias for behavior. Never infer parameters from alias spelling such as `-high`, `-search`, `-reasoning`, or `-1080p`; only explicit request parameters and canonical defaults apply. Keep a separate canonical model if the old behavior must remain.
@@ -85,6 +90,7 @@ Check the [website’s Playground overrides](../../../../pollinations.ai/src/dat
 - Retire all legacy aliases through explicit migrations.
 - Keep model names and aliases in `shared/registry/`; use the live model
   catalog for public listings rather than maintaining a duplicate Markdown list.
+
 ## Pricing, catalog and provider onboarding
 
 - Bill from the usage the provider reports with each response: its usage block

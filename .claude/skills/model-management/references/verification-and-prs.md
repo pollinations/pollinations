@@ -58,6 +58,8 @@ Decision first, at most ~150 words, no narrative:
 ```
 
 - Take values from code, catalog and live provider. Write `same` if unchanged, `none` if absent.
+- Below the description, outside the word limit, add a collapsed `<details>` table with one row per tested parameter value or capability: route, request, result, billed units.
+- For a discounted cost, put the end date and the cost after it in the Promo row and link the dated PR that restores the normal rate.
 - End each cost cell with `= price`, `below price` or `above price ⚠`.
 - Retirement, once decided: add the row below; the news pipeline parses it. Postpone with a new row, withdraw with `Cancelled`, never move a date earlier. Note a provider's route deadline as a code comment, not in the registry.
 

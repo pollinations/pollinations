@@ -5,9 +5,11 @@ These are strategic defaults. The user's explicit, confirmed contract for a spec
 ## Route selection
 
 - Prefer managed serverless inference.
-- Primary is the cheapest route at its normal, non-promo price; count credit-funded routes at their real cost to us. Price = primary cost.
-- Fallback is the next cheapest route, on another provider where possible.
-- A promo never chooses the primary or sets the price, except on routes billed at the provider's live price.
+- Offer the best price on the market without losing money. Compare routes by user price: the provider cost with every fee included (OpenRouter's 5.5%, search, cache storage) times the route's `priceMultiplier`.
+- Spend provider credits first, in this order: Azure, Fireworks, AWS. Azure is primary whenever it serves the exact model with the advertised capabilities. During a promo, the lower user price decides between Azure and Fireworks. A cash route is primary only when none of the three serves the model; then the lowest user price wins.
+- Take every discount and pass it on: the price follows the current cost. State the discount's end date and the cost after it. When the end date is known, open the PR that restores the normal rate at the same time, as a [dated hold](verification-and-prs.md#scheduled-merges-and-holds).
+- A multiplier below 1 is only for routes with spare credits: 0.75 on Azure, where the credits are largest, though not on every Azure model, and 0.75 on Anthropic direct. Fireworks and AWS use 1.
+- Fallback is the next cheapest route, on another provider where possible. A fallback that costs more than the price is an accepted loss; show it in the approval row.
 - Before choosing a route, enumerate the exact model across the preferred providers, the current provider, and other already-integrated providers. Compare current posted price, credit eligibility, availability, quotas, capabilities, latency, and maturity.
 - Do not route to a provider solely because an old model name matches. Verify the exact canonical checkpoint, capabilities, limits, latency, and pricing.
 - Direct providers remain valid when the preferred platforms lack an equivalent route or the direct API has a material capability advantage.
@@ -40,7 +42,7 @@ These are strategic defaults. The user's explicit, confirmed contract for a spec
 - Add or change a fallback only after explicit confirmation of the exact pair. Use the shared generic fallback system; do not build a model-specific retry layer.
 - Directly probe both routes and force the configured fallback through the full applicable local E2E matrix. Prove permissions, billing, provider attribution, cache behavior, errors, and burst capacity independently for the fallback.
 - Provider-managed fallback is distinct from Pollinations fallback. Preserve the provider default unless its tradeoffs require a product decision, and disclose those tradeoffs before editing.
-- Flag a fallback that costs more than the price in the PR.
+- Flag a fallback that costs more than the price in the approval row and the PR.
 
 ## GPUs and latency
 

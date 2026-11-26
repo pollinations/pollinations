@@ -13,4 +13,6 @@ Review open PRs that introduce a new public model. Read any linked request for c
    job's chat. For an approved addition, use the
    [change matrix](../../.claude/skills/model-management/references/change-and-test-matrix.md#change-matrix)
    and [billing verification](../../.claude/skills/model-management/references/billing-verification.md)
-   before marking the PR ready.
+   before marking the PR ready. Check the PR against the
+   [implementation rules](../../.claude/skills/model-management/references/implementation.md)
+   and the [completion gate](../../.claude/skills/model-management/references/verification-and-prs.md#completion-gate).

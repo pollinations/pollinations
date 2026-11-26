@@ -9474,6 +9474,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         community?: boolean;
         agent?: boolean;
         base_model?: string;
+        mcp_servers?: string[];
         pricing?: Record<string, string>;
         capabilities?: string[];
         input_modalities?: string[];
@@ -9513,6 +9514,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         community: true,
         agent: true,
         base_model: promptAgent.baseModel,
+        mcp_servers: promptAgent.mcpServers,
         pricing: baseModelInfo?.pricing,
         capabilities: agentCapabilities,
         input_modalities: baseModelInfo?.input_modalities,

@@ -26,6 +26,7 @@ export type MockGithubState = {
         state: "open" | "closed";
         html_url: string;
         body: string | null;
+        authorAssociation?: string;
         created_at: string;
         updated_at: string;
         closed_at: string | null;
@@ -233,6 +234,7 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                 url: issue.html_url,
                 createdAt: issue.created_at,
                 body: issue.body,
+                authorAssociation: issue.authorAssociation ?? "MEMBER",
                 author: issue.user
                     ? { databaseId: issue.user.databaseId ?? null }
                     : null,
@@ -247,6 +249,8 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                     nodes: (issue.closedByPullRequestsReferences ?? []).map(
                         (pr) => ({
                             ...pr,
+                            title: `PR ${pr.number}`,
+                            url: `https://github.com/${REPO}/pull/${pr.number}`,
                             baseRefName: pr.baseRefName ?? "main",
                             repository: {
                                 nameWithOwner: pr.repository ?? REPO,

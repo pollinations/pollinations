@@ -696,9 +696,12 @@ async function generation(
     // Within the interval after the day's last free reply: the daily limit
     // is the wait that matters, not the 45 seconds
     if (served && slot.action === "pay" && !slot.daily) {
+        // One timestamp for the day checked and its reset; a day that ended
+        // during the lookup keeps the interval's answer
+        const at = Date.now();
         try {
-            if (await quotaFull(env.DAILY_QUOTA, ip, FREE_PER_DAY, Date.now()))
-                slot = dailyLimit(Date.now());
+            const full = await quotaFull(env.DAILY_QUOTA, ip, FREE_PER_DAY, at);
+            if (full && nextMidnight(at) > Date.now()) slot = dailyLimit(at);
         } catch (error) {
             logFailure(route, { error: "daily_quota", type: error.name });
         }

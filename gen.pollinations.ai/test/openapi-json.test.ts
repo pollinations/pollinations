@@ -99,8 +99,14 @@ describe("/openapi.json", () => {
         const schema = (await response.json()) as {
             openapi: string;
             paths: Record<string, unknown>;
+            externalDocs: { description: string; url: string };
         };
         expect(schema.openapi).toBe("3.1.0");
+        // Agents that read only the schema need a path to the plain-text guide.
+        expect(schema.externalDocs).toEqual({
+            description: expect.stringContaining("Agent guide"),
+            url: "https://gen.pollinations.ai/docs/llm.txt",
+        });
         expect(Object.keys(schema.paths).length).toBeGreaterThan(0);
         // Gen-owned merged paths prove the real merge ran (not a stub/404).
         expect(schema.paths["/v1/chat/completions"]).toBeDefined();

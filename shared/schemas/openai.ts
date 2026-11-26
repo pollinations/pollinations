@@ -829,6 +829,7 @@ export const OpenAIModelSchema = z
             .string()
             .optional()
             .describe(AGENT_FIELD_DESCRIPTIONS.base_model),
+        mcp_servers: ModelInfoSchema.shape.mcp_servers,
         paid_only: z
             .boolean()
             .describe(

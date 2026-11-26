@@ -759,8 +759,10 @@ export async function evaluateUser(
         }));
 
     // A PR's own reward label wins, then the highest bounty among the quests
-    // it closes, then 5; never a sum. A quest pays each author once, however
-    // many of their PRs close it.
+    // it closes, then 5; never a sum. A quest pays each author once: their
+    // earliest unpaid merged PR closing it earns the quest reward, and every
+    // other PR closing it earns its own merged-PR reward. When the quest issue
+    // already pays the author (an early PR or an app), every PR earns its own.
     const quests = new Map(issues.map((issue) => [issue.issueNumber, issue]));
     // Until this change deploys, Enter pays the one-time reward for any first
     // merged PR. Without a PR from before REWARDS_START, that paid the earliest
@@ -772,19 +774,42 @@ export async function evaluateUser(
                   first && first.mergedAt <= pr.mergedAt ? first : pr,
               undefined,
           );
+    const closes = new Map(
+        mergedPrs.map((pr) => [
+            pr,
+            pr.closingIssuesReferences.nodes
+                .filter((issue) => issue.repository.nameWithOwner === REPO)
+                .map((issue) => issue.number)
+                .filter(
+                    (number) =>
+                        !quests.get(number)?.winnerGithubIds.includes(githubId),
+                ),
+        ]),
+    );
+    const firstCloser = new Map<number, MergedPrNode>();
+    for (const [pr, numbers] of closes) {
+        // A PR already paid its merged-PR reward didn't earn a quest.
+        if (earned.has(`github:merged_pr:${pr.number}`)) continue;
+        for (const number of numbers) {
+            const first = firstCloser.get(number);
+            if (!first || pr.mergedAt < first.mergedAt) {
+                firstCloser.set(number, pr);
+            }
+        }
+    }
     const prProposals = mergedPrs.flatMap((pr) => {
-        const closes = pr.closingIssuesReferences.nodes
-            .filter((issue) => issue.repository.nameWithOwner === REPO)
-            .map((issue) => issue.number);
+        const firstCloses = (closes.get(pr) ?? []).filter(
+            (number) => firstCloser.get(number) === pr,
+        );
         // Labels, quests and closing issues can change after a PR paid, so a
         // PR that could map to an id the account earned has already paid.
         const ids = [
             `github:merged_pr:${pr.number}`,
-            ...closes.map((number) => `github:issue:${number}`),
+            ...firstCloses.map((number) => `github:issue:${number}`),
             ...(pr === firstPr ? [mergedPrQuest.id] : []),
         ];
         if (ids.some((id) => earned.has(id))) return [];
-        const quest = closes
+        const quest = firstCloses
             .flatMap((number) => quests.get(number) ?? [])
             .sort((a, b) => b.rewardAmount - a.rewardAmount)[0];
         const definition = quest

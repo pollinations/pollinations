@@ -2641,7 +2641,7 @@ test("a merged PR pays its own reward label, else the highest bounty it closes, 
         pr(9501, { mergedAt: "2026-11-05T00:00:00Z" }),
         pr(9502, { labels: ["reward-15", "BUG"] }),
         pr(9503, { closingIssues: [9400] }),
-        // The same quest pays its author once.
+        // The same quest pays its author once; their next PR closing it earns 5.
         pr(9507, { closingIssues: [9400] }),
         pr(9505, { closingIssues: [9401, 9402] }),
         pr(9506, { labels: ["reward-50"], closingIssues: [9403] }),
@@ -2658,6 +2658,7 @@ test("a merged PR pays its own reward label, else the highest bounty it closes, 
         { questId: "github:issue:9404", pollenAmount: 5 },
         { questId: "github:merged_pr:9501", pollenAmount: 5 },
         { questId: "github:merged_pr:9502", pollenAmount: 15 },
+        { questId: "github:merged_pr:9507", pollenAmount: 5 },
     ];
     expect(await prRewards()).toEqual(paid);
 
@@ -2776,6 +2777,139 @@ test("a merged PR pays once, whatever changes after it paid", async ({
         paid[0],
         { questId: "github:merged_pr:9799", pollenAmount: 5 },
         ...paid.slice(1),
+    ]);
+});
+
+test("a later PR closing an already-paid multi-winner quest earns its own merged-PR reward", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const user = await getOnlyUser();
+    await mocks.enable("github", "tinybird");
+    const login = user.githubUsername ?? "";
+
+    // The quest paid this author once, for PR 19503, before PR 19519 merged.
+    seedQuestIssue(mocks.github.state, {
+        issueNumber: 19174,
+        title: "[QUEST] Extend our MCP servers or add a new one",
+        goal: "Add a new MCP server or extend one of ours.",
+        reward: 5,
+        reopened: true,
+    });
+    const questRewardKey = rewardKey("github:issue:19174", user);
+    await drizzle(env.DB, { schema })
+        .insert(schema.rewards)
+        .values({
+            id: questRewardKey,
+            idempotencyKey: questRewardKey,
+            userId: user.id,
+            questId: "github:issue:19174",
+            title: "Extend our MCP servers or add a new one",
+            pollenAmount: 5,
+            balanceBucket: "tier",
+            earnedAt: new Date("2026-11-12T06:00:00Z"),
+        });
+    // Before this change deployed, Enter also paid 19503 the one-time reward.
+    const firstPrKey = `quest:merged_pr:github:${user.githubId}`;
+    await drizzle(env.DB, { schema })
+        .insert(schema.rewards)
+        .values({
+            id: firstPrKey,
+            idempotencyKey: firstPrKey,
+            userId: user.id,
+            questId: "merged_pr",
+            title: "Contribute a pull request",
+            pollenAmount: 5,
+            balanceBucket: "tier",
+            earnedAt: new Date("2026-11-12T06:00:00Z"),
+        });
+    mocks.github.state.mergedPullRequests.push(
+        {
+            number: 19503,
+            authorLogin: login,
+            mergedAt: "2026-11-12T00:00:00Z",
+            closingIssues: [19174],
+        },
+        {
+            number: 19519,
+            authorLogin: login,
+            mergedAt: "2026-11-12T12:00:00Z",
+            closingIssues: [19174],
+        },
+    );
+
+    // 19503 earned the quest reward; 19519 still earns its own 5.
+    const paid = [
+        { questId: "github:issue:19174", pollenAmount: 5 },
+        { questId: "github:merged_pr:19519", pollenAmount: 5 },
+        { questId: "merged_pr", pollenAmount: 5 },
+    ];
+    expect(await checkPrRewards(user.id)).toEqual(paid);
+    // A recheck pays neither PR again.
+    expect(await checkPrRewards(user.id)).toEqual(paid);
+});
+
+test("PRs closing one quest that merge before a check each pay: the earliest the quest, the rest their merged-PR reward", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const user = await getOnlyUser();
+    await mocks.enable("github", "tinybird");
+    const login = user.githubUsername ?? "";
+
+    seedQuestIssue(mocks.github.state, {
+        issueNumber: 19174,
+        title: "[QUEST] Extend our MCP servers or add a new one",
+        goal: "Add a new MCP server or extend one of ours.",
+        reward: 5,
+        reopened: true,
+    });
+    mocks.github.state.mergedPullRequests.push(
+        ...[19503, 19519, 19520].map((number, i) => ({
+            number,
+            authorLogin: login,
+            mergedAt: `2026-11-12T0${i}:00:00Z`,
+            closingIssues: [19174],
+        })),
+    );
+
+    const paid = [
+        { questId: "github:issue:19174", pollenAmount: 5 },
+        { questId: "github:merged_pr:19519", pollenAmount: 5 },
+        { questId: "github:merged_pr:19520", pollenAmount: 5 },
+    ];
+    expect(await checkPrRewards(user.id)).toEqual(paid);
+    expect(await checkPrRewards(user.id)).toEqual(paid);
+
+    // A PR from before the start date already earned the next quest, so the
+    // PR closing it now earns its own reward.
+    seedQuestIssue(mocks.github.state, {
+        issueNumber: 19175,
+        title: "Quest 19175",
+        goal: "Build it.",
+        reward: 10,
+    });
+    const quest19175 = mocks.github.state.questIssues.at(-1);
+    if (quest19175)
+        quest19175.closedByPullRequestsReferences = [
+            {
+                number: 19400,
+                mergedAt: "2026-11-01T00:00:00Z",
+                author: { databaseId: user.githubId },
+            },
+        ];
+    await env.KV.delete("quests:github-issues:v2");
+    mocks.github.state.mergedPullRequests.push({
+        number: 19521,
+        authorLogin: login,
+        mergedAt: "2026-11-13T00:00:00Z",
+        closingIssues: [19175],
+    });
+    expect(await checkPrRewards(user.id)).toEqual([
+        paid[0],
+        { questId: "github:issue:19175", pollenAmount: 10 },
+        ...paid.slice(1),
+        { questId: "github:merged_pr:19521", pollenAmount: 5 },
     ]);
 });
 

@@ -1,7 +1,7 @@
 import { env, fetchMock, runInDurableObject } from "cloudflare:test";
 import { afterEach, beforeAll, expect, test, vi } from "vitest";
 import { MAX_HOLD_MS } from "../../../shared/ip-slot.js";
-import { nextMidnight, takeQuota, usedUp } from "../src/daily-quota.js";
+import { nextMidnight, refundQuota, takeQuota } from "../src/daily-quota.js";
 import browserHeaders from "./fixtures/text.pollinations.ai-get-browser.headers?raw";
 import {
     alarmOf,
@@ -287,7 +287,6 @@ test("the 100th free reply of the day is served and counted, the 101st goes to t
 
     events.length = 0;
     for (const [path, headers] of [
-        // A stream first: takeSlot's memo answers other requests in the interval
         ["/quota%20100?stream=true", CURL],
         ["/quota%20100", CURL],
     ]) {
@@ -332,6 +331,47 @@ test("a reply gen fails to make gives its count back", async () => {
     expect(await quotaOf(ip)).toBe(5);
 });
 
+test("a stream that fails after it opens gives its count back", async () => {
+    const ip = nextIp();
+    await quotaOf(ip, 5);
+    const { response, text } = await call("/gen:stream-error?stream=true", {
+        ip,
+        headers: CURL,
+    });
+    expect(response.status).toBe(200);
+    expect(text).toContain('"error"');
+    expect(await quotaOf(ip)).toBe(5);
+
+    // A stream that finishes keeps its count
+    const done = nextIp();
+    await quotaOf(done, 5);
+    await call("/stream%20ok?stream=true", { ip: done, headers: CURL });
+    expect(await quotaOf(done)).toBe(6);
+});
+
+test("a retry while the 100th reply is in flight is refused once, not until midnight", async () => {
+    const ip = nextIp();
+    // The 100th reply is running: the count is 100 until it fails
+    await quotaOf(ip, 100);
+    const refused = await call("/quota%20retry", { ip, headers: CURL });
+    expect(refused.response.status).toBe(402);
+    // It fails and gives its count back
+    await refundQuota(env.DAILY_QUOTA, ip, Date.now());
+    const retried = await call("/quota%20retry%202", { ip, headers: CURL });
+    expect(retried.response.status).toBe(200);
+});
+
+test("the 101st request within the 45 seconds gets the daily limit, not the interval", async () => {
+    const ip = nextIp();
+    await quotaOf(ip, 99);
+    const last = await call("/quota%20cooldown", { ip, headers: CURL });
+    expect(last.response.status).toBe(200);
+
+    const next = await call("/quota%20cooldown%202", { ip, headers: CURL });
+    expect(next.response.status).toBe(402);
+    expect(next.text).toMatch(DAILY_NOTICE);
+});
+
 test("a model we don't serve uses no quota", async () => {
     const ip = nextIp();
     await quotaOf(ip, 99);
@@ -358,13 +398,6 @@ test("a reply booked on either side of midnight counts on its own UTC day", asyn
     await takeQuota(env.DAILY_QUOTA, ip, 100, midnight + 1);
     expect(await used(midnight - 1)).toBe(1);
     expect(await used(midnight)).toBe(2);
-});
-
-test("a quota used up just before midnight is not remembered into the new day", async () => {
-    const ip = nextIp();
-    const beforeMidnight = nextMidnight() - 86_400_000 - 1;
-    expect(await takeQuota(env.DAILY_QUOTA, ip, 0, beforeMidnight)).toBe(false);
-    expect(usedUp(ip)).toBe(false);
 });
 
 test("a JSON request past the daily quota gets gen's error body", async () => {

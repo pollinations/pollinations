@@ -16,6 +16,11 @@ export class DailyQuota extends DurableObject {
         return true;
     }
 
+    /** Whether `limit` replies were counted, without counting one */
+    async full(limit) {
+        return ((await this.ctx.storage.get("used")) ?? 0) >= limit;
+    }
+
     /** Gives back one reply counted by take() */
     async refund() {
         const used = (await this.ctx.storage.get("used")) ?? 0;
@@ -35,14 +40,6 @@ export function nextMidnight(now = Date.now()) {
     return Math.floor(now / DAY_MS) * DAY_MS + DAY_MS;
 }
 
-const MAX_REMEMBERED_IPS = 10_000;
-// Per isolate: IP -> the midnight until which its quota is used up, so its
-// further requests that day need no RPC
-const usedUpUntilByIp = new Map();
-
-/** Whether `ip`'s quota for today is known to be used up, without an RPC */
-export const usedUp = (ip) => usedUpUntilByIp.get(ip) > Date.now();
-
 /** The DailyQuota object of `ip` on the UTC day of `at` */
 const quotaOf = (namespace, ip, at) =>
     namespace.getByName(`${new Date(at).toISOString().slice(0, 10)} ${ip}`);
@@ -52,17 +49,14 @@ const quotaOf = (namespace, ip, at) =>
  * of `at`, when the reply starts; false once it had `limit` that day. RPC
  * errors propagate.
  */
-export async function takeQuota(namespace, ip, limit, at) {
-    const free = await quotaOf(namespace, ip, at).take(limit);
-    if (!free) {
-        if (usedUpUntilByIp.size >= MAX_REMEMBERED_IPS) usedUpUntilByIp.clear();
-        // From the same `at`: a reply that lands after midnight is not
-        // remembered into the new day
-        usedUpUntilByIp.set(ip, nextMidnight(at));
-    }
-    return free;
-}
+// No memo of a used-up quota: a refund can bring it back below the limit
+export const takeQuota = (namespace, ip, limit, at) =>
+    quotaOf(namespace, ip, at).take(limit);
 
 /** Gives back the reply takeQuota counted for `ip` on the UTC day of `at` */
 export const refundQuota = (namespace, ip, at) =>
     quotaOf(namespace, ip, at).refund();
+
+/** Whether `ip` had `limit` free replies on the UTC day of `at` */
+export const quotaFull = (namespace, ip, limit, at) =>
+    quotaOf(namespace, ip, at).full(limit);

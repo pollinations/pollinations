@@ -1,6 +1,6 @@
 // No imports needed for Web Crypto API
 import { checkTurnstile } from "../../../shared/turnstile.js";
-import { origin } from "./origin.js";
+import { origin, streamResults } from "./origin.js";
 
 // Durable Object classes must be exported by the Worker's main module
 export { IpSlot } from "../../../shared/ip-slot.js";
@@ -238,6 +238,14 @@ const worker = {
                     // Cache the response in the background once streaming is done
                     ctx.waitUntil(
                         (async () => {
+                            // A stream gen ended with an error, or that was
+                            // cut short, is not stored: a retry reaches gen
+                            if (
+                                !(await (streamResults.get(originResp) ?? true))
+                            ) {
+                                log("cache", "Not caching a failed stream");
+                                return;
+                            }
                             try {
                                 // Combine all chunks into a single buffer
                                 const completeResponse = new Uint8Array(

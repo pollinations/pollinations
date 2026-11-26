@@ -2809,6 +2809,20 @@ test("a later PR closing an already-paid multi-winner quest earns its own merged
             balanceBucket: "tier",
             earnedAt: new Date("2026-11-12T06:00:00Z"),
         });
+    // Before this change deployed, Enter also paid 19503 the one-time reward.
+    const firstPrKey = `quest:merged_pr:github:${user.githubId}`;
+    await drizzle(env.DB, { schema })
+        .insert(schema.rewards)
+        .values({
+            id: firstPrKey,
+            idempotencyKey: firstPrKey,
+            userId: user.id,
+            questId: "merged_pr",
+            title: "Contribute a pull request",
+            pollenAmount: 5,
+            balanceBucket: "tier",
+            earnedAt: new Date("2026-11-12T06:00:00Z"),
+        });
     mocks.github.state.mergedPullRequests.push(
         {
             number: 19503,
@@ -2828,6 +2842,7 @@ test("a later PR closing an already-paid multi-winner quest earns its own merged
     const paid = [
         { questId: "github:issue:19174", pollenAmount: 5 },
         { questId: "github:merged_pr:19519", pollenAmount: 5 },
+        { questId: "merged_pr", pollenAmount: 5 },
     ];
     expect(await checkPrRewards(user.id)).toEqual(paid);
     // A recheck pays neither PR again.

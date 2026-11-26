@@ -774,11 +774,6 @@ export async function evaluateUser(
                   first && first.mergedAt <= pr.mergedAt ? first : pr,
               undefined,
           );
-    // Ids only this PR can earn, recorded only if this PR has paid.
-    const ownIds = (pr: MergedPrNode) => [
-        `github:merged_pr:${pr.number}`,
-        ...(pr === firstPr ? [mergedPrQuest.id] : []),
-    ];
     const closes = new Map(
         mergedPrs.map((pr) => [
             pr,
@@ -793,7 +788,8 @@ export async function evaluateUser(
     );
     const firstCloser = new Map<number, MergedPrNode>();
     for (const [pr, numbers] of closes) {
-        if (ownIds(pr).some((id) => earned.has(id))) continue;
+        // A PR already paid its merged-PR reward didn't earn a quest.
+        if (earned.has(`github:merged_pr:${pr.number}`)) continue;
         for (const number of numbers) {
             const first = firstCloser.get(number);
             if (!first || pr.mergedAt < first.mergedAt) {
@@ -808,8 +804,9 @@ export async function evaluateUser(
         // Labels, quests and closing issues can change after a PR paid, so a
         // PR that could map to an id the account earned has already paid.
         const ids = [
-            ...ownIds(pr),
+            `github:merged_pr:${pr.number}`,
             ...firstCloses.map((number) => `github:issue:${number}`),
+            ...(pr === firstPr ? [mergedPrQuest.id] : []),
         ];
         if (ids.some((id) => earned.has(id))) return [];
         const quest = firstCloses

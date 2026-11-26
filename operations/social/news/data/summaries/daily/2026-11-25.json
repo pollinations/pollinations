@@ -1,0 +1,29 @@
+{
+  "date": "2026-11-25",
+  "period_start": "2026-11-25",
+  "period_end": "2026-11-25",
+  "title": "Fewer unexpected API rejections",
+  "summary": "A debugging day: fewer rejected API requests, steadier Discord context, and clearer payment support instructions.\n\nGPT-5.5 and GPT-5.4 Mini now map `max` reasoning effort to `xhigh` across Chat Completions and Responses, including fallback routes. Privacy and secrets scans now apply only the requested checks, so unrelated filters do not block them.\n\nA community fix makes the Discord agent match complete user IDs when rebuilding chat context, keeping earlier questions and answers assigned to the right person.\n\nTwo x402 API key purchase errors now tell buyers where to send their transaction hash. The locked Quest balance contact link points to billing support too.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 20525,
+      "date": "2026-11-25"
+    },
+    {
+      "number": 20584,
+      "date": "2026-11-25"
+    },
+    {
+      "number": 20600,
+      "date": "2026-11-25"
+    },
+    {
+      "number": 20616,
+      "date": "2026-11-25"
+    }
+  ],
+  "generated_at": "2026-11-26T06:06:12.007457+00:00",
+  "daily": [],
+  "changelog": []
+}

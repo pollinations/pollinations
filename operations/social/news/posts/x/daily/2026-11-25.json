@@ -1,0 +1,14 @@
+{
+  "platform": "x",
+  "scope": "daily",
+  "date": "2026-11-25",
+  "period_start": "2026-11-25",
+  "period_end": "2026-11-25",
+  "generated_at": "2026-11-26T06:06:12.007457+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/2e9450addcac82947a7a0c9d533f596954d2b3c3df296c85cb8c2d670c1653c3"
+    }
+  ],
+  "text": "Merged: GPT-5.5 and GPT-5.4 Mini map `max` to `xhigh` across Chat Completions, Responses, and fallbacks. Privacy/secrets scans run only requested checks. Discord context rebuilds compare full user IDs, keeping messages with the right person."
+}

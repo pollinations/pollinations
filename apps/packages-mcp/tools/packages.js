@@ -13,6 +13,8 @@ export async function lookup({ ecosystem, name, version }) {
         golang: /^[A-Za-z0-9][-A-Za-z0-9_.]*(?:\/[-A-Za-z0-9_~][-A-Za-z0-9_.~]*)+$/,
         packagist:
             /^[a-z0-9]+(?:[_.-][a-z0-9]+)*\/[a-z0-9]+(?:[_.-][a-z0-9]+)*$/,
+        pubdev: /^[a-z][a-z0-9_]{0,63}$/,
+        nuget: /^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/,
     };
     if (!patterns[ecosystem].test(name))
         throw new Error(`Invalid ${ecosystem} package name`);
@@ -166,6 +168,54 @@ export async function lookup({ ecosystem, name, version }) {
             registryUrl: `https://pkg.go.dev/${name}@${encodeURIComponent(info.Version)}`,
         };
     }
+    if (ecosystem === "pubdev") {
+        const data = await fetchJson(
+            `https://pub.dev/api/packages/${encoded}`,
+        );
+        const target = version
+            ? data.versions?.find((v) => v.version === version)
+            : data.latest;
+        if (!target) throw new Error("pub.dev package version not found");
+        const pubspec = target.pubspec ?? {};
+        return {
+            ecosystem,
+            name: data.name,
+            version: target.version,
+            description: pubspec.description ?? null,
+            homepage: pubspec.homepage ?? null,
+            repository: pubspec.repository ?? null,
+            environment: pubspec.environment ?? null,
+            dependencies: pubspec.dependencies ?? {},
+            isDiscontinued: Boolean(data.isDiscontinued),
+            registryUrl: `https://pub.dev/packages/${encoded}/versions/${encodeURIComponent(target.version)}`,
+        };
+    }
+    if (ecosystem === "nuget") {
+        const data = await fetchJson(
+            `https://azuresearch-usnc.nuget.org/query?q=packageid:${encoded}&prerelease=${version ? "true" : "false"}&take=5`,
+        );
+        const entry = data.data?.find(
+            (x) => x.id?.toLowerCase() === name.toLowerCase(),
+        );
+        if (!entry) throw new Error("NuGet package not found");
+        const resolvedVersion = version
+            ? entry.versions?.find(
+                  (v) => v.version?.toLowerCase() === version.toLowerCase(),
+              )?.version
+            : entry.version;
+        if (!resolvedVersion) throw new Error("NuGet package version not found");
+        return {
+            ecosystem,
+            name: entry.id,
+            version: resolvedVersion,
+            description: entry.description ?? null,
+            authors: entry.authors ?? [],
+            projectUrl: entry.projectUrl ?? null,
+            licenseUrl: entry.licenseUrl ?? null,
+            totalDownloads: entry.totalDownloads ?? null,
+            registryUrl: `https://www.nuget.org/packages/${encodeURIComponent(entry.id)}/${encodeURIComponent(resolvedVersion)}`,
+        };
+    }
     // crates.io asks clients to prefer its unlimited sparse index to the 1 rps API.
     const lower = name.toLowerCase();
     const path =
@@ -203,7 +253,7 @@ export async function lookup({ ecosystem, name, version }) {
 export const packageTools = [
     [
         "package_lookup",
-        "Read live npm/PyPI/RubyGems/Packagist (PHP) package metadata, Go module proxy info and go.mod, or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Rust highest non-yanked stable version, PHP highest stable version. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
+        "Read live npm/PyPI/RubyGems/Packagist (PHP)/pub.dev (Dart)/NuGet (.NET) package metadata, Go module proxy info and go.mod, or crates.io sparse-index versions, dependencies and runtime requirements. Default: npm latest tag, PyPI latest, RubyGems current version, Go latest, Rust highest non-yanked stable version, PHP highest stable version, pub.dev latest, NuGet latest stable. Rust descriptive metadata (license/homepage) is at registryUrl. Does not install or execute packages.",
         {
             ecosystem: z
                 .enum([
@@ -213,6 +263,8 @@ export const packageTools = [
                     "rubygems",
                     "golang",
                     "packagist",
+                    "pubdev",
+                    "nuget",
                 ])
                 .default("npm"),
             name: z.string().trim().min(1).max(214),

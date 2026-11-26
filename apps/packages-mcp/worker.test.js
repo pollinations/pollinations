@@ -771,3 +771,58 @@ test("Docker Hub exact tag and rejected repository names", async (t) => {
     for (const image of ["node:22-alpine", "node@sha256:abc", "Node", "a/b/c"])
         await assert.rejects(imageTags({ image }), /tag|repository/i);
 });
+test("pubdev and nuget lookups return normalized metadata and validate names", async (t) => {
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url) => {
+        urls.push(url);
+        if (url.startsWith("https://pub.dev/")) {
+            return Response.json({
+                name: "http",
+                isDiscontinued: false,
+                latest: {
+                    version: "1.2.2",
+                    pubspec: {
+                        description: "A composable HTTP client",
+                        homepage: "https://dart.dev",
+                        environment: { sdk: "^3.3.0" },
+                        dependencies: { async: "^2.11.0" },
+                    },
+                },
+                versions: [{ version: "1.2.2", pubspec: {} }],
+            });
+        }
+        return Response.json({
+            data: [
+                {
+                    id: "Newtonsoft.Json",
+                    version: "13.0.3",
+                    description: "Json.NET",
+                    authors: ["James Newton-King"],
+                    projectUrl: "https://www.newtonsoft.com/json",
+                    totalDownloads: 5000000000,
+                    versions: [{ version: "13.0.3" }],
+                },
+            ],
+        });
+    });
+    const client = await clientFor(t);
+    const pub = await call(client, "package_lookup", {
+        ecosystem: "pubdev",
+        name: "http",
+    });
+    assert.equal(pub.version, "1.2.2");
+    assert.deepEqual(pub.dependencies, { async: "^2.11.0" });
+
+    const nuget = await call(client, "package_lookup", {
+        ecosystem: "nuget",
+        name: "newtonsoft.json",
+    });
+    assert.equal(nuget.name, "Newtonsoft.Json");
+    assert.equal(nuget.version, "13.0.3");
+    assert.equal(urls.length, 2);
+
+    await assert.rejects(
+        lookup({ ecosystem: "pubdev", name: "Bad-Name" }),
+        /Invalid pubdev/,
+    );
+});

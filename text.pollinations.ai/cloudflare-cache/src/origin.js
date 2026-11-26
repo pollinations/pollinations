@@ -13,7 +13,7 @@ import {
     REFUSED,
 } from "../../../shared/messages.js";
 import { BLOCKED_PREFIXES } from "./blocked-prefixes.js";
-import { nextMidnight, refundQuota, takeQuota, usedUp } from "./daily-quota.js";
+import { nextMidnight, refundQuota, takeQuota } from "./daily-quota.js";
 // index.js imports this module too; the function is only called per request
 import { prepareForwardedHeaders } from "./index.js";
 
@@ -649,10 +649,7 @@ async function generation(
     const served = MODELS.has(job.model);
     let slot;
     try {
-        slot =
-            served && usedUp(ip)
-                ? dailyLimit(Date.now())
-                : await takeSlot(env.IP_SLOT, ip, FREE_INTERVAL_MS, canWait);
+        slot = await takeSlot(env.IP_SLOT, ip, FREE_INTERVAL_MS, canWait);
     } catch (error) {
         logFailure(route, { error: "ip_slot", type: error.name });
         return sendGenAnswer(failure(503));
@@ -734,6 +731,10 @@ async function generation(
             logFailure(route, { error: "ip_slot_release", type: error.name }),
         ),
     );
+    // A stream's outcome is known only at its end
+    const streamed = new Promise((resolve) => {
+        job.finished = resolve;
+    });
     const response = (async () => {
         if (slot.waitMs > 0) {
             await new Promise((resolve) => setTimeout(resolve, slot.waitMs));
@@ -741,14 +742,13 @@ async function generation(
         return generate(env, job, undefined, ended);
     })();
     ctx.waitUntil(response);
-    // The quota counts replies: an error answer gives its count back
+    // The quota counts replies: an error answer, or a stream that fails or
+    // stops early, gives its count back
     if (counted) {
         ctx.waitUntil(
             response
-                .then(
-                    (answer) =>
-                        answer.ok || refundQuota(env.DAILY_QUOTA, ip, start),
-                )
+                .then((answer) => answer.ok && (!job.stream || streamed))
+                .then((ok) => ok || refundQuota(env.DAILY_QUOTA, ip, start))
                 .catch((error) =>
                     logFailure(route, {
                         error: "daily_quota_refund",
@@ -829,7 +829,7 @@ async function generate(env, job, cacheControl, ended) {
             return await send(await response.text(), response.status, headers);
         }
         if (job.stream) {
-            return sse(response.body);
+            return sse(response.body, job.finished);
         }
         const completion = completionOf(await response.json());
         if (completion.error) {
@@ -943,12 +943,28 @@ function textResponse(completion) {
 /**
  * sendAsOpenAIStream with stopAfterSseDone: gen's SSE up to "data: [DONE]",
  * then a blank line and the end. A client that cancels also cancels gen.
+ * @param {(ok: boolean) => void} [finished] called once the stream ends: ok
+ *   when it reached "data: [DONE]" with no error event from gen
  */
-function sse(body) {
+function sse(body, finished = () => {}) {
     // Bytes not yet sent: "data: [DONE]" may start in them
     let pending = new Uint8Array(0);
+    // gen ends a failed stream with an error event; lines are checked whole
+    const decoder = new TextDecoder();
+    let line = "";
+    let failed = false;
+    let done = false;
+    const settle = (ok) => {
+        if (!done) finished(ok);
+        done = true;
+    };
     const cut = new TransformStream({
         transform(chunk, controller) {
+            const lines = (
+                line + decoder.decode(chunk, { stream: true })
+            ).split("\n");
+            line = lines.pop();
+            failed ||= lines.some((text) => text.startsWith('data: {"error"'));
             const bytes = new Uint8Array(pending.byteLength + chunk.byteLength);
             bytes.set(pending);
             bytes.set(chunk, pending.byteLength);
@@ -959,6 +975,7 @@ function sse(body) {
                 last.set(bytes.subarray(0, end));
                 last.set([10, 10], end);
                 controller.enqueue(last);
+                settle(!failed);
                 return controller.terminate();
             }
             const keep = Math.min(bytes.byteLength, SSE_DONE.byteLength - 1);
@@ -969,10 +986,25 @@ function sse(body) {
         },
         flush(controller) {
             if (pending.byteLength) controller.enqueue(pending);
+            settle(false);
         },
     });
-    body.pipeTo(cut.writable).catch(() => {});
-    return new Response(cut.readable, {
+    body.pipeTo(cut.writable).catch(() => settle(false));
+    // A client that leaves cancels this side, which the pipe above does not
+    // report in workerd: a reply cut short is not a reply
+    const reader = cut.readable.getReader();
+    const readable = new ReadableStream({
+        async pull(controller) {
+            const { done: over, value } = await reader.read();
+            if (over) controller.close();
+            else controller.enqueue(value);
+        },
+        cancel(reason) {
+            settle(false);
+            return reader.cancel(reason);
+        },
+    });
+    return new Response(readable, {
         headers: {
             ...CORS,
             "X-Powered-By": "Express",

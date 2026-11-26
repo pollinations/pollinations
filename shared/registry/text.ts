@@ -1864,7 +1864,7 @@ const TEXT_BASE_SERVICES = {
         title: "Gemini 2.5 Flash Lite Search",
         description:
             "Look up recent information on the web and get an answer grounded in the results.",
-        inputModalities: ["text", "image", "video"],
+        inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.
         maxReferenceVideos: 10, // Gemini API video-understanding upload limit.

@@ -61,6 +61,7 @@ import {
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
     Fragment,
+    type ReactNode,
     useCallback,
     useEffect,
     useId,
@@ -75,7 +76,7 @@ import {
     typicalRequestCost,
 } from "../../../../shared/model-price-display";
 import { isNewModel } from "../../../../shared/model-recency";
-import { API_BASE_URL, ENTER_URL } from "../../config";
+import { API_BASE_URL, DEFAULT_AGENT_ID, ENTER_URL } from "../../config";
 import { LINKS } from "../../copy/content/socialLinks";
 import {
     type AudioCatalogMetadata,
@@ -678,7 +679,10 @@ function ModelPicker({
     selectedModel,
     isLoading,
     onSelectModel,
+    details,
 }: {
+    /** The selected model's description and badges, shown inside the selector card under its name. */
+    details?: ReactNode;
     models: PlaygroundModel[];
     stats: ModelRunStat[];
     costByModel: ReadonlyMap<string, number | null | undefined>;
@@ -745,7 +749,7 @@ function ModelPicker({
                 onClick={() => step(direction)}
             >
                 <ChevronIcon
-                    className={direction === -1 ? "rotate-90" : "-rotate-90"}
+                    className={direction === -1 ? "rotate-180" : undefined}
                 />
             </Button>
         );
@@ -753,8 +757,7 @@ function ModelPicker({
 
     return (
         <div className="flex min-w-0 items-center gap-2">
-            {stepButton(-1)}
-            <div className="min-w-0 flex-1">
+            <div className="relative min-w-0 flex-1 rounded-card bg-theme-bg-subtle outline-offset-2 outline-(--polli-color-focus) has-[[aria-haspopup]:focus-visible]:outline-2">
                 <Dropdown
                     portalled={false}
                     onOpenChange={(open) => {
@@ -763,14 +766,14 @@ function ModelPicker({
                             setQuestOnly(false);
                         }
                     }}
-                    className="w-[var(--reference-width)] overscroll-y-contain p-2"
+                    className="w-[var(--reference-width)] overscroll-y-contain data-[placement^=bottom]:-mt-2 data-[placement^=bottom]:border-t border-theme-text-muted/20 data-[placement^=bottom]:rounded-t-none! data-[placement^=bottom]:rounded-b-card! data-[placement^=top]:-mb-2 data-[placement^=top]:rounded-t-card! data-[placement^=top]:rounded-b-none! bg-[linear-gradient(var(--polli-color-bg-subtle),var(--polli-color-bg-subtle)),linear-gradient(var(--polli-color-surface-block),var(--polli-color-surface-block))]! p-2"
                     trigger={(open) => (
                         <Button
                             type="button"
                             intent="neutral"
                             size="lg"
                             disabled={isLoading || models.length === 0}
-                            className="w-full touch-pan-y justify-between gap-2 pr-3 pl-6"
+                            className="static! w-full touch-pan-y justify-between gap-2 bg-transparent! px-5 text-lg font-semibold before:absolute before:inset-0 before:rounded-card before:transition-colors hover:bg-transparent! hover:filter-none! focus-visible:outline-none! hover:before:bg-theme-text-muted/15"
                             title={selected?.title}
                             aria-label={`Model: ${selected?.title ?? (models.length ? "Choose a model" : "Unavailable")}`}
                             aria-description={
@@ -833,6 +836,7 @@ function ModelPicker({
                                 ) : selected ? (
                                     <MediaModelOption
                                         model={selected}
+                                        showIcon={false}
                                         showPricing={false}
                                     />
                                 ) : models.length ? (
@@ -853,7 +857,7 @@ function ModelPicker({
                             {filters.length > 1 && (
                                 <fieldset
                                     aria-label={`Filter ${category} models`}
-                                    className="sticky top-0 z-10 mb-1 flex flex-wrap gap-1 border-b border-theme-text-muted/20 bg-surface-menu pt-1 pr-px pb-2 pl-1"
+                                    className="sticky top-0 z-10 mb-1 flex flex-wrap gap-1 border-b border-theme-text-muted/20 bg-[linear-gradient(var(--polli-color-bg-subtle),var(--polli-color-bg-subtle)),linear-gradient(var(--polli-color-surface-block),var(--polli-color-surface-block))] pt-1 pr-px pb-2 pl-1"
                                 >
                                     {filters.map((value) => (
                                         <TabButton
@@ -958,8 +962,17 @@ function ModelPicker({
                         </ScrollArea>
                     )}
                 </Dropdown>
+                {details && (
+                    // Same left edge as the model name in the trigger (its padding plus border).
+                    <div className="flex flex-col gap-2 border-t border-theme-text-muted/20 px-[calc(1.25rem+1px)] pt-3 pb-4">
+                        {details}
+                    </div>
+                )}
             </div>
-            {stepButton(1)}
+            <div className="flex flex-col gap-1 self-start">
+                {stepButton(-1)}
+                {stepButton(1)}
+            </div>
         </div>
     );
 }
@@ -983,7 +996,9 @@ function RunStatBadge({
     const hidePanel = () => panel.current?.hidePopover();
 
     return (
+        // Above the selector card's click area.
         <div
+            className="relative z-10"
             onPointerEnter={(event) => {
                 if (event.pointerType === "mouse") panel.current?.showPopover();
             }}
@@ -1004,7 +1019,7 @@ function RunStatBadge({
                 aria-label={`Typical cost ${cost ?? "unavailable"}, typical time ${time ?? "unavailable"}`}
                 className="flex cursor-help rounded-lg"
             >
-                <Chip size="md" data-theme="neutral" className="tabular-nums">
+                <span className="inline-flex items-center gap-1 tabular-nums text-theme-text-muted">
                     {cost || time ? (
                         <>
                             <span className="text-theme-text-muted">
@@ -1036,7 +1051,7 @@ function RunStatBadge({
                             <WalletKindIcon kind={walletKind} />
                         </>
                     )}
-                </Chip>
+                </span>
             </button>
             <div
                 ref={panel}
@@ -1579,11 +1594,13 @@ export function Playground({ drafts }: { drafts: ConnectDrafts }) {
             }
         }
         if (selectedModel || !stats) return;
-        const first = pickerModels.find(
+        const usable = pickerModels.filter(
             (model) =>
                 (!isLoggedIn || catalog.allowedModelIds.has(model.id)) &&
                 (!params.task || supportsTask(model, task)),
         );
+        const first =
+            usable.find((model) => model.id === DEFAULT_AGENT_ID) ?? usable[0];
         if (first) {
             setParams((previous) => ({
                 ...previous,
@@ -2598,12 +2615,7 @@ export function Playground({ drafts }: { drafts: ConnectDrafts }) {
                                 another model to continue.
                             </Alert>
                         )}
-                    <Surface
-                        as="section"
-                        variant="card"
-                        aria-label="Model details"
-                        className="@container flex min-w-0 flex-col gap-2"
-                    >
+                    <section aria-label="Model" className="@container min-w-0">
                         <ModelPicker
                             key={activeCategory}
                             models={pickerModels}
@@ -2612,56 +2624,61 @@ export function Playground({ drafts }: { drafts: ConnectDrafts }) {
                             selectedModel={selectedModel}
                             isLoading={isLoading || !isHydrated}
                             onSelectModel={selectModel}
-                        />
-                        {currentModel && (
-                            <>
-                                {currentModel.description && (
-                                    <Text tone="soft" data-theme="neutral">
-                                        {currentModel.description}
-                                    </Text>
-                                )}
-                                <div className="flex flex-wrap items-center gap-2 text-xs">
-                                    {modelAbilities(currentModel).length >
-                                        0 && (
-                                        <ul
-                                            aria-label="Abilities"
-                                            className="m-0 flex list-none flex-wrap items-center gap-x-3 gap-y-1 p-0 pr-1 text-theme-text-muted"
-                                        >
-                                            {modelAbilities(currentModel).map(
-                                                ({ label, Icon }) => (
-                                                    <li
-                                                        key={label}
-                                                        className="inline-flex items-center gap-1"
-                                                    >
-                                                        <Icon
-                                                            aria-hidden="true"
-                                                            className="size-3.5"
-                                                        />
-                                                        {label}
-                                                    </li>
-                                                ),
+                            details={
+                                currentModel && (
+                                    <>
+                                        {currentModel.description && (
+                                            <Text
+                                                tone="soft"
+                                                data-theme="neutral"
+                                            >
+                                                {currentModel.description}
+                                            </Text>
+                                        )}
+                                        <div className="flex flex-wrap items-center gap-2 text-xs">
+                                            {modelAbilities(currentModel)
+                                                .length > 0 && (
+                                                <ul
+                                                    aria-label="Abilities"
+                                                    className="m-0 flex list-none flex-wrap items-center gap-x-3 gap-y-1 p-0 pr-1 text-theme-text-muted"
+                                                >
+                                                    {modelAbilities(
+                                                        currentModel,
+                                                    ).map(({ label, Icon }) => (
+                                                        <li
+                                                            key={label}
+                                                            className="inline-flex items-center gap-1"
+                                                        >
+                                                            <Icon
+                                                                aria-hidden="true"
+                                                                className="size-3.5"
+                                                            />
+                                                            {label}
+                                                        </li>
+                                                    ))}
+                                                </ul>
                                             )}
-                                        </ul>
-                                    )}
-                                    <RunStatBadge
-                                        cost={cost}
-                                        time={time}
-                                        walletKind={
-                                            currentModel.paidOnly
-                                                ? "paid"
-                                                : "tier"
-                                        }
-                                        costDetail={
-                                            cost === "Free"
-                                                ? "This model is free to use."
-                                                : "Median cost of a successful paid request over the last 7 days. Your settings can change the price."
-                                        }
-                                        pricingHref={`${ENTER_URL}/models?${new URLSearchParams({ category: currentModel.category, q: currentModel.id })}`}
-                                    />
-                                </div>
-                            </>
-                        )}
-                    </Surface>
+                                            <RunStatBadge
+                                                cost={cost}
+                                                time={time}
+                                                walletKind={
+                                                    currentModel.paidOnly
+                                                        ? "paid"
+                                                        : "tier"
+                                                }
+                                                costDetail={
+                                                    cost === "Free"
+                                                        ? "This model is free to use."
+                                                        : "Median cost of a successful paid request over the last 7 days. Your settings can change the price."
+                                                }
+                                                pricingHref={`${ENTER_URL}/models?${new URLSearchParams({ category: currentModel.category, q: currentModel.id })}`}
+                                            />
+                                        </div>
+                                    </>
+                                )
+                            }
+                        />
+                    </section>
                     <Surface
                         as="section"
                         variant="card"

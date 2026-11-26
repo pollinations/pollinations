@@ -5,9 +5,11 @@ import { isNewModel } from "../../../../shared/model-recency";
 
 export function MediaModelOption({
     model,
+    showIcon = true,
     showPricing = true,
     perDollar,
 }: {
+    showIcon?: boolean;
     showPricing?: boolean;
     perDollar?: string;
     model: {
@@ -24,20 +26,22 @@ export function MediaModelOption({
 }) {
     return (
         <span className="flex w-full min-w-0 items-center gap-2">
-            <ModelBrandIcon
-                model={model}
-                className="size-4 shrink-0 text-theme-text-muted"
-            />
-            <span className="flex min-w-0 flex-1 items-center gap-2">
+            {showIcon && (
+                <ModelBrandIcon
+                    model={model}
+                    className="size-4 shrink-0 text-theme-text-muted"
+                />
+            )}
+            <span className="flex min-w-0 flex-1 items-baseline gap-[0.6em]">
                 <span className="truncate">{model.title}</span>
                 {model.verified && (
                     <span
-                        className="inline-flex items-center gap-1 text-xs text-theme-text-muted"
+                        className="inline-flex items-baseline gap-1 text-xs text-theme-text-muted"
                         title="Published and run by Pollinations"
                     >
                         <ShieldCheckIcon
                             aria-hidden="true"
-                            className="size-3"
+                            className="size-3 self-center"
                         />
                         Official
                     </span>

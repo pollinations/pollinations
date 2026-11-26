@@ -10,6 +10,7 @@ import { hashTools } from "./tools/hash.js";
 import { integerTools } from "./tools/integer.js";
 import { qrTools } from "./tools/qr.js";
 import { textTools } from "./tools/text.js";
+import { textTools } from "./tools/text.js";
 import { timeTools } from "./tools/time.js";
 import { unicodeTools } from "./tools/unicode.js";
 import { versionTools } from "./tools/versions.js";
@@ -33,6 +34,7 @@ const handler = createMcpHandler(
             ...diffTools,
             ...fractionTools,
             ...versionTools,
+            ...textTools,
             ...textTools,
         ]) {
             server.registerTool(

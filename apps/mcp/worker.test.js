@@ -20,6 +20,7 @@ const EXPECTED_TOOLS = [
     "generateVideo",
     "getBalance",
     "getEarnings",
+    "getGenerationJob",
     "getModelStatus",
     "getUsage",
     "isolateSpeech",

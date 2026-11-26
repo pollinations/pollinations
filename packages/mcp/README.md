@@ -35,6 +35,7 @@ For all Pollinations-hosted MCP servers, see the
 | `isolateSpeech` | Remove background noise from a spoken audio or video URL | `/v1/audio/voice-isolator` |
 | `changeVoice` | Transform the speaker identity of an audio URL | `/v1/audio/voice-changer` |
 | `generate3D` | Generate a GLB model | `/3d/{prompt}` |
+| `getGenerationJob` | Poll a media job started with `async=true`; returns the result link once it succeeds | `/v1/jobs/{id}` |
 | `createEmbeddings` | Create text or multimodal embeddings | `/v1/embeddings` |
 | `listModels` | Search and list live models, capabilities, voices, and pricing; narrow with `query`, `capabilities`, `agent`, `community`, `limit` | Model registry routes |
 | `getModelStatus` | Inspect recent requests, errors, and latency | `/models/status` |
@@ -53,6 +54,11 @@ For all Pollinations-hosted MCP servers, see the
 Generated media is returned as an MCP resource link using the API's existing
 public Media URL. No download or re-upload is needed, and binary data does not
 consume model context. Anyone with the link can access it; expired files return 404.
+
+Long generations can pass `async=true` to `generateImage`, `generateVideo`,
+`generateAudio` or `generate3D`: the tool returns a job id at once instead of
+holding the request open, and `getGenerationJob` polls that id until it
+succeeds. The async result link needs the same API key that started the job.
 
 Models, voices, capabilities, and pricing come from the live registry. Use
 `listModels` before selecting a model or voice.

@@ -6,6 +6,7 @@ import {
     createTextContent,
     fetchJsonWithAuth,
     fetchMediaLink,
+    submitMediaAsync,
 } from "../utils/coreUtils.js";
 
 function publicAudioUrl(source) {
@@ -143,12 +144,13 @@ export async function changeVoice(params, context) {
 async function generateAudio(params, context) {
     requireApiKey(context);
 
-    const { text, ...options } = params;
-    const { contentType, mediaUrl } = await fetchMediaLink(
-        buildUrl(`/audio/${encodeURIComponent(text)}`, options),
-        {},
-        context,
-    );
+    const { text, async: asyncFlag, ...options } = params;
+    const url = buildUrl(`/audio/${encodeURIComponent(text)}`, options);
+    if (asyncFlag) {
+        const job = await submitMediaAsync(url, {}, context);
+        if (job) return createMCPResponse([createTextContent(job, true)]);
+    }
+    const { contentType, mediaUrl } = await fetchMediaLink(url, {}, context);
     return createMCPResponse([
         {
             type: "resource_link",
@@ -230,6 +232,12 @@ export const audioTools = [
                 .union([z.string(), z.boolean()])
                 .optional()
                 .describe("Pollinations safety options"),
+            async: z
+                .boolean()
+                .optional()
+                .describe(
+                    "Return a job id immediately instead of waiting for the audio; poll getGenerationJob for the result",
+                ),
         },
         generateAudio,
     ],

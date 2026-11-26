@@ -160,6 +160,35 @@ export async function fetchMediaLink(url, options = {}, context) {
 }
 
 /**
+ * Submit a media generation asynchronously with `Prefer: respond-async` so a
+ * long image, video, audio or 3D job returns a job id instead of holding the
+ * connection open.
+ *
+ * @param {string} url - Generation URL (same one the synchronous path uses)
+ * @param {Object} [options] - Fetch options, such as method and body
+ * @param {Object} context - Request context carrying the caller's bearer token
+ * @returns {Promise<{id: string, status: string, status_url: string}|null>}
+ *   The 202 job descriptor, or null when the gateway already had the result
+ *   cached and answered 200 synchronously — the caller then falls back to the
+ *   normal path, which returns the cached media.
+ */
+export async function submitMediaAsync(url, options = {}, context) {
+    const response = await fetchResponseWithAuth(
+        url,
+        {
+            ...options,
+            headers: { ...options.headers, Prefer: "respond-async" },
+        },
+        context,
+    );
+    if (response.status !== 202) {
+        await response.body?.cancel();
+        return null;
+    }
+    return response.json();
+}
+
+/**
  * @param {number} status - HTTP status code
  * @param {string} errorText - Raw error text from response
  * @returns {string} - User-friendly error message

@@ -5,6 +5,7 @@ import {
     createMCPResponse,
     createTextContent,
     fetchMediaLink,
+    submitMediaAsync,
 } from "../utils/coreUtils.js";
 import { validateModel3d } from "../utils/models.js";
 
@@ -21,12 +22,13 @@ async function generate3D(params, context) {
         }
     }
 
-    const { prompt, ...options } = params;
-    const { contentType, mediaUrl } = await fetchMediaLink(
-        buildUrl(`/3d/${encodeURIComponent(prompt)}`, options),
-        {},
-        context,
-    );
+    const { prompt, async: asyncFlag, ...options } = params;
+    const url = buildUrl(`/3d/${encodeURIComponent(prompt)}`, options);
+    if (asyncFlag) {
+        const job = await submitMediaAsync(url, {}, context);
+        if (job) return createMCPResponse([createTextContent(job, true)]);
+    }
+    const { contentType, mediaUrl } = await fetchMediaLink(url, {}, context);
     return createMCPResponse([
         {
             type: "resource_link",
@@ -60,6 +62,12 @@ export const model3dTools = [
             resolution: z.enum(["low", "medium", "high"]).optional(),
             seed: z.number().int().optional(),
             safe: z.union([z.string(), z.boolean()]).optional(),
+            async: z
+                .boolean()
+                .optional()
+                .describe(
+                    "Return a job id immediately instead of waiting for the model; poll getGenerationJob for the result",
+                ),
         },
         generate3D,
     ],

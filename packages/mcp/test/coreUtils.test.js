@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { parseApiError } from "../src/utils/coreUtils.js";
+import { parseApiError, submitMediaAsync } from "../src/utils/coreUtils.js";
 
 test("parseApiError displays gateway 403 error message with editor link unchanged", () => {
     const errorJson = JSON.stringify({
@@ -128,4 +128,48 @@ test("parseApiError keeps the generic fallback for an HTML 502 page", () => {
         parseApiError(502, "<html><body>Cloudflare Bad Gateway</body></html>"),
         "Service temporarily unavailable. Please try again in a few moments.",
     );
+});
+
+test("submitMediaAsync sends Prefer: respond-async and returns the 202 job", async (t) => {
+    const originalFetch = globalThis.fetch;
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+    let seenPrefer;
+    globalThis.fetch = async (_url, init) => {
+        seenPrefer = init.headers.Prefer;
+        return new Response(
+            JSON.stringify({ id: "abc", status: "pending", status_url: "u" }),
+            {
+                status: 202,
+                headers: { "Content-Type": "application/json" },
+            },
+        );
+    };
+    const job = await submitMediaAsync(
+        "https://gen.pollinations.ai/video/x",
+        {},
+        { http: { authInfo: { token: "sk_test" } } },
+    );
+    assert.equal(seenPrefer, "respond-async");
+    assert.equal(job.id, "abc");
+    assert.equal(job.status, "pending");
+});
+
+test("submitMediaAsync returns null on a cached 200 so the caller falls back", async (t) => {
+    const originalFetch = globalThis.fetch;
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+    globalThis.fetch = async () =>
+        new Response("media-bytes", {
+            status: 200,
+            headers: { "Content-Type": "video/mp4" },
+        });
+    const job = await submitMediaAsync(
+        "https://gen.pollinations.ai/video/x",
+        {},
+        { http: { authInfo: { token: "sk_test" } } },
+    );
+    assert.equal(job, null);
 });

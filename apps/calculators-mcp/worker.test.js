@@ -78,6 +78,7 @@ for (const modern of [false, true])
                 "rank_palette",
                 "time_convert",
                 "time_math",
+                "text_stats",
             ].sort(),
         );
         const converted = await call(client, "time_convert", {
@@ -950,3 +951,4 @@ test("integer_math rejects what is not integer arithmetic", async (t) => {
         );
     }
 });
+

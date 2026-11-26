@@ -739,7 +739,7 @@ describe("applySafetyToInput text", { timeout: 30000 }, () => {
             });
         }
 
-        it("allows ordinary system instructions and scans them along with the user prompt", async () => {
+        it("sends caller-supplied system and user text as untrusted Bedrock content", async () => {
             stubScores();
             const response = await chat("shield");
 

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { isCommunityProviderIconUrl } from "../community-provider-icon.ts";
 import { SAFETY_FEATURES } from "../schemas/safety.ts";
+import { AGENT_MCP_SERVER_IDS } from "./mcp.ts";
 import { publicPriceInfo, toFixedPoint } from "./public-pricing";
 import {
     type BillingAdjustmentRule,
@@ -66,6 +67,8 @@ export const AGENT_FIELD_DESCRIPTIONS = {
     verified: "True for agents published by an official Pollinations account.",
     base_model:
         "Model a prompt agent runs on; `pricing` shows its rates. Absent when Gen cannot see which models an agent calls.",
+    mcp_servers:
+        "MCP servers a prompt agent can call tools on, by server id. Absent when Gen cannot see an agent's tools.",
     pricing:
         'Rates in US dollars per billed unit; `currency` is always `"pollen"`, the API\'s name for US dollars. Paid tool calls an agent makes are billed on top. An agent without `base_model` lists only `currency`: its charges depend on the calls it makes.',
 };
@@ -95,6 +98,10 @@ export const ModelInfoSchema = z.object({
         .string()
         .optional()
         .describe(AGENT_FIELD_DESCRIPTIONS.base_model),
+    mcp_servers: z
+        .array(z.enum(AGENT_MCP_SERVER_IDS))
+        .optional()
+        .describe(AGENT_FIELD_DESCRIPTIONS.mcp_servers),
     per_user_rpm: z.number().positive().nullable().optional(),
     pricing: z
         .record(z.string(), z.string())

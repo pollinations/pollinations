@@ -9,23 +9,32 @@ import {
     withModelFallback,
 } from "../fallback.ts";
 import { createGeminiLiveEvents } from "./geminiLiveEvents.ts";
+import { createGeminiTranscribeEvents } from "./geminiTranscribeEvents.ts";
 
 export const GEMINI_LIVE = "google/gemini-3.8-live";
-const GEMINI_US = "google/gemini-3.8-live:google:us";
+export const GEMINI_TRANSCRIBE = "google/gemini-3.5-transcribe-live";
+const TRANSCRIPTION_RECEIPT_TIMEOUT_MS = 45_000;
 
 async function route(c: Context<Env>, id: string) {
-    const us = id === GEMINI_US;
-    const location = us ? "us" : "us-central1";
+    const us = id.endsWith(":google:us");
+    const model = id.split(":")[0].slice("google/".length);
+    const location = us
+        ? "us"
+        : id === GEMINI_TRANSCRIBE
+          ? "global"
+          : "us-central1";
     const host = us
         ? "aiplatform.us.rep.googleapis.com"
-        : "us-central1-aiplatform.googleapis.com";
+        : location === "global"
+          ? "aiplatform.googleapis.com"
+          : "us-central1-aiplatform.googleapis.com";
     syncTextEnvironment(c.env);
     const token = await googleCloudAuth.getAccessToken();
     if (!token) throw new Error("Gemini Live route unavailable");
     return {
         url: `https://${host}/ws/google.cloud.aiplatform.v1.LlmBidiService/BidiGenerateContent`,
         headers: new Headers({ Authorization: `Bearer ${token}` }),
-        model: `projects/${c.env.GOOGLE_PROJECT_ID}/locations/${location}/publishers/google/models/gemini-3.8-live`,
+        model: `projects/${c.env.GOOGLE_PROJECT_ID}/locations/${location}/publishers/google/models/${model}`,
     };
 }
 
@@ -46,6 +55,7 @@ export function proxyGeminiLive(
     let started = false;
     let disconnected = false;
     let drainTimer: ReturnType<typeof setTimeout> | undefined;
+    let turnTimer: ReturnType<typeof setTimeout> | undefined;
     // Only one bounded turn can await setup. Session configuration is sent in setup itself.
     const queue: string[] = [];
     const sendClient = (event: object) => {
@@ -55,6 +65,7 @@ export function proxyGeminiLive(
     const finish = (message?: string) => {
         if (lifetime.signal.aborted) return;
         clearTimeout(drainTimer);
+        clearTimeout(turnTimer);
         lifetime.abort();
         queue.length = 0;
         if (message) {
@@ -77,10 +88,28 @@ export function proxyGeminiLive(
         billing.settle();
     };
 
-    const events = createGeminiLiveEvents({
-        model: GEMINI_LIVE,
+    const model = c.var.model.resolved;
+    const transcribing = model === GEMINI_TRANSCRIBE;
+    const createEvents = transcribing
+        ? createGeminiTranscribeEvents
+        : createGeminiLiveEvents;
+    let queuedBytes = 0;
+    const events = createEvents({
+        model,
         sendClient,
         onUsage: billing.usage,
+        onCommit() {
+            if (lifetime.signal.aborted) return;
+            // Start at commit so this also bounds a turn queued during setup.
+            // Close on timeout because late provider frames have no turn ID.
+            turnTimer = setTimeout(
+                () =>
+                    finish(
+                        "Gemini transcription timed out waiting for terminal usage",
+                    ),
+                TRANSCRIPTION_RECEIPT_TIMEOUT_MS,
+            );
+        },
         cancelUnsentTurn() {
             if (selected) return false;
             queue.length = 0;
@@ -90,13 +119,22 @@ export function proxyGeminiLive(
             if (lifetime.signal.aborted) return;
             const frame = JSON.stringify(event);
             if (selected) selected.send(frame);
-            else queue.push(frame);
+            else {
+                if (
+                    transcribing &&
+                    (queue.length >= 1024 ||
+                        queuedBytes + frame.length > 8 * 1024 * 1024)
+                )
+                    return finish("Gemini transcription setup buffer exceeded");
+                queue.push(frame);
+                if (transcribing) queuedBytes += frame.length;
+            }
         },
         requestSetup() {
             if (started) return;
             started = true;
             const candidates = fallbackCandidates(c.var.model).filter(
-                ({ id }) => id === GEMINI_LIVE || id === GEMINI_US,
+                ({ id }) => id === model || id === `${model}:google:us`,
             );
             c.executionCtx.waitUntil(
                 withModelFallback(
@@ -192,7 +230,10 @@ export function proxyGeminiLive(
                         queue.length = 0;
                     } else {
                         events.google(frame);
-                        if (disconnected && !events.pendingTurn()) finish();
+                        if (!events.pendingTurn()) {
+                            clearTimeout(turnTimer);
+                            if (disconnected) finish();
+                        }
                     }
                 } catch {
                     if (!ready) return failSetup();
@@ -215,6 +256,7 @@ export function proxyGeminiLive(
     const disconnect = () => {
         if (disconnected || lifetime.signal.aborted) return;
         disconnected = true;
+        if (selected && "disconnect" in events) events.disconnect();
         if (selected && events.pendingTurn()) {
             // Give Google a bounded opportunity to send usage for an in-flight turn.
             c.executionCtx.waitUntil(

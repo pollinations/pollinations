@@ -2,6 +2,8 @@
  * AWS Bedrock Guardrails integration for request-input safety checks.
  */
 
+import type { SafetyFeature } from "@shared/schemas/safety.ts";
+
 interface PIIFilter {
     action: "ANONYMIZED" | "BLOCKED";
     match?: string;
@@ -28,6 +30,10 @@ interface ContentFilter {
 
 export interface BedrockResponse {
     action?: "NONE" | "GUARDRAIL_INTERVENED";
+    usage?: {
+        contentPolicyUnits?: number;
+        sensitiveInformationPolicyUnits?: number;
+    };
     outputs?: GuardrailOutput[];
     assessments?: {
         contentPolicy?: { filters?: ContentFilter[] };
@@ -46,8 +52,16 @@ export interface BedrockGuardrailEnv {
     guardrailVersion: string;
 }
 
+const SENSITIVE_FEATURES = new Set<SafetyFeature>(["privacy", "secrets"]);
+
+/** True when every check needs only the sensitive-information policy. */
+export function isSensitiveOnly(features: Set<SafetyFeature>): boolean {
+    return [...features].every((feature) => SENSITIVE_FEATURES.has(feature));
+}
+
 export function resolveBedrockGuardrailEnv(
     env: CloudflareBindings,
+    features: Set<SafetyFeature>,
 ): BedrockGuardrailEnv | null {
     const maybeEnv = env as CloudflareBindings & {
         AWS_BEDROCK_ACCESS_KEY_ID?: string;
@@ -55,6 +69,8 @@ export function resolveBedrockGuardrailEnv(
         AWS_BEDROCK_REGION?: string;
         BEDROCK_GUARDRAIL_ID?: string;
         BEDROCK_GUARDRAIL_VERSION?: string;
+        BEDROCK_SENSITIVE_GUARDRAIL_ID?: string;
+        BEDROCK_SENSITIVE_GUARDRAIL_VERSION?: string;
     };
 
     const accessKeyId =
@@ -63,8 +79,16 @@ export function resolveBedrockGuardrailEnv(
         maybeEnv.AWS_BEDROCK_SECRET_ACCESS_KEY ||
         maybeEnv.AWS_SECRET_ACCESS_KEY;
     const region = maybeEnv.AWS_BEDROCK_REGION || maybeEnv.AWS_REGION;
-    const guardrailIdentifier = maybeEnv.BEDROCK_GUARDRAIL_ID;
-    const guardrailVersion = maybeEnv.BEDROCK_GUARDRAIL_VERSION;
+    // AWS bills each configured policy per text unit. Privacy and secrets
+    // checks use a guardrail without content filters, so they are not billed
+    // for a content policy whose result they ignore.
+    const sensitiveOnly = isSensitiveOnly(features);
+    const guardrailIdentifier = sensitiveOnly
+        ? maybeEnv.BEDROCK_SENSITIVE_GUARDRAIL_ID
+        : maybeEnv.BEDROCK_GUARDRAIL_ID;
+    const guardrailVersion = sensitiveOnly
+        ? maybeEnv.BEDROCK_SENSITIVE_GUARDRAIL_VERSION
+        : maybeEnv.BEDROCK_GUARDRAIL_VERSION;
 
     if (
         !accessKeyId ||

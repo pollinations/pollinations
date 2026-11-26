@@ -12,7 +12,7 @@ import type {
     QuestEvaluationContext,
 } from "../services/quests/types.ts";
 import {
-    buildQuestStandings,
+    getQuestStandings,
     questStandingsResponseSchema,
 } from "./quest-leaderboard.ts";
 
@@ -98,7 +98,7 @@ export const questsRoutes = new Hono<Env>()
         auth({ allowApiKey: false, allowSessionCookie: true }),
         async (c) => {
             const githubLogin = c.var.auth.user?.githubUsername ?? null;
-            return c.json(await buildQuestStandings(c.env, githubLogin));
+            return c.json(await getQuestStandings(c.env, githubLogin));
         },
     );
 

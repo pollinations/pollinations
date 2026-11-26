@@ -8,6 +8,10 @@ const TEXT_ENDPOINT =
     "https://queue.fal.run/fal-ai/kling-video/v3/standard/text-to-video";
 const IMAGE_ENDPOINT =
     "https://queue.fal.run/fal-ai/kling-video/v3/standard/image-to-video";
+const FLASH_TEXT_ENDPOINT =
+    "https://queue.fal.run/fal-ai/kling-video/v4/flash/text-to-video";
+const FLASH_IMAGE_ENDPOINT =
+    "https://queue.fal.run/fal-ai/kling-video/v4/flash/image-to-video";
 const STATUS_URL =
     "https://queue.fal.run/fal-ai/kling-video/requests/test/status";
 const RESULT_URL = "https://queue.fal.run/fal-ai/kling-video/requests/test";
@@ -53,7 +57,12 @@ function mockKlingFetch(
                       >)
                     : undefined,
             });
-            if (href === TEXT_ENDPOINT || href === IMAGE_ENDPOINT) {
+            if (
+                href === TEXT_ENDPOINT ||
+                href === IMAGE_ENDPOINT ||
+                href === FLASH_TEXT_ENDPOINT ||
+                href === FLASH_IMAGE_ENDPOINT
+            ) {
                 return Response.json({
                     status_url: STATUS_URL,
                     response_url: RESULT_URL,
@@ -126,6 +135,67 @@ describe("callKlingVideoAPI", () => {
         expect(result.trackingData).toEqual({
             actualModel: "kwaivgi/kling-v3.0-std",
             usage: { completionVideoSeconds: 3 },
+        });
+    });
+
+    it("routes Kling 4.0 Flash text-to-video and bills provider units", async () => {
+        const requests: ProviderRequest[] = [];
+        mockKlingFetch(requests, "COMPLETED", "5");
+
+        const result = await callKlingVideoAPI(
+            "a drone flyover of misty mountains",
+            {
+                ...baseParams,
+                model: "kwaivgi/kling-v4.0-flash",
+                duration: 5,
+                aspectRatio: "21:9",
+                audio: false,
+            },
+            "kwaivgi/kling-v4.0-flash",
+        );
+
+        expect(requests[0].url).toBe(FLASH_TEXT_ENDPOINT);
+        expect(requests[0].body).toEqual({
+            prompt: "a drone flyover of misty mountains",
+            duration: 5,
+            aspect_ratio: "21:9",
+        });
+        expect(result.durationSeconds).toBe(5);
+        expect(result.trackingData).toEqual({
+            actualModel: "kwaivgi/kling-v4.0-flash",
+            usage: { completionVideoSeconds: 5 },
+        });
+    });
+
+    it("routes Kling 4.0 Flash image-to-video without end frame", async () => {
+        const requests: ProviderRequest[] = [];
+        mockKlingFetch(requests, "COMPLETED", "4");
+
+        const result = await callKlingVideoAPI(
+            "bring this portrait to life",
+            {
+                ...baseParams,
+                model: "kwaivgi/kling-v4.0-flash",
+                image: [
+                    "https://example.com/first.png",
+                    "https://example.com/second.png",
+                ],
+                duration: 4,
+                audio: true,
+            },
+            "kwaivgi/kling-v4.0-flash",
+        );
+
+        expect(requests[0].url).toBe(FLASH_IMAGE_ENDPOINT);
+        expect(requests[0].body).toEqual({
+            prompt: "bring this portrait to life",
+            start_image_url: "https://example.com/first.png",
+            duration: 4,
+        });
+        expect(result.durationSeconds).toBe(4);
+        expect(result.trackingData).toEqual({
+            actualModel: "kwaivgi/kling-v4.0-flash",
+            usage: { completionVideoSeconds: 4 },
         });
     });
 

@@ -28,6 +28,7 @@ export type DirectResponsesTarget = {
     defaults: JsonObject;
     serviceTier?: string;
     imageConversionModel?: string;
+    reasoningEffortOverride?: string;
     /**
      * Ask for a stream even when the caller wants JSON. Cloudflare ends a
      * subrequest to Azure that has no response headers after ~125 s, and a
@@ -106,16 +107,20 @@ export function resolveDirectResponsesTarget(
     const modelDef = findModelByName(modelId);
     if (!modelDef) return null;
 
+    const effort = reasoningEffort(request);
     const options: TransformOptions = {
         model: modelId,
-        reasoning_effort: reasoningEffort(request),
+        reasoning_effort: effort,
     };
     const resolved = resolveModelConfig([], options).options;
     const config = resolved.modelConfig ?? {};
     const target = responsesTargetFromConfig(String(resolved.model), config);
-    return target?.imageConversionModel
-        ? { ...target, imageConversionModel: modelId }
-        : target;
+    if (!target) return null;
+    if (target.imageConversionModel) target.imageConversionModel = modelId;
+    if (effort !== undefined && resolved.reasoning_effort !== effort) {
+        target.reasoningEffortOverride = resolved.reasoning_effort;
+    }
+    return target;
 }
 
 function parseJson(text: string): unknown {

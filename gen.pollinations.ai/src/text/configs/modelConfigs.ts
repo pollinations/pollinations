@@ -473,6 +473,12 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-6-luna/chat/completions?api-version=2025-04-01-preview",
             azureOpenAIParameters,
         ),
+    "gpt-6-luna-classic": () =>
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-6-luna-classic/chat/completions?api-version=2025-04-01-preview",
+            azureOpenAIParameters,
+        ),
 
     // -- AWS Bedrock fallback (GPT-6) ---------------------------------------
     "gpt-6-sol-bedrock": () =>

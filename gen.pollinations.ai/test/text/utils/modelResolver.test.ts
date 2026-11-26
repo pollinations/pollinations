@@ -246,6 +246,15 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe("global.anthropic.claude-opus-5");
     });
 
+    it("routes the Classic GPT-6 Luna to its own Azure deployment", () => {
+        const result = resolveModelConfig(messages, {
+            model: "openai/gpt-6-luna:classic",
+        });
+
+        // Azure's v1 Responses API picks the deployment from the model field
+        expect(result.options.model).toBe("gpt-6-luna-classic");
+    });
+
     it("routes GPT-OSS 20B to our Vast GPU", () => {
         const result = resolveModelConfig(messages, {
             model: "openai/gpt-oss-20b",

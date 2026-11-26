@@ -3902,6 +3902,20 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000001,
     },
   },
+  "openai/gpt-6-luna:classic": {
+    "cost": {
+      "completionTextTokens": 0.0000005,
+      "promptCacheWriteTokens": 0.000000125,
+      "promptCachedTokens": 0.00000001,
+      "promptTextTokens": 0.0000001,
+    },
+    "price": {
+      "completionTextTokens": 0.0000005,
+      "promptCacheWriteTokens": 0.000000125,
+      "promptCachedTokens": 0.00000001,
+      "promptTextTokens": 0.0000001,
+    },
+  },
   "openai/gpt-6-sol": {
     "cost": {
       "completionTextTokens": 0.00001,
@@ -4392,16 +4406,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "price": {
       "completionTextTokens": 0.00000018,
       "promptTextTokens": 0.00000005,
-    },
-  },
-  "openai/gpt-oss-20b:deepinfra": {
-    "cost": {
-      "completionTextTokens": 0.00000014,
-      "promptTextTokens": 0.00000003,
-    },
-    "price": {
-      "completionTextTokens": 0.00000014,
-      "promptTextTokens": 0.00000003,
     },
   },
   "openai/gpt-realtime-2.1": {

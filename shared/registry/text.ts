@@ -941,6 +941,34 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1050000,
         isSpecialized: false,
     },
+    // Classic API (text.pollinations.ai) only: its own capped Azure deployment
+    // and no fallback, so free traffic never uses the official route's quota
+    "openai/gpt-6-luna:classic": {
+        supportedParameters: CHAT_PARAMETERS.azureResponses,
+        aliases: [],
+        hidden: true,
+        provider: "azure",
+        publisher: "OpenAI",
+        category: "text",
+        addedDate: new Date("2026-11-26").getTime(),
+        paidOnly: false,
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(0.1),
+            promptCachedTokens: perMillion(0.01),
+            promptCacheWriteTokens: perMillion(0.125),
+            completionTextTokens: perMillion(0.5),
+        },
+        title: "GPT-6 Luna (Classic)",
+        description: "Answer free Classic API requests on a capped deployment.",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        // Below the 272K long-context price tier
+        contextLength: 272000,
+        isSpecialized: false,
+    },
     "inception/mercury-2": {
         supportedParameters: CHAT_PARAMETERS.mercury,
         aliases: ["mercury-2", "inception", "inception-mercury", "mercury"],

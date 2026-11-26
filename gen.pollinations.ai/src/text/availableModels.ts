@@ -506,6 +506,13 @@ const models: ModelDefinition[] = [
         useResponsesApi: true,
     },
     {
+        name: "openai/gpt-6-luna:classic",
+        config: portkeyConfig["gpt-6-luna-classic"],
+        transform: omitOpenAISampling,
+        reasoningEffortMap: minimalToLow,
+        useResponsesApi: true,
+    },
+    {
         name: "openai/gpt-6-luna:aws",
         config: portkeyConfig["gpt-6-luna-bedrock"],
         transform: omitOpenAISampling,

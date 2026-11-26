@@ -37,6 +37,7 @@ import {
     generationHandoffRoutes,
 } from "@/utils/execute-generation.ts";
 import { refreshCommunityModelRegistryCache } from "./community-models.ts";
+import { agentsMd } from "./routes/agents-md.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { stopExpiredAzureSandboxes } from "./routes/azure-sandboxes.ts";
 import {
@@ -244,6 +245,8 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
             "Cache-Control": "public, max-age=3600",
         }),
     )
+    // agents.md: instructions for agents, next to the llms.txt link index.
+    .get("/AGENTS.md", (c) => agentsMd(c))
     .get("/manifest.webmanifest", () => manifestResponse())
     .route("/.well-known", wellKnownRoutes)
     // Coordinator alarms run generations here, under the zone's timeout.

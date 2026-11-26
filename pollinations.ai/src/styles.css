@@ -317,6 +317,19 @@ main > * {
     );
 }
 
+/* Play's inputs sit on the page, not in a card: each field is its own
+   surface, so it needs no border until it is focused or invalid. */
+.play-inputs
+    :is(.polli-input, .polli-textarea, .polli-input-shell):not(
+        :focus,
+        :focus-within,
+        [data-error],
+        [data-invalid]
+    ) {
+    background-color: var(--polli-color-surface-opaque);
+    border-color: transparent;
+}
+
 @supports (position-area: top span-right) {
     .play-stat-popover {
         inset: auto;

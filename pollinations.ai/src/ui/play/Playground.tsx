@@ -681,7 +681,7 @@ function ModelPicker({
     onSelectModel,
     details,
 }: {
-    /** The selected model's description and badges, shown under the selector, in line with its name. */
+    /** The selected model's description and badges, shown under the selector. */
     details?: ReactNode;
     models: PlaygroundModel[];
     stats: ModelRunStat[];
@@ -981,12 +981,7 @@ function ModelPicker({
                 {stepButton(-1)}
                 {stepButton(1)}
             </div>
-            {details && (
-                // Same left edge as the model name in the trigger (its padding plus border).
-                <div className="flex flex-col gap-2 px-[calc(1.25rem+1px)]">
-                    {details}
-                </div>
-            )}
+            {details && <div className="flex flex-col gap-2">{details}</div>}
         </div>
     );
 }
@@ -1010,7 +1005,9 @@ function RunStatBadge({
     const hidePanel = () => panel.current?.hidePopover();
 
     return (
+        // Inline: it opens the sentence that the description continues.
         <div
+            className="inline"
             onPointerEnter={(event) => {
                 if (event.pointerType === "mouse") panel.current?.showPopover();
             }}
@@ -1028,42 +1025,46 @@ function RunStatBadge({
                 popoverTarget={id}
                 popoverTargetAction="show"
                 style={{ anchorName: anchor }}
-                aria-label={`Typical cost ${cost ?? "unavailable"}, typical time ${time ?? "unavailable"}`}
-                className="flex cursor-help rounded-lg"
+                aria-label={`Average cost ${cost ?? "unavailable"}, average time ${time ?? "unavailable"}`}
+                className="inline-flex cursor-help items-baseline gap-1 rounded-sm tabular-nums"
             >
-                <Chip size="md" data-theme="neutral" className="tabular-nums">
-                    {cost || time ? (
-                        <>
-                            <span className="text-theme-text-muted">
-                                Typical
-                            </span>{" "}
-                            <span
-                                className={
-                                    walletKind === "paid"
-                                        ? "polli-wallet-text-paid"
-                                        : "polli-wallet-text-tier"
-                                }
-                            >
-                                {cost ?? "—"}
-                            </span>
-                            <WalletKindIcon kind={walletKind} />
-                            <span
-                                aria-hidden="true"
-                                className="text-theme-text-muted"
-                            >
-                                ·
-                            </span>
-                            {time ?? "—"}
-                        </>
-                    ) : (
-                        <>
-                            <span className="text-theme-text-muted">
-                                Measuring…
-                            </span>
-                            <WalletKindIcon kind={walletKind} />
-                        </>
-                    )}
-                </Chip>
+                {cost || time ? (
+                    <>
+                        <span
+                            className={
+                                walletKind === "paid"
+                                    ? "polli-wallet-text-paid"
+                                    : "polli-wallet-text-tier"
+                            }
+                        >
+                            {cost ?? "—"}
+                        </span>
+                        <WalletKindIcon
+                            kind={walletKind}
+                            className="self-center"
+                        />
+                        <span
+                            aria-hidden="true"
+                            className="text-theme-text-muted"
+                        >
+                            ·
+                        </span>
+                        {time ?? "—"}
+                        <span className="text-theme-text-muted">
+                            on average
+                        </span>
+                    </>
+                ) : (
+                    <>
+                        <span className="text-theme-text-muted">
+                            Measuring…
+                        </span>
+                        <WalletKindIcon
+                            kind={walletKind}
+                            className="self-center"
+                        />
+                    </>
+                )}
             </button>
             <div
                 ref={panel}
@@ -2639,18 +2640,44 @@ export function Playground({ drafts }: { drafts: ConnectDrafts }) {
                             details={
                                 currentModel && (
                                     <>
-                                        {currentModel.description && (
-                                            <Text
-                                                tone="soft"
-                                                data-theme="neutral"
-                                            >
-                                                {currentModel.description}
-                                            </Text>
-                                        )}
-                                        <div className="flex flex-wrap items-center gap-2 text-xs">
+                                        {/* One badge: what a run costs and takes, then what the model does. */}
+                                        <Text
+                                            as="div"
+                                            size="sm"
+                                            data-theme="neutral"
+                                            className="w-fit max-w-full rounded-lg bg-theme-bg-active px-2.5 py-0.5 leading-5! text-theme-text-strong"
+                                        >
+                                            <RunStatBadge
+                                                cost={cost}
+                                                time={time}
+                                                walletKind={
+                                                    currentModel.paidOnly
+                                                        ? "paid"
+                                                        : "tier"
+                                                }
+                                                costDetail={
+                                                    cost === "Free"
+                                                        ? "This model is free to use."
+                                                        : "Median cost of a successful paid request over the last 7 days. Your settings can change the price."
+                                                }
+                                                pricingHref={`${ENTER_URL}/models?${new URLSearchParams({ category: currentModel.category, q: currentModel.id })}`}
+                                            />
+                                            {currentModel.description && (
+                                                <>
+                                                    <span
+                                                        aria-hidden="true"
+                                                        className="text-theme-text-muted"
+                                                    >
+                                                        {" — "}
+                                                    </span>
+                                                    {currentModel.description}
+                                                </>
+                                            )}
+                                        </Text>
+                                        <div className="flex flex-wrap items-center gap-2 text-xs empty:hidden">
                                             {modelAbilities(currentModel).some(
                                                 (ability) =>
-                                                    !ability.shownByUploads,
+                                                    !ability.shownByInputs,
                                             ) && (
                                                 <ul
                                                     aria-label="Abilities"
@@ -2661,7 +2688,7 @@ export function Playground({ drafts }: { drafts: ConnectDrafts }) {
                                                     )
                                                         .filter(
                                                             (ability) =>
-                                                                !ability.shownByUploads,
+                                                                !ability.shownByInputs,
                                                         )
                                                         .map(
                                                             ({
@@ -2688,32 +2715,15 @@ export function Playground({ drafts }: { drafts: ConnectDrafts }) {
                                                         )}
                                                 </ul>
                                             )}
-                                            <RunStatBadge
-                                                cost={cost}
-                                                time={time}
-                                                walletKind={
-                                                    currentModel.paidOnly
-                                                        ? "paid"
-                                                        : "tier"
-                                                }
-                                                costDetail={
-                                                    cost === "Free"
-                                                        ? "This model is free to use."
-                                                        : "Median cost of a successful paid request over the last 7 days. Your settings can change the price."
-                                                }
-                                                pricingHref={`${ENTER_URL}/models?${new URLSearchParams({ category: currentModel.category, q: currentModel.id })}`}
-                                            />
                                         </div>
                                     </>
                                 )
                             }
                         />
                     </section>
-                    <Surface
-                        as="section"
-                        variant="card"
+                    <section
                         aria-label="Generation inputs"
-                        className="@container/play-inputs flex flex-col gap-5"
+                        className="play-inputs @container/play-inputs flex min-w-0 flex-col gap-5"
                     >
                         <fieldset
                             aria-label="Model input"
@@ -3225,7 +3235,7 @@ export function Playground({ drafts }: { drafts: ConnectDrafts }) {
                                 </>
                             )}
                         </div>
-                    </Surface>
+                    </section>
 
                     {/* Not connected is not a broken state, so the button
                         becomes the connect action. When it genuinely

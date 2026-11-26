@@ -24,8 +24,8 @@ type AbilityModel = {
 type Ability = {
     label: string;
     Icon: typeof ImageIcon;
-    /** The upload tiles already say it, so the row under the picker leaves it out. */
-    shownByUploads?: true;
+    /** The upload tiles or settings below already say it, so the row under the picker leaves it out. */
+    shownByInputs?: true;
     applies: (model: AbilityModel) => boolean;
 };
 
@@ -56,33 +56,39 @@ const ABILITIES: Ability[] = [
     },
     {
         label: "With sound",
+        shownByInputs: true,
         Icon: SpeakerIcon,
         applies: (model) => video(model, "audio_output"),
     },
     {
         label: "Start and end frames",
+        shownByInputs: true,
         Icon: ImageIcon,
         applies: (model) =>
             video(model, "start_frame") && video(model, "end_frame"),
     },
     {
         label: "Start frame",
+        shownByInputs: true,
         Icon: ImageIcon,
         applies: (model) =>
             video(model, "start_frame") && !video(model, "end_frame"),
     },
     {
         label: "Reference images",
+        shownByInputs: true,
         Icon: LayersIcon,
         applies: (model) => video(model, "reference_images"),
     },
     {
         label: "Reference video",
+        shownByInputs: true,
         Icon: VideoIcon,
         applies: (model) => video(model, "reference_videos"),
     },
     {
         label: "Reference audio",
+        shownByInputs: true,
         Icon: AudioIcon,
         applies: (model) => video(model, "reference_audios"),
     },
@@ -96,13 +102,13 @@ const RUNS_CODE = { label: "Runs code", Icon: TerminalIcon };
 const OTHER_TOOLS = { label: "Other tools", Icon: ToolIcon };
 const MCP_SERVER_ABILITIES: Record<
     Exclude<McpServerId, "composio">,
-    Pick<Ability, "label" | "Icon" | "shownByUploads">
+    Pick<Ability, "label" | "Icon" | "shownByInputs">
 > = {
     pollinations: { label: "Makes media", Icon: SparklesIcon },
     exa: WEB_SEARCH,
     research: WEB_SEARCH,
     news: WEB_SEARCH,
-    ffmpeg: { label: "Edits video", Icon: VideoIcon, shownByUploads: true },
+    ffmpeg: { label: "Edits video", Icon: VideoIcon, shownByInputs: true },
     computer: RUNS_CODE,
     machines: RUNS_CODE,
     packages: OTHER_TOOLS,

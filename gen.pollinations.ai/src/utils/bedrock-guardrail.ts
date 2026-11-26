@@ -3,7 +3,10 @@
  */
 
 import type { SafetyFeature } from "@shared/schemas/safety.ts";
-import { signBedrockHeaders } from "@/text/auth/bedrock.ts";
+import {
+    type BedrockCredentials,
+    signBedrockHeaders,
+} from "@/text/auth/bedrock.ts";
 
 interface PIIFilter {
     action: "ANONYMIZED" | "BLOCKED";
@@ -45,10 +48,7 @@ export interface BedrockResponse {
     }[];
 }
 
-export interface BedrockGuardrailEnv {
-    accessKeyId: string;
-    secretAccessKey: string;
-    region: string;
+export interface BedrockGuardrailEnv extends BedrockCredentials {
     guardrailIdentifier: string;
     guardrailVersion: string;
 }
@@ -64,50 +64,38 @@ export function resolveBedrockGuardrailEnv(
     env: CloudflareBindings,
     features: Set<SafetyFeature>,
 ): BedrockGuardrailEnv | null {
-    const maybeEnv = env as CloudflareBindings & {
-        AWS_BEDROCK_ACCESS_KEY_ID?: string;
-        AWS_BEDROCK_SECRET_ACCESS_KEY?: string;
-        AWS_BEDROCK_REGION?: string;
-        BEDROCK_GUARDRAIL_ID?: string;
-        BEDROCK_GUARDRAIL_VERSION?: string;
-        BEDROCK_SENSITIVE_GUARDRAIL_ID?: string;
-        BEDROCK_SENSITIVE_GUARDRAIL_VERSION?: string;
-    };
-
-    const accessKeyId =
-        maybeEnv.AWS_BEDROCK_ACCESS_KEY_ID || maybeEnv.AWS_ACCESS_KEY_ID;
-    const secretAccessKey =
-        maybeEnv.AWS_BEDROCK_SECRET_ACCESS_KEY ||
-        maybeEnv.AWS_SECRET_ACCESS_KEY;
-    const region = maybeEnv.AWS_BEDROCK_REGION || maybeEnv.AWS_REGION;
+    const credentials = resolveBedrockCredentials(env);
     // AWS bills each configured policy per text unit. Privacy and secrets
     // checks use a guardrail without content filters, so they are not billed
     // for a content policy whose result they ignore.
     const sensitiveOnly = isSensitiveOnly(features);
     const guardrailIdentifier = sensitiveOnly
-        ? maybeEnv.BEDROCK_SENSITIVE_GUARDRAIL_ID
-        : maybeEnv.BEDROCK_GUARDRAIL_ID;
+        ? env.BEDROCK_SENSITIVE_GUARDRAIL_ID
+        : env.BEDROCK_GUARDRAIL_ID;
     const guardrailVersion = sensitiveOnly
-        ? maybeEnv.BEDROCK_SENSITIVE_GUARDRAIL_VERSION
-        : maybeEnv.BEDROCK_GUARDRAIL_VERSION;
-
-    if (
-        !accessKeyId ||
-        !secretAccessKey ||
-        !region ||
-        !guardrailIdentifier ||
-        !guardrailVersion
-    ) {
+        ? env.BEDROCK_SENSITIVE_GUARDRAIL_VERSION
+        : env.BEDROCK_GUARDRAIL_VERSION;
+    if (!credentials || !guardrailIdentifier || !guardrailVersion) {
         return null;
     }
 
     return {
-        accessKeyId,
-        secretAccessKey,
-        region,
+        ...credentials,
         guardrailIdentifier,
         guardrailVersion,
     };
+}
+
+export function resolveBedrockCredentials(
+    env: CloudflareBindings,
+): BedrockCredentials | null {
+    const accessKeyId = env.AWS_BEDROCK_ACCESS_KEY_ID || env.AWS_ACCESS_KEY_ID;
+    const secretAccessKey =
+        env.AWS_BEDROCK_SECRET_ACCESS_KEY || env.AWS_SECRET_ACCESS_KEY;
+    const region = env.AWS_BEDROCK_REGION || env.AWS_REGION;
+    return accessKeyId && secretAccessKey && region
+        ? { accessKeyId, secretAccessKey, region }
+        : null;
 }
 
 export async function applyGuardrail(
@@ -145,13 +133,6 @@ const SHIELD_CATEGORIES = [
     "PROMPT_INJECTION",
     "PROMPT_LEAKAGE",
 ] as const;
-const INLINE_CONTENT_CATEGORIES = {
-    MISCONDUCT: "shield",
-    SEXUAL: "sexual",
-    VIOLENCE: "violence",
-    HATE: "violence",
-    INSULTS: "violence",
-} as const satisfies Record<string, SafetyFeature>;
 
 type InlinePolicy = "promptAttack" | "contentFilter";
 type InlineScore = { category: string; severityScore: number };
@@ -162,8 +143,7 @@ type InlineResponse = {
 
 export async function checkShield(
     texts: string[],
-    features: Set<SafetyFeature>,
-    env: BedrockGuardrailEnv,
+    credentials: BedrockCredentials,
 ) {
     const messages: { role: "user"; content: { text: string }[] }[] = [];
     // API callers control the text for every role. Screen it all as untrusted.
@@ -175,11 +155,6 @@ export async function checkShield(
         });
     }
 
-    const categories = (
-        Object.keys(
-            INLINE_CONTENT_CATEGORIES,
-        ) as (keyof typeof INLINE_CONTENT_CATEGORIES)[]
-    ).filter((category) => features.has(INLINE_CONTENT_CATEGORIES[category]));
     const body = JSON.stringify({
         messages,
         checks: {
@@ -187,18 +162,18 @@ export async function checkShield(
                 categories: SHIELD_CATEGORIES.map((category) => ({ category })),
             },
             contentFilter: {
-                categories: categories.map((category) => ({ category })),
+                categories: [{ category: "MISCONDUCT" }],
             },
         },
     });
     const url = new URL(
-        `https://bedrock-runtime.${env.region}.amazonaws.com/guardrail-checks/invoke`,
+        `https://bedrock-runtime.${credentials.region}.amazonaws.com/guardrail-checks/invoke`,
     );
     const headers = await signBedrockHeaders(
         url,
         body,
         { "content-type": "application/json" },
-        env,
+        credentials,
     );
     const result = await fetch(
         new Request(url, {
@@ -214,23 +189,17 @@ export async function checkShield(
     }
     const response = await result.json<InlineResponse>();
 
-    const blockedFeatures = new Set<SafetyFeature>();
-    for (const category of SHIELD_CATEGORIES) {
-        if (
-            severity(response.results?.promptAttack?.results, category) >= 0.8
-        ) {
-            blockedFeatures.add("shield");
-        }
-    }
-    for (const category of categories) {
-        if (
-            severity(response.results?.contentFilter?.results, category) >= 0.6
-        ) {
-            blockedFeatures.add(INLINE_CONTENT_CATEGORIES[category]);
-        }
-    }
+    const attackScores = SHIELD_CATEGORIES.map((category) =>
+        severity(response.results?.promptAttack?.results, category),
+    );
+    const misconductScore = severity(
+        response.results?.contentFilter?.results,
+        "MISCONDUCT",
+    );
     return {
-        blockedFeatures,
+        blocked:
+            attackScores.some((score) => score >= 0.8) ||
+            misconductScore >= 0.6,
         promptAttackPolicyUnits: response.usage?.promptAttack?.textUnits,
         inlineContentPolicyUnits: response.usage?.contentFilter?.textUnits,
     };

@@ -684,7 +684,11 @@ describe("applySafetyToInput text", { timeout: 30000 }, () => {
             { role: "user", content: "What is 2 + 2?" },
         ];
 
-        async function chat(safe: string, input = messages) {
+        async function chat(
+            safe: string,
+            input = messages,
+            bindings: CloudflareBindings = inlineEnv,
+        ) {
             const context = createExecutionContext();
             const response = await safetyApp()
                 .onError(handleError)
@@ -693,14 +697,17 @@ describe("applySafetyToInput text", { timeout: 30000 }, () => {
                         method: "POST",
                         body: JSON.stringify({ messages: input, safe }),
                     }),
-                    inlineEnv,
+                    bindings,
                     context,
                 );
             await waitOnExecutionContext(context);
             return response;
         }
 
-        function stubScores(scores: Record<string, number | undefined> = {}) {
+        function stubScores(
+            scores: Record<string, number | undefined> = {},
+            sensitiveResponse?: BedrockResponse,
+        ) {
             fetchMock.mockImplementation(async (request) => {
                 if (!(request instanceof Request))
                     throw new Error("Expected Request");
@@ -708,6 +715,14 @@ describe("applySafetyToInput text", { timeout: 30000 }, () => {
                     return Response.json({ successful_rows: 1 });
                 }
                 if (request.url.includes("/guardrail/")) {
+                    if (
+                        sensitiveResponse &&
+                        request.url.includes(
+                            "/guardrail/test-sensitive-guardrail/",
+                        )
+                    ) {
+                        return Response.json(sensitiveResponse);
+                    }
                     return Response.json(guardrailResponse);
                 }
                 const { checks } = (await request.clone().json()) as {
@@ -741,7 +756,11 @@ describe("applySafetyToInput text", { timeout: 30000 }, () => {
 
         it("sends caller-supplied system and user text as untrusted Bedrock content", async () => {
             stubScores();
-            const response = await chat("shield");
+            const response = await chat("shield", messages, {
+                ...inlineEnv,
+                BEDROCK_GUARDRAIL_ID: undefined,
+                BEDROCK_GUARDRAIL_VERSION: undefined,
+            });
 
             expect(response.status).toBe(200);
             expect(response.headers.get("X-Safety-Applied")).toBe("shield");
@@ -770,19 +789,44 @@ describe("applySafetyToInput text", { timeout: 30000 }, () => {
             });
         });
 
-        it("keeps content blocking active alongside Shield", async () => {
-            stubScores({ PROMPT_INJECTION: 1, SEXUAL: 1, HATE: 0.6 });
+        it("uses the existing content policy for sexual and violence decisions with or without Shield", async () => {
+            stubScores({ PROMPT_INJECTION: 1 });
+            guardrailResponse = intervened({
+                contentPolicy: {
+                    filters: [
+                        { action: "BLOCKED", type: "PROMPT_ATTACK" },
+                        { action: "BLOCKED", type: "SEXUAL" },
+                        { action: "BLOCKED", type: "HATE" },
+                    ],
+                },
+            });
+            const withoutShield = await chat("sexual,violence");
+            const withShield = await chat("shield,sexual,violence");
 
-            const response = await chat("shield,sexual,violence");
-
-            expect(response.status).toBe(400);
-            expect(await response.json()).toMatchObject({
+            expect(withoutShield.status).toBe(400);
+            expect(await withoutShield.json()).toMatchObject({
                 error: {
                     code: "content_blocked",
                     message:
-                        "Request blocked by safety filter: shield, sexual, violence",
+                        "Request blocked by safety filter: sexual, violence",
                 },
             });
+            expect(withShield.status).toBe(400);
+            expect(await withShield.json()).toMatchObject({
+                error: {
+                    code: "content_blocked",
+                    message:
+                        "Request blocked by safety filter: sexual, violence, shield",
+                },
+            });
+            const legacyRequests = fetchMock.mock.calls
+                .map(([request]) => request as Request)
+                .filter((request) => request.url.includes("/guardrail/"));
+            expect(legacyRequests).toHaveLength(2);
+            expect(legacyRequests[0].url).toBe(legacyRequests[1].url);
+            expect(await legacyRequests[0].json()).toEqual(
+                await legacyRequests[1].json(),
+            );
         });
 
         it("sends all selected parts in groups that fit the Bedrock message limit", async () => {
@@ -847,6 +891,54 @@ describe("applySafetyToInput text", { timeout: 30000 }, () => {
                 ]),
             );
             expect(fetchMock).toHaveBeenCalledTimes(2);
+        });
+
+        it("redacts with the sensitive guardrail when the content guardrail blocks the same personal data", async () => {
+            guardrailResponse = intervened(
+                {
+                    sensitiveInformationPolicy: {
+                        piiEntities: [{ type: "EMAIL", action: "BLOCKED" }],
+                    },
+                    contentPolicy: {
+                        filters: [{ type: "PROMPT_ATTACK", action: "BLOCKED" }],
+                    },
+                },
+                [{ text: "A legacy block message" }],
+            );
+            stubScores(
+                {},
+                intervened(
+                    {
+                        sensitiveInformationPolicy: {
+                            piiEntities: [
+                                { type: "EMAIL", action: "ANONYMIZED" },
+                            ],
+                        },
+                    },
+                    [
+                        { text: messages[0].content },
+                        { text: "My email is {EMAIL}." },
+                    ],
+                ),
+            );
+
+            for (const safe of ["privacy,sexual", "privacy,sexual,shield"]) {
+                const response = await chat(safe, [
+                    messages[0],
+                    {
+                        role: "user",
+                        content: "My email is example@example.com.",
+                    },
+                ]);
+                expect(response.status).toBe(200);
+                expect(response.headers.get("X-Safety-Redacted")).toBe("EMAIL");
+                expect(await response.json()).toMatchObject({
+                    messages: [
+                        messages[0],
+                        { role: "user", content: "My email is {EMAIL}." },
+                    ],
+                });
+            }
         });
 
         it("fails closed if an inline check has no score", async () => {

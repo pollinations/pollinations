@@ -40,7 +40,7 @@ Also available:
 
 - `POST https://text.pollinations.ai/` with `{"messages": [...]}`: plain-text answer
 - `POST https://text.pollinations.ai/openai` (or `/v1/chat/completions`): OpenAI-compatible chat completions
-- `GET https://text.pollinations.ai/models`: the available model (GPT-OSS 20B)
+- `GET https://text.pollinations.ai/models`: the available model (GPT-6 Luna)
 
 ## Limits
 
@@ -58,7 +58,7 @@ Beyond the limit you get **402 Payment Required**, with a `Retry-After` header s
 
 A `HEAD` request beyond the limit gets **429 Too Many Requests** with a `Retry-After` header and no body.
 
-Text runs GPT-OSS 20B with low reasoning effort. Prompts are limited to 16,000 characters (about 4,000 tokens), counting messages and tools, and replies to 800 tokens. A longer prompt gets **413 Content Too Large**: a plain text notice, or a JSON error for OpenAI-style and `json=true` requests. A `json=true` reply cut off at the token limit gets **422** with a JSON error instead of partial JSON. These limits also apply to requests paid with x402; for longer prompts and replies, use a key from [enter.pollinations.ai](https://enter.pollinations.ai/?ref=classic-limits).
+Text runs GPT-6 Luna with low reasoning effort. Prompts are limited to 16,000 characters (about 4,000 tokens), counting messages and tools, and replies to 1,500 tokens. A longer prompt gets **413 Content Too Large**: a plain text notice, or a JSON error for OpenAI-style and `json=true` requests. A `json=true` reply cut off at the token limit gets **422** with a JSON error instead of partial JSON. These limits also apply to requests paid with x402; for longer prompts and replies, use a key from [enter.pollinations.ai](https://enter.pollinations.ai/?ref=classic-limits).
 
 You can:
 

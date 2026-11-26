@@ -35,9 +35,9 @@ const FREE_INTERVAL_MS = 45_000;
 // gpt-oss cost, from ~300 IPs a day, almost all scripts (Tinybird, Nov 2026)
 const FREE_PER_DAY = 100;
 const MAX_BODY_BYTES = 20 * 1024 * 1024; // body-parser's "20mb"
-// Free gpt-oss costs: half of all replies are under 150 tokens, and prompts
-// over ~4k tokens were 13% of requests but 60% of the cost (Tinybird, Nov 2026)
-const MAX_TOKENS = 800;
+// Prompts over ~4k tokens were 13% of requests but 60% of the cost, and 8.8%
+// of replies stopped at the old 800-token cap (Tinybird, Nov 2026)
+const MAX_TOKENS = 1500;
 // Characters of the caller's messages and tools, about 4,000 tokens
 const MAX_PROMPT_CHARS = 16_000;
 // Node's default --max-http-header-size on the VM. Node 22 counts the request
@@ -56,7 +56,7 @@ const VM_HOST = "text-origin.pollinations.ai";
 // cf-ipcountry, cf-ray (16 hex digits), cf-visitor, connection,
 // x-forwarded-proto and x-real-ip.
 const TUNNEL_HEAD_BYTES = 119;
-// openai-fast and its registry aliases; gen serves them all as gpt-oss
+// openai-fast and its old registry aliases; gen serves them all as GPT-6 Luna
 const MODELS = new Set([
     "openai-fast",
     "openai",
@@ -74,7 +74,7 @@ You never use phrases that imply moral superiority or a sense of authority, incl
 const DOCS_URL =
     "https://github.com/pollinations/pollinations/blob/master/APIDOCS.md";
 const MODELS_BODY =
-    '[{"name":"openai-fast","description":"GPT-OSS 20B Reasoning LLM (OVH)","reasoning":true,"tier":"anonymous","community":false,"input_modalities":["text"],"output_modalities":["text"],"tools":true,"aliases":["openai","gpt-oss","gpt-oss-20b","ovh-reasoning"],"vision":false,"audio":false}]';
+    '[{"name":"openai-fast","description":"GPT-6 Luna, low reasoning (Azure)","reasoning":true,"tier":"anonymous","community":false,"input_modalities":["text"],"output_modalities":["text"],"tools":true,"aliases":["openai","gpt-oss","gpt-oss-20b","ovh-reasoning"],"vision":false,"audio":false}]';
 const CROSSDOMAIN = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE cross-domain-policy SYSTEM "http://www.macromedia.com/xml/dtds/cross-domain-policy.dtd">
 <cross-domain-policy>
@@ -278,7 +278,7 @@ async function answer(request, env, ctx) {
             id: "openai-fast",
             object: "model",
             created: Date.now(),
-            owned_by: "ovh",
+            owned_by: "openai",
         };
         return json({ object: "list", data: [model] }, 200);
     }
@@ -824,7 +824,9 @@ async function generate(env, job, cacheControl, ended) {
             },
             body: JSON.stringify(
                 clean({
-                    model: "gpt-oss",
+                    // Hidden, capped Azure deployment for this API only; when
+                    // it is full, gen's 429 becomes the busy notice
+                    model: "openai/gpt-6-luna:classic",
                     messages: job.messages,
                     ...job.options,
                     stream: job.stream,

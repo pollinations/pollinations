@@ -91,19 +91,19 @@ const SCREENS = {
     },
     toolong: {
         title: "That message is too long",
-        text: "The free API runs GPT-OSS 20B, a small model, with prompts up to 16,000 characters. Shorten it and try again, or use long prompts and stronger models with your own account.",
+        text: "The free API runs GPT-6 Luna with prompts up to 16,000 characters. Shorten it and try again, or use long prompts and stronger models with your own account.",
         alt: "Nomnom faces an endless scroll while Polli the bee holds tiny scissors.",
     },
     // gen's JSON reply cut off at the output limit
     cutoff: {
         scene: "toolong",
         title: "The reply got too long",
-        text: "Free replies stop at 800 tokens, and this JSON reply reached that before it was complete. Ask for shorter output and try again, or use longer replies with your own account.",
+        text: "Free replies stop at 1,500 tokens, and this JSON reply reached that before it was complete. Ask for shorter output and try again, or use longer replies with your own account.",
         alt: "Nomnom faces an endless scroll while Polli the bee holds tiny scissors.",
     },
     unknown: {
         title: "We don't know that model",
-        text: "The free API runs only GPT-OSS 20B. Every other model is on Pollinations.",
+        text: "The free API runs only GPT-6 Luna. Every other model is on Pollinations.",
         alt: "Polli the bee reads a map with a question mark next to the puzzled robot.",
     },
 };
@@ -287,7 +287,7 @@ export function promptTooLong(maxChars, json) {
         status: 413,
         headers: { "Content-Type": "text/plain; charset=utf-8" },
         body:
-            `This message is too long for the free Classic API. It runs GPT-OSS 20B, a small model, with prompts up to ${chars} characters (about ${tokens} tokens) and short replies. Shorten the conversation and try again, or [use long prompts and stronger models](${ENTER.text}).\n\n` +
+            `This message is too long for the free Classic API. It runs GPT-6 Luna with prompts up to ${chars} characters (about ${tokens} tokens) and short replies. Shorten the conversation and try again, or [use long prompts and stronger models](${ENTER.text}).\n\n` +
             "If you're using someone else's app, ask whoever runs it to switch to a Pollinations API key.",
     };
 }

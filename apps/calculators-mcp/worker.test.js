@@ -76,6 +76,7 @@ for (const modern of [false, true])
                 "inspect_unicode",
                 "next_cron_runs",
                 "rank_palette",
+                "json_format",
                 "time_convert",
                 "time_math",
             ].sort(),
@@ -949,4 +950,17 @@ test("integer_math rejects what is not integer arithmetic", async (t) => {
             JSON.stringify(args),
         );
     }
+});
+
+test("json_format pretty prints and minifies", async (t) => {
+    const client = await clientFor(t);
+    assert.equal(
+        await call(client, "json_format", { text: '{"a":1,"b":[2,3]}' }),
+        '{\n  "a": 1,\n  "b": [\n    2,\n    3\n  ]\n}',
+    );
+    assert.equal(
+        await call(client, "json_format", { text: '{"a":1}', mode: "minify" }),
+        '{"a":1}',
+    );
+    assert.match(await call(client, "json_format", { text: "{bad" }), /^Invalid JSON:/);
 });

@@ -14,10 +14,6 @@ on:
       issue_numbers:
         description: "Space-separated issue numbers"
         required: false
-      model_queues_only:
-        description: "Fill only empty Model work cells for open Models items (ignore number inputs)"
-        type: boolean
-        default: false
       dry_run:
         description: "Log the changes without applying them"
         type: boolean
@@ -62,6 +58,5 @@ jobs:
           POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
           PR_NUMBERS: ${{ inputs.pr_numbers }}
           ISSUE_NUMBERS: ${{ inputs.issue_numbers }}
-          MODEL_QUEUES_ONLY: ${{ inputs.model_queues_only }}
           DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '' }}
         run: bash operations/infrastructure/project-manager/run.sh

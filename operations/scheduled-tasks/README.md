@@ -8,14 +8,16 @@ chats for each type of model work. Proposed jobs await activation.
 | --- | --- | --- | --- | --- |
 | Support Git | Active | Daily at 09:00 | Review open Community issues in the Express queue and surface the next reply or action. Draft or send a reply on request under the support workflow. | [Git support runbook](support-git.md) |
 | Support email | Active | Daily at 18:00 | Review the connected inbox over the last 24 hours and surface replies, deadlines and follow-ups. Handle individual replies under the email support workflow on request. | [Email support runbook](support-email.md) |
-| [Model retirements](https://github.com/orgs/pollinations/projects/20/views/42?filterQuery=is%3Aopen%20area%3AModels%20model-work%3ARetirement) | Active | Thursdays at 09:30 | Find low-use models and upstream shutdowns. Propose a dated removal or route migration. Process an approved retirement through the existing notice and hold procedure. | [Retirement runbook](model-retirements.md) |
-| [Model repairs](https://github.com/orgs/pollinations/projects/20/views/42?filterQuery=is%3Aopen%20area%3AModels%20model-work%3ARepair) | Proposed | Thursdays at 10:00 | Diagnose active model failures or regressions. Fix the failing layer or restore service through a verified route. | [Repair runbook](model-repairs.md) |
-| [Model additions](https://github.com/orgs/pollinations/projects/20/views/42?filterQuery=is%3Aopen%20area%3AModels%20model-work%3AAddition) | Proposed | Thursdays at 13:30 | Review new-model requests and prepare provider, capability, price and fallback decisions. Implement an approved addition. | [Addition runbook](model-additions.md) |
-| [Model updates](https://github.com/orgs/pollinations/projects/20/views/42?filterQuery=is%3Aopen%20area%3AModels%20model-work%3AUpdate) | Proposed | Thursdays at 14:00 | Plan upgrades, pricing, capability or routing changes for models that are working. Implement approved changes. | [Update runbook](model-updates.md) |
+| [Model retirements](https://github.com/orgs/pollinations/projects/20/views/42?filterQuery=is%3Aopen%20is%3Apr%20area%3AModels%20model-work%3ARetirement) | Active | Thursdays at 09:30 | Find low-use models and upstream shutdowns. Propose a dated removal or route migration. Process an approved retirement through the existing notice and hold procedure. | [Retirement runbook](model-retirements.md) |
+| [Model repairs](https://github.com/orgs/pollinations/projects/20/views/42?filterQuery=is%3Aopen%20is%3Apr%20area%3AModels%20model-work%3ARepair) | Proposed | Thursdays at 10:00 | Review open repair PRs and verify the proposed fix against production health and linked reports. | [Repair runbook](model-repairs.md) |
+| [Model additions](https://github.com/orgs/pollinations/projects/20/views/42?filterQuery=is%3Aopen%20is%3Apr%20area%3AModels%20model-work%3AAddition) | Proposed | Thursdays at 13:30 | Review open PRs for new models and verify their provider, capability, price and fallback decisions. | [Addition runbook](model-additions.md) |
+| [Model updates](https://github.com/orgs/pollinations/projects/20/views/42?filterQuery=is%3Aopen%20is%3Apr%20area%3AModels%20model-work%3AUpdate) | Proposed | Thursdays at 14:00 | Review open PRs for planned upgrades, pricing, capability or routing changes. | [Update runbook](model-updates.md) |
 
-Start each Thursday chat from its linked queue of open issues and PRs. The
-[Project Manager](../infrastructure/project-manager/project-manager.md) assigns the queue. To catch up existing items, run **Repo / Organize issues and PRs**
-with **model_queues_only**. Its default dry run previews the assignments.
+Start each Thursday chat from its linked queue of open PRs. Use linked issues
+for context and production telemetry to judge impact. The
+[Project Manager](../infrastructure/project-manager/project-manager.md) assigns
+the queue when a PR opens. If an existing PR needs a queue, assign its Model
+work field in the Dev project.
 Each model job owns its PR through review and authorized merge. Check test
 evidence, required approvals and any merge hold in that job's chat. When a job
 finds work owned by another, link the evidence and existing issue or PR in its

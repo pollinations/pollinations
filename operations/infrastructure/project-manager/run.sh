@@ -6,9 +6,6 @@ if [ "$GITHUB_EVENT_NAME" != "workflow_dispatch" ]; then
   export PROJECT_MANAGER_EVENT_PATH="$GITHUB_EVENT_PATH"
   exec python "$manager_dir/project_manager.py"
 fi
-if [ "$MODEL_QUEUES_ONLY" = "true" ]; then
-  exec python "$manager_dir/backfill_model_work.py"
-fi
 
 export GH_TOKEN="$GITHUB_TOKEN"
 

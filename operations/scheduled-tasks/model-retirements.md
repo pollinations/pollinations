@@ -5,7 +5,7 @@ its [catalog lifecycle policy](../../.claude/skills/model-management/references/
 for configured routes and `origin/main` for upcoming changes. Fetch refs if
 needed and read them with Git without switching the user's checkout.
 
-Start with open issues and PRs in the [Retirement queue](https://github.com/orgs/pollinations/projects/20/views/42?filterQuery=is%3Aopen%20area%3AModels%20model-work%3ARetirement). Check for existing work before proposing another retirement.
+Start with open PRs in the [Retirement queue](https://github.com/orgs/pollinations/projects/20/views/42?filterQuery=is%3Aopen%20is%3Apr%20area%3AModels%20model-work%3ARetirement). Read linked issues for context and check for existing work before proposing another retirement.
 
 ## Usage
 

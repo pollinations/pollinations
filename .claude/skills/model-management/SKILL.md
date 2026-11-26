@@ -7,6 +7,9 @@ description: "Add, update, rename, reroute, price, or remove Pollinations text, 
 
 Use this workflow for every model change. Keep the implementation minimal, preserve the public contract unless the user explicitly approves a change, and prove provider behavior with real requests.
 
+For weekly queue reviews, start with the job’s runbook in the
+[scheduled tasks catalog](../../../operations/scheduled-tasks/README.md).
+
 ## Load context first
 
 1. Read the repository `AGENTS.md`.
@@ -25,7 +28,6 @@ Read [operating-policy.md](references/operating-policy.md) before recommending a
 
 | Task | Required references |
 |---|---|
-| Review models for deprecation or upstream shutdowns | [model-retirements.md](../../../operations/scheduled-tasks/model-retirements.md) |
 | Find code or run locally | [repository-and-local-testing.md](references/repository-and-local-testing.md) |
 | Add, update, reroute, rename, or remove | [change-and-test-matrix.md](references/change-and-test-matrix.md) |
 | New model, provider, model ID, or price | [billing-verification.md](references/billing-verification.md) |

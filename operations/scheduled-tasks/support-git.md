@@ -88,5 +88,5 @@ For each actionable issue, provide its link, waiting time when verifiable, and
 the suggested reply or next action. Flag uncertainty when it affects triage.
 Report an access failure if neither GitHub route verifies the queue. When there
 is no meaningful change and nothing needs attention, stay quiet. If a reply
-draft is requested, use the private support profile in the skill, above the
-customer-facing draft.
+draft is requested, follow the GitHub support skill and summarize the evidence
+for the draft in chat.

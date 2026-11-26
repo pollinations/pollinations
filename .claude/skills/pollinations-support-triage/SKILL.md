@@ -10,7 +10,7 @@ Local, operator-led workflow. Follow the checkout's `AGENTS.md` and read
 identity, Workspace footer ownership and production access. Reuse existing
 credentials; never put secrets or customer content in the repository.
 
-For the scheduled 24-hour inbox briefing, use [daily-email-review.md](../../../operations/scheduled-tasks/daily-email-review.md).
+For the scheduled 24-hour inbox briefing, use [support-email.md](../../../operations/scheduled-tasks/support-email.md).
 
 ## Inbox workflow
 

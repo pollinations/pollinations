@@ -1,4 +1,4 @@
-# Model deprecation review
+# Model retirements
 
 Run this review read-only. Follow the [model-management skill](../../.claude/skills/model-management/SKILL.md) and
 its [catalog lifecycle policy](../../.claude/skills/model-management/references/operating-policy.md). Use current `origin/production`

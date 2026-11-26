@@ -1,4 +1,4 @@
-# Daily Express GitHub support triage
+# Support Git
 
 Review the [Express support queue](https://github.com/orgs/pollinations/projects/20/views/50?filterQuery=is%3Aopen%20source%3ACommunity%20is%3Aissue%20priority%3AExpress)
 for `pollinations/pollinations`. Keep GitHub read-only and report only in the

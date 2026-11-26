@@ -1,4 +1,4 @@
-# Daily email review
+# Support email
 
 The scheduled briefing is a read-only scan of the connected Pollinations Gmail
 inbox specified by the operator in Codex. Run it on demand with the same scope

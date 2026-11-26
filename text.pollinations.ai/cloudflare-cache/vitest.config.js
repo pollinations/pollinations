@@ -37,7 +37,8 @@ const send = (res, status, body) => {
  * Fixed gen responses for POST /v1/chat/completions, picked by the last
  * message: "gen:<status>" answers that error, "gen:empty" an empty content,
  * "gen:length" a reply cut off at max_tokens,
- * "gen:echo" the request it got, "gen:slow" waits 300 ms. Streams get SSE,
+ * "gen:echo" the request it got, "gen:stream-error" a stream that ends
+ * with an error event, "gen:slow" waits 300 ms. Streams get SSE,
  * one chunk a second for "gen:long".
  */
 async function gen(req, res) {
@@ -53,6 +54,16 @@ async function gen(req, res) {
         });
     }
     if (prompt === "gen:slow") await new Promise((r) => setTimeout(r, 300));
+    // A stream gen opens, then ends with an error event, as gen does when the
+    // provider fails mid-stream
+    if (body.stream && prompt === "gen:stream-error") {
+        res.writeHead(200, { "Content-Type": "text/event-stream" });
+        res.write(SSE_CHUNKS[0]);
+        res.write(
+            'data: {"error":{"message":"boom","type":"upstream_error"}}\n\n',
+        );
+        return res.end("data: [DONE]\n\n");
+    }
     if (body.stream) {
         res.writeHead(200, { "Content-Type": "text/event-stream" });
         const pause = prompt === "gen:long" ? 1000 : 5;

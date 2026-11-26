@@ -49,7 +49,7 @@ Free requests are anonymous and limited per IP address:
 | | Limit |
 |---|---|
 | Images | One at a time, at least 45 seconds apart |
-| Text | One at a time, at least 45 seconds apart. A stream waits for the next slot |
+| Text | One at a time, at least 45 seconds apart. A stream waits for the next slot. At most 100 replies a day, reset at 00:00 UTC |
 
 Beyond the limit you get **402 Payment Required**, with a `Retry-After` header saying when the next free request is ready, and a short explanation:
 

@@ -30,6 +30,18 @@ const limitNotice = (every, wait) =>
     `Free limit reached: 1 reply every ${every} seconds per IP. Please wait ${wait} seconds or [get unlimited replies](${ENTER}), then try again.\n\n` +
     "If you're using someone else's app, ask whoever runs it to switch to a pollen key.";
 
+const hoursUntil = (seconds) => {
+    const hours = Math.ceil(seconds / 3600);
+    return `${hours} hour${hours === 1 ? "" : "s"}`;
+};
+
+// The daily quota's answer, for scripts and as a notice apps show as is
+const dailyError = (perDay, wait) =>
+    `Free limit reached: ${perDay} replies a day per IP. It resets at 00:00 UTC, in ${hoursUntil(wait)}. Get unlimited replies with a pollen key at ${ENTER}`;
+const dailyNotice = (perDay, wait) =>
+    `Free limit reached: ${perDay} replies a day per IP. It resets at 00:00 UTC, in ${hoursUntil(wait)}, or [get unlimited replies](${ENTER}) now.\n\n` +
+    "If you're using someone else's app, ask whoever runs it to switch to a pollen key.";
+
 /** The free limit's page for a browser, built by screens/render.js */
 function page(kind, every, wait) {
     const [item, items] =
@@ -47,8 +59,17 @@ function page(kind, every, wait) {
  * and PAYMENT-REQUIRED stay: x402 clients pay from that header.
  * @param {"image" | "text" | "json"} kind
  * @param {number} until when the IP's next free request may start
+ * @param {number} [perDay] the daily quota the IP used up; the notice, not
+ *   the page, answers a browser, as the page names only the interval
  */
-export function explainFreeLimit(request, response, kind, intervalMs, until) {
+export function explainFreeLimit(
+    request,
+    response,
+    kind,
+    intervalMs,
+    until,
+    perDay,
+) {
     const paying =
         request.headers.has("payment-signature") ||
         request.headers.has("x-payment");
@@ -74,6 +95,13 @@ export function explainFreeLimit(request, response, kind, intervalMs, until) {
         return new Response(body, { status: 402, headers });
     };
 
+    if (perDay)
+        return kind === "json"
+            ? answer(
+                  JSON_TYPE,
+                  genError(402, "FREE_LIMIT", dailyError(perDay, wait)),
+              )
+            : answer("text/plain; charset=utf-8", dailyNotice(perDay, wait));
     if (browser)
         return answer("text/html; charset=utf-8", page(kind, every, wait));
     if (kind === "text")

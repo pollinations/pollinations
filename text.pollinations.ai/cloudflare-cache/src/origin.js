@@ -4,7 +4,7 @@ import contentType from "content-type";
 import iconv from "iconv-lite";
 import mediaTyper from "media-typer";
 import { callerHeaders } from "../../../shared/gen-caller.js";
-import { slotKey, takeSlot } from "../../../shared/ip-slot.js";
+import { forgetSlot, slotKey, takeSlot } from "../../../shared/ip-slot.js";
 import {
     explainFreeLimit,
     failure,
@@ -13,6 +13,12 @@ import {
     REFUSED,
 } from "../../../shared/messages.js";
 import { BLOCKED_PREFIXES } from "./blocked-prefixes.js";
+import {
+    nextMidnight,
+    quotaFull,
+    refundQuota,
+    takeQuota,
+} from "./daily-quota.js";
 // index.js imports this module too; the function is only called per request
 import { prepareForwardedHeaders } from "./index.js";
 
@@ -24,6 +30,9 @@ import { prepareForwardedHeaders } from "./index.js";
 
 const GEN_URL = "https://gen.pollinations.ai/v1/chat/completions";
 const FREE_INTERVAL_MS = 45_000;
+// Free replies per IP and UTC day. Replies past the 100th were ~31% of the
+// gpt-oss cost, from ~300 IPs a day, almost all scripts (Tinybird, Nov 2026)
+const FREE_PER_DAY = 100;
 const MAX_BODY_BYTES = 20 * 1024 * 1024; // body-parser's "20mb"
 // Free gpt-oss costs: half of all replies are under 150 tokens, and prompts
 // over ~4k tokens were 13% of requests but 60% of the cost (Tinybird, Nov 2026)
@@ -633,12 +642,69 @@ async function generation(
         ),
     };
     const canWait = params.stream || !weftEnabled(env);
+    // A used-up daily quota goes to the paywall, streams too: they cannot wait
+    // until midnight
+    const dailyLimit = (at) => ({
+        action: "pay",
+        until: nextMidnight(at),
+        daily: true,
+    });
+    // A model we don't serve still books the slot, as on the VM, but its 404
+    // never meets the quota
+    const served = MODELS.has(job.model);
     let slot;
     try {
         slot = await takeSlot(env.IP_SLOT, ip, FREE_INTERVAL_MS, canWait);
     } catch (error) {
         logFailure(route, { error: "ip_slot", type: error.name });
         return sendGenAnswer(failure(503));
+    }
+    // The booked reply's start, in the slot's own clock: the quota counts it
+    // on that UTC day
+    const start = slot.until - FREE_INTERVAL_MS;
+    // Whether the quota counted this reply, so a failed one gives it back
+    let counted = false;
+    if (served && (slot.action === "go" || slot.action === "wait")) {
+        let free = true;
+        try {
+            free = await takeQuota(env.DAILY_QUOTA, ip, FREE_PER_DAY, start);
+            counted = free;
+        } catch (error) {
+            // A cost cap, not a safety check: the reply stays free
+            logFailure(route, { error: "daily_quota", type: error.name });
+        }
+        if (!free) {
+            // Ends the booking with the cooldown it found: no reply ran, so
+            // none starts a new one
+            forgetSlot(ip);
+            const release = env.IP_SLOT.getByName(ip).release({
+                ...slot,
+                until: start,
+            });
+            ctx.waitUntil(
+                release.catch((error) =>
+                    logFailure(route, {
+                        error: "ip_slot_release",
+                        type: error.name,
+                    }),
+                ),
+            );
+            slot = dailyLimit(start);
+        }
+    }
+
+    // Within the interval after the day's last free reply: the daily limit
+    // is the wait that matters, not the 45 seconds
+    if (served && slot.action === "pay" && !slot.daily) {
+        // One timestamp for the day checked and its reset; a day that ended
+        // during the lookup keeps the interval's answer
+        const at = Date.now();
+        try {
+            const full = await quotaFull(env.DAILY_QUOTA, ip, FREE_PER_DAY, at);
+            if (full && nextMidnight(at) > Date.now()) slot = dailyLimit(at);
+        } catch (error) {
+            logFailure(route, { error: "daily_quota", type: error.name });
+        }
     }
 
     if (slot.action === "full") {
@@ -669,6 +735,7 @@ async function generation(
             json ? "json" : "text",
             FREE_INTERVAL_MS,
             slot.until,
+            slot.daily ? FREE_PER_DAY : undefined,
         );
     }
 
@@ -683,6 +750,10 @@ async function generation(
             logFailure(route, { error: "ip_slot_release", type: error.name }),
         ),
     );
+    // A stream's outcome is known only at its end
+    const streamed = new Promise((resolve) => {
+        job.finished = resolve;
+    });
     const response = (async () => {
         if (slot.waitMs > 0) {
             await new Promise((resolve) => setTimeout(resolve, slot.waitMs));
@@ -690,6 +761,21 @@ async function generation(
         return generate(env, job, undefined, ended);
     })();
     ctx.waitUntil(response);
+    // The quota counts replies: an error answer, or a stream that fails or
+    // stops early, gives its count back
+    if (counted) {
+        ctx.waitUntil(
+            response
+                .then((answer) => answer.ok && (!job.stream || streamed))
+                .then((ok) => ok || refundQuota(env.DAILY_QUOTA, ip, start))
+                .catch((error) =>
+                    logFailure(route, {
+                        error: "daily_quota_refund",
+                        type: error.name,
+                    }),
+                ),
+        );
+    }
     return response;
 }
 
@@ -762,7 +848,7 @@ async function generate(env, job, cacheControl, ended) {
             return await send(await response.text(), response.status, headers);
         }
         if (job.stream) {
-            return sse(response.body);
+            return sse(response.body, job.finished);
         }
         const completion = completionOf(await response.json());
         if (completion.error) {
@@ -876,12 +962,35 @@ function textResponse(completion) {
 /**
  * sendAsOpenAIStream with stopAfterSseDone: gen's SSE up to "data: [DONE]",
  * then a blank line and the end. A client that cancels also cancels gen.
+ * @param {(ok: boolean) => void} [finished] called once the stream ends: ok
+ *   when it reached "data: [DONE]" with no error event from gen
  */
-function sse(body) {
+function sse(body, finished = () => {}) {
+    let outcome;
+    const result = new Promise((resolve) => {
+        outcome = resolve;
+    });
     // Bytes not yet sent: "data: [DONE]" may start in them
     let pending = new Uint8Array(0);
+    // gen ends a failed stream with an error event; lines are checked whole
+    const decoder = new TextDecoder();
+    let line = "";
+    let failed = false;
+    let done = false;
+    const settle = (ok) => {
+        if (!done) {
+            finished(ok);
+            outcome(ok);
+        }
+        done = true;
+    };
     const cut = new TransformStream({
         transform(chunk, controller) {
+            const lines = (
+                line + decoder.decode(chunk, { stream: true })
+            ).split("\n");
+            line = lines.pop();
+            failed ||= lines.some((text) => text.startsWith('data: {"error"'));
             const bytes = new Uint8Array(pending.byteLength + chunk.byteLength);
             bytes.set(pending);
             bytes.set(chunk, pending.byteLength);
@@ -892,6 +1001,7 @@ function sse(body) {
                 last.set(bytes.subarray(0, end));
                 last.set([10, 10], end);
                 controller.enqueue(last);
+                settle(!failed);
                 return controller.terminate();
             }
             const keep = Math.min(bytes.byteLength, SSE_DONE.byteLength - 1);
@@ -902,10 +1012,25 @@ function sse(body) {
         },
         flush(controller) {
             if (pending.byteLength) controller.enqueue(pending);
+            settle(false);
         },
     });
-    body.pipeTo(cut.writable).catch(() => {});
-    return new Response(cut.readable, {
+    body.pipeTo(cut.writable).catch(() => settle(false));
+    // A client that leaves cancels this side, which the pipe above does not
+    // report in workerd: a reply cut short is not a reply
+    const reader = cut.readable.getReader();
+    const readable = new ReadableStream({
+        async pull(controller) {
+            const { done: over, value } = await reader.read();
+            if (over) controller.close();
+            else controller.enqueue(value);
+        },
+        cancel(reason) {
+            settle(false);
+            return reader.cancel(reason);
+        },
+    });
+    const response = new Response(readable, {
         headers: {
             ...CORS,
             "X-Powered-By": "Express",
@@ -913,7 +1038,16 @@ function sse(body) {
             "Cache-Control": "no-cache",
         },
     });
+    streamResults.set(response, result);
+    return response;
 }
+
+/**
+ * A stream's result, known at its end: true when it reached "data: [DONE]"
+ * with no error event. index.js stores only streams that succeeded.
+ * @type {WeakMap<Response, Promise<boolean>>}
+ */
+export const streamResults = new WeakMap();
 
 function indexOf(bytes, pattern) {
     for (let i = 0; i + pattern.byteLength <= bytes.byteLength; i++) {

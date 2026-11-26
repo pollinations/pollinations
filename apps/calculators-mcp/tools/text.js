@@ -21,13 +21,7 @@ export const textTools = [
                           .split(/[.!?。！？]+/)
                           .map((part) => part.trim())
                           .filter(Boolean).length;
-            return {
-                characters,
-                charactersNoWhitespace,
-                words,
-                lines,
-                sentences,
-            };
+            return { characters, charactersNoWhitespace, words, lines, sentences };
         },
     ],
 ];

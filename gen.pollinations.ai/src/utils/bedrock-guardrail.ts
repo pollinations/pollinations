@@ -3,6 +3,10 @@
  */
 
 import type { SafetyFeature } from "@shared/schemas/safety.ts";
+import {
+    type BedrockCredentials,
+    signBedrockHeaders,
+} from "@/text/auth/bedrock.ts";
 
 interface PIIFilter {
     action: "ANONYMIZED" | "BLOCKED";
@@ -44,10 +48,7 @@ export interface BedrockResponse {
     }[];
 }
 
-export interface BedrockGuardrailEnv {
-    accessKeyId: string;
-    secretAccessKey: string;
-    region: string;
+export interface BedrockGuardrailEnv extends BedrockCredentials {
     guardrailIdentifier: string;
     guardrailVersion: string;
 }
@@ -63,50 +64,38 @@ export function resolveBedrockGuardrailEnv(
     env: CloudflareBindings,
     features: Set<SafetyFeature>,
 ): BedrockGuardrailEnv | null {
-    const maybeEnv = env as CloudflareBindings & {
-        AWS_BEDROCK_ACCESS_KEY_ID?: string;
-        AWS_BEDROCK_SECRET_ACCESS_KEY?: string;
-        AWS_BEDROCK_REGION?: string;
-        BEDROCK_GUARDRAIL_ID?: string;
-        BEDROCK_GUARDRAIL_VERSION?: string;
-        BEDROCK_SENSITIVE_GUARDRAIL_ID?: string;
-        BEDROCK_SENSITIVE_GUARDRAIL_VERSION?: string;
-    };
-
-    const accessKeyId =
-        maybeEnv.AWS_BEDROCK_ACCESS_KEY_ID || maybeEnv.AWS_ACCESS_KEY_ID;
-    const secretAccessKey =
-        maybeEnv.AWS_BEDROCK_SECRET_ACCESS_KEY ||
-        maybeEnv.AWS_SECRET_ACCESS_KEY;
-    const region = maybeEnv.AWS_BEDROCK_REGION || maybeEnv.AWS_REGION;
+    const credentials = resolveBedrockCredentials(env);
     // AWS bills each configured policy per text unit. Privacy and secrets
     // checks use a guardrail without content filters, so they are not billed
     // for a content policy whose result they ignore.
     const sensitiveOnly = isSensitiveOnly(features);
     const guardrailIdentifier = sensitiveOnly
-        ? maybeEnv.BEDROCK_SENSITIVE_GUARDRAIL_ID
-        : maybeEnv.BEDROCK_GUARDRAIL_ID;
+        ? env.BEDROCK_SENSITIVE_GUARDRAIL_ID
+        : env.BEDROCK_GUARDRAIL_ID;
     const guardrailVersion = sensitiveOnly
-        ? maybeEnv.BEDROCK_SENSITIVE_GUARDRAIL_VERSION
-        : maybeEnv.BEDROCK_GUARDRAIL_VERSION;
-
-    if (
-        !accessKeyId ||
-        !secretAccessKey ||
-        !region ||
-        !guardrailIdentifier ||
-        !guardrailVersion
-    ) {
+        ? env.BEDROCK_SENSITIVE_GUARDRAIL_VERSION
+        : env.BEDROCK_GUARDRAIL_VERSION;
+    if (!credentials || !guardrailIdentifier || !guardrailVersion) {
         return null;
     }
 
     return {
-        accessKeyId,
-        secretAccessKey,
-        region,
+        ...credentials,
         guardrailIdentifier,
         guardrailVersion,
     };
+}
+
+export function resolveBedrockCredentials(
+    env: CloudflareBindings,
+): BedrockCredentials | null {
+    const accessKeyId = env.AWS_BEDROCK_ACCESS_KEY_ID || env.AWS_ACCESS_KEY_ID;
+    const secretAccessKey =
+        env.AWS_BEDROCK_SECRET_ACCESS_KEY || env.AWS_SECRET_ACCESS_KEY;
+    const region = env.AWS_BEDROCK_REGION || env.AWS_REGION;
+    return accessKeyId && secretAccessKey && region
+        ? { accessKeyId, secretAccessKey, region }
+        : null;
 }
 
 export async function applyGuardrail(
@@ -137,4 +126,98 @@ export async function applyGuardrail(
             })),
         }),
     ) as Promise<BedrockResponse>;
+}
+
+const SHIELD_CATEGORIES = [
+    "JAILBREAK",
+    "PROMPT_INJECTION",
+    "PROMPT_LEAKAGE",
+] as const;
+
+type InlinePolicy = "promptAttack" | "contentFilter";
+type InlineScore = { category: string; severityScore: number };
+type InlineResponse = {
+    results?: Partial<Record<InlinePolicy, { results?: InlineScore[] }>>;
+    usage?: Partial<Record<InlinePolicy, { textUnits?: number }>>;
+};
+
+export async function checkShield(
+    texts: string[],
+    credentials: BedrockCredentials,
+) {
+    const messages: { role: "user"; content: { text: string }[] }[] = [];
+    // API callers control the text for every role. Screen it all as untrusted.
+    // Bedrock allows at most 10 content blocks per message.
+    for (let index = 0; index < texts.length; index += 10) {
+        messages.push({
+            role: "user",
+            content: texts.slice(index, index + 10).map((text) => ({ text })),
+        });
+    }
+
+    const body = JSON.stringify({
+        messages,
+        checks: {
+            promptAttack: {
+                categories: SHIELD_CATEGORIES.map((category) => ({ category })),
+            },
+            contentFilter: {
+                categories: [{ category: "MISCONDUCT" }],
+            },
+        },
+    });
+    const url = new URL(
+        `https://bedrock-runtime.${credentials.region}.amazonaws.com/guardrail-checks/invoke`,
+    );
+    const headers = await signBedrockHeaders(
+        url,
+        body,
+        { "content-type": "application/json" },
+        credentials,
+    );
+    const result = await fetch(
+        new Request(url, {
+            method: "POST",
+            body,
+            headers,
+            signal: AbortSignal.timeout(10_000),
+        }),
+    );
+    if (!result.ok) {
+        await result.body?.cancel();
+        throw new Error(`Bedrock inline checks returned HTTP ${result.status}`);
+    }
+    const response = await result.json<InlineResponse>();
+
+    const attackScores = SHIELD_CATEGORIES.map((category) =>
+        severity(response.results?.promptAttack?.results, category),
+    );
+    const misconductScore = severity(
+        response.results?.contentFilter?.results,
+        "MISCONDUCT",
+    );
+    return {
+        blocked:
+            attackScores.some((score) => score >= 0.8) ||
+            misconductScore >= 0.6,
+        promptAttackPolicyUnits: response.usage?.promptAttack?.textUnits,
+        inlineContentPolicyUnits: response.usage?.contentFilter?.textUnits,
+    };
+}
+
+function severity(results: InlineScore[] | undefined, category: string) {
+    const score = results?.find(
+        (result) => result.category === category,
+    )?.severityScore;
+    if (
+        score === undefined ||
+        !Number.isFinite(score) ||
+        score < 0 ||
+        score > 1
+    ) {
+        throw new Error(
+            `Bedrock did not return a valid severity score for ${category}`,
+        );
+    }
+    return score;
 }

@@ -5,10 +5,12 @@ Review open PRs that introduce a new public model. Read any linked request for c
 
 1. Check the live catalog, registry and open PRs for an existing model, alias,
    route or implementation that already covers the proposed addition.
-2. Use the [model management skill](../../.claude/skills/model-management/SKILL.md)
-   to check current provider evidence and prepare the proposed model contract.
-   Include the public ID, supported capabilities, primary route, price, access
-   and fallback decision. Record what still needs approval or verification.
-3. Report the issue and PR links, the proposed contract, and the next action
-   in the job's chat. For an approved addition, follow the skill's capability,
-   billing and catalog checks before marking the PR ready.
+2. Use [route research](../../.claude/skills/model-management/references/route-research.md#research-the-exact-route)
+   to verify current provider evidence. Prepare the proposed public ID,
+   supported capabilities, primary route, price, access and fallback decision
+   using the [model contract checklist](../../.claude/skills/model-management/references/change-approval.md#model-contract).
+3. Report the issue and PR links, proposed contract, and next action in the
+   job's chat. For an approved addition, use the
+   [change matrix](../../.claude/skills/model-management/references/change-and-test-matrix.md#change-matrix)
+   and [billing verification](../../.claude/skills/model-management/references/billing-verification.md)
+   before marking the PR ready.

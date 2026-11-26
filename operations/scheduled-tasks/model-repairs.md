@@ -9,9 +9,11 @@ including cases where a fallback hides a failing primary route.
    identify the model, environment, request shape, symptom and time window.
 2. Follow the [model debugging skill](../../.claude/skills/model-debugging/SKILL.md)
    to trace the failing layer. Check for evidence that the proposed fix
-   reproduces the old failure and restores the affected behavior.
+   reproduces the old failure and restores the affected behavior. Use the
+   [test matrix](../../.claude/skills/model-management/references/change-and-test-matrix.md#change-matrix)
+   for the affected model or route.
 3. Report the issue and PR links, impact, evidence, and the next repair or
    verification step in the job's chat. Flag active outages for immediate action.
 
-Use the [model management skill](../../.claude/skills/model-management/SKILL.md)
-for an approved change to the model or its route.
+Before changing a model or its route, follow the
+[model contract approval](../../.claude/skills/model-management/references/change-approval.md#model-contract).

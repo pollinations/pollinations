@@ -1,9 +1,9 @@
 # Model retirements
 
-Run this review read-only. Follow the [model-management skill](../../.claude/skills/model-management/SKILL.md) and
-its [catalog lifecycle policy](../../.claude/skills/model-management/references/operating-policy.md). Use current `origin/production`
-for configured routes and `origin/main` for upcoming changes. Fetch refs if
-needed and read them with Git without switching the user's checkout.
+Run this review read-only using the [catalog lifecycle policy](../../.claude/skills/model-management/references/operating-policy.md#catalog-scope-and-lifecycle).
+Use current `origin/production` for configured routes and `origin/main` for
+upcoming changes. Fetch refs if needed and read them with Git without switching
+the user's checkout.
 
 Start with open PRs in the [Retirement queue](https://github.com/orgs/pollinations/projects/20/views/42?filterQuery=is%3Aopen%20is%3Apr%20area%3AModels%20model-work%3ARetirement). Read linked issues for context and check for existing work before proposing another retirement.
 
@@ -67,11 +67,11 @@ equivalent route is available.
 
 For voluntary retirement, propose the canonical ID, affected aliases and
 integrations, usage and rationale, compatible replacement or gaps, and a date
-at least 30 days after customer notice. A maintainer approves the specific
-model change. Track it through the existing announcement and dated
-`MERGE-HOLD` PR process, recheck usage, dependencies and the replacement
-before lifting the hold, and verify the catalog and affected routes after the
-normal production deployment.
+at least 30 days after customer notice. A maintainer approves the specific model change under the
+[model contract](../../.claude/skills/model-management/references/change-approval.md#model-contract).
+Track it through the announcement and [dated merge hold](../../.claude/skills/model-management/references/verification-and-prs.md#scheduled-merges-and-holds).
+Recheck usage, dependencies and the replacement before lifting the hold. Verify
+the catalog and affected routes after the normal production deployment.
 
 Keep the scheduled report and draft plans in the active chat. Public notices,
 GitHub writes, registry or permission changes and deployment need separately

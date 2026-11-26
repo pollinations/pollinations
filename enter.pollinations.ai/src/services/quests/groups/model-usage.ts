@@ -24,7 +24,7 @@ const useTextModelQuest: QuestDefinition = {
     id: "use_text_model",
     title: "Use a text model",
     description:
-        "Make one successful request from any of the [text](https://gen.pollinations.ai/docs#tag/text) models.",
+        "Make one billed, successful request from any of the [text](https://gen.pollinations.ai/docs#tag/text) models. Cached and free requests don't count.",
     category: "setup",
     scope: "perUser",
     rewardAmount: 0.25,
@@ -35,7 +35,7 @@ const useImageModelQuest: QuestDefinition = {
     id: "use_image_model",
     title: "Use an image model",
     description:
-        "Make one successful request from any of the [image](https://gen.pollinations.ai/docs#tag/image) models.",
+        "Make one billed, successful request from any of the [image](https://gen.pollinations.ai/docs#tag/image) models. Cached and free requests don't count.",
     category: "setup",
     scope: "perUser",
     rewardAmount: 0.25,
@@ -46,7 +46,7 @@ const useAudioModelQuest: QuestDefinition = {
     id: "use_audio_model",
     title: "Use an audio model",
     description:
-        "Make one successful request from any of the [audio](https://gen.pollinations.ai/docs#tag/audio) models.",
+        "Make one billed, successful request from any of the [audio](https://gen.pollinations.ai/docs#tag/audio) models. Cached and free requests don't count.",
     category: "setup",
     scope: "perUser",
     rewardAmount: 0.25,
@@ -57,7 +57,7 @@ const useVideoModelQuest: QuestDefinition = {
     id: "use_video_model",
     title: "Use a video model",
     description:
-        "Make one successful request from any of the [video](https://gen.pollinations.ai/docs#tag/video) models. Every video model is paid-only, so this needs a paid balance — Quest balance does not cover them.",
+        "Make one billed, successful request from any of the [video](https://gen.pollinations.ai/docs#tag/video) models. Every video model is paid-only, so this needs a paid balance — Quest balance does not cover them.",
     category: "setup",
     scope: "perUser",
     rewardAmount: 1,

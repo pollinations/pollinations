@@ -167,12 +167,7 @@ type DerivedQuestIssue = {
     state: "available" | "completed";
     rewardPerPr: boolean;
     // Earlier merges and app-publish bot PRs are outside the author's PR search.
-    historicalPrs: (Pick<
-        MergedPrNode,
-        "number" | "title" | "url" | "mergedAt"
-    > & {
-        githubIds: number[];
-    })[];
+    historicalPrs: (MergedPr & { githubIds: number[] })[];
 };
 
 type GitHubUser = {
@@ -222,16 +217,25 @@ type GitHubPullRequestNode = {
     mergedAt: string | null;
 };
 
-type MergedPrNode = {
+type MergedPr = {
     number: number;
     title: string;
     url: string;
-    author: GitHubUser | null;
     mergedAt: string;
+};
+
+type MergedPrNode = MergedPr & {
+    author: GitHubUser | null;
     labels: { nodes: { name: string }[] };
     closingIssuesReferences: {
         nodes: { number: number; repository: { nameWithOwner: string } }[];
     };
+};
+
+type PrRewardCandidate = {
+    pr: MergedPr;
+    closes: number[];
+    labelAmount: number;
 };
 
 type ReportedIssueNode = {
@@ -783,10 +787,7 @@ export async function evaluateUser(
 
     // A PR's own label wins, then the highest quest bounty, then the default.
     const quests = new Map(issues.map((issue) => [issue.issueNumber, issue]));
-    const historical = new Map<
-        number,
-        { pr: MergedPrNode; closes: number[] }
-    >();
+    const historical = new Map<number, PrRewardCandidate>();
     for (const issue of issues) {
         for (const winner of issue.historicalPrs) {
             if (!winner.githubIds.includes(githubId)) continue;
@@ -795,16 +796,9 @@ export async function evaluateUser(
                 candidate.closes.push(issue.issueNumber);
             } else {
                 historical.set(winner.number, {
-                    pr: {
-                        number: winner.number,
-                        title: winner.title,
-                        url: winner.url,
-                        mergedAt: winner.mergedAt,
-                        author: { databaseId: githubId },
-                        labels: { nodes: [] },
-                        closingIssuesReferences: { nodes: [] },
-                    },
+                    pr: winner,
                     closes: [issue.issueNumber],
+                    labelAmount: 0,
                 });
             }
         }
@@ -829,12 +823,13 @@ export async function evaluateUser(
             quest: toIssueQuestDefinition(issue),
             userId: user.id,
         }));
-    const candidates = [
+    const candidates: PrRewardCandidate[] = [
         ...mergedPrs.map((pr) => ({
             pr,
             closes: pr.closingIssuesReferences.nodes
                 .filter((issue) => issue.repository.nameWithOwner === REPO)
                 .map((issue) => issue.number),
+            labelAmount: labelReward(pr.labels.nodes),
         })),
         ...historicalCandidates,
     ];
@@ -865,7 +860,7 @@ export async function evaluateUser(
                   first && first.mergedAt <= pr.mergedAt ? first : pr,
               undefined,
           );
-    const prProposals = candidates.flatMap(({ pr, closes }) => {
+    const prProposals = candidates.flatMap(({ pr, closes, labelAmount }) => {
         const prId = `github:merged_pr:${pr.number}`;
         if (
             earned.has(prId) ||
@@ -905,8 +900,7 @@ export async function evaluateUser(
             {
                 quest: {
                     ...definition,
-                    rewardAmount:
-                        labelReward(pr.labels.nodes) || definition.rewardAmount,
+                    rewardAmount: labelAmount || definition.rewardAmount,
                 },
                 userId: user.id,
             },

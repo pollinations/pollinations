@@ -399,6 +399,9 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         ...(entry.info.base_model && {
             base_model: entry.info.base_model,
         }),
+        ...(entry.info.mcp_servers && {
+            mcp_servers: entry.info.mcp_servers,
+        }),
         paid_only: entry.info.paid_only,
         pricing: entry.info.pricing,
         pricing_units: entry.info.pricing_units,

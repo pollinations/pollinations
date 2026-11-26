@@ -32,6 +32,7 @@ function applyBaseModelMetadata(
     entry.info = {
         ...entry.info,
         base_model: config.baseModel,
+        mcp_servers: config.mcpServers,
         capabilities: [
             ...new Set([...entry.info.capabilities, ...agentCapabilities]),
         ],

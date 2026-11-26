@@ -350,6 +350,17 @@ test("a retry while the 100th reply is in flight is refused once, not until midn
     expect(retried.response.status).toBe(200);
 });
 
+test("the 101st request within the 45 seconds gets the daily limit, not the interval", async () => {
+    const ip = nextIp();
+    await quotaOf(ip, 99);
+    const last = await call("/quota%20cooldown", { ip, headers: CURL });
+    expect(last.response.status).toBe(200);
+
+    const next = await call("/quota%20cooldown%202", { ip, headers: CURL });
+    expect(next.response.status).toBe(402);
+    expect(next.text).toMatch(DAILY_NOTICE);
+});
+
 test("a model we don't serve uses no quota", async () => {
     const ip = nextIp();
     await quotaOf(ip, 99);

@@ -1138,3 +1138,13 @@ test("a reply stored for /favicon.ico is no longer served", async () => {
 
     expect(response.status).toBe(404);
 });
+
+test("a stream gen ends with an error is not stored, so an identical retry reaches gen", async () => {
+    const path = "/gen:stream-error?stream=true";
+    const failed = await call(path);
+    expect(failed.text).toContain('"error"');
+    expect(await storedAt(path)).toBeNull();
+
+    const retry = await call(path);
+    expect(retry.response.headers.get("x-cache")).not.toBe("HIT");
+});

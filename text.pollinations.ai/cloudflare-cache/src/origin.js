@@ -13,7 +13,12 @@ import {
     REFUSED,
 } from "../../../shared/messages.js";
 import { BLOCKED_PREFIXES } from "./blocked-prefixes.js";
-import { nextMidnight, refundQuota, takeQuota } from "./daily-quota.js";
+import {
+    nextMidnight,
+    quotaFull,
+    refundQuota,
+    takeQuota,
+} from "./daily-quota.js";
 // index.js imports this module too; the function is only called per request
 import { prepareForwardedHeaders } from "./index.js";
 
@@ -688,6 +693,17 @@ async function generation(
         }
     }
 
+    // Within the interval after the day's last free reply: the daily limit
+    // is the wait that matters, not the 45 seconds
+    if (served && slot.action === "pay" && !slot.daily) {
+        try {
+            if (await quotaFull(env.DAILY_QUOTA, ip, FREE_PER_DAY, Date.now()))
+                slot = dailyLimit(Date.now());
+        } catch (error) {
+            logFailure(route, { error: "daily_quota", type: error.name });
+        }
+    }
+
     if (slot.action === "full") {
         return sendGenAnswer(genAnswer(429, REFUSED.replyBusy));
     }
@@ -947,6 +963,10 @@ function textResponse(completion) {
  *   when it reached "data: [DONE]" with no error event from gen
  */
 function sse(body, finished = () => {}) {
+    let outcome;
+    const result = new Promise((resolve) => {
+        outcome = resolve;
+    });
     // Bytes not yet sent: "data: [DONE]" may start in them
     let pending = new Uint8Array(0);
     // gen ends a failed stream with an error event; lines are checked whole
@@ -955,7 +975,10 @@ function sse(body, finished = () => {}) {
     let failed = false;
     let done = false;
     const settle = (ok) => {
-        if (!done) finished(ok);
+        if (!done) {
+            finished(ok);
+            outcome(ok);
+        }
         done = true;
     };
     const cut = new TransformStream({
@@ -1004,7 +1027,7 @@ function sse(body, finished = () => {}) {
             return reader.cancel(reason);
         },
     });
-    return new Response(readable, {
+    const response = new Response(readable, {
         headers: {
             ...CORS,
             "X-Powered-By": "Express",
@@ -1012,7 +1035,16 @@ function sse(body, finished = () => {}) {
             "Cache-Control": "no-cache",
         },
     });
+    streamResults.set(response, result);
+    return response;
 }
+
+/**
+ * A stream's result, known at its end: true when it reached "data: [DONE]"
+ * with no error event. index.js stores only streams that succeeded.
+ * @type {WeakMap<Response, Promise<boolean>>}
+ */
+export const streamResults = new WeakMap();
 
 function indexOf(bytes, pattern) {
     for (let i = 0; i + pattern.byteLength <= bytes.byteLength; i++) {

@@ -16,6 +16,11 @@ export class DailyQuota extends DurableObject {
         return true;
     }
 
+    /** Whether `limit` replies were counted, without counting one */
+    async full(limit) {
+        return ((await this.ctx.storage.get("used")) ?? 0) >= limit;
+    }
+
     /** Gives back one reply counted by take() */
     async refund() {
         const used = (await this.ctx.storage.get("used")) ?? 0;
@@ -51,3 +56,7 @@ export const takeQuota = (namespace, ip, limit, at) =>
 /** Gives back the reply takeQuota counted for `ip` on the UTC day of `at` */
 export const refundQuota = (namespace, ip, at) =>
     quotaOf(namespace, ip, at).refund();
+
+/** Whether `ip` had `limit` free replies on the UTC day of `at` */
+export const quotaFull = (namespace, ip, limit, at) =>
+    quotaOf(namespace, ip, at).full(limit);

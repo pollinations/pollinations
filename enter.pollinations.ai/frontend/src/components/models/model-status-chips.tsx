@@ -157,17 +157,17 @@ export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
                 <Tooltip
                     triggerAs="span"
                     content="Published and run by Pollinations"
-                    ariaLabel="Official: published and run by Pollinations"
+                    ariaLabel="Verified: published and run by Pollinations"
                     tapEnabled
                     displayContents
                 >
-                    <span className="inline-flex items-center gap-1 text-xs text-theme-text-muted">
+                    <Chip size="sm" data-theme="accent">
                         <ShieldCheckIcon
                             aria-hidden="true"
                             className="size-3"
                         />
-                        Official
-                    </span>
+                        Verified
+                    </Chip>
                 </Tooltip>
             )}
             {showNew && (

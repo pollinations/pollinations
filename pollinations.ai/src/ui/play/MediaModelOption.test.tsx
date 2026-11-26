@@ -79,6 +79,6 @@ describe("model dropdown option", () => {
                 model={{ title: "Floret", paidOnly: false, verified: true }}
             />,
         );
-        expect(html).toContain("Official");
+        expect(html).toContain("Verified");
     });
 });

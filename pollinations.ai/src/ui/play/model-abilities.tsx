@@ -1,14 +1,8 @@
 import {
     AudioIcon,
-    BookIcon,
-    CubeIcon,
-    DatabaseIcon,
-    GitBranchIcon,
     GlobeIcon,
     ImageIcon,
     LayersIcon,
-    NewspaperIcon,
-    PulseIcon,
     SparklesIcon,
     SpeakerIcon,
     TerminalIcon,
@@ -45,7 +39,7 @@ const video = (model: AbilityModel, capability: string) =>
  */
 const ABILITIES: Ability[] = [
     {
-        label: "Makes images, audio and video",
+        label: "Makes media",
         Icon: SparklesIcon,
         applies: (model) =>
             model.agent && model.capabilities.includes("pollinations_models"),
@@ -94,30 +88,27 @@ const ABILITIES: Ability[] = [
     },
 ];
 
-// One chip per tool server an agent may use. Typed against the registry, so a
-// new server fails the build until it has a label and icon here.
+// What each tool server lets an agent do, in a few broad kinds: several
+// servers share a label, and the row shows each label once. Typed against the
+// registry, so a new server fails the build until it has a kind here.
+const WEB_SEARCH = { label: "Web search", Icon: GlobeIcon };
+const RUNS_CODE = { label: "Runs code", Icon: TerminalIcon };
+const OTHER_TOOLS = { label: "Other tools", Icon: ToolIcon };
 const MCP_SERVER_ABILITIES: Record<
     Exclude<McpServerId, "composio">,
     Pick<Ability, "label" | "Icon" | "shownByUploads">
 > = {
-    pollinations: {
-        label: "Makes images, audio and video",
-        Icon: SparklesIcon,
-    },
-    exa: { label: "Web search", Icon: GlobeIcon },
-    ffmpeg: {
-        label: "Edits audio and video",
-        Icon: VideoIcon,
-        shownByUploads: true,
-    },
-    computer: { label: "Own computer", Icon: TerminalIcon },
-    machines: { label: "Runs code in sandboxes", Icon: CubeIcon },
-    research: { label: "Research sources", Icon: BookIcon },
-    news: { label: "News and feeds", Icon: NewspaperIcon },
-    packages: { label: "Package lookups", Icon: DatabaseIcon },
-    network: { label: "Network checks", Icon: PulseIcon },
-    calculators: { label: "Calculators", Icon: ToolIcon },
-    "ask-jev": { label: "Decisions", Icon: GitBranchIcon },
+    pollinations: { label: "Makes media", Icon: SparklesIcon },
+    exa: WEB_SEARCH,
+    research: WEB_SEARCH,
+    news: WEB_SEARCH,
+    ffmpeg: { label: "Edits video", Icon: VideoIcon, shownByUploads: true },
+    computer: RUNS_CODE,
+    machines: RUNS_CODE,
+    packages: OTHER_TOOLS,
+    network: OTHER_TOOLS,
+    calculators: OTHER_TOOLS,
+    "ask-jev": OTHER_TOOLS,
 };
 
 export function modelAbilities(model: AbilityModel) {
@@ -135,15 +126,8 @@ export function modelAbilities(model: AbilityModel) {
     );
 }
 
-/** Agent picker filters, each a short name for the ability labels it covers.
- * "Takes images" reads the inputs instead, which the row leaves out. */
-const AGENT_FILTERS: Record<string, string[]> = {
-    "Makes media": ["Makes images, audio and video"],
-    "Web search": ["Web search"],
-    "Edits video": ["Edits audio and video"],
-    "Runs code": ["Runs code", "Runs code in sandboxes", "Own computer"],
-};
-
+/** Agent picker filters: the ability labels, plus "Takes images", which reads
+ * the inputs instead (the row leaves inputs out). */
 export const agentFilters = [
     "Makes media",
     "Takes images",
@@ -155,10 +139,7 @@ export const agentFilters = [
 export function matchesAgentFilter(model: AbilityModel, filter: string) {
     if (filter === "Takes images")
         return model.inputModalities.includes("image");
-    const labels = AGENT_FILTERS[filter] ?? [];
-    return modelAbilities(model).some((ability) =>
-        labels.includes(ability.label),
-    );
+    return modelAbilities(model).some((ability) => ability.label === filter);
 }
 
 type Attachment = "image" | "audio" | "video";

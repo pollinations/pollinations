@@ -35,16 +35,19 @@ export function MediaModelOption({
             <span className="flex min-w-0 flex-1 items-baseline gap-[0.6em]">
                 <span className="truncate">{model.title}</span>
                 {model.verified && (
-                    <span
-                        className="inline-flex items-baseline gap-1 text-xs text-theme-text-muted"
+                    <Chip
+                        size="sm"
+                        data-theme="accent"
+                        className="play-model-chip relative pl-6!"
                         title="Published and run by Pollinations"
                     >
+                        {/* Out of flow: the badge then shares its text's baseline, like New. */}
                         <ShieldCheckIcon
                             aria-hidden="true"
-                            className="size-3 self-center"
+                            className="absolute top-1/2 left-2 size-3 -translate-y-1/2"
                         />
-                        Official
-                    </span>
+                        Verified
+                    </Chip>
                 )}
                 {isNewModel(model.addedDate) && (
                     <Chip intent="info" size="sm" className="play-model-chip">

@@ -30,7 +30,7 @@ it("shows an agent's image input and tools, not the common signals", () => {
                 "web_search",
             ],
         }),
-    ).toEqual(["Makes images, audio and video", "Web search"]);
+    ).toEqual(["Makes media", "Web search"]);
     expect(labels({ ...base, category: "text", agent: true })).toEqual([]);
 });
 
@@ -59,7 +59,7 @@ it("adds one chip per tool server, without repeating a capability", () => {
             capabilities: ["tool_calling", "web_search"],
             mcpServers: ["exa", "ffmpeg", "research"],
         }),
-    ).toEqual(["Web search", "Edits audio and video", "Research sources"]);
+    ).toEqual(["Web search", "Edits video"]);
 });
 
 it("shows what an external agent declares for itself", () => {
@@ -75,7 +75,7 @@ it("shows what an external agent declares for itself", () => {
                 "code_execution",
             ],
         }),
-    ).toEqual(["Makes images, audio and video", "Web search", "Runs code"]);
+    ).toEqual(["Makes media", "Web search", "Runs code"]);
 });
 
 it("offers an official agent the files it declares or its tools take", () => {

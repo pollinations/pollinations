@@ -17,6 +17,9 @@ SCHEMA >
 `end_time`        DateTime               `json:$.endTime`,
 `response_time`   Float32                `json:$.responseTime` DEFAULT 0,
 `attempt_response_time` Nullable(Float32) `json:$.attemptResponseTime` DEFAULT NULL,
+-- Caller-requested text mode, not whether the provider returned a stream.
+-- Historical and non-text events stay unknown rather than looking synchronous.
+`stream_requested` Nullable(Bool)         `json:$.streamRequested` DEFAULT NULL,
 `response_status` UInt32                 `json:$.responseStatus` DEFAULT 0,
 `environment`     LowCardinality(String) `json:$.environment` DEFAULT 'undefined',
 `event_type`      LowCardinality(String) `json:$.eventType`,

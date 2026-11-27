@@ -32,7 +32,6 @@ https://text.pollinations.ai/{your question}
 | Parameter | What it does |
 |---|---|
 | `system` | A system prompt |
-| `seed`, `temperature` | Repeatable or more varied answers |
 | `json=true` | Answer as JSON |
 | `stream=true` | Stream the answer (server-sent events) |
 
@@ -41,6 +40,8 @@ Also available:
 - `POST https://text.pollinations.ai/` with `{"messages": [...]}`: plain-text answer
 - `POST https://text.pollinations.ai/openai` (or `/v1/chat/completions`): OpenAI-compatible chat completions
 - `GET https://text.pollinations.ai/models`: the available model (GPT-6 Luna)
+
+GPT-6 Luna ignores `seed`, `temperature` and other sampling settings, so the same question can get a different answer each time.
 
 ## Limits
 

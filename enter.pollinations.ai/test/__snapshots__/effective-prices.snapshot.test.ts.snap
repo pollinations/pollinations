@@ -5417,6 +5417,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000007,
     },
   },
+  "tencent/hy4-flash:deepinfra": {
+    "cost": {
+      "completionTextTokens": 0.000000281,
+      "promptCachedTokens": 0.000000003,
+      "promptTextTokens": 0.00000007,
+    },
+    "price": {
+      "completionTextTokens": 0.000000281,
+      "promptCachedTokens": 0.000000003,
+      "promptTextTokens": 0.00000007,
+    },
+  },
   "tencent/hy4-preview": {
     "cost": {
       "completionTextTokens": 0.000002638555,

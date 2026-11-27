@@ -3022,7 +3022,7 @@ const TEXT_BASE_SERVICES = {
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
-        contextLength: 524000,
+        contextLength: 524288,
         isSpecialized: false,
     },
     "tencent/hy4-preview": {

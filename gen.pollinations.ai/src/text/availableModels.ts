@@ -1367,6 +1367,11 @@ const models: ModelDefinition[] = [
         transform: fireworksThinkingWithoutCacheControl,
     },
     {
+        name: "tencent/hy4-flash:deepinfra",
+        config: portkeyConfig["tencent/Hy4-flash"],
+        transform: fireworksThinkingWithoutCacheControl,
+    },
+    {
         name: "tencent/hy4-preview",
         config: portkeyConfig["tencent/hy4-preview"],
     },

@@ -61,7 +61,7 @@ describe("resolveModelConfig", () => {
         }
     });
 
-    it("routes Hy4 Flash directly to Fireworks with no fallback", () => {
+    it("routes Hy4 Flash to Fireworks with a DeepInfra fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "tencent/hy4-flash",
         });
@@ -72,7 +72,14 @@ describe("resolveModelConfig", () => {
             provider: "openai",
             "custom-host": "https://api.fireworks.ai/inference/v1",
         });
-        expect(findModelByName("tencent/hy4-flash:openrouter")).toBeNull();
+        const fallback = resolveModelConfig(messages, {
+            model: "tencent/hy4-flash:deepinfra",
+        });
+        expect(fallback.options.model).toBe("tencent/Hy4-flash");
+        expect(fallback.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+        });
     });
 
     it("routes Qwen 4 Max to Alibaba with a Vercel fallback", () => {

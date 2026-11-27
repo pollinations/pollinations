@@ -689,6 +689,19 @@ export const TEXT_FALLBACKS = {
             addedDate: new Date("2026-10-06").getTime(),
         },
     },
+    "tencent/hy4-flash": {
+        "tencent/hy4-flash:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
+            provider: "deepinfra",
+            contextLength: 1048576,
+            // https://deepinfra.com/tencent/Hy4-flash/api
+            cost: {
+                promptTextTokens: perMillion(0.07),
+                promptCachedTokens: perMillion(0.003),
+                completionTextTokens: perMillion(0.281),
+            },
+        },
+    },
     "mistralai/mistral-small-3.2": {
         "mistralai/mistral-small-3.2:deepinfra": {
             supportedParameters: CHAT_PARAMETERS.deepinfra,

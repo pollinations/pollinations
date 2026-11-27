@@ -79,7 +79,7 @@ test("a free GET answers gen's text with the VM's headers and is stored", async 
     );
 });
 
-test("gen gets the legacy defaults: bridge key, gpt-oss, low reasoning, 800 tokens, clamped parameters", async () => {
+test("gen gets the legacy defaults: bridge key, Classic Luna, low reasoning, 1,500 tokens, clamped parameters", async () => {
     const get = await call(
         "/gen:echo?temperature=9&top_p=-1&presence_penalty=5&frequency_penalty=-9&seed=4.7&json=true&model=openai&voice=nova",
     );
@@ -87,7 +87,7 @@ test("gen gets the legacy defaults: bridge key, gpt-oss, low reasoning, 800 toke
 
     expect(echo.authorization).toBe("Bearer test-gen-key");
     expect(echo.body).toEqual({
-        model: "gpt-oss",
+        model: "openai/gpt-6-luna:classic",
         messages: [
             {
                 role: "system",
@@ -105,7 +105,7 @@ test("gen gets the legacy defaults: bridge key, gpt-oss, low reasoning, 800 toke
         reasoning_effort: "low",
         response_format: { type: "json_object" },
         stream: false,
-        max_tokens: 800,
+        max_tokens: 1500,
     });
 
     // A given system prompt replaces the default; empty user messages get a placeholder
@@ -129,7 +129,7 @@ test("gen gets the legacy defaults: bridge key, gpt-oss, low reasoning, 800 toke
         { role: "user", content: "gen:echo" },
     ]);
     // Callers can raise neither the reply length nor the reasoning effort
-    expect(body.max_tokens).toBe(800);
+    expect(body.max_tokens).toBe(1500);
     expect(body.reasoning_effort).toBe("low");
 
     const override = await call("/gen:echo?reasoning_effort=medium");
@@ -435,7 +435,7 @@ test("the VM's other routes: redirect, models and crossdomain", async () => {
                 id: "openai-fast",
                 object: "model",
                 created: expect.any(Number),
-                owned_by: "ovh",
+                owned_by: "openai",
             },
         ],
     });
@@ -450,8 +450,9 @@ test("the VM's other routes: redirect, models and crossdomain", async () => {
 });
 
 test("a matching If-None-Match gets Express's empty 304, after the generation has run", async () => {
-    const etag = 'W/"11e-Fd6JEDDMrK3a9OtoxYkMHKWn4Ng"';
-    // The live 304 of 2026-10-12, without the edge's headers
+    const etag = 'W/"120-0ULSngh507QdZSptB3ceWTsPppU"';
+    // The live 304 of 2026-10-12, without the edge's headers; the tag is
+    // the listing's since it names GPT-6 Luna
     const live = {
         "access-control-allow-origin": "*",
         "access-control-expose-headers":
@@ -462,7 +463,7 @@ test("a matching If-None-Match gets Express's empty 304, after the generation ha
     for (const noneMatch of [
         etag,
         "*",
-        '"11e-Fd6JEDDMrK3a9OtoxYkMHKWn4Ng"',
+        '"120-0ULSngh507QdZSptB3ceWTsPppU"',
         `W/"other",  ${etag}`,
     ]) {
         const { response, text } = await call("/models", {

@@ -5,16 +5,16 @@ function parseRetryAfter(response: Response): number | undefined {
     const retryAfter = response.headers.get("Retry-After");
     if (!retryAfter) return undefined;
 
-    // Try parsing as number of seconds.
-    // Retry-After's delay-seconds is 1*DIGIT, so match that instead of Number():
-    // Number() accepts "5e2" (500 seconds), "0x10" (16), "30.5" and "+5", none of
-    // which are valid delays, and a bogus header would otherwise set an
-    // arbitrarily long wait.
     if (/^\d+$/.test(retryAfter)) {
-        return Number(retryAfter);
+        const seconds = Number(retryAfter);
+        return Number.isFinite(seconds) ? seconds : undefined;
     }
 
-    // Try parsing as HTTP date
+    // Date.parse also accepts arbitrary numeric and non-HTTP date strings.
+    // HTTP-date permits IMF-fixdate and the two obsolete date formats.
+    const httpDate =
+        /^(?:(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun), \d{2} (?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{4} \d{2}:\d{2}:\d{2} GMT|(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday), \d{2}-(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-\d{2} \d{2}:\d{2}:\d{2} GMT|(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun) (?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) (?: \d|\d{2}) \d{2}:\d{2}:\d{2} \d{4})$/;
+    if (!httpDate.test(retryAfter)) return undefined;
     const date = Date.parse(retryAfter);
     if (!Number.isNaN(date)) {
         const delayMs = date - Date.now();

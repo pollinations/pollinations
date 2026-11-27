@@ -82,13 +82,19 @@ describe("pollinationsErrorFromResponse Retry-After", () => {
     });
 
     // Number() would take these as 500s, 16s, 30.5s and 5s.
-    it.each(["5e2", "0x10", "30.5", "+5", "-5"])(
-        "rejects %s, which is not delay-seconds",
-        async (value: string) => {
-            const err = await pollinationsErrorFromResponse(errorWith(value));
-            expect(err.retryAfter).toBeUndefined();
-        },
-    );
+    it.each([
+        "5e2",
+        "0x10",
+        "30.5",
+        "+5",
+        "-5",
+        "+9999",
+        "9".repeat(400),
+        "January 1, 9999",
+    ])("rejects %s, which is not delay-seconds", async (value: string) => {
+        const err = await pollinationsErrorFromResponse(errorWith(value));
+        expect(err.retryAfter).toBeUndefined();
+    });
 
     it("reads a future HTTP date", async () => {
         const date = new Date(Date.now() + 90_000).toUTCString();
@@ -96,6 +102,14 @@ describe("pollinationsErrorFromResponse Retry-After", () => {
         expect(err.retryAfter).toBeGreaterThanOrEqual(89);
         expect(err.retryAfter).toBeLessThanOrEqual(90);
     });
+
+    it.each(["Sunday, 06-Nov-37 08:49:37 GMT", "Sun Nov  6 08:49:37 2037"])(
+        "reads obsolete HTTP date %s",
+        async (value) => {
+            const err = await pollinationsErrorFromResponse(errorWith(value));
+            expect(err.retryAfter).toBeGreaterThan(0);
+        },
+    );
 });
 
 describe("isOutageError", () => {

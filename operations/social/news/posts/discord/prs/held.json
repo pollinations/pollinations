@@ -48,11 +48,6 @@
       "required": [
         "deploy-legacy-caches.yml:deploy (image)"
       ]
-    },
-    "20690": {
-      "merge_sha": "e1ee3a1e4d850d0ab83b35e0990f5abe4ba79a32",
-      "merged_at": "2026-11-27T14:29:02Z",
-      "required": []
     }
   },
   "production": "579abe5196165b4a90e40314bf97f9fe42da5f64",

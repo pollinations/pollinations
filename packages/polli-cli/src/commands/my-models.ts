@@ -354,9 +354,9 @@ const create = addPriceOptions(
         )
         .option(
             "--paid-only",
-            "Only accept Paid Pollen, for a pay-as-you-go upstream whose cost free Quest Pollen would not cover",
+            "Only accept the paid balance, for a pay-as-you-go upstream whose cost the free Quest balance would not cover",
         )
-        .option("--no-paid-only", "Accept Quest or Paid Pollen (default)")
+        .option("--no-paid-only", "Accept Quest or paid balance (default)")
         .option(
             "--fallbacks <ids>",
             "Comma-separated community model ids tried in order when this model's upstream fails; empty string clears them",
@@ -427,9 +427,9 @@ const update = addPriceOptions(
         )
         .option(
             "--paid-only",
-            "Only accept Paid Pollen, for a pay-as-you-go upstream whose cost free Quest Pollen would not cover",
+            "Only accept the paid balance, for a pay-as-you-go upstream whose cost the free Quest balance would not cover",
         )
-        .option("--no-paid-only", "Accept Quest or Paid Pollen")
+        .option("--no-paid-only", "Accept Quest or paid balance")
         .option(
             "--fallbacks <ids>",
             "Comma-separated community model ids tried in order when this model's upstream fails; empty string clears them",

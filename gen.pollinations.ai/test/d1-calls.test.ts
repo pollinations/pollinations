@@ -3,43 +3,72 @@ import {
     env,
     waitOnExecutionContext,
 } from "cloudflare:test";
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { withD1Calls } from "../src/d1-calls.ts";
-import { detachedContext } from "../src/utils/execute-generation.ts";
+import { withD1Calls } from "@shared/d1-calls.ts";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+// Only the deployed Workers record, in 10 s batches; the clock is ours, so
+// no test waits for one.
+const recording = { ...env, D1_CALL_TELEMETRY: "on" };
+const clock = Date.UTC(2026, 10, 23, 13, 2, 6);
+const second = (ms: number) =>
+    new Date(ms).toISOString().slice(0, 19).replace("T", " ");
+beforeEach(() => {
+    vi.useFakeTimers({ now: clock });
+});
 
 afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
 });
 
-function captureErrorEvents(delayMs = 0) {
-    const events: Record<string, unknown>[] = [];
+type Rows = Record<string, unknown>[];
+
+// Each ingest is one NDJSON request; returns the rows sent per datasource.
+function captureIngest(queryStatus = 200) {
+    const sent = { calls: [] as Rows[], queries: [] as Rows[] };
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
         const url = new URL(input instanceof Request ? input.url : input);
-        if (url.searchParams.get("name") === "error_event") {
-            await new Promise((resolve) => setTimeout(resolve, delayMs));
-            events.push(JSON.parse(String(init?.body)));
-        }
-        return new Response("{}");
+        const rows = String(init?.body)
+            .split("\n")
+            .map((line) => JSON.parse(line));
+        const name = url.searchParams.get("name");
+        if (name === "d1_call_event") sent.calls.push(rows);
+        if (name !== "d1_query") return new Response("{}");
+        sent.queries.push(rows);
+        const status = sent.queries.length === 1 ? queryStatus : 200;
+        return new Response("{}", { status });
     });
-    return events;
+    return sent;
 }
 
-async function run<T>(fn: (db: D1Database) => Promise<T>) {
+// Runs `fn` as one request, without waiting for the batch to be sent.
+async function request<T>(
+    fn: (db: D1Database) => Promise<T>,
+    route_path = "/image/:prompt",
+) {
     const ctx = createExecutionContext();
     const result = withD1Calls(
-        env,
+        "gen",
+        recording,
         ctx,
-        () => ({ route_path: "/image/:prompt", method: "GET" }),
+        () => ({ route_path, method: "GET" }),
         () => fn(env.DB),
     );
     await result.catch(() => {});
+    return { ctx, result };
+}
+
+// The same, through the 10 s until its batch is sent.
+async function run<T>(fn: (db: D1Database) => Promise<T>) {
+    const { ctx, result } = await request(fn);
+    await vi.advanceTimersByTimeAsync(10_000);
     await waitOnExecutionContext(ctx);
     return result;
 }
 
 describe("D1 call timing", () => {
-    it("passes results through, including batches of wrapped statements", async () => {
-        const events = captureErrorEvents();
+    it("passes results through and sums a second's calls per query", async () => {
+        const sent = captureIngest();
         const [first, all, raw, batch] = await run(async (db) => {
             const stmt = db.prepare("SELECT ? AS value");
             return [
@@ -55,11 +84,41 @@ describe("D1 call timing", () => {
         expect(all).toEqual([{ value: 2 }]);
         expect(raw).toEqual([[3]]);
         expect(batch).toEqual([[{ value: 4 }], [{ value: 5 }]]);
-        expect(events).toEqual([]);
+
+        expect(sent.queries).toEqual([
+            [
+                {
+                    query_id: expect.stringMatching(/^[0-9a-f]{8}$/),
+                    service: "gen",
+                    sql: "SELECT ? AS value",
+                },
+            ],
+        ]);
+        expect(sent.calls).toEqual([
+            [
+                {
+                    timestamp: second(clock),
+                    service: "gen",
+                    environment: env.ENVIRONMENT,
+                    route_path: "/image/:prompt",
+                    method: "GET",
+                    query_id: sent.queries[0][0].query_id,
+                    error_code: "",
+                    calls: 4,
+                    // all() and batch() report D1's figures.
+                    measured: 2,
+                    total_ms: 0,
+                    max_ms: 0,
+                    sql_ms: expect.any(Number),
+                    rows_read: expect.any(Number),
+                    rows_written: 0,
+                },
+            ],
+        ]);
     });
 
     it("records a failed call with its SQL but no bound values", async () => {
-        const events = captureErrorEvents();
+        const sent = captureIngest();
         await expect(
             run((db) =>
                 db
@@ -69,45 +128,126 @@ describe("D1 call timing", () => {
             ),
         ).rejects.toThrow("missing_table");
 
-        expect(events).toHaveLength(1);
-        expect(events[0]).toMatchObject({
-            kind: "d1_call",
-            severity: "error",
-            route_path: "/image/:prompt",
-            method: "GET",
-            status: 0,
-            error_code: "D1_FAILED",
-            error_class: "D1Call",
-            upstream_host: "d1",
-            message: "SELECT * FROM missing_table WHERE prompt = ?",
-        });
-        expect(JSON.stringify(events[0])).not.toContain("secret");
-        expect(JSON.stringify(events[0])).not.toContain("D1_ERROR");
+        expect(sent.queries[0]).toEqual([
+            expect.objectContaining({
+                sql: "SELECT * FROM missing_table WHERE prompt = ?",
+            }),
+        ]);
+        expect(sent.calls[0]).toEqual([
+            expect.objectContaining({ error_code: "D1_FAILED", calls: 1 }),
+        ]);
+        expect(JSON.stringify(sent)).not.toContain("secret");
+        expect(JSON.stringify(sent)).not.toContain("D1_ERROR");
     });
 
-    it("settles a coordinator job only after telemetry from billing that fails after the response", async () => {
-        const events = captureErrorEvents(50);
-        const { ctx, settled } = detachedContext();
+    it("counts placeholder lists of any length as one query", async () => {
+        const sent = captureIngest();
+        await run(async (db) => {
+            await db.prepare("SELECT 1 WHERE 1 IN (?, ?)").bind(1, 2).all();
+            await db
+                .prepare("SELECT 1 WHERE 1 IN (?, ?, ?)")
+                .bind(1, 2, 3)
+                .all();
+        });
+        expect(sent.queries[0]).toEqual([
+            expect.objectContaining({ sql: "SELECT 1 WHERE 1 IN (?, ...)" }),
+        ]);
+        expect(sent.calls[0]).toEqual([expect.objectContaining({ calls: 2 })]);
+    });
+
+    it("marks sums D1 gave no figures for, so they do not read as zero", async () => {
+        const sent = captureIngest();
+        await run((db) => db.prepare("SELECT 'unmeasured' AS value").raw());
+        expect(sent.calls[0]).toEqual([
+            expect.objectContaining({ calls: 1, measured: 0 }),
+        ]);
+    });
+
+    it("sends one batch 10 s after its first call, with no later request", async () => {
+        const sent = captureIngest();
+        const query = (db: D1Database) =>
+            db.prepare("SELECT 'batched' AS value").all();
+        const first = await request(query);
+
+        await vi.advanceTimersByTimeAsync(3_000);
+        await request(query);
+        // Post-response work rides along too.
+        const late = createExecutionContext();
         withD1Calls(
+            "gen",
+            recording,
+            late,
+            () => ({ route_path: "generation", method: "GET" }),
+            () => late.waitUntil(query(env.DB)),
+        );
+        await vi.advanceTimersByTimeAsync(6_000);
+        expect(sent.calls).toHaveLength(0);
+
+        await vi.advanceTimersByTimeAsync(1_000);
+        await waitOnExecutionContext(first.ctx);
+        expect(sent.calls).toHaveLength(1);
+        expect(
+            sent.calls[0].map((row) => [
+                row.timestamp,
+                row.route_path,
+                row.calls,
+            ]),
+        ).toEqual([
+            [second(clock), "/image/:prompt", 1],
+            [second(clock + 3_000), "/image/:prompt", 1],
+            [second(clock + 3_000), "generation", 1],
+        ]);
+    });
+
+    it("records nothing unless telemetry is on", async () => {
+        const sent = captureIngest();
+        const ctx = createExecutionContext();
+        await withD1Calls(
+            "gen",
             env,
             ctx,
-            () => ({ route_path: "generation", method: "GET" }),
-            () => {
-                // Post-response billing: its failing query registers the
-                // telemetry send while settlement is already waiting.
-                ctx.waitUntil(
-                    env.DB.prepare("UPDATE missing_table SET balance = ?")
-                        .bind(1)
-                        .run()
-                        .catch(() => {}),
-                );
-            },
+            () => ({ route_path: "/image/:prompt", method: "GET" }),
+            () => env.DB.prepare("SELECT 'local' AS value").all(),
         );
-        await settled();
-        expect(events).toHaveLength(1);
-        expect(events[0]).toMatchObject({
-            route_path: "generation",
-            error_code: "D1_FAILED",
+        await vi.advanceTimersByTimeAsync(10_000);
+        await waitOnExecutionContext(ctx);
+        expect(sent.calls).toHaveLength(0);
+    });
+
+    it("keeps one send per 10 s after a full buffer went early", async () => {
+        const sent = captureIngest();
+        const first = await request(async (db) => {
+            for (let i = 0; i < 500; i++) {
+                await db.prepare(`SELECT ${i} AS filler`).all();
+            }
         });
+        expect(sent.calls).toHaveLength(1);
+
+        await vi.advanceTimersByTimeAsync(3_000);
+        const later = await request((db) =>
+            db.prepare("SELECT 'after the burst' AS value").all(),
+        );
+        // The first timer is due: the newer batch is not its to send.
+        await vi.advanceTimersByTimeAsync(7_000);
+        await waitOnExecutionContext(first.ctx);
+        expect(sent.calls).toHaveLength(1);
+
+        await vi.advanceTimersByTimeAsync(3_000);
+        await waitOnExecutionContext(later.ctx);
+        expect(sent.calls).toHaveLength(2);
+        expect(sent.calls[1]).toHaveLength(1);
+    });
+
+    it("sends a statement again when Tinybird did not take it", async () => {
+        const sent = captureIngest(503);
+        const query = (db: D1Database) =>
+            db.prepare("SELECT 'retried' AS value").all();
+        await run(query);
+        await run(query);
+        expect(sent.queries).toHaveLength(2);
+        expect(sent.queries[1]).toEqual(sent.queries[0]);
+        expect(sent.queries[0]).toEqual([
+            expect.objectContaining({ sql: "SELECT 'retried' AS value" }),
+        ]);
     });
 });

@@ -7,6 +7,7 @@ import faqMarkdown from "../../../../POLLEN_FAQ.md?raw";
 import { PollenExamples } from "../models/pollen-examples.tsx";
 
 type FAQItem = {
+    id: string;
     question: string;
     answer: string;
 };
@@ -22,37 +23,45 @@ const generateSlug = (text: string): string => {
         .trim();
 };
 
+// A heading can pin its anchor with a trailing {#id}, so renaming a
+// question keeps links that already point at it.
+const parseHeading = (heading: string) => {
+    const pinned = heading.match(/^(.*?)\s*\{#([\w-]+)\}$/);
+    const question = pinned ? pinned[1] : heading;
+    return { question, id: pinned ? pinned[2] : generateSlug(question) };
+};
+
 // Parse markdown content into FAQ items
 const parseFAQFromMarkdown = (markdown: string): FAQItem[] => {
     const items: FAQItem[] = [];
     const lines = markdown.split("\n");
 
-    let currentQuestion = "";
+    let currentHeading = "";
     let currentAnswer: string[] = [];
 
     for (const line of lines) {
         // Check if line is a H2 heading (question)
         if (line.startsWith("## ")) {
             // Save previous FAQ item if exists
-            if (currentQuestion && currentAnswer.length > 0) {
+            if (currentHeading && currentAnswer.length > 0) {
                 items.push({
-                    question: currentQuestion,
+                    ...parseHeading(currentHeading),
                     answer: currentAnswer.join("\n").trim(),
                 });
             }
             // Start new question
-            currentQuestion = line.replace("## ", "").trim();
+            currentHeading = line.replace("## ", "").trim();
             currentAnswer = [];
-        } else if (currentQuestion) {
+        } else if (currentHeading) {
             // Add to current answer
             currentAnswer.push(line);
         }
     }
 
     // Don't forget the last item
-    if (currentQuestion && currentAnswer.length > 0) {
+    if (currentHeading && currentAnswer.length > 0) {
         items.push({
-            question: currentQuestion,
+            ...parseHeading(currentHeading),
             answer: currentAnswer.join("\n").trim(),
         });
     }
@@ -72,7 +81,7 @@ export const FAQ: FC<FAQProps> = ({ showTitle = true }) => {
     const navigate = useNavigate();
 
     const toggleQuestion = (index: number) => {
-        const slug = generateSlug(faqData[index]?.question ?? "");
+        const slug = faqData[index]?.id ?? "";
         const isOpen = openIndices.has(index);
         setOpenIndices((prev) => {
             const next = new Set(prev);
@@ -94,9 +103,7 @@ export const FAQ: FC<FAQProps> = ({ showTitle = true }) => {
     // Auto-expand FAQ item when navigating via anchor link
     useEffect(() => {
         if (!hash) return;
-        const index = faqData.findIndex(
-            (item) => generateSlug(item.question) === hash,
-        );
+        const index = faqData.findIndex((item) => item.id === hash);
         if (index === -1) return;
 
         setOpenIndices((prev) => new Set(prev).add(index));
@@ -118,7 +125,7 @@ export const FAQ: FC<FAQProps> = ({ showTitle = true }) => {
             )}
             <div className="flex flex-col gap-4">
                 {faqData.map((item, index) => {
-                    const questionId = generateSlug(item.question);
+                    const questionId = item.id;
                     return (
                         <Surface
                             key={item.question}
@@ -151,7 +158,7 @@ export const FAQ: FC<FAQProps> = ({ showTitle = true }) => {
                                 >
                                     <Markdown>{item.answer}</Markdown>
                                     {item.question.includes(
-                                        "What can I create with Pollen",
+                                        "What can I create with Pollinations",
                                     ) && <PollenExamples />}
                                 </div>
                             )}

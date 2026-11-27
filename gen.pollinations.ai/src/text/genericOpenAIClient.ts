@@ -618,9 +618,12 @@ export async function genericOpenAIClient(
                     if (message.tool_calls === null) delete message.tool_calls;
                     formattedChoice.message = message;
                 }
-                // Some providers report "stop" even when they returned a tool
-                // call. Keep the compatibility fix without dropping choices.
-                if (formattedChoice.message?.tool_calls?.length) {
+                // Some providers report "stop" (or no reason) even when they
+                // returned a tool call. Keep "length" so truncation stays visible.
+                if (
+                    (formattedChoice.finish_reason ?? "stop") === "stop" &&
+                    formattedChoice.message?.tool_calls?.length
+                ) {
                     formattedChoice.finish_reason = "tool_calls";
                 }
                 if (

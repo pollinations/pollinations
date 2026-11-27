@@ -2,14 +2,15 @@
 
 Canonical vendor: `azure`
 
-## Verified — 2026-08-22
+## Verified — 2026-11-03
 
-- Status: client-credential authentication and the invoices API work.
-- Dashboard login: `thomas@myceli.ai`. Use the vendor journal's
-  billing-profile link → Payment methods → Azure credits → View all credits
-  (verified 2026-09-05).
-- Account routing: use only the Chrome window signed in as
-  `thomas@myceli.ai`; never open Azure in the `elliot@myceli.ai` window.
+- Status: client-credential authentication, invoices, current credits and
+  funding-lot APIs work.
+- Dashboard login: `thomas@myceli.ai`. Use the registry's billing-profile link
+  → Payment methods → Azure credits → View all credits (verified 2026-09-05).
+- Browser fallback: sign into Azure as `thomas@myceli.ai` in an existing
+  Workspace Chrome window and verify the billing profile. The Chrome profile
+  itself need not use that email.
 - Billing account:
   `d6c5b3e7-63ac-515a-8674-de5afbaec90d:d9f4ee4f-6add-42d1-ad32-b0cf92f726f4_2019-05-31`.
 - Billing profile: `7E4U-QBXO-BG7-PGB`. Verify both the signed-in email and
@@ -25,11 +26,9 @@ Canonical vendor: `azure`
 Primary evidence sources:
 
 - Invoice/payment: monthly Azure/Microsoft invoice, usually issued around day 9 for the previous calendar month.
-- Live credit balance and expiry: billing profile → Payment methods → Azure
-  credits. Use View all credits to select active grants; the summary can show
-  an exhausted grant's expiry. Use the latest USD transaction balance after
-  unbilled eligible charges for the OP Cloud balance snapshot. The prominent
-  EUR balance is an estimated display translated at a monthly benchmark rate.
+- Live credit balance: ARM credit summary and funding-lot APIs below. The
+  matching billing-profile dashboard remains the fallback. Its prominent EUR
+  balance is a translated estimate, not the original credit currency.
 - API: Microsoft Billing invoices API through ARM.
 - Detailed usage: subscription Cost Management API, or Azure cost/usage CSV,
   when service, SKU, or
@@ -39,9 +38,16 @@ Primary evidence sources:
 Collection steps:
 
 1. For invoices, place PDFs/receipts in `<collection-dir>/evidence/`.
-2. For the current balance, record one dated `type: balance` OP Cloud snapshot
-   from the latest USD balance in the Azure credit-transactions table. Do not
-   convert the displayed EUR estimate back to USD.
+2. Read both endpoints under
+   `/providers/Microsoft.Billing/billingAccounts/{account}/billingProfiles/{profile}/providers/Microsoft.Consumption/`:
+   `credits/balanceSummary?api-version=2024-08-01` and
+   `lots?api-version=2024-08-01`. Archive both responses. Use the provider's
+   `balanceSummary.estimatedBalance` in `creditCurrency` after checking pending
+   eligible charges and active lots; retain its estimate status. Do not convert
+   `estimatedBalanceInBillingCurrency` back to the credit currency. Exclude
+   exhausted lots when identifying expiry. If several funded lots remain,
+   preserve their individual evidence without allocating profile-wide pending
+   charges arbitrarily.
 3. For API evidence, query the billing profile invoices endpoint for the requested period only.
 4. Required credentials:
    - `AZURE_TENANT_ID`
@@ -90,6 +96,14 @@ Collection steps:
    `ServiceName` and `Meter` for model labels and usage cross-checks. Raw costs
    can differ from finalized invoice transactions; do not proportionally
    allocate invoice totals when exact transaction lines are available.
+   For `ActualCost`, use explicit first-day UTC midnight through final-day
+   23:59:59 bounds and verify BillingMonth, currency and pagination. Honor
+   retry headers on 429 responses. Before the invoice arrives, retain complete
+   usage as non-posting source evidence if its cash/credit funding is unknown.
+   Query `Product`/`Meter` for exact billed-product qualification and reconcile
+   its total to the service/meter export. Preserve Product as `resource_sku`
+   and Meter as `model` for `Meter | Product` mapping keys; do not substitute
+   ServiceName or allocate region splits.
 10. Use this skill for saved raw evidence.
 
 ## Verified — 2026-09-06
@@ -118,6 +132,15 @@ Known traps:
   `reconciliation_notes` because Azure may still show
   `freeAzureCreditApplied.value == 0` and `azurePrepaymentApplied.value == 0`.
 - The running month has no full invoice until the next invoice is issued.
+- A large current grant and pending eligible charges do not establish the
+  closed month's funding split. When the monthly invoice/Transactions export
+  is the remaining dependency, record its expected issue date and continue
+  usage, mapping and current-balance checks independently.
+- Non-Foundry services can contain model usage: Azure Speech Fast Transcription
+  Promo is distinct from MAI Models streaming transcription. Use original
+  product/meter identity, effective retail SKU, runtime route and same-month
+  Pollen evidence for attribution; rates identify the product, not a formula
+  for rebuilding billed cost. Unmatched model products remain unattributed.
 - Keep each active grant's amount, effective date, expiry, and status in the
   evidence. Do not assign an exhausted grant's expiry to the current balance.
   Jan-Mar 2026 invoices had no sponsorship credit and were card-charged in full.

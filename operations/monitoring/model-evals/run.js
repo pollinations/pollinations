@@ -24,7 +24,7 @@ const USAGE = `Score every text model on gen.pollinations.ai with the same eval 
   --models a,b,c                   only these names or aliases (overrides --scope)
   --eval id                        only this eval (default: all of ${EVALS.map((e) => e.id).join(", ")})
   --samples N                      questions per family and model (default 10)
-  --budget N                       stop asking questions once this many Pollen are spent (default 12)
+  --budget N                       stop asking questions when estimated spend reaches this budget in USD (default $12)
   --concurrency N                  models scored at once (default 8)
   --timeout SECONDS                per-question time limit, a timeout counts as a failed answer (default 180)
   --seed N                         question seed (default: random; printed and saved)
@@ -229,7 +229,7 @@ export function formatTable(evalResult) {
     const width = Math.max(5, ...rows.map((row) => row.name.length));
     const lines = [
         `${evalResult.title}: ${rows.length} scored, ${unscored} unscored, ${skipped} skipped`,
-        `${"model".padEnd(width)}  score (95% CI)        failed  cost (Pollen)`,
+        `${"model".padEnd(width)}  score (95% CI)        failed  cost (USD)`,
     ];
     for (const row of rows) {
         lines.push(
@@ -347,7 +347,7 @@ export async function main(argv = process.argv.slice(2), env = process.env) {
     for (const evalResult of results)
         console.log(`\n${formatTable(evalResult)}`);
     console.log(
-        `\nCost: ${estimatedCost.toFixed(4)} Pollen estimated from reported usage and catalog prices.`,
+        `\nEstimated cost: $${estimatedCost.toFixed(4)} USD from reported usage and catalog prices.`,
     );
     console.log(`Saved ${join(opts.out, "runs", `${run.id}.json`)}`);
 }

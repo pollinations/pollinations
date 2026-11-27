@@ -104,7 +104,7 @@ export async function getPurchase(
 // its key; a stored key is never returned and a recorded payment never
 // resumed. Support checks wallet ownership and payment terms instead.
 export const PAYMENT_USED =
-    "x402 payment already used. If it was charged and you have no key, contact hello@pollinations.ai with the transaction.";
+    "x402 payment already used. If it was charged and you have no key, contact billing@pollinations.ai with the transaction hash.";
 
 export async function preparePurchase(
     env: Env["Bindings"],
@@ -113,7 +113,7 @@ export async function preparePurchase(
     userId: string,
     packKey: string,
 ): Promise<{ id: string; key: string }> {
-    // A pending key cannot spend Pollen. It becomes usable only after Weft
+    // A pending key cannot spend from its budget. It becomes usable only after Weft
     // settles and creditPurchase atomically funds the wallet and key budget.
     const created = await createApiKeyForUser({
         authClient: createAuth(env, ctx),

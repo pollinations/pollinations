@@ -36,10 +36,15 @@ Collection steps:
    route can return 403 for a valid scoped management key.
 3. Query `GET /v1/billing/teams/{teamId}/invoices` for cycle invoices.
 4. Query `GET /v1/billing/teams/{teamId}/prepaid/balance` for signed balance changes.
-5. In the Usage page, select the complete month and group by API key. Confirm
-   that every active key is expected.
-6. Group by model and export one daily CSV per model plus the unfiltered daily
-   total. The model exports must sum exactly to the total export.
+5. Query `POST /v1/billing/teams/{teamId}/usage` with `analyticsRequest`,
+   timezone `Etc/GMT`, `timeUnit=TIME_UNIT_DAY`,
+   `values=[{name: "usd", aggregation: "AGGREGATION_SUM"}]` and
+   `groupBy=["description"]`. Repeat with `groupBy=[]` for an independent daily
+   total. Preserve requests and responses; verify `limitReached=false`, UTC
+   coverage and agreement between daily model sums and the daily total.
+6. In the Usage page, select the complete UTC month and group by API key to
+   confirm every active key is expected. If the API is unavailable, export one
+   daily CSV per model and the unfiltered total; reconcile their sums.
 7. Archive the raw billing response, each cycle invoice PDF, prepaid-purchase
    PDFs, the total CSV, every model CSV, and the reconciliation report in Drive.
 8. Keep cycle invoices and prepaid purchases as separate evidence.
@@ -49,7 +54,8 @@ Base URL: `https://management-api.x.ai`.
 Known traps:
 
 - Use a management API key, not a runtime API key.
-- Team ID may need to be discovered from the management `/auth/teams` endpoint before querying billing invoices.
+- Use the team scope returned by key validation; `/auth/teams` can return 403
+  even when the scoped billing credential works.
 - The invoice ledger has two different source types:
   - cycle invoices: usage for calendar month `m`, typically created in month `m+1`
   - prepaid top-ups: funding/balance purchases, not usage
@@ -63,5 +69,7 @@ Known traps:
   daily entry ID through the batch gate; never append the entire month again
   or overwrite an issued invoice with provisional dashboard usage.
 - For the current open month, supersede provisional Pollen-derived provider
-  rows with exact dashboard CSV rows. Replace them again with invoice-line rows
+  rows with exact provider API or dashboard CSV rows. Replace them again with invoice-line rows
   once the monthly cycle invoice closes.
+
+Official reference: https://docs.x.ai/developers/rest-api-reference/management/billing

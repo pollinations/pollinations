@@ -69,7 +69,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Glyph Cluster (Stealth)",
         description:
-            "Experimental coding and long-context reasoning with automatic tool calling. Prompts and responses may be retained and used for training; no zero data retention.",
+            "Explore long coding problems with tools. Zero data retention is unavailable, and prompts and replies may be retained and used for training.",
         inputModalities: ["text"],
         outputModalities: ["text"],
         contextLength: 256000,
@@ -96,7 +96,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "GPT-5.4 Nano",
         description:
-            "Fast, affordable all-rounder for everyday chat and image questions",
+            "Get quick, low-cost answers to everyday questions about text or images.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
@@ -122,7 +122,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "GPT-5 Nano",
         description:
-            "Ultra-fast and ultra-cheap for simple tasks; not built for hard problems",
+            "Label messages or extract names quickly and at low cost for simple, high-volume tasks.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
@@ -134,19 +134,20 @@ const TEXT_BASE_SERVICES = {
     "openai/gpt-oss-20b": {
         supportedParameters: CHAT_PARAMETERS.ovhGptOss,
         aliases: ["gpt-oss-20b", "ovh-reasoning", "gpt-oss"],
-        provider: "ovhcloud",
+        provider: "deepinfra",
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
         priceMultiplier: 1,
         paidOnly: false,
         cost: {
-            promptTextTokens: perMillion(0.05),
-            completionTextTokens: perMillion(0.18),
+            promptTextTokens: perMillion(0.03),
+            promptCachedTokens: perMillion(0.015),
+            completionTextTokens: perMillion(0.14),
         },
         title: "GPT-OSS 20B",
         description:
-            "Compact open-weight reasoner; solid logic on a budget, limited world knowledge",
+            "Work through written logic problems with a compact model whose weights are publicly available.",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -172,7 +173,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "GPT-4o Mini",
         description:
-            "Affordable multimodal chat with vision input for everyday tasks",
+            "Summarize a message, describe a photo, or ask follow-up questions about either.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10, // OpenAI vision limit: 10 images/chat request (provider cap).
@@ -200,7 +201,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "GPT-5.3 Codex",
         description:
-            "Coding-focused reasoner for complex software engineering and agentic tasks",
+            "Trace a bug through a codebase and plan a fix across multiple files.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
@@ -265,7 +266,7 @@ const TEXT_BASE_SERVICES = {
         ),
         title: "GPT-5.4",
         description:
-            "Deep reasoning for the hardest questions; slower and pricier than lighter tiers",
+            "Weigh evidence from long documents and images to work through difficult questions.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
@@ -291,7 +292,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "GPT-5.4 Mini",
         description:
-            "Strong all-round quality at mid cost; a good default when speed matters",
+            "Get a quick explanation of a passage or image, with tool calls when needed.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
@@ -353,7 +354,7 @@ const TEXT_BASE_SERVICES = {
         ),
         title: "GPT-5.5",
         description:
-            "Frontier reasoning for complex, multi-step problems; takes its time thinking",
+            "Break a complex question into steps and work through them before reaching an answer.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
@@ -411,7 +412,8 @@ const TEXT_BASE_SERVICES = {
             ],
         ),
         title: "GPT-5.6 Sol",
-        description: "Frontier reasoning for complex multimodal tasks",
+        description:
+            "Use frontier reasoning to connect evidence across long documents and images.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
@@ -469,7 +471,7 @@ const TEXT_BASE_SERVICES = {
         ),
         title: "GPT-6.1 Terra",
         description:
-            "Fast, efficient model for professional work with strong visual reasoning and computer use",
+            "Interpret screenshots quickly and use visual reasoning to plan computer tasks.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -524,7 +526,8 @@ const TEXT_BASE_SERVICES = {
             ],
         ),
         title: "GPT-5.6 Terra",
-        description: "Balanced reasoning for general multimodal tasks",
+        description:
+            "Balance reasoning depth and speed when analyzing text and images together.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
@@ -580,7 +583,8 @@ const TEXT_BASE_SERVICES = {
             ],
         ),
         title: "GPT-5.6 Luna",
-        description: "Fast low-cost reasoning for everyday multimodal tasks",
+        description:
+            "Classify screenshots or extract details from images quickly and at low cost.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
@@ -637,7 +641,7 @@ const TEXT_BASE_SERVICES = {
         ),
         title: "GPT-6 Astra",
         description:
-            "Frontier reasoning for complex agentic, coding, and multimodal work",
+            "Use frontier reasoning to debug complex code and work through visual tasks with tools.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
@@ -694,7 +698,122 @@ const TEXT_BASE_SERVICES = {
             ],
         ),
         title: "GPT-6 Sol",
-        description: "Reasoning for complex coding and agentic workflows",
+        description:
+            "Balance reasoning depth and efficiency for complex coding tasks that need several tool calls.",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 50, // Azure rejects more: "Exceeded maximum number of images (50)".
+        tools: true,
+        reasoning: true,
+        contextLength: 1050000,
+        isSpecialized: false,
+    },
+    "openai/gpt-6.2-astra": {
+        supportedParameters: CHAT_PARAMETERS.azureResponses,
+        aliases: [],
+        provider: "azure",
+        publisher: "OpenAI",
+        category: "text",
+        addedDate: new Date("2026-11-17").getTime(),
+        paidOnly: true,
+        priceMultiplier: 0.75,
+        cost: {
+            promptTextTokens: perMillion(8),
+            promptCachedTokens: perMillion(0.4),
+            promptCacheWriteTokens: perMillion(10),
+            completionTextTokens: perMillion(40),
+        },
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(16),
+                    promptCachedTokens: perMillion(0.8),
+                    promptCacheWriteTokens: perMillion(20),
+                    completionTextTokens: perMillion(60),
+                },
+            },
+            longContextAbove(272_000),
+            {
+                long_context: {
+                    label: "Long context (>272K)",
+                    description:
+                        "More than 272,000 prompt tokens; the higher rates apply to the full request.",
+                },
+            },
+            "≤272K context",
+            [
+                {
+                    "key": "context",
+                    "label": "Context",
+                    "unit": "tokens",
+                    "values": {
+                        "": "≤272K",
+                        "long_context": ">272K",
+                    },
+                },
+            ],
+        ),
+        title: "GPT-6.2 Astra",
+        description:
+            "Use frontier reasoning for demanding work that takes many rounds of analysis and tool use.",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 1050000,
+        isSpecialized: false,
+    },
+    "openai/gpt-6.2-sol": {
+        supportedParameters: CHAT_PARAMETERS.azureResponses,
+        aliases: [],
+        provider: "azure",
+        publisher: "OpenAI",
+        category: "text",
+        addedDate: new Date("2026-11-17").getTime(),
+        paidOnly: true,
+        priceMultiplier: 0.75,
+        cost: {
+            promptTextTokens: perMillion(2),
+            promptCachedTokens: perMillion(0.1),
+            promptCacheWriteTokens: perMillion(2.5),
+            promptImageTokens: perMillion(2),
+            completionTextTokens: perMillion(10),
+        },
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(4),
+                    promptCachedTokens: perMillion(0.2),
+                    promptCacheWriteTokens: perMillion(5),
+                    promptImageTokens: perMillion(4),
+                    completionTextTokens: perMillion(15),
+                },
+            },
+            longContextAbove(272_000),
+            {
+                long_context: {
+                    label: "Long context (>272K)",
+                    description:
+                        "More than 272,000 prompt tokens; the higher rates apply to the full request.",
+                },
+            },
+            "≤272K context",
+            [
+                {
+                    "key": "context",
+                    "label": "Context",
+                    "unit": "tokens",
+                    "values": {
+                        "": "≤272K",
+                        "long_context": ">272K",
+                    },
+                },
+            ],
+        ),
+        title: "GPT-6.2 Sol",
+        description:
+            "Write and debug code efficiently, using tools as the work progresses.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 50, // Azure rejects more: "Exceeded maximum number of images (50)".
@@ -753,7 +872,7 @@ const TEXT_BASE_SERVICES = {
         ),
         title: "GPT-6.1 Sol",
         description:
-            "Faster near-Astra reasoning for coding, agents, and professional work",
+            "Get faster responses on demanding coding and tool tasks with reasoning close to the Astra tier.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 50, // Azure rejects more: "Exceeded maximum number of images (50)".
@@ -810,7 +929,8 @@ const TEXT_BASE_SERVICES = {
             ],
         ),
         title: "GPT-6 Luna",
-        description: "Efficient reasoning for focused, high-volume tasks",
+        description:
+            "Handle focused, high-volume tasks efficiently, such as extracting details from messages and images.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 50, // Azure rejects more: "Exceeded maximum number of images (50)".
@@ -819,75 +939,78 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1050000,
         isSpecialized: false,
     },
+    // Classic API (text.pollinations.ai) only: its own capped Azure deployment
+    // and no fallback, so free traffic never uses the official route's quota
+    "openai/gpt-6-luna:classic": {
+        supportedParameters: CHAT_PARAMETERS.azureResponses,
+        aliases: [],
+        hidden: true,
+        // polli@pollinations.ai, which owns the Classic API's key
+        ownerUserId: "LJVtOPiUl0C4uRku8kL8prpp95m8jLnt",
+        provider: "azure",
+        publisher: "OpenAI",
+        category: "text",
+        addedDate: new Date("2026-11-26").getTime(),
+        paidOnly: false,
+        priceMultiplier: 1,
+        // Azure Flex tier: half the Standard rates
+        cost: {
+            promptTextTokens: perMillion(0.05),
+            promptCachedTokens: perMillion(0.005),
+            promptCacheWriteTokens: perMillion(0.0625),
+            completionTextTokens: perMillion(0.25),
+        },
+        title: "GPT-6 Luna (Classic)",
+        description: "Answer free Classic API requests on a capped deployment.",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        // Below the 272K long-context price tier
+        contextLength: 272000,
+        isSpecialized: false,
+    },
     "inception/mercury-2": {
         supportedParameters: CHAT_PARAMETERS.mercury,
         aliases: ["mercury-2", "inception", "inception-mercury", "mercury"],
-        provider: "openrouter",
+        provider: "inception",
         publisher: "Inception",
         category: "text",
         addedDate: new Date("2026-06-23").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.25) * 1.055,
-            promptCachedTokens: perMillion(0.025) * 1.055,
-            completionTextTokens: perMillion(0.75) * 1.055,
+            promptTextTokens: perMillion(0.25),
+            promptCachedTokens: perMillion(0.025),
+            completionTextTokens: perMillion(0.75),
         },
         title: "Mercury 2",
         description:
-            "Near-instant responses for real-time apps; skip it for heavy reasoning",
+            "Get short text replies quickly enough for an interactive app.",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
         contextLength: 128000,
         isSpecialized: false,
     },
-    "inception/mercury-2.5-preview": {
-        supportedParameters: CHAT_PARAMETERS.mercury25,
-        aliases: [],
-        provider: "openrouter",
-        publisher: "Inception",
-        category: "text",
-        addedDate: new Date("2026-09-01").getTime(),
-        paidOnly: true,
-        priceMultiplier: 1,
-        // OpenRouter's exact Inception route rates (2026-09-01).
-        cost: {
-            promptTextTokens: perMillion(0.04) * 1.055,
-            promptCachedTokens: perMillion(0.004) * 1.055,
-            completionTextTokens: perMillion(0.15) * 1.055,
-        },
-        title: "Mercury 2.5 Preview",
-        description:
-            "Ultra-fast diffusion reasoning for coding, tool use, and structured outputs",
-        inputModalities: ["text"],
-        outputModalities: ["text"],
-        tools: true,
-        reasoning: true,
-        contextLength: 260000,
-        isSpecialized: false,
-    },
     "inception/mercury-3": {
-        supportedParameters: CHAT_PARAMETERS.mercury25,
+        supportedParameters: CHAT_PARAMETERS.mercury3,
         aliases: [],
-        provider: "openrouter",
+        provider: "inception",
         publisher: "Inception",
         category: "text",
         addedDate: new Date("2026-10-19").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // OpenRouter's Inception route launch rates (50% off, checked
-        // 2026-10-23), including the account's 5.5% credit-purchase fee. List
-        // is $0.20 / $0.02 cached / $0.70 per M; raise these when the launch
-        // offer ends (no end date published).
+        // Inception's 50% launch rate. Recheck when the promotion ends.
         cost: {
-            promptTextTokens: perMillion(0.1) * 1.055,
-            promptCachedTokens: perMillion(0.01) * 1.055,
-            completionTextTokens: perMillion(0.35) * 1.055,
+            promptTextTokens: perMillion(0.1),
+            promptCachedTokens: perMillion(0.01),
+            completionTextTokens: perMillion(0.35),
         },
         title: "Mercury 3",
         description:
-            "Diffusion reasoning for agentic workflows and real-time voice and search",
+            "Generate fast text replies for a search assistant or a voice app.",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -917,7 +1040,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Command A+",
         description:
-            "Multilingual agentic reasoning with tools and long context",
+            "Ask questions across languages, drawing on long documents and external tools.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -943,7 +1066,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Qwen3 Coder 30B",
         description:
-            "Writes and fixes code quickly at low cost; best for programming, not chat",
+            "Turn a written description into code or get a quick fix for an existing snippet.",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -970,7 +1093,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Mistral Small 3.2",
         description:
-            "Follows instructions reliably and calls functions well, at low cost",
+            "Give instructions in plain language to call a function, such as looking up a record.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -1002,7 +1125,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Mistral Small 4",
         description:
-            "Compact all-rounder that combines reasoning with image understanding",
+            "Match a diagram to its written explanation or ask how an image supports a claim.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 8,
@@ -1034,7 +1157,8 @@ const TEXT_BASE_SERVICES = {
             completionAudioTokens: perMillion(20.0),
         },
         title: "GPT Audio Mini",
-        description: "Voice conversations with spoken or text replies",
+        description:
+            "Ask a question out loud and get the answer in speech or text.",
         voices: [...AUDIO_VOICES],
         inputModalities: ["text", "audio"],
         outputModalities: ["audio", "text"],
@@ -1067,7 +1191,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "GPT Audio 1.5",
         description:
-            "Rich, natural voice conversations; premium quality at a higher price",
+            "Carry on a natural-sounding voice conversation or ask for a written reply.",
         voices: [...AUDIO_VOICES],
         inputModalities: ["text", "audio"],
         outputModalities: ["audio", "text"],
@@ -1096,7 +1220,7 @@ const TEXT_BASE_SERVICES = {
         billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
         title: "Gemini 3 Flash Preview",
         description:
-            "Pro-grade reasoning at high speed, with web search and a huge context window",
+            "Find answers in long documents and look up supporting information on the web.",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.
@@ -1129,7 +1253,7 @@ const TEXT_BASE_SERVICES = {
         billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 0.5),
         title: "Gemini 3.7 Flash",
         description:
-            "Sharp, fast reasoning over text, images, audio and video, plus web search",
+            "Ask about a recording, image, or video clip and check details with a web search.",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.
@@ -1161,13 +1285,45 @@ const TEXT_BASE_SERVICES = {
         billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 0.5),
         title: "Gemini 3.8 Flash",
         description:
-            "Fast multimodal reasoning for long-horizon coding, autonomous agents and complex workflows",
+            "Work through a coding task with quick feedback from screenshots, audio, or video.",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.
         maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
         tools: true,
         search: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "google/gemini-4-hydrogen": {
+        supportedParameters: CHAT_PARAMETERS.vertexGemini35,
+        aliases: [],
+        provider: "google",
+        publisher: "Google",
+        category: "text",
+        addedDate: new Date("2026-11-12").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            promptTextTokens: perMillion(1.5),
+            promptCachedTokens: perMillion(0.075),
+            promptCacheWriteTokens: perMillion(1.5),
+            promptAudioTokens: perMillion(1.5),
+            promptImageTokens: perMillion(1.5),
+            promptVideoTokens: perMillion(1.5),
+            completionTextTokens: perMillion(7.5),
+        },
+        billing: GEMINI_3_SEARCH_BILLING,
+        title: "Gemini 4 Hydrogen",
+        description:
+            "High-throughput agentic model for long-horizon coding, tool use and multimodal analysis with a 1M-token context",
+        inputModalities: ["text", "image", "audio", "video"],
+        outputModalities: ["text"],
+        maxReferenceImages: 3000,
+        maxReferenceVideos: 10,
+        tools: true,
+        search: true,
+        reasoning: true,
         contextLength: 1048576,
         isSpecialized: false,
     },
@@ -1194,13 +1350,46 @@ const TEXT_BASE_SERVICES = {
         billing: GEMINI_3_SEARCH_BILLING,
         title: "Gemini 4 Carbon",
         description:
-            "Frontier reasoning for long-running agentic coding and knowledge work, with a 1M-token context",
+            "Plan changes across a large coding project with room for many files in one request.",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 3000, // Vertex Carbon shares this limit with documents.
         maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
         tools: true,
         search: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "google/gemini-4-neon": {
+        supportedParameters: CHAT_PARAMETERS.vertexGemini35,
+        aliases: [],
+        provider: "google",
+        publisher: "Google",
+        category: "text",
+        addedDate: new Date("2026-11-18").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // Vertex global pricing announced on 2026-11-18; use list rates.
+        cost: {
+            promptTextTokens: perMillion(3),
+            promptCachedTokens: perMillion(0.15),
+            promptCacheWriteTokens: perMillion(3),
+            promptAudioTokens: perMillion(3),
+            promptImageTokens: perMillion(3),
+            promptVideoTokens: perMillion(3),
+            completionTextTokens: perMillion(15),
+        },
+        billing: GEMINI_3_SEARCH_BILLING,
+        title: "Gemini 4 Neon",
+        description:
+            "Multimodal reasoning for coding and tool use, with native web search",
+        inputModalities: ["text", "image", "audio", "video"],
+        outputModalities: ["text"],
+        maxReferenceImages: 3000,
+        maxReferenceVideos: 10,
+        tools: true,
+        search: true,
+        reasoning: true,
         contextLength: 1048576,
         isSpecialized: false,
     },
@@ -1227,7 +1416,7 @@ const TEXT_BASE_SERVICES = {
         billing: GEMINI_3_SEARCH_BILLING,
         title: "Gemini 4 Argon",
         description:
-            "Flagship reasoning over text, images, audio and video, with web search",
+            "Investigate complex questions using documents, images, recordings, and web search together.",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.
@@ -1265,7 +1454,7 @@ const TEXT_BASE_SERVICES = {
         billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
         title: "Gemini 3.5 Flash Lite",
         description:
-            "Fast multimodal reasoning for high-throughput agents and data processing",
+            "Process large batches of text, images, audio, or video quickly.",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.
@@ -1295,7 +1484,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Gemini 2.5 Flash Lite",
         description:
-            "Cheapest way to handle everyday multimodal tasks; trades depth for speed",
+            "Ask everyday questions about photos, recordings, video, or text at low cost.",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.
@@ -1331,7 +1520,8 @@ const TEXT_BASE_SERVICES = {
             completionTextTokens: perMillion(1.32),
         },
         title: "DeepSeek V4 Flash 0731",
-        description: "Fast reasoning and coding at bargain prices",
+        description:
+            "Get quick help with a programming question or a written logic problem.",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -1340,7 +1530,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "deepseek/deepseek-v4.1-flash": {
-        // Azure accepts this full set (probed 2026-10-15).
+        // Azure accepts none, high and max for reasoning_effort.
         supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
         aliases: [],
         provider: "azure",
@@ -1362,7 +1552,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "DeepSeek V4.1 Flash",
         description:
-            "Reasoning, coding, tool calling, and image understanding.",
+            "Write code, inspect screenshots, and call tools to track down a problem.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -1371,24 +1561,27 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "deepseek/deepseek-v4.1-flash-1017": {
-        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        // Azure accepts none, high and max for reasoning_effort.
+        supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
         aliases: [],
-        provider: "fireworks",
+        provider: "azure",
         publisher: "DeepSeek",
         category: "text",
         addedDate: new Date("2026-10-18").getTime(),
-        // 0.5x matches DeepInfra's output price (0.60 per M).
+        // 0.5x matches the output price of the Azure V4.1 Flash route.
         priceMultiplier: 0.5,
-        paidOnly: true,
-        // Fireworks standard serverless rates (2026-10-18).
+        paidOnly: false,
+        perUserRpm: 60,
+        // Azure Sweden Central Global Standard Flash1017 meters (2026-11-01).
         cost: {
             promptTextTokens: perMillion(0.3),
             promptCachedTokens: perMillion(0.006),
+            promptImageTokens: perMillion(0.3),
             completionTextTokens: perMillion(1.2),
         },
         title: "DeepSeek V4.1 Flash 1017",
         description:
-            "Reasoning, coding, tool calling, and image understanding.",
+            "Test coding, image analysis, and tool use against a fixed model release.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -1415,7 +1608,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "DeepSeek V4 Flash Vision Exp",
         description:
-            "Low-cost multimodal reasoning for coding, agents and visual analysis",
+            "Use a screenshot alongside code to diagnose a problem and plan the next tool call.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 30,
@@ -1447,7 +1640,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Gemma 4 26B A4B",
         description:
-            "Efficient open-source chat with image understanding; modest on hard problems",
+            "Chat about text and images with a compact model whose weights are publicly available.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -1472,7 +1665,8 @@ const TEXT_BASE_SERVICES = {
             completionTextTokens: perMillion(0.4) * 1.055,
         },
         title: "Gemma 4 31B",
-        description: "Dense multimodal reasoning with configurable thinking",
+        description:
+            "Adjust the reasoning effort when asking questions about text and images.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
@@ -1500,7 +1694,8 @@ const TEXT_BASE_SERVICES = {
             completionTextTokens: perMillion(3.366) * 1.055,
         },
         title: "DeepSeek V4 Pro 0813",
-        description: "Deep reasoning and strong coding for demanding problems",
+        description:
+            "Work through difficult programming problems with room for extensive code and documentation.",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -1541,7 +1736,8 @@ const TEXT_BASE_SERVICES = {
             completionTextTokens: perMillion(2.5),
         },
         title: "Grok 4.20",
-        description: "Multimodal chat and tool calling with optional reasoning",
+        description:
+            "Chat about text or images and turn on deeper reasoning when needed.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -1567,7 +1763,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Grok 4.3",
         description:
-            "Strong multimodal reasoning with a huge context window at a friendly price",
+            "Compare figures across reports, with images and long documents in the same request.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -1596,7 +1792,8 @@ const TEXT_BASE_SERVICES = {
             completionTextTokens: perMillion(6),
         },
         title: "Grok 4.6",
-        description: "Frontier reasoning for coding and knowledge work",
+        description:
+            "Analyze source material for research or work through a programming question.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
@@ -1651,7 +1848,7 @@ const TEXT_BASE_SERVICES = {
         ),
         title: "Grok 4.7",
         description:
-            "Frontier reasoning for long-running coding, agentic tasks, and knowledge work",
+            "Carry out long coding or research tasks that need repeated tool calls.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
@@ -1698,7 +1895,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Gemini 2.5 Flash Lite Search",
         description:
-            "Answers grounded in live web search; fast and cheap, not a deep reasoner",
+            "Look up recent information on the web and get an answer grounded in the results.",
         inputModalities: ["text", "image", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.
@@ -1725,8 +1922,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "D3",
         description:
-            "Typed choices, yes/no probabilities and scores for routing and " +
-            "classification. Inputs may be logged and used for training",
+            "Classify or route text by picking an option, assigning a score, or estimating the chance of a yes answer. Inputs may be logged and used for training.",
         supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
         inputModalities: ["text"],
         outputModalities: ["text"],
@@ -1743,7 +1939,7 @@ const TEXT_BASE_SERVICES = {
         category: "decision",
         addedDate: new Date("2026-09-30").getTime(),
         priceMultiplier: 1, // Free upstream, so billed at zero.
-        // Free upstream, so Quest Pollen can reach it at no cost.
+        // Free upstream, so Quest balance can reach it at no cost.
         paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0),
@@ -1751,12 +1947,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Span-01 Lite",
         description:
-            "Free behaviour scoring: the probability that plain-language " +
-            "behaviours are present in an agent or LLM conversation. Accepts " +
-            "only noul questions with plain-string instructions, and Respan " +
-            "retains prompts (no training). Post state and questions to " +
-            "/alpha/decisions, or send the same JSON in the last user " +
-            "message on /v1/chat/completions",
+            "Estimate whether a conversation shows the behavior described in a plain-text yes/no question. Respan retains prompts and excludes them from training.",
         // Same request shape as Jev: decisions route and chat adapter only.
         supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
         inputModalities: ["text"],
@@ -1781,9 +1972,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Jev",
         description:
-            "Typed decisions with calibrated confidence instead of free text; " +
-            "post state and questions to /alpha/decisions, or send the same " +
-            "JSON in the last user message on /v1/chat/completions",
+            "Get calibrated confidence for choices, scores, and yes/no answers.",
         // Its own request shape, so it is offered on the decisions route and
         // the chat adapter only — /text returns plain content and has nothing
         // to return here.
@@ -1795,6 +1984,31 @@ const TEXT_BASE_SERVICES = {
         // 64k for state + questions together; 32k for state + the longest
         // question. https://docs.typesafe.ai/models#context-length
         contextLength: 64000,
+        isSpecialized: true,
+    },
+    "baseten/bison-1": {
+        supportedParameters: CHAT_PARAMETERS.typesafeJev,
+        aliases: [],
+        provider: "vercel",
+        publisher: "Baseten",
+        category: "decision",
+        addedDate: new Date("2026-11-20").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            promptTextTokens: perMillion(0.1),
+            completionTextTokens: perMillion(0),
+        },
+        title: "Bison 1",
+        maxReferenceImages: 16,
+        description:
+            "A 31B-parameter decision model that scores predefined choices and classifications with calibrated probabilities from text, JSON or image context.",
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: false,
+        contextLength: 32768,
         isSpecialized: true,
     },
     "jaredpalmer/kev-4b": {
@@ -1814,10 +2028,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Kev 4B",
         description:
-            "Small open-weight decision model that returns typed choices, " +
-            "scores and probabilities with no prompt retention; post state " +
-            "and questions to /alpha/decisions, or send the same JSON in " +
-            "the last user message on /v1/chat/completions",
+            "Get choices, scores, or probabilities from a small open-weight model with zero prompt retention.",
         // Same request shape as Jev: decisions route and chat adapter only.
         supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
         inputModalities: ["text"],
@@ -1844,10 +2055,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Decider V1.2 27B",
         description:
-            "Typed choices, scores and yes/no probabilities over a 262K " +
-            "context; post state and questions to /alpha/decisions, or send " +
-            "the same JSON in the last user message on /v1/chat/completions. " +
-            "Text state only",
+            "Score or classify long passages of text with a 262K-token context window.",
         // Same request shape as Jev: decisions route and chat adapter only.
         supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
         inputModalities: ["text"],
@@ -1875,11 +2083,32 @@ const TEXT_BASE_SERVICES = {
         },
         title: "d1",
         description:
-            "Structured decision model that returns typed choices, scores " +
-            "and probabilities; post state and questions to " +
-            "/alpha/decisions, or send the same JSON in the last user " +
-            "message on /v1/chat/completions",
+            "Choose a category, assign a score, or estimate the chance of a yes answer.",
         // Same request shape as Jev: decisions route and chat adapter only.
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: false,
+        contextLength: 65536,
+        isSpecialized: true,
+    },
+    "liquid/d1.2": {
+        supportedParameters: CHAT_PARAMETERS.typesafeJev,
+        aliases: ["d1.2"],
+        provider: "vercel",
+        publisher: "Liquid AI",
+        category: "decision",
+        addedDate: new Date("2026-11-17").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            promptTextTokens: perMillion(0.02),
+            completionTextTokens: perMillion(0),
+        },
+        title: "d1.2",
+        description:
+            "Get choices, scores, or probabilities for questions about text or JSON data.",
         supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
         inputModalities: ["text"],
         outputModalities: ["text"],
@@ -1906,7 +2135,7 @@ const TEXT_BASE_SERVICES = {
         billing: { resolveTotalCost: reportedInferencePortCost },
         title: "Lightning Text v2.1",
         description:
-            "Router that picks a fast model per prompt, serving Qwen3.8 27B in place of GPT-OSS, with image input, tools and JSON output",
+            "Route each prompt to a fast model, including Qwen3.8 27B, with support for images, tools, and JSON replies.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -1932,13 +2161,65 @@ const TEXT_BASE_SERVICES = {
         billing: { resolveTotalCost: reportedInferencePortCost },
         title: "Lightning Text v2",
         description:
-            "Router that picks a fast model per prompt, with image input, tools and JSON output",
+            "Let a router choose a fast model for image questions, tool calls, or JSON replies.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
         reasoning: false,
         contextLength: 128000,
         isSpecialized: false,
+    },
+    "microsoft/microsoft-decision-1.1": {
+        supportedParameters: CHAT_PARAMETERS.typesafeJev,
+        aliases: [],
+        provider: "azure",
+        publisher: "Microsoft",
+        category: "decision",
+        addedDate: new Date("2026-11-17").getTime(),
+        priceMultiplier: 0.75,
+        paidOnly: false,
+        cost: {
+            // Azure East US Global Standard retail meter, verified 2026-11-17.
+            promptTextTokens: perMillion(0.042),
+            completionTextTokens: perMillion(0),
+        },
+        title: "Microsoft-Decision-1.1",
+        description:
+            "Route requests quickly by estimating how likely each option is to be the right choice.",
+        // Same request shape as Jev: decisions route and chat adapter only.
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: false,
+        contextLength: 32768,
+        isSpecialized: true,
+    },
+    "heygen/heygen-decision-1": {
+        supportedParameters: CHAT_PARAMETERS.typesafeJev,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "HeyGen",
+        category: "decision",
+        addedDate: new Date("2026-11-20").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            // Fee-inclusive list rate. The receipt captures the actual route cost.
+            promptTextTokens: perMillion(0.14) * 1.055,
+            completionTextTokens: perMillion(0),
+        },
+        billing: { resolveTotalCost: reportedTextCost(1.055) },
+        title: "HeyGen Decision 1",
+        description:
+            "Typed yes/no, choice and score decisions over text, images, audio and video.",
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
+        inputModalities: ["text", "image", "audio", "video"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: false,
+        contextLength: 131072,
+        isSpecialized: true,
     },
     "microsoft/microsoft-decision-1": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
@@ -1956,11 +2237,7 @@ const TEXT_BASE_SERVICES = {
             completionTextTokens: perMillion(0),
         },
         title: "Microsoft-Decision-1",
-        description:
-            "Fast typed choices with a calibrated probability for each fixed " +
-            "option and no generated text; post state and questions to " +
-            "/alpha/decisions, or send the same JSON in the last user " +
-            "message on /v1/chat/completions",
+        description: "Estimate the probability of each option in a fixed list.",
         // Same request shape as Jev: decisions route and chat adapter only.
         supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
         inputModalities: ["text"],
@@ -2016,10 +2293,7 @@ const TEXT_BASE_SERVICES = {
         ),
         title: "GPT-6 Luna Decisions",
         description:
-            "Typed answers with probabilities and confidence instead of " +
-            "generated text, billed on input tokens only; post state and " +
-            "questions to /alpha/decisions, or send the same JSON in the " +
-            "last user message on /v1/chat/completions. Text state only",
+            "Get probabilities and confidence scores for decisions about text.",
         // Same request shape as Jev: decisions route and chat adapter only.
         supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
         inputModalities: ["text"],
@@ -2027,6 +2301,37 @@ const TEXT_BASE_SERVICES = {
         tools: false,
         reasoning: false,
         contextLength: 1050000,
+        isSpecialized: true,
+    },
+    "google/gemini-decision-1": {
+        supportedParameters: CHAT_PARAMETERS.typesafeJev,
+        aliases: [],
+        provider: "google",
+        publisher: "Google",
+        category: "decision",
+        addedDate: new Date("2026-11-12").getTime(),
+        priceMultiplier: 1, // Billed at cost, no margin.
+        paidOnly: true,
+        cost: {
+            // All input modalities share the same rate.
+            promptAudioTokens: perMillion(0.1),
+            promptImageTokens: perMillion(0.1),
+            promptVideoTokens: perMillion(0.1),
+            promptTextTokens: perMillion(0.1),
+            completionTextTokens: perMillion(0),
+        },
+        title: "Gemini Decision 1",
+        description:
+            "Score yes/no, multiple-choice, and ordered-scale questions about text, images, audio, and video in one request.",
+        // Same request shape as Jev: decisions route and chat adapter only.
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
+        inputModalities: ["text", "image", "audio", "video"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: false,
+        contextLength: 262144,
+        maxReferenceImages: 3600,
+        maxReferenceVideos: 10,
         isSpecialized: true,
     },
     "pollinations/midijourney": {
@@ -2046,7 +2351,8 @@ const TEXT_BASE_SERVICES = {
             completionTextTokens: perMillion(4.5),
         },
         title: "MIDIjourney",
-        description: "Turns your musical ideas into playable MIDI notation",
+        description:
+            "Turn a description of a tune into MIDI notation you can play.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -2100,7 +2406,7 @@ const TEXT_BASE_SERVICES = {
         ),
         title: "MIDIjourney Large",
         description:
-            "Composes richer, more detailed MIDI arrangements; costs more per piece",
+            "Compose a detailed MIDI arrangement from a description of the music you have in mind.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -2124,7 +2430,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Claude Haiku 4.5",
         description:
-            "Quick, capable chat and coding at low cost; great for high-volume tasks",
+            "Get quick answers to everyday questions or help with a short coding task.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
@@ -2183,7 +2489,7 @@ const TEXT_BASE_SERVICES = {
         ),
         title: "Claude Haiku 5.5",
         description:
-            "Low-cost adaptive reasoning for everyday tasks, tool use and high-volume sub-agents",
+            "Handle frequent writing and coding requests with reasoning that adapts to the task.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Preserve the image limit across the AWS fallback.
@@ -2210,7 +2516,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Claude Sonnet 4.6",
         description:
-            "Excellent writing, coding and analysis with balanced speed and cost",
+            "Balance response speed and cost for writing, coding, and analysis.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
@@ -2235,7 +2541,8 @@ const TEXT_BASE_SERVICES = {
             completionTextTokens: perMillion(10),
         },
         title: "Claude Sonnet 5",
-        description: "Reasoning model with fast responses for general use",
+        description:
+            "Get a quick second pass on a draft or a reasoned answer to a question.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
@@ -2261,7 +2568,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Claude Sonnet 5.5",
         description:
-            "Fast adaptive reasoning for everyday coding, agentic tool use and long-context work",
+            "Work through everyday coding tasks quickly, with tools and adaptive reasoning for longer jobs.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Preserve the image limit across the AWS fallback.
@@ -2288,7 +2595,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Claude Opus 4.6",
         description:
-            "Deep analysis and careful reasoning for tough problems; slower and premium-priced",
+            "Analyze difficult questions in depth when reasoning quality matters more than speed or cost.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
@@ -2314,7 +2621,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Claude Opus 4.7",
         description:
-            "Heavyweight reasoning and analysis; built for hard problems, not quick replies",
+            "Investigate a difficult question or a hard-to-trace bug with sustained reasoning.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
@@ -2345,7 +2652,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Claude Opus 5",
         description:
-            "Frontier reasoning for coding, complex analysis and long-running agents",
+            "Use frontier reasoning for complex analysis, coding, and projects that take many tool calls.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
@@ -2371,7 +2678,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Claude Opus 5.5",
         description:
-            "Flagship reasoning for demanding coding, multi-step codebase changes and long-horizon agentic work",
+            "Use flagship reasoning to plan and implement demanding changes across a codebase.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Preserve the image limit across the AWS fallback.
@@ -2399,7 +2706,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Claude Opus 5.5 Fast",
         description:
-            "Higher output speed for interactive coding and agentic work, at premium pricing",
+            "Get faster output for interactive coding and tool use at a premium rate.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Same image limit as Opus 5.5.
@@ -2425,7 +2732,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Claude Fable 5",
         description:
-            "Frontier intelligence for complex reasoning and long agentic work; the priciest tier",
+            "Use premium frontier reasoning for difficult problems that require a long sequence of tool calls.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
@@ -2452,7 +2759,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Claude Fable 5.2",
         description:
-            "Frontier intelligence for demanding reasoning and long-horizon agentic work",
+            "Apply frontier reasoning to demanding projects that require extended planning and tool use.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20,
@@ -2479,7 +2786,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Claude Fable 5.1",
         description:
-            "Frontier intelligence for complex reasoning, coding and long-running agents",
+            "Use frontier reasoning for complex coding tasks that need sustained analysis and repeated tool calls.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Preserve the image limit across both providers.
@@ -2522,7 +2829,8 @@ const TEXT_BASE_SERVICES = {
             completionTextTokens: perMillion(2.5),
         },
         title: "Sonar Fast Search",
-        description: "Quick web searches with cited answers; keeps it brief",
+        description:
+            "Search the web and get a brief answer with sources you can follow.",
         // Sonar is text-only — verified empirically (image input is ignored,
         // no image tokens billed). Do not add "image".
         inputModalities: ["text"],
@@ -2562,7 +2870,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Kimi K2.6",
         description:
-            "Agentic all-rounder that shows its chain-of-thought reasoning",
+            "Investigate multi-step questions about text and images with tools.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 30,
@@ -2592,7 +2900,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Kimi K2.7 Code",
         description:
-            "Agentic coding: plans, reasons and edits code step by step",
+            "Plan a code change, reason through it, and edit the code step by step.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 30,
@@ -2623,7 +2931,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Kimi K3.1 Pro",
         description:
-            "Reasoning and agentic coding model with 1M context and image input",
+            "Use screenshots to guide code changes across a large project.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -2649,7 +2957,8 @@ const TEXT_BASE_SERVICES = {
             completionTextTokens: perMillion(15),
         },
         title: "Kimi K3",
-        description: "Frontier multimodal model for coding and agents",
+        description:
+            "Work through programming tasks with images, code, and external tools.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
@@ -2678,7 +2987,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Kimi K3.1 Pro Highspeed",
         description:
-            "High-speed reasoning and agentic coding model with 1M context and image input",
+            "Get fast feedback while working across a large codebase with screenshots and tools.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -2708,12 +3017,37 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Laguna S 2.1",
         description:
-            "Long-context reasoning for coding agents and complex software tasks",
+            "Trace a software change across long stretches of code and plan its implementation.",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
         contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "tencent/hy4-flash": {
+        supportedParameters: CHAT_PARAMETERS.vercelHy4Flash,
+        aliases: [],
+        provider: "vercel",
+        publisher: "Tencent",
+        category: "text",
+        addedDate: new Date("2026-11-16").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // Vercel AI Gateway list rates (2026-11-16). Vercel adds no gateway fee.
+            promptTextTokens: perMillion(0.035),
+            promptCachedTokens: perMillion(0.0015),
+            completionTextTokens: perMillion(0.1405),
+        },
+        title: "Hy4 Flash",
+        description:
+            "Work on large coding tasks at low cost with images alongside the code.",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1024000,
         isSpecialized: false,
     },
     "tencent/hy4-preview": {
@@ -2735,7 +3069,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Hy4 Preview",
         description:
-            "Mixture-of-experts model for coding agents and complex tool-use workflows",
+            "Plan software changes and call tools at each stage of a coding task.",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -2766,7 +3100,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Hy3",
         description:
-            "Mixture-of-experts reasoning for agentic workflows and production tool-use",
+            "Carry out a written task step by step using external tools.",
         inputModalities: ["text"],
         outputModalities: ["text"],
         // Forced tool_choice:"required" isn't reliably supported on any of
@@ -2796,7 +3130,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Ling 3.1 Flash",
         description:
-            "Hybrid reasoning mixture-of-experts for agentic workflows with tool use and long context",
+            "Analyze long passages and use tools to act on what you find.",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -2822,7 +3156,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Nex N2.5 Mini",
         description:
-            "Compact agentic coding model with image input and switchable reasoning",
+            "Ask coding questions from text or screenshots and switch deeper reasoning on or off.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: false,
@@ -2848,7 +3182,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Nex N2.5 Pro",
         description:
-            "Agentic coding model with a visual feedback loop for multi-file changes, tool use and image input",
+            "Check changes across multiple files using screenshots and tools as feedback.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -2878,7 +3212,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Ling 3.0 Flash VL",
         description:
-            "Low-cost multimodal MoE with image and video understanding and tool calling",
+            "Inspect images or video clips and call tools based on what they show.",
         inputModalities: ["text", "image", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
@@ -2904,8 +3238,35 @@ const TEXT_BASE_SERVICES = {
         },
         title: "LongCat 2.0",
         description:
-            "Long-context reasoning for coding agents and repository-scale tasks",
+            "Plan changes across many files by reasoning over a large codebase.",
         inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "thinkingmachines/inkling-2-mini": {
+        supportedParameters: CHAT_PARAMETERS.inkling2Mini,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Thinking Machines",
+        category: "text",
+        addedDate: new Date("2026-11-20").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // OpenRouter PrimeIntellect FP4 standard rates plus 5.5% credit fee.
+        // Use the upstream cost receipt for the actual serving route.
+        cost: {
+            promptTextTokens: perMillion(0.075) * 1.055,
+            promptCachedTokens: perMillion(0.015) * 1.055,
+            completionTextTokens: perMillion(0.3) * 1.055,
+        },
+        billing: { resolveTotalCost: reportedTextCost(1.055) },
+        title: "Inkling 2 Mini",
+        description:
+            "A compact 26.4B-parameter multimodal mixture-of-experts model with 3.4B active parameters and repeated transformer layers. Supports code generation, tool calling, RAG and image-grounded dialogue across a one-million-token context.",
+        inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
@@ -2931,7 +3292,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Inkling Small",
         description:
-            "Multimodal reasoning for agents, coding, image analysis and audio understanding",
+            "Combine text, images, and recordings to investigate a question or a coding task.",
         inputModalities: ["text", "image", "audio"],
         outputModalities: ["text"],
         tools: true,
@@ -2958,7 +3319,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Inkling",
         description:
-            "Flagship million-token multimodal reasoning for agents, coding, visual analysis and audio understanding",
+            "Draw on long collections of text, images, and audio to answer questions or write code.",
         inputModalities: ["text", "image", "audio"],
         outputModalities: ["text"],
         tools: true,
@@ -2967,7 +3328,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "nvidia/nemotron-3-ultra": {
-        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoningNoPrediction,
         aliases: [
             "nemotron-3-ultra",
             "nvidia-nemotron-3-ultra",
@@ -2990,7 +3351,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Nemotron 3 Ultra",
         description:
-            "Frontier reasoning for coding agents, deep research and complex workflows",
+            "Investigate research questions and programming problems across several rounds of tool use.",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -2999,7 +3360,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "nvidia/nemotron-3.5-lightning": {
-        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoningNoPrediction,
         aliases: ["nemotron-3.5-lightning"],
         provider: "azure",
         publisher: "NVIDIA",
@@ -3018,7 +3379,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Nemotron 3.5 Lightning",
         description:
-            "Fast open-weight reasoning for high-volume agent tasks, tool use and structured output",
+            "Process a high volume of text requests quickly with tool calls and structured results.",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -3043,7 +3404,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Nemotron 3.5 Super VL",
         description:
-            "Open-weight reasoning over text and image inputs, with tool calling and structured output",
+            "Extract structured results from images and text for other software to use.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -3066,34 +3427,11 @@ const TEXT_BASE_SERVICES = {
             completionTextTokens: perMillion(0.28) * 1.055,
         },
         title: "MiMo V2.5",
-        description: "Efficient multimodal reasoning for agents and coding",
+        description:
+            "Write code and plan tool calls using written instructions and images.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
-        tools: true,
-        reasoning: true,
-        contextLength: 1048576,
-        isSpecialized: false,
-    },
-    "xiaomi/mimo-v2.5-pro": {
-        supportedParameters: CHAT_PARAMETERS.mimo,
-        aliases: ["mimo-pro", "mimo-2.5-pro", "mimo-v2.5-pro"],
-        provider: "openrouter",
-        publisher: "Xiaomi",
-        category: "text",
-        addedDate: new Date("2026-07-18").getTime(),
-        paidOnly: true,
-        priceMultiplier: 1,
-        cost: {
-            // OpenRouter Xiaomi FP8 endpoint, verified 2026-08-22.
-            promptTextTokens: perMillion(0.435) * 1.055,
-            promptCachedTokens: perMillion(0.0036) * 1.055,
-            completionTextTokens: perMillion(0.87) * 1.055,
-        },
-        title: "MiMo V2.5 Pro",
-        description: "Long-context reasoning and coding with higher capability",
-        inputModalities: ["text"],
-        outputModalities: ["text"],
         tools: true,
         reasoning: true,
         contextLength: 1048576,
@@ -3118,7 +3456,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "MiMo V2.6 Flash",
         description:
-            "Fast, efficient multimodal reasoning for agents and coding",
+            "Get quick feedback on images and code during an interactive programming session.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
@@ -3146,7 +3484,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "MiMo V2.6 Pro",
         description:
-            "Flagship long-context reasoning and coding at higher capability",
+            "Review a large codebase alongside screenshots to reason through possible changes.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -3210,7 +3548,7 @@ const TEXT_BASE_SERVICES = {
         billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 4.5),
         title: "Gemini 3.1 Pro Preview",
         description:
-            "Top-tier multimodal reasoning over huge documents, images and video",
+            "Investigate detailed questions using long documents, images, and videos together.",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.
@@ -3240,7 +3578,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Nova Micro",
         description:
-            "Instant, ultra-cheap replies for simple tasks; not a deep thinker",
+            "Extract a name or summarize a short message with a quick text response.",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -3266,7 +3604,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Nova 2 Lite",
         description:
-            "Budget-friendly reasoning with room for very long documents",
+            "Analyze long documents at low cost or ask questions about images and videos.",
         inputModalities: ["text", "image", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
@@ -3293,7 +3631,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "GLM-5.2",
         description:
-            "Massive open-weight model for long-context reasoning and agent workflows",
+            "Analyze long documents and call tools with a model whose weights are publicly available.",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -3318,7 +3656,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "GLM-5.3",
         description:
-            "Mandatory-reasoning model for complex software engineering and long-horizon agent workflows",
+            "Work through extended software engineering tasks with a model that reasons before every answer.",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -3327,7 +3665,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "z-ai/glm-5.3-flash": {
-        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoningNoPrediction,
         aliases: [],
         provider: "fireworks",
         publisher: "Z.ai",
@@ -3344,7 +3682,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "GLM-5.3-Flash",
         description:
-            "Low-cost million-token multimodal reasoning for agents and visual analysis",
+            "Analyze images alongside long documents at low cost, with room for a million tokens.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
@@ -3372,7 +3710,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "GLM-5.3-FlashX",
         description:
-            "Faster million-token multimodal reasoning for agents and visual analysis",
+            "Get quick answers to questions that combine images with long documents or code.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
@@ -3401,7 +3739,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Llama 3.3 70B",
         description:
-            "Open-source workhorse for general chat and summarization; text only",
+            "Discuss a written passage, follow up with questions, or ask for a summary.",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -3428,7 +3766,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Llama 4 Maverick",
         description:
-            "Open-source chat that understands images, with a huge context window",
+            "Ask about images alongside a long document or conversation.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -3459,7 +3797,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Llama 4 Scout",
         description:
-            "Text and image understanding with a 128K context window; no tool calling or structured output",
+            "Analyze text and images within 128K tokens, without tool calling or structured output.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10, // Pollinations cap.
@@ -3491,7 +3829,8 @@ const TEXT_BASE_SERVICES = {
             completionTextTokens: perMillion(1.08) * 1.055,
         },
         title: "MiniMax M2.7",
-        description: "Multilingual coding and agent tasks at a friendly price",
+        description:
+            "Debug and refactor code across programming languages, with low-cost tool use for multistep tasks.",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -3518,7 +3857,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "MiniMax M3",
         description:
-            "Strong coding and agent skills with a very long memory for big projects",
+            "Work on a coding project with room for many files and follow-up instructions at once.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 30, // Fireworks vision hard limit.
@@ -3544,7 +3883,33 @@ const TEXT_BASE_SERVICES = {
         },
         title: "MiniMax M3.1 Flash",
         description:
-            "Multimodal agent model with a 1M-token context for tool use and coding",
+            "Combine images, tools, and large amounts of code in a single programming task.",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "meta/muse-ember": {
+        supportedParameters: CHAT_PARAMETERS.museSpark,
+        aliases: [],
+        provider: "vercel",
+        publisher: "Meta",
+        category: "text",
+        addedDate: new Date("2026-11-09").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // The Vercel quote has no separate charge for fallback cache writes.
+        cost: {
+            promptTextTokens: perMillion(0.1),
+            promptCachedTokens: perMillion(0.004),
+            promptCacheWriteTokens: 0,
+            completionTextTokens: perMillion(0.5),
+        },
+        title: "Muse Ember",
+        description:
+            "Multimodal agent model with a 1M-token context, implicit prompt caching and tool use",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -3571,7 +3936,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Muse Glimmer 30B",
         description:
-            "Compact multimodal agent for reasoning, tool use and failure recovery",
+            "Interpret text or images and try another approach when a tool call fails.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 30,
@@ -3601,7 +3966,8 @@ const TEXT_BASE_SERVICES = {
             completionTextTokens: perMillion(4.25),
         },
         title: "Muse Spark 1.2",
-        description: "Agentic coding and tool-use model with 1M context",
+        description:
+            "Plan code changes and use tools across projects with many files.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -3626,7 +3992,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Muse Spark 1.3",
         description:
-            "Long-horizon multimodal reasoning for coding, agents and tool-driven workflows",
+            "Carry out a multi-step coding task using text, images, and tools.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -3652,7 +4018,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Muse Spark Open",
         description:
-            "Agentic coding and tool use with reasoning controls and 1M context",
+            "Adjust the reasoning effort while working on large coding projects with tools.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -3679,7 +4045,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Muse Wonder 1.0",
         description:
-            "Long-running agent and coding model with 1M context and image input",
+            "Guide a long-running coding task with images alongside a large codebase.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -3705,7 +4071,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Mistral Large 4",
         description:
-            "Frontier multimodal model for reasoning, coding and agentic workloads with a 512K context",
+            "Combine images, code, and long documents to reason through a task and call tools.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -3729,7 +4095,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Mistral Large 3",
         description:
-            "Polished multilingual writing and reasoning with image understanding",
+            "Write and revise text in multiple languages or ask questions about images.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -3754,7 +4120,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Qwen3 Coder Next",
         description:
-            "Advanced code generation for demanding projects; code-focused, text only",
+            "Generate code from written instructions for demanding programming projects.",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -3821,7 +4187,7 @@ const TEXT_BASE_SERVICES = {
         ),
         title: "Qwen3.7 Plus",
         description:
-            "Multimodal agent intelligence for coding and productivity",
+            "Write code or use tools for everyday tasks involving text and images.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
@@ -3847,7 +4213,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Qwen3.7 Max",
         description:
-            "Flagship long-context model for coding and autonomous agents",
+            "Plan and carry out programming tasks across long stretches of code and documentation.",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -3873,7 +4239,7 @@ const TEXT_BASE_SERVICES = {
         cacheVersion: "2026-11-12-a95b-checkpoint",
         title: "Qwen3.8 2.4T A95B",
         description:
-            "Open-weight sparse frontier reasoning for long-horizon coding and autonomous agents. For image input, use Qwen3.8 Max.",
+            "Use open-weight reasoning for extended coding tasks with tools. For image input, use Qwen3.8 Max.",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -3902,7 +4268,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Qwen3.8 27B",
         description:
-            "Dense multimodal reasoning for coding, tool use, and structured generation",
+            "Analyze images or video alongside code and get structured replies for software to use.",
         inputModalities: ["text", "image", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
@@ -3910,6 +4276,35 @@ const TEXT_BASE_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 262144,
+        isSpecialized: false,
+    },
+    "qwen/qwen4-max": {
+        supportedParameters: CHAT_PARAMETERS.alibabaQwenReasoning,
+        aliases: [],
+        provider: "alibaba",
+        publisher: "Qwen",
+        category: "text",
+        addedDate: new Date("2026-11-16").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // Alibaba Model Studio pay-as-you-go list rates, 0-1M tier (CNY 10 in,
+            // CNY 0.5 cached, CNY 12.5 5-minute write, CNY 30 out per 1M tokens),
+            // converted at the rate Vercel's listing implies (6.67 CNY per USD).
+            promptImageTokens: perMillion(1.5),
+            promptTextTokens: perMillion(1.5),
+            promptCachedTokens: perMillion(0.075),
+            promptCacheWriteTokens: perMillion(1.875),
+            completionTextTokens: perMillion(4.5),
+        },
+        title: "Qwen 4 Max",
+        description:
+            "Work across large codebases and use screenshots to reason about programming tasks.",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1000000,
         isSpecialized: false,
     },
     "qwen/qwen3.8-max": {
@@ -3954,7 +4349,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Qwen3.8 Max",
         description:
-            "Million-token multimodal reasoning for coding and autonomous agents",
+            "Plan and carry out code changes using images or video alongside many files.",
         inputModalities: ["text", "image", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
@@ -4008,7 +4403,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Qwen3.8 Max 0902",
         description:
-            "Pinned September checkpoint with stronger coding and long-horizon agent performance",
+            "Use a fixed September release for coding tasks that involve tools, images, or video.",
         inputModalities: ["text", "image", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
@@ -4037,7 +4432,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Qwen3.8 Flash",
         description:
-            "Low-cost multimodal reasoning with 1M context and 131K output for agents and coding",
+            "Generate unusually long code or text replies from large inputs, with up to 131,000 tokens of output.",
         inputModalities: ["text", "image", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
@@ -4177,7 +4572,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Qwen3.7 Flash",
         description:
-            "Ultra-low-cost multimodal reasoning for agents and visual tasks",
+            "Analyze images and video quickly and at low cost, with support for tool calls.",
         inputModalities: ["text", "image", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
@@ -4209,7 +4604,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Qwen3 VL 30B A3B Instruct",
         description:
-            "Describes images, reads text in them, and analyzes visual content",
+            "Read text in an image, describe a scene, or ask about individual details.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -4243,7 +4638,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Qwen3 VL 235B A22B Thinking",
         description:
-            "Careful visual reasoning for charts, documents and complex scenes",
+            "Interpret a chart, a scanned document, or a scene with many visual details.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -4270,7 +4665,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Step 5 Preview",
         description:
-            "Agentic coding and long-document analysis with tool calling and image input",
+            "Analyze long documents or write code with help from screenshots and tools.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -4302,7 +4697,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Step 3.7 Flash",
         description:
-            "Speedy reasoning over text and images for everyday questions",
+            "Get quick answers to everyday questions about text and images.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -4328,7 +4723,8 @@ const TEXT_BASE_SERVICES = {
             completionTextTokens: perMillion(0.3) * 1.055,
         },
         title: "Step 3.5 Flash",
-        description: "Fast, low-cost text reasoning for everyday tasks",
+        description:
+            "Work through everyday text questions quickly and at low cost.",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -4351,7 +4747,8 @@ const TEXT_BASE_SERVICES = {
             completionTextTokens: perMillion(0),
         },
         title: "Qwen3Guard 8B",
-        description: "Flags unsafe content for moderation",
+        description:
+            "Check text for unsafe content to help moderate conversations.",
         inputModalities: ["text"],
         outputModalities: ["text"],
         contextLength: 32768,

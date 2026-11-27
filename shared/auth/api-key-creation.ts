@@ -253,7 +253,7 @@ export async function createApiKeyForUser({
     const isPublishable = type === "publishable";
     if (isPublishable && pollenBudget != null && pollenBudget !== 0) {
         throw new HTTPException(400, {
-            message: "Publishable keys must have a pollen budget of 0",
+            message: "Publishable keys must have a budget of 0",
         });
     }
     const effectivePollenBudget = isPublishable ? 0 : pollenBudget;

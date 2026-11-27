@@ -1,6 +1,18 @@
 import { formatPollen } from "@pollinations/ui/wallet";
 
 const TINY_POLLEN_THRESHOLD = 0.0001;
+
+/** "$" after a leading comparison or minus: "<0.0001" → "<$0.0001", "-0.02" → "-$0.02". */
+export function withDollar(amount: string): string {
+    return amount.replace(/^([<>]?-?)/, "$1$$");
+}
+
+/** The same amount read aloud: "less than $0.0001", "-$0.02". */
+export function spokenDollars(amount: string): string {
+    return withDollar(amount)
+        .replace(/^</, "less than ")
+        .replace(/^>/, "more than ");
+}
 const MIN_PRECISE_POLLEN_LABEL = "0.000000000001";
 
 function trimFixed(value: number, decimals: number): string {

@@ -1,5 +1,4 @@
-// The community monitor, ported from the retired one
-// (operations/community-monitor/CYCLE.md): code applies Thomas's rules,
+// The community monitor applies Thomas's rules,
 // picks this cycle's incidents and keeps their quiet periods, and draws each
 // one's card; one AI call only sorts them into posts and writes a sentence
 // under each. No Cloudflare imports, so it is testable with plain Node.

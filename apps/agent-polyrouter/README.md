@@ -3,7 +3,7 @@
 A code-only model router for [Pollinations](https://pollinations.ai). For each
 request it picks **the cheapest healthy model that fits the request's
 complexity**, then forwards the conversation unchanged - callers see only the
-chosen model's answer. Routing and model calls use the caller's Pollen.
+chosen model's answer. Routing and model calls draw from the caller’s balance.
 
 Built from the
 [pollinations-router-agent](https://github.com/pollinations/pollinations-router-agent)
@@ -43,7 +43,7 @@ deterministic), then lets live platform data make the final pick.
 Every response carries a trace on headers:
 
 ```
-x-polyrouter-model: inception/mercury-2.5-preview
+x-polyrouter-model: openai/gpt-5.4-nano
 x-polyrouter-tier: fast
 x-polyrouter-why: score 0; simple prompt; picked cheapest eligible of 87; skipped 21 unhealthy (5xx), ...
 ```

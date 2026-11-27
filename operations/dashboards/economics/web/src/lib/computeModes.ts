@@ -5,6 +5,7 @@ import {
     resolveProvider,
 } from "./providerRegistry";
 import { canonicalVendor } from "./tb";
+import { isToolUsage } from "./toolUsage";
 
 export type ComputeMode =
     | "managed-inference"
@@ -172,6 +173,7 @@ export function directDeliveryData(data: Data): Data {
         ),
         opPollen: (data.opPollen ?? []).filter(
             (row) =>
+                !isToolUsage(row) &&
                 canonicalVendor(row.vendor) !== "community" &&
                 resolveProvider(row.vendor)?.category !== "infrastructure",
         ),
@@ -193,6 +195,7 @@ export function managedInferenceData(
         ),
         opPollen: (data.opPollen ?? []).filter(
             (row) =>
+                !isToolUsage(row) &&
                 canonicalVendor(row.vendor) !== "community" &&
                 pollenComputeMode(index, row.month, row.vendor, row.model) ===
                     "managed-inference",

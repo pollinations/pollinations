@@ -1,3 +1,4 @@
+import { nameD1Caller, withD1Calls } from "@shared/d1-calls.ts";
 import { handleError } from "@shared/error.ts";
 import { Hono } from "hono";
 import type { Env } from "@/env.ts";
@@ -11,7 +12,6 @@ import type {
 } from "@/middleware/generation-deduplication.ts";
 import { logger } from "@/middleware/logger.ts";
 import { generationExecutorRoutes } from "@/routes/generation-executor.ts";
-import { nameD1Caller, withD1Calls } from "../d1-calls.ts";
 
 async function drainResponse(response: Response): Promise<void> {
     const reader = response.body?.getReader();
@@ -119,6 +119,7 @@ export async function executeGeneration(
         body: job.request.body?.slice().buffer,
     });
     const response = await withD1Calls(
+        "gen",
         env,
         executionCtx,
         // The method only: the job URL can carry the prompt.
@@ -203,6 +204,8 @@ export const generationHandoffRoutes = new Hono<Env>().post(
                 c.req.header(GENERATION_HANDOFF_HEADER) ?? "",
             )) as GenerationJobHead | null;
         if (!job) return c.notFound();
+        // Correlate handoff errors with the verified job's billing event.
+        c.set("requestId", job.requestId);
         const body = new Uint8Array(await c.req.arrayBuffer());
         const { result, settlement } = await executeGeneration(
             {

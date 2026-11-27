@@ -277,13 +277,13 @@ describe("locked Quest pollen display", () => {
             );
             if (restricted) {
                 expect(html).toContain("Available");
-                expect(html).toContain("Quest pollen locked");
+                expect(html).toContain("Quest balance locked");
                 expect(html).not.toContain("37.54");
                 expect(html).toContain("$2.00");
                 expect(html).not.toContain("/ 7d");
             } else {
                 expect(html).toContain("Total");
-                expect(html).not.toContain("Quest pollen locked");
+                expect(html).not.toContain("Quest balance locked");
                 expect(html).toContain("$37.54");
                 expect(html).toContain("+$12.50");
                 expect(html).toContain("/ 7d");
@@ -311,7 +311,7 @@ describe("locked Quest pollen display", () => {
         expect(html).toContain("Verification needed");
         expect(html).toContain("make your first purchase");
         expect(html).toContain('href="/pollen#buy-pollen"');
-        expect(html).toContain('href="mailto:hello@pollinations.ai"');
+        expect(html).toContain('href="mailto:billing@pollinations.ai"');
         expect(html).not.toContain('role="alert"');
         expect(html).not.toContain("request a review");
 
@@ -325,7 +325,7 @@ describe("locked Quest pollen display", () => {
         expect(sidebar).toContain("$35.54");
         expect(sidebar).not.toContain("Frozen");
         expect(sidebar).toContain(
-            'aria-label="Quest pollen needs verification"',
+            'aria-label="Quest balance needs verification"',
         );
     });
 
@@ -349,7 +349,7 @@ describe("locked Quest pollen display", () => {
             }),
         );
         expect(sidebar).not.toContain(
-            'aria-label="Quest pollen needs verification"',
+            'aria-label="Quest balance needs verification"',
         );
     });
 });
@@ -389,9 +389,7 @@ describe("dollar amounts", () => {
             }),
         );
         expect(html).toContain(`>$${pack.amountUsd}<`);
-        expect(html).toContain(
-            `aria-label="Select $${pack.amountUsd} of Pollen for $`,
-        );
+        expect(html).toContain(`aria-label="Select $${pack.amountUsd} for $`);
     });
 });
 

@@ -387,14 +387,44 @@ export function stopReason(
     finishReason: string | null | undefined,
     hasToolUse: boolean,
 ): string {
-    if (hasToolUse) return "tool_use";
     if (finishReason === "length") return "max_tokens";
+    if (hasToolUse) return "tool_use";
     if (finishReason === "content_filter") return "refusal";
     return "end_turn";
 }
 
 export function toolUseInput(argumentsJson: string): unknown {
     return JSON.parse(argumentsJson || "{}");
+}
+
+/**
+ * Anthropic tool_use blocks from provider tool calls.
+ *
+ * Unlike native Anthropic partial-input objects, this adapter omits invalid or
+ * empty arguments cut off by the token limit. The caller sees max_tokens and
+ * can retry with a higher budget; we do not retry or invent executable input.
+ * Complete content is preserved. Malformed arguments at other stops still fail.
+ */
+export function toolUseBlocks(
+    calls: { id: string; name: string; arguments: string }[],
+    truncated: boolean,
+): CreateMessageResponse["content"] {
+    return calls.flatMap((call) => {
+        if (truncated && !call.arguments) return [];
+        try {
+            return [
+                {
+                    type: "tool_use" as const,
+                    id: call.id,
+                    name: call.name,
+                    input: toolUseInput(call.arguments),
+                },
+            ];
+        } catch (error) {
+            if (truncated) return [];
+            throw error;
+        }
+    });
 }
 
 /** Translate a Chat Completions response into a Messages response. */
@@ -430,15 +460,16 @@ export function chatToMessagesResponse(
             signature: GEMINI_SIGNATURE_PREFIX + thoughtSignature,
         });
     }
-    for (const call of message?.tool_calls ?? []) {
-        content.push({
-            type: "tool_use",
+    const toolUses = toolUseBlocks(
+        (message?.tool_calls ?? []).map((call) => ({
             id: call.id,
             name: call.function.name,
-            input: toolUseInput(call.function.arguments),
-        });
-    }
-    const hasToolUse = Boolean(message?.tool_calls?.length);
+            arguments: call.function.arguments,
+        })),
+        choice?.finish_reason === "length",
+    );
+    content.push(...toolUses);
+    const hasToolUse = toolUses.length > 0;
     return {
         id: completion.id,
         type: "message",

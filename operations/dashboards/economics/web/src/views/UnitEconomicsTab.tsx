@@ -24,13 +24,11 @@ import {
 } from "../components/EconomicsGauge";
 import { useAmountDisplay } from "../components/ReconcilePro";
 import { PairedStatCards } from "../components/StatCards";
-import {
-    type ComputeMode,
-    providerMonthComputeMode,
-} from "../lib/computeModes";
+import { API_COST_LABELS, type ApiCost, sumApiCosts } from "../lib/apiCosts";
 import { hasVisibleAmount } from "../lib/format";
 import { signedToneOrSoft } from "../lib/tone";
 import {
+    providerEconomicsReport,
     type UnitEconomicsGrain,
     type UnitEconomicsRow,
     type UnitEconomicsView,
@@ -174,11 +172,32 @@ const DEFAULT_SORT = {
     direction: "asc",
 } as const;
 
-function computeModeLabel(mode: ComputeMode): string {
-    if (mode === "managed-inference") return "Inference";
-    if (mode === "gpu-capacity") return "GPU";
-    if (mode === "mixed") return "Both";
-    return "Unclassified";
+function ProviderServices({ costs }: { costs: ApiCost[] }) {
+    const { fmtUsd } = useAmountDisplay();
+    const groups = Object.entries(API_COST_LABELS).flatMap(([kind, label]) => {
+        const matching = costs.filter((row) => row.kind === kind);
+        return matching.length ? [{ label, ...sumApiCosts(matching) }] : [];
+    });
+    if (!groups.length) return "Unclassified";
+    return (
+        <details className="text-theme-text-soft">
+            <summary className="cursor-pointer">
+                {groups.map(({ label }) => label).join(" · ")}
+            </summary>
+            <dl className="mt-2 space-y-1 whitespace-nowrap text-xs">
+                {groups.map(({ label, totalUsd, cashUsd, creditUsd }) => (
+                    <div key={label}>
+                        <dt className="font-semibold">
+                            {label} {fmtUsd(totalUsd)}
+                        </dt>
+                        <dd>
+                            {fmtUsd(cashUsd)} cash · {fmtUsd(creditUsd)} credits
+                        </dd>
+                    </div>
+                ))}
+            </dl>
+        </details>
+    );
 }
 
 function UnitEconomicsTable({
@@ -193,20 +212,24 @@ function UnitEconomicsTable({
     const { pro, fmtUsd, fmtSignedUsd, fmtMarginPct, fmtUnsignedPct } =
         useAmountDisplay();
     const grain: UnitEconomicsGrain = view === "vendors" ? "provider" : "model";
+    const providerReport = useMemo(
+        () =>
+            view === "vendors" ? providerEconomicsReport(data, month) : null,
+        [data, month, view],
+    );
     const {
-        modeIndex,
         vendorMonths,
         summary,
         currentResultUsd,
         fullCostResultUsd,
         provisional,
     } = useMemo(
-        () => unitEconomicsReport(data, month, view),
-        [data, month, view],
+        () => providerReport ?? unitEconomicsReport(data, month, view),
+        [data, month, view, providerReport],
     );
     const rows = useMemo(
-        () => unitEconomicsRows(vendorMonths, grain),
-        [vendorMonths, grain],
+        () => providerReport?.rows ?? unitEconomicsRows(vendorMonths, grain),
+        [vendorMonths, grain, providerReport],
     );
     const sortColumns = useMemo<readonly SortColumn<UnitEconomicsRow>[]>(
         () =>
@@ -215,17 +238,22 @@ function UnitEconomicsTable({
                     ? {
                           key: "model",
                           value: (row: UnitEconomicsRow) =>
-                              computeModeLabel(
-                                  providerMonthComputeMode(
-                                      modeIndex,
-                                      row.month,
-                                      row.vendor,
+                              [
+                                  ...new Set(
+                                      providerReport?.costsByVendor
+                                          .get(row.vendor)
+                                          ?.map(
+                                              ({ kind }) =>
+                                                  API_COST_LABELS[kind],
+                                          ),
                                   ),
-                              ),
+                              ]
+                                  .sort()
+                                  .join(" ") || "Unclassified",
                       }
                     : column,
             ),
-        [modeIndex, view],
+        [view, providerReport],
     );
     const { headerProps, rows: sortedRows } = useSortableRows(
         rows.filter(
@@ -378,7 +406,7 @@ function UnitEconomicsTable({
                                 rowSpan={2}
                                 {...headerProps("model")}
                             >
-                                {view === "vendors" ? "Mode" : "Model"}
+                                {view === "vendors" ? "Services" : "Model"}
                             </TableHeaderCell>
                             <TableHeaderCell colSpan={3} align="center">
                                 Pollen
@@ -508,26 +536,27 @@ function UnitEconomicsTable({
                                                 : undefined
                                         }
                                     >
-                                        <span className="mr-2">
-                                            {view === "vendors"
-                                                ? computeModeLabel(
-                                                      providerMonthComputeMode(
-                                                          modeIndex,
-                                                          row.month,
-                                                          row.vendor,
-                                                      ),
-                                                  )
-                                                : [
-                                                        "missing breakdown",
-                                                        "needs mapping",
-                                                        "provider only",
-                                                    ].includes(
-                                                        row.allocationStatus ??
-                                                            "",
-                                                    )
-                                                  ? "Other provider costs"
-                                                  : row.model}
-                                        </span>
+                                        {providerReport ? (
+                                            <ProviderServices
+                                                costs={
+                                                    providerReport.costsByVendor.get(
+                                                        row.vendor,
+                                                    ) ?? []
+                                                }
+                                            />
+                                        ) : (
+                                            <span className="mr-2">
+                                                {[
+                                                    "missing breakdown",
+                                                    "needs mapping",
+                                                    "provider only",
+                                                ].includes(
+                                                    row.allocationStatus ?? "",
+                                                )
+                                                    ? "Other provider costs"
+                                                    : row.model}
+                                            </span>
+                                        )}
                                     </TableCell>
                                     <TableCell align="right" numeric>
                                         {fmtUsd(row.retainedPaidUsd)}

@@ -4,6 +4,7 @@ import { buildRunway } from "./runway";
 
 it("explains mismatched observation dates without improving the cash forecast", () => {
     const now = new Date("2026-10-16T12:00:00Z");
+    const review = { baselineMonth: "2026-09", asOf: "2026-10-16" };
     const opening: OpTransactionRow = {
         entry_id: "opening",
         kind: "opening_balance",
@@ -56,11 +57,22 @@ it("explains mismatched observation dates without improving the cash forecast", 
         credit: 310,
         resource_sku: "current-balance-expiry-assumed",
     };
-    const newer = buildRunway(bank, now, [usage, balance]);
-    const older = buildRunway(bank, now, [
-        usage,
-        { ...balance, start: "2026-10-14 00:00:00" },
-    ]);
+    const newer = buildRunway(
+        bank,
+        now,
+        [usage, balance],
+        undefined,
+        [],
+        review,
+    );
+    const older = buildRunway(
+        bank,
+        now,
+        [usage, { ...balance, start: "2026-10-14 00:00:00" }],
+        undefined,
+        [],
+        review,
+    );
     expect(newer.forecastTimingNote).toContain("2026-09-30");
     expect(newer.forecastTimingNote).toContain("2026-10-16");
     expect(newer.forecastTimingNote).toContain("not reconciled");
@@ -68,4 +80,32 @@ it("explains mismatched observation dates without improving the cash forecast", 
     expect(newer.rows.map((row) => row.values["2026-10:forecast"])).toEqual(
         older.rows.map((row) => row.values["2026-10:forecast"]),
     );
+    for (const [end, octoberCash] of [
+        ["2026-10-20", -110],
+        ["2026-10-31", 0],
+    ] as const) {
+        const expiring = buildRunway(
+            bank,
+            now,
+            [
+                {
+                    ...usage,
+                    evidence:
+                        "https://drive.google.com/file/d/monthly-usage/view",
+                },
+                { ...balance, end },
+            ],
+            undefined,
+            [],
+            review,
+        );
+        const line = expiring.rows.find((row) => row.vendor === "fireworks");
+        expect(line?.values["2026-10:forecast"]).toBeCloseTo(octoberCash);
+        expect(line?.values["2026-11:forecast"]).toBeCloseTo(-310);
+        expect(line?.creditValues?.["2026-11:forecast"] ?? 0).toBe(0);
+        expect(expiring.flags.join(" ")).toContain(
+            "opening balance for 2026-10-01 is missing",
+        );
+        expect(expiring.currentCashUsd).toBe(9999);
+    }
 });

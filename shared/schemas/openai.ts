@@ -344,7 +344,7 @@ export const CreateChatCompletionRequestSchema = z
         messages: z.array(ChatCompletionRequestMessageSchema),
         model: z.string().min(1).optional().default(DEFAULT_TEXT_MODEL).meta({
             description:
-                "AI model for text generation. See /v1/models for full list. List up to four comma-separated models of the same category to try in order, including repeated models. This replaces configured fallbacks; the model that serves determines the price and whether paid Pollen is required. Single-model requests keep their configured fallbacks and original pricing rules.",
+                "AI model for text generation. See /v1/models for full list. List up to four comma-separated models of the same category to try in order, including repeated models. This replaces configured fallbacks; the model that serves determines the price and whether the paid balance is required. Single-model requests keep their configured fallbacks and original pricing rules.",
         }),
         system: z
             .string()
@@ -378,7 +378,17 @@ export const CreateChatCompletionRequestSchema = z
         max_completion_tokens: ChatOutputTokenLimitSchema,
         presence_penalty: z.number().min(-2).max(2).nullable().optional(),
         response_format: ResponseFormatUnionSchema.optional(),
-        seed: z.number().int().min(-1).max(2147483647).nullable().optional(),
+        seed: z
+            .number()
+            .int()
+            .min(-1)
+            .max(2147483647)
+            .nullable()
+            .optional()
+            .meta({
+                description:
+                    "Seed for reproducible text generation on supported models. -1 requests a fresh random seed and generation for each request.",
+            }),
         stop: z
             .union([z.string().nullable(), z.array(z.string()).min(1).max(4)])
             .optional(),
@@ -810,22 +820,29 @@ export const OpenAIModelSchema = z
         description: z.string().optional(),
         input_modalities: z.array(z.string()).optional(),
         output_modalities: z.array(z.string()).optional(),
+        required_safety: ModelInfoSchema.shape.required_safety.describe(
+            "Safety checks the gateway always applies to text input for this model; callers cannot disable them.",
+        ),
         supported_endpoints: z.array(z.string()).optional(),
         agent: z.boolean().optional().describe(AGENT_FIELD_DESCRIPTIONS.agent),
         base_model: z
             .string()
             .optional()
             .describe(AGENT_FIELD_DESCRIPTIONS.base_model),
+        mcp_servers: ModelInfoSchema.shape.mcp_servers,
         paid_only: z
             .boolean()
             .describe(
-                "True when the model needs paid Pollen; Quest Pollen can't pay for it. Same field as on `/models`.",
+                "True when the model needs the paid balance; the Quest balance can't pay for it. Same field as on `/models`.",
             ),
         pricing: z
             .record(z.string(), z.string())
             .optional()
             .describe(AGENT_FIELD_DESCRIPTIONS.pricing),
         pricing_units: ModelInfoSchema.shape.pricing_units,
+        pricing_adjustments: ModelInfoSchema.shape.pricing_adjustments.describe(
+            "Per-use surcharges on top of the token price, such as Gemini search queries or cache storage; omitted for models with no surcharges.",
+        ),
         top_provider: z.object({
             max_completion_tokens: ModelInfoSchema.shape.max_completion_tokens
                 .unwrap()
@@ -843,6 +860,9 @@ export const OpenAIModelSchema = z
             ),
         tools: z.boolean().optional(),
         reasoning: z.boolean().optional(),
+        alpha: ModelInfoSchema.shape.alpha.describe(
+            "True for experimental models with potential instability; omitted for stable models.",
+        ),
         supports_streaming: z
             .boolean()
             .optional()
@@ -976,7 +996,7 @@ const imageResolutionField = z
     });
 const imageOutputFormatField = z.enum(["png", "webp", "gif"]).optional().meta({
     description:
-        "GPT Image 2.6 Flare output format (default png). GIF requires frame_count and frame_duration_ms.",
+        "GIF generation is supported by GPT Image 2.6 Flare and Sunburst and requires frame_count and frame_duration_ms. WebP is supported by Flare.",
 });
 const imageFrameCountField = z.number().int().min(2).max(16).optional();
 const imageFrameDurationField = z.number().int().min(20).max(2000).optional();
@@ -1006,7 +1026,7 @@ export const CreateImageRequestSchema = z
             .optional()
             .meta({
                 description:
-                    "Optional aspect ratio for GPT Image 2.6 Flare; used when size is omitted/default.",
+                    "Optional aspect ratio when size is omitted or defaulted. Supported by GPT Image 2.6 Flare and by Sunburst for GIF generation.",
             }),
         quality: imageQualityField,
         output_format: imageOutputFormatField,
@@ -1044,7 +1064,7 @@ const ImageDataSchema = z.object({
     b64_json: z.string().optional(),
     media_type: z.string().optional().meta({
         description:
-            "MIME type, included for URL responses and non-raster output",
+            "MIME type of the returned media, included in both URL and base64 responses.",
     }),
     revised_prompt: z.string().optional(),
 });

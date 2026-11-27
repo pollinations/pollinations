@@ -86,7 +86,8 @@ ${POLLI_UI_TOKENS_CSS}
 /* Restore the standard UI button's typography and spacing after Scalar's reset. */
 .ph-docs-account polli-connect > div > button {
     width: 100%; max-width: 320px;
-    padding: 0 16px; border: 1px solid var(--polli-color-text-soft);
+    height: auto; min-height: 40px; white-space: normal;
+    padding: 6px 16px; border: 1px solid var(--polli-color-text-soft);
     font-size: 14px; line-height: 1.5; font-weight: 500;
 }
 .ph-docs-account polli-connect :is(img, [role="img"]) {

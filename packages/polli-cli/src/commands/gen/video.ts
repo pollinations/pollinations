@@ -30,7 +30,10 @@ export function createVideoCommand() {
             "Reference frame URL(s) for start/end frames (repeatable)",
         )
         .option("--output <path>", "Save to file", "video.mp4")
-        .option("--estimate", "Show the estimated Pollen cost; don't generate")
+        .option(
+            "--estimate",
+            "Show the estimated cost in dollars; don't generate",
+        )
         .action(async (prompt, opts) => {
             const isHuman = getOutputMode() === "human";
 

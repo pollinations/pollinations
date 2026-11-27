@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Talk with gpt-realtime-2.1</title>
+<style>
+  body { font: 16px/1.5 system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; }
+  #log p { margin: 0.25rem 0; }
+</style>
+</head>
+<body>
+<h1>Talk with gpt-realtime-2.1</h1>
+<p>Sign in with Pollinations, press Talk, and speak. Server voice detection ends your turn, and talking over a reply stops it. Usage is billed when the session closes.</p>
+<p><small>Serve this file over http(s), for example <code>npx serve</code>: sign-in redirects back to the page, and browsers allow the microphone only there.</small></p>
+<button type="button" id="signin">Sign in</button>
+<button type="button" id="talk" disabled>Talk</button>
+<button type="button" id="stop" disabled>Stop</button>
+<p id="status"></p>
+<div id="log"></div>
+<!-- The model's voice plays through an <audio> element, which browsers use as the echo-cancellation reference. -->
+<!-- biome-ignore lint/a11y/useMediaCaption: the transcript is shown as text above the player -->
+<audio id="speaker" autoplay></audio>
+
+<!-- The browser bundle of the SDK. To try this page against the source in this
+     repository, run `npm run build` in packages/sdk first. -->
+<script src="../dist/index.browser.min.js"></script>
+<script>
+const P = window.Pollinations;
+const MODEL = "openai/gpt-realtime-2.1";
+const $ = (id) => document.getElementById(id);
+const back = new URLSearchParams(location.hash.slice(1));
+const apiKey = back.get("api_key");
+if (back.get("error")) $("status").textContent = `Sign-in failed: ${back.get("error")}`;
+history.replaceState(null, "", location.pathname + location.search);
+$("talk").disabled = !apiKey;
+$("signin").onclick = () => {
+  location.href = P.authorizeUrl({ redirectUrl: location.href.split("#")[0], models: [MODEL], budget: 1, expiry: 1 });
+};
+
+let session, mic, ctx;
+
+function line() {
+  const p = document.createElement("p");
+  $("log").append(p);
+  return p;
+}
+
+$("talk").onclick = async () => {
+  $("talk").disabled = true;
+  $("status").textContent = "Connecting…";
+  ctx = new AudioContext({ sampleRate: 24000 }); // PCM16 at 24 kHz both ways
+  const out = ctx.createMediaStreamDestination();
+  $("speaker").srcObject = out.stream;
+  const playing = new Set();
+  let playAt = 0;
+  let reply, source;
+  try {
+    mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+    source = ctx.createMediaStreamSource(mic); // before connecting, so a failure here costs nothing
+    session = await P.connectRealtime({
+      apiKey,
+      model: MODEL,
+      session: {
+        type: "realtime",
+        instructions: "You are a friendly voice assistant. Keep replies short.",
+      },
+    });
+  } catch (err) {
+    return stop(err.message);
+  }
+  const current = session;
+  $("status").textContent = "Listening. Say something.";
+  $("stop").disabled = false;
+
+  current.on("response.created", () => { reply = line(); });
+  current.on("response.output_audio_transcript.delta", (e) => { reply.textContent += e.delta; });
+  // The reply arrives faster than it plays; when the user starts talking, drop what is queued.
+  current.on("input_audio_buffer.speech_started", () => {
+    for (const node of playing) node.stop();
+    playing.clear();
+    playAt = 0;
+  });
+  current.on("response.output_audio.delta", (e) => {
+    const samples = P.base64ToPcm16(e.delta);
+    const buffer = ctx.createBuffer(1, samples.length, 24000);
+    buffer.copyToChannel(samples, 0);
+    const node = ctx.createBufferSource();
+    node.buffer = buffer;
+    node.connect(out);
+    node.onended = () => playing.delete(node);
+    playing.add(node);
+    playAt = Math.max(playAt, ctx.currentTime);
+    node.start(playAt);
+    playAt += buffer.duration;
+  });
+  current.on("error", (e) => { $("status").textContent = e.error?.message ?? "Error"; });
+  current.closed.then(({ reason }) => { if (session === current) stop(reason || "Session closed."); });
+
+  // shortcut: ScriptProcessorNode is deprecated but needs no worklet file; use an AudioWorklet in an app.
+  const tap = ctx.createScriptProcessor(4096, 1, 1);
+  tap.onaudioprocess = (e) => {
+    if (session !== current) return; // stopped; stop() also ends the mic
+    current.send({ type: "input_audio_buffer.append", audio: P.pcm16ToBase64(e.inputBuffer.getChannelData(0)) });
+  };
+  source.connect(tap);
+  tap.connect(ctx.destination); // outputs silence; keeps the processor running
+};
+
+function stop(message) {
+  session?.close();
+  for (const track of mic?.getTracks() ?? []) track.stop();
+  ctx?.close();
+  session = mic = ctx = undefined;
+  $("status").textContent = message;
+  $("stop").disabled = true;
+  $("talk").disabled = !apiKey;
+}
+$("stop").onclick = () => stop("Stopped.");
+</script>
+</body>
+</html>

@@ -15,7 +15,7 @@ Generate text using OpenAI-compatible Chat Completions and stateless Responses A
 
 Set `model` to a comma-separated list of up to four model IDs or aliases, such as `"model-a,model-b,model-a"`. Models are tried in the supplied order on retryable upstream failures; repeated entries request separate attempts. All entries must have the same model category and support the requested endpoint. Listed alternatives excluded by the API key's permissions are skipped. List requests are cached per API key or signed-in session user because their alternatives depend on that caller’s permissions and budget.
 
-An explicit list replaces each model's configured fallback routes. The model that serves determines the price and whether Paid Pollen is required; balance checks, key budgets and rate limits apply before its attempt. A single-model request keeps its configured fallback routes and original pricing rules. Find model IDs, categories and supported endpoints in [`GET /v1/models`](https://gen.pollinations.ai/v1/models).
+An explicit list replaces each model's configured fallback routes. The model that serves determines the price and whether the paid balance is required; balance checks, key budgets and rate limits apply before its attempt. A single-model request keeps its configured fallback routes and original pricing rules. Find model IDs, categories and supported endpoints in [`GET /v1/models`](https://gen.pollinations.ai/v1/models).
 
 ### Responses API
 
@@ -41,6 +41,8 @@ Community text models and endpoint agents declare one upstream API and one exact
 On models served through Chat Completions, Responses supports text and image input, function tools and their outputs, `tool_choice`, `text.format` (JSON object and JSON schema), `reasoning.effort`, and streaming. Provider reasoning returns as `reasoning` items with `reasoning_text` content. `max_tool_calls`, `truncation: "auto"`, `top_logprobs`, logprob includes and hosted tools return HTTP 400. Streams end with `data: [DONE]` after the terminal event; a provider error or missing usage ends the stream with `error` and `response.failed`.
 
 Managed prompt agents run configured MCP tools on the server. Send previous response items back to continue a conversation; completed tools are not run again.
+
+Managed agents accept `input_text`, `input_image` and `input_file` user content. An `input_file` part needs a public `https` `file_url`. The file is not fetched: the agent receives the complete URL as text, so it can pass the link to its tools. A `filename` is added as a hint of the file's type, reduced to letters, digits, dots, dashes and underscores. Do not send a URL that carries a secret, such as a signed query string. An `input_image` reaches the model as an image only; send the same link as an `input_file` as well when the agent's tools need it.
 
 Managed prompt agents accept `reasoning.effort` (Responses) and `reasoning_effort` (Chat Completions). Reasoning summaries are not supported: a non-null `reasoning.summary` returns HTTP 400.
 

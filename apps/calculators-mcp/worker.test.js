@@ -61,6 +61,7 @@ for (const modern of [false, true])
         assert.deepEqual(
             (await client.listTools()).tools.map((x) => x.name).sort(),
             [
+                "add_business_days",
                 "currency_convert",
                 "currency_list",
                 "currency_rates",
@@ -73,6 +74,7 @@ for (const modern of [false, true])
                 "diff_text",
                 "create_qr",
                 "hash_text",
+                "date_weekday",
                 "inspect_unicode",
                 "next_cron_runs",
                 "rank_palette",
@@ -353,6 +355,76 @@ test("QR generates real SVG and rejects empty or oversized UTF-8 payloads", asyn
     }
 });
 
+test("weekdays and business days come from the calendar, not the clock", async (t) => {
+    const client = await clientFor(t);
+    for (const [date, weekday, dayOfWeek] of [
+        ["2026-09-19", "Saturday", 6],
+        ["2026-09-17", "Thursday", 4],
+        ["1900-01-01", "Monday", 1],
+        ["2000-01-01", "Saturday", 6],
+        ["2024-02-29", "Thursday", 4],
+        ["2026-12-25", "Friday", 5],
+    ])
+        assert.deepEqual(
+            await call(client, "date_weekday", { date }),
+            { weekday, iso: date, dayOfWeek },
+            date,
+        );
+    assert.deepEqual(
+        (
+            await call(client, "add_business_days", {
+                from: "2026-09-17",
+                days: 5,
+            })
+        ).dates,
+        ["2026-09-18", "2026-09-21", "2026-09-22", "2026-09-23", "2026-09-24"],
+    );
+    assert.deepEqual(
+        (
+            await call(client, "add_business_days", {
+                from: "2026-09-18",
+                days: 2,
+            })
+        ).dates,
+        ["2026-09-21", "2026-09-22"],
+    );
+    assert.deepEqual(
+        (
+            await call(client, "add_business_days", {
+                from: "2026-12-31",
+                days: 1,
+            })
+        ).dates,
+        ["2027-01-01"],
+    );
+    for (const date of ["2026-02-29", "2026-13-01", "2026-04-31"])
+        assert.equal(
+            (
+                await client.callTool({
+                    name: "date_weekday",
+                    arguments: { date },
+                })
+            ).isError,
+            true,
+            date,
+        );
+    for (const args of [
+        { from: "2026-02-29", days: 1 },
+        { from: "2026-9-17", days: 1 },
+        { from: "2026-09-17", days: 0 },
+        { from: "9999-12-31", days: 1 },
+    ])
+        assert.equal(
+            (
+                await client.callTool({
+                    name: "add_business_days",
+                    arguments: args,
+                })
+            ).isError,
+            true,
+            JSON.stringify(args),
+        );
+});
 test("time duration preserves nanoseconds", async (t) => {
     const result = await call(await clientFor(t), "time_math", {
         start: "2026-01-01T00:00:00.000000001Z",

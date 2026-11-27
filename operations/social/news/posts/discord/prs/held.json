@@ -48,8 +48,21 @@
       "required": [
         "deploy-legacy-caches.yml:deploy (image)"
       ]
+    },
+    "20437": {
+      "merge_sha": "98558f9395398f6f8bc323ee7636685815370dcd",
+      "merged_at": "2026-11-27T17:36:09Z",
+      "required": [
+        "deploy-applications.yml:Deploy operations/dashboards/economics",
+        "deploy-applications.yml:Deploy operations/dashboards/kpi",
+        "deploy-applications.yml:Deploy operations/dashboards/model-monitor",
+        "deploy-applications.yml:Deploy operations/dashboards/observability",
+        "deploy-cloudflare-production.yml:deploy-enter",
+        "deploy-cloudflare-production.yml:deploy-gen",
+        "deploy-cloudflare-production.yml:deploy-media"
+      ]
     }
   },
-  "production": "579abe5196165b4a90e40314bf97f9fe42da5f64",
+  "production": "a212b84d178247aaaf3a093c7c280fec1841bddd",
   "master": "dbe66c06f3609fe8c7193aae8b2e78989f5e7ce4"
 }

@@ -52,7 +52,6 @@ export async function scanSensitiveMessages(input: {
     guardrail: BedrockGuardrailEnv;
     secret: string;
     account: string;
-    keyId?: string;
     model?: string;
     requestUrl: string;
     cacheWrite: (write: Promise<void>) => void;
@@ -80,7 +79,6 @@ export async function scanSensitiveMessages(input: {
                 JSON.stringify([
                     CACHE_NAME,
                     input.account,
-                    input.keyId,
                     input.model,
                     guardrail.region,
                     guardrail.guardrailIdentifier,

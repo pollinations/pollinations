@@ -148,7 +148,6 @@ async function checkSafetyTexts(
                 guardrail: guardrailEnv,
                 secret: c.env.BETTER_AUTH_SECRET,
                 account: userId,
-                keyId: c.var.auth?.apiKey?.id,
                 model: c.var.model?.resolved,
                 requestUrl: c.req.url,
                 cacheWrite: (write) => c.executionCtx.waitUntil(write),

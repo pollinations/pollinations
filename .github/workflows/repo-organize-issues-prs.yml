@@ -8,6 +8,10 @@ on:
   # Reclassify Area, Source and type. Fill empty Priority and Model work fields. Defaults to every open PR.
   workflow_dispatch:
     inputs:
+      check_weaver_owner:
+        description: "Check the existing Pollinations caller identity without organizing items"
+        type: boolean
+        default: false
       pr_numbers:
         description: "Space-separated PR numbers (empty with no issue numbers = all open PRs)"
         required: false
@@ -24,9 +28,35 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  check-weaver-owner:
+    if: github.event_name == 'workflow_dispatch' && inputs.check_weaver_owner
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Check the Pollinations caller identity
+        env:
+          POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 30 \
+            -H "Authorization: Bearer $POLLINATIONS_TOKEN" \
+            https://gen.pollinations.ai/account/profile |
+            jq -er '
+              if (has("githubUsername") | not) then error("Unexpected profile response") else
+                (if .email == null then "Account email unavailable to this key"
+                 elif .email == "polli@pollinations.ai" then "Account email matches polli@pollinations.ai"
+                 elif .email == "polly@pollinations.ai" then "Account email matches polly@pollinations.ai"
+                 else "Account email differs from both proposed owners" end),
+                (if .githubUsername == null then "No GitHub account linked"
+                 elif (.githubUsername | ascii_downcase) == "pollinations-ai" then "Linked GitHub user matches pollinations-ai"
+                 else "Linked GitHub user differs from pollinations-ai" end)
+              end' | tee -a "$GITHUB_STEP_SUMMARY"
+
   organize:
     # Reclassify after a workflow label changes the source.
-    if: github.event.action != 'labeled' || github.event.label.name == 'APP-SUBMISSION' || github.event.label.name == 'QUEST'
+    if: >-
+      !(github.event_name == 'workflow_dispatch' && inputs.check_weaver_owner) &&
+      (github.event.action != 'labeled' || github.event.label.name == 'APP-SUBMISSION' || github.event.label.name == 'QUEST')
     runs-on: ubuntu-latest
     permissions:
       issues: write

@@ -23,7 +23,7 @@ const IntQueryParamSchema = z.preprocess((value) => {
 }, z.number().int().optional());
 
 export const GenerateTextRequestQueryParamsSchema = z.object({
-    model: z.string().optional().default(DEFAULT_TEXT_MODEL).meta({
+    model: z.string().min(1).optional().default(DEFAULT_TEXT_MODEL).meta({
         description:
             "Text model to use. See /v1/models or /text/models for the full list of available models.",
     }),

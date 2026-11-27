@@ -2160,6 +2160,17 @@ export const accountRoutes = new Hono<Env>()
                         "BYOP earnings can only be enabled on publishable app keys",
                 });
             }
+            // Same rule as creation: app keys can't spend, so a budget on one
+            // would only lock away Pollen reserved from a budgeted caller key.
+            if (
+                key.prefix === "pk" &&
+                pollenBudget != null &&
+                pollenBudget !== 0
+            ) {
+                throw new HTTPException(400, {
+                    message: "Publishable keys must have a pollen budget of 0",
+                });
+            }
             for (const uri of redirectUris ?? []) {
                 validateRedirectUriFormat(uri);
             }

@@ -189,11 +189,12 @@ describe("CreateChatCompletionRequestSchema", () => {
         });
     });
 
-    it("keeps empty user content for the provider adapter", () => {
-        const result = CreateChatCompletionRequestSchema.parse({
-            messages: [{ role: "user", content: "" }],
-        });
-        expect(result.messages).toEqual([{ role: "user", content: "" }]);
+    it("rejects empty user content for the provider adapter", () => {
+        expect(() =>
+            CreateChatCompletionRequestSchema.parse({
+                messages: [{ role: "user", content: "" }],
+            }),
+        ).toThrow();
     });
 
     it("accepts a string system prompt and tolerates explicit null", () => {

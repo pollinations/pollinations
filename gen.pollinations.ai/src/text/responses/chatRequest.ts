@@ -455,7 +455,8 @@ export function chatToResponsesRequest(
         request.safety_identifier = options.user;
     }
     if (typeof options.service_tier === "string") {
-        request.service_tier = options.service_tier;
+        request.service_tier =
+            options.service_tier as CreateResponseRequest["service_tier"];
     }
     if (typeof options.prompt_cache_key === "string") {
         request.prompt_cache_key = options.prompt_cache_key;

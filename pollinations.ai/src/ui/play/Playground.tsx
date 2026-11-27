@@ -839,7 +839,7 @@ function ModelPicker({
                                     ) : selected ? (
                                         <MediaModelOption
                                             model={selected}
-                                            iconClassName="size-6 text-(--polli-color-fill)"
+                                            iconClassName="size-6 text-(--polli-color-text-display)"
                                             showPricing={false}
                                         />
                                     ) : models.length ? (

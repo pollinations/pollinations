@@ -769,7 +769,7 @@ function ModelPicker({
                                 setQuestOnly(false);
                             }
                         }}
-                        className="w-[var(--reference-width)] overscroll-y-contain rounded-card! bg-[linear-gradient(var(--polli-color-bg-subtle),var(--polli-color-bg-subtle)),linear-gradient(var(--polli-color-surface-block),var(--polli-color-surface-block))]! p-2"
+                        className="w-[var(--reference-width)] overscroll-y-contain rounded-card! bg-[linear-gradient(var(--polli-color-bg-subtle),var(--polli-color-bg-subtle)),linear-gradient(var(--polli-color-surface-opaque),var(--polli-color-surface-opaque))]! p-2"
                         trigger={(open) => (
                             <Button
                                 type="button"
@@ -839,7 +839,7 @@ function ModelPicker({
                                     ) : selected ? (
                                         <MediaModelOption
                                             model={selected}
-                                            iconClassName="size-6"
+                                            iconClassName="size-6 text-(--polli-color-fill)"
                                             showPricing={false}
                                         />
                                     ) : models.length ? (
@@ -860,7 +860,7 @@ function ModelPicker({
                                 {filters.length > 1 && (
                                     <fieldset
                                         aria-label={`Filter ${category} models`}
-                                        className="sticky top-0 z-10 mb-1 flex flex-wrap gap-1 border-b border-theme-text-muted/20 bg-[linear-gradient(var(--polli-color-bg-subtle),var(--polli-color-bg-subtle)),linear-gradient(var(--polli-color-surface-block),var(--polli-color-surface-block))] pt-1 pr-px pb-2 pl-1"
+                                        className="sticky top-0 z-10 mb-1 flex flex-wrap gap-1 border-b border-theme-text-muted/20 bg-[linear-gradient(var(--polli-color-bg-subtle),var(--polli-color-bg-subtle)),linear-gradient(var(--polli-color-surface-opaque),var(--polli-color-surface-opaque))] pt-1 pr-px pb-2 pl-1"
                                     >
                                         {filters.map((value) => (
                                             <TabButton
@@ -2743,613 +2743,627 @@ export function Playground({ drafts }: { drafts: ConnectDrafts }) {
                                 another model to continue.
                             </Alert>
                         )}
-                    <section aria-label="Model" className="@container min-w-0">
-                        <ModelPicker
-                            key={activeCategory}
-                            models={pickerModels}
-                            stats={stats ?? []}
-                            costByModel={costByModel}
-                            selectedModel={selectedModel}
-                            isLoading={isLoading || !isHydrated}
-                            onSelectModel={selectModel}
-                            details={
-                                currentModel && (
-                                    <>
-                                        {/* The facts in one wrapping row: what a
-                                            run costs and takes, then what the
-                                            model can do. Its description follows. */}
-                                        <div className="flex flex-wrap items-start gap-2">
-                                            <Text
-                                                as="div"
-                                                size="sm"
-                                                data-theme="neutral"
-                                                className="shrink-0 rounded-lg bg-theme-bg-active px-2.5 py-0.5 leading-5! text-theme-text-strong"
-                                            >
-                                                <RunStatBadge
-                                                    cost={cost}
-                                                    time={time}
-                                                    walletKind={
-                                                        currentModel.paidOnly
-                                                            ? "paid"
-                                                            : "tier"
-                                                    }
-                                                    costDetail={
-                                                        cost === "Free"
-                                                            ? "This model is free to use."
-                                                            : "Median cost of a successful paid request over the last 7 days. Your settings can change the price."
-                                                    }
-                                                    pricingHref={`${ENTER_URL}/models?${new URLSearchParams({ category: currentModel.category, q: currentModel.id })}`}
-                                                />
-                                            </Text>
-                                            {modelAbilities(currentModel).some(
-                                                (ability) =>
-                                                    !ability.shownByInputs,
-                                            ) && (
-                                                <ul
-                                                    aria-label="Abilities"
-                                                    className="contents list-none"
-                                                >
-                                                    {modelAbilities(
-                                                        currentModel,
-                                                    )
-                                                        .filter(
-                                                            (ability) =>
-                                                                !ability.shownByInputs,
-                                                        )
-                                                        .map(
-                                                            ({
-                                                                label,
-                                                                Icon,
-                                                            }) => (
-                                                                <li
-                                                                    key={label}
-                                                                    className="flex"
-                                                                >
-                                                                    <Chip
-                                                                        size="md"
-                                                                        data-theme="neutral"
-                                                                        className="gap-1"
-                                                                    >
-                                                                        <Icon
-                                                                            aria-hidden="true"
-                                                                            className="size-3.5 text-intent-info-text"
-                                                                        />
-                                                                        {label}
-                                                                    </Chip>
-                                                                </li>
-                                                            ),
-                                                        )}
-                                                </ul>
-                                            )}
-                                        </div>
-                                        {currentModel.description && (
-                                            <Text
-                                                as="div"
-                                                size="sm"
-                                                data-theme="neutral"
-                                                className="w-fit max-w-full rounded-lg bg-theme-bg-active px-2.5 py-0.5 leading-5! text-theme-text-strong"
-                                            >
-                                                {currentModel.description}
-                                            </Text>
-                                        )}
-                                    </>
-                                )
-                            }
-                        />
-                    </section>
-                    <section
-                        aria-label="Generation inputs"
-                        className="play-inputs @container/play-inputs flex min-w-0 flex-col gap-5"
-                    >
-                        <fieldset
-                            aria-label="Model input"
-                            className="flex min-w-0 flex-col gap-3"
+                    {/* The setup in one card: the model, then what goes into
+                        it. The action stays outside, below. */}
+                    <div className="flex min-w-0 flex-col gap-4 rounded-card bg-surface-opaque p-4">
+                        <section
+                            aria-label="Model"
+                            className="@container min-w-0"
                         >
-                            {isAgent && currentModel && (
-                                <AgentChat
-                                    agentTitle={currentModel.title}
-                                    turns={agentChat.turns}
-                                    draft={prompt}
-                                    onDraftChange={(value) =>
-                                        setParam("prompt", value)
-                                    }
-                                    onSubmit={() => {
-                                        if (!blockedReason && !agentChat.busy)
-                                            run();
-                                    }}
-                                    onRetry={agentChat.retry}
-                                    renderMedia={(url) => (
-                                        <AgentMedia url={url} />
-                                    )}
-                                    attachments={
-                                        agentKinds.length > 0 && (
-                                            <div className="flex flex-col gap-2">
-                                                <div className="flex flex-wrap items-start gap-3">
-                                                    {agentKinds.includes(
-                                                        "image",
-                                                    ) && (
-                                                        <FileUpload
-                                                            value={
-                                                                referenceImages
-                                                            }
-                                                            onChange={
-                                                                setReferenceImages
-                                                            }
-                                                            maxFiles={
-                                                                maxReferenceImages
-                                                            }
-                                                            disabled={
-                                                                agentChat.busy
-                                                            }
-                                                            {...uploadProps(
-                                                                ["image"],
-                                                                `Use up to ${maxReferenceImages} images.`,
+                            <ModelPicker
+                                key={activeCategory}
+                                models={pickerModels}
+                                stats={stats ?? []}
+                                costByModel={costByModel}
+                                selectedModel={selectedModel}
+                                isLoading={isLoading || !isHydrated}
+                                onSelectModel={selectModel}
+                                details={
+                                    currentModel && (
+                                        <>
+                                            {/* What the model does, then what
+                                            else it can do. Its price sits by
+                                            the button that spends it. */}
+                                            {currentModel.description && (
+                                                <Text
+                                                    as="div"
+                                                    size="sm"
+                                                    data-theme="neutral"
+                                                    className="w-fit max-w-full rounded-lg bg-theme-bg-active px-2.5 py-0.5 leading-5! text-theme-text-strong"
+                                                >
+                                                    {currentModel.description}
+                                                </Text>
+                                            )}
+                                            <div className="flex flex-wrap items-start gap-2 empty:hidden">
+                                                {modelAbilities(
+                                                    currentModel,
+                                                ).some(
+                                                    (ability) =>
+                                                        !ability.shownByInputs,
+                                                ) && (
+                                                    <ul
+                                                        aria-label="Abilities"
+                                                        className="contents list-none"
+                                                    >
+                                                        {modelAbilities(
+                                                            currentModel,
+                                                        )
+                                                            .filter(
+                                                                (ability) =>
+                                                                    !ability.shownByInputs,
+                                                            )
+                                                            .map(
+                                                                ({
+                                                                    label,
+                                                                    Icon,
+                                                                }) => (
+                                                                    <li
+                                                                        key={
+                                                                            label
+                                                                        }
+                                                                        className="flex"
+                                                                    >
+                                                                        <Chip
+                                                                            size="md"
+                                                                            data-theme="neutral"
+                                                                            className="gap-1"
+                                                                        >
+                                                                            <Icon
+                                                                                aria-hidden="true"
+                                                                                className="size-3.5 text-intent-info-text"
+                                                                            />
+                                                                            {
+                                                                                label
+                                                                            }
+                                                                        </Chip>
+                                                                    </li>
+                                                                ),
                                                             )}
-                                                            label="Image"
-                                                        />
-                                                    )}
-                                                    {queuedTiles}
-                                                    {mediaTiles}
-                                                </div>
-                                                {(referenceImages.length > 0 ||
-                                                    referenceQueue.length >
-                                                        0) && (
-                                                    <UploadPrivacyNote />
+                                                    </ul>
                                                 )}
                                             </div>
-                                        )
-                                    }
-                                />
-                            )}
-                            {showPromptInput && (
-                                <FieldStack
-                                    label={isDecide ? "Context" : undefined}
-                                    orientation={
-                                        isDecide ? "inline" : "stacked"
-                                    }
-                                    className={
-                                        isDecide
-                                            ? "[&>div:first-child]:self-start [&>div:first-child]:pt-2"
-                                            : undefined
-                                    }
-                                >
-                                    <Textarea
-                                        aria-label={
-                                            isAudioTranscription
-                                                ? "Instructions (optional)"
-                                                : promptLabel
+                                        </>
+                                    )
+                                }
+                            />
+                        </section>
+                        <section
+                            aria-label="Generation inputs"
+                            className="play-inputs @container/play-inputs flex min-w-0 flex-col gap-5"
+                        >
+                            <fieldset
+                                aria-label="Model input"
+                                className="flex min-w-0 flex-col gap-3"
+                            >
+                                {isAgent && currentModel && (
+                                    <AgentChat
+                                        agentTitle={currentModel.title}
+                                        turns={agentChat.turns}
+                                        draft={prompt}
+                                        onDraftChange={(value) =>
+                                            setParam("prompt", value)
                                         }
-                                        value={prompt}
-                                        rows={
-                                            isAudioTranscription || isDecide
-                                                ? 3
-                                                : 7
-                                        }
-                                        onChange={(event) =>
-                                            setParam(
-                                                "prompt",
-                                                event.target.value,
+                                        onSubmit={() => {
+                                            if (
+                                                !blockedReason &&
+                                                !agentChat.busy
+                                            )
+                                                run();
+                                        }}
+                                        onRetry={agentChat.retry}
+                                        renderMedia={(url) => (
+                                            <AgentMedia url={url} />
+                                        )}
+                                        attachments={
+                                            agentKinds.length > 0 && (
+                                                <div className="flex flex-col gap-2">
+                                                    <div className="flex flex-wrap items-start gap-3">
+                                                        {agentKinds.includes(
+                                                            "image",
+                                                        ) && (
+                                                            <FileUpload
+                                                                value={
+                                                                    referenceImages
+                                                                }
+                                                                onChange={
+                                                                    setReferenceImages
+                                                                }
+                                                                maxFiles={
+                                                                    maxReferenceImages
+                                                                }
+                                                                disabled={
+                                                                    agentChat.busy
+                                                                }
+                                                                {...uploadProps(
+                                                                    ["image"],
+                                                                    `Use up to ${maxReferenceImages} images.`,
+                                                                )}
+                                                                label="Image"
+                                                            />
+                                                        )}
+                                                        {queuedTiles}
+                                                        {mediaTiles}
+                                                    </div>
+                                                    {(referenceImages.length >
+                                                        0 ||
+                                                        referenceQueue.length >
+                                                            0) && (
+                                                        <UploadPrivacyNote />
+                                                    )}
+                                                </div>
                                             )
                                         }
-                                        onKeyDown={(event) => {
-                                            if (
-                                                event.key === "Enter" &&
-                                                (event.metaKey || event.ctrlKey)
-                                            ) {
-                                                event.preventDefault();
-                                                run();
-                                            }
-                                        }}
-                                        placeholder={promptPlaceholder(
-                                            task,
-                                            editsImage,
-                                            format,
-                                        )}
-                                        className={cn(
-                                            !isDecide && "lg:min-h-56",
-                                            isAudioTranscription || isDecide
-                                                ? "min-h-24"
-                                                : "min-h-44",
-                                        )}
                                     />
-                                </FieldStack>
-                            )}
-                            {decision && (
-                                <>
-                                    <OptionField
-                                        label="Question type"
-                                        options={decision.types}
-                                        value={decision.type}
-                                        onChange={(type) =>
-                                            setParam("questionType", type)
-                                        }
-                                        format={questionTypeLabel}
-                                    />
+                                )}
+                                {showPromptInput && (
                                     <FieldStack
-                                        label="Question"
-                                        orientation="inline"
+                                        label={isDecide ? "Context" : undefined}
+                                        orientation={
+                                            isDecide ? "inline" : "stacked"
+                                        }
+                                        className={
+                                            isDecide
+                                                ? "[&>div:first-child]:self-start [&>div:first-child]:pt-2"
+                                                : undefined
+                                        }
                                     >
-                                        <Input
-                                            aria-label="Question"
-                                            value={decision.instructions}
+                                        <Textarea
+                                            aria-label={
+                                                isAudioTranscription
+                                                    ? "Instructions (optional)"
+                                                    : promptLabel
+                                            }
+                                            value={prompt}
+                                            rows={
+                                                isAudioTranscription || isDecide
+                                                    ? 3
+                                                    : 7
+                                            }
                                             onChange={(event) =>
                                                 setParam(
-                                                    "question",
+                                                    "prompt",
+                                                    event.target.value,
+                                                )
+                                            }
+                                            onKeyDown={(event) => {
+                                                if (
+                                                    event.key === "Enter" &&
+                                                    (event.metaKey ||
+                                                        event.ctrlKey)
+                                                ) {
+                                                    event.preventDefault();
+                                                    run();
+                                                }
+                                            }}
+                                            placeholder={promptPlaceholder(
+                                                task,
+                                                editsImage,
+                                                format,
+                                            )}
+                                            className={cn(
+                                                !isDecide && "lg:min-h-56",
+                                                isAudioTranscription || isDecide
+                                                    ? "min-h-24"
+                                                    : "min-h-44",
+                                            )}
+                                        />
+                                    </FieldStack>
+                                )}
+                                {decision && (
+                                    <>
+                                        <OptionField
+                                            label="Question type"
+                                            options={decision.types}
+                                            value={decision.type}
+                                            onChange={(type) =>
+                                                setParam("questionType", type)
+                                            }
+                                            format={questionTypeLabel}
+                                        />
+                                        <FieldStack
+                                            label="Question"
+                                            orientation="inline"
+                                        >
+                                            <Input
+                                                aria-label="Question"
+                                                value={decision.instructions}
+                                                onChange={(event) =>
+                                                    setParam(
+                                                        "question",
+                                                        event.target.value,
+                                                    )
+                                                }
+                                            />
+                                        </FieldStack>
+                                        {(decision.type === "choice" ||
+                                            decision.type === "score") && (
+                                            <DecisionCriteriaFields
+                                                type={decision.type}
+                                                values={decision.criteria}
+                                                onChange={(values) =>
+                                                    setParam(
+                                                        decision.type ===
+                                                            "score"
+                                                            ? "levels"
+                                                            : "choices",
+                                                        values.join("\n"),
+                                                    )
+                                                }
+                                            />
+                                        )}
+                                    </>
+                                )}
+                                {audioInput}
+                                {isReferenceImageListMode && (
+                                    <fieldset
+                                        aria-label={
+                                            requiresImage
+                                                ? "Required image"
+                                                : "Reference images"
+                                        }
+                                        className="flex min-w-0 flex-col gap-2"
+                                    >
+                                        <div className="flex flex-wrap items-end gap-2">
+                                            <FileUpload
+                                                value={referenceImages}
+                                                onChange={setReferenceImages}
+                                                maxFiles={maxReferenceImages}
+                                                {...uploadProps(
+                                                    ["image"],
+                                                    `Use up to ${maxReferenceImages === 1 ? "1 image" : `${maxReferenceImages} images`}.`,
+                                                )}
+                                                label="Image"
+                                            />
+                                            {maxReferenceImages > 1 &&
+                                                referenceImages.length > 0 && (
+                                                    <Text
+                                                        size="xs"
+                                                        tone="muted"
+                                                        aria-label={`${referenceImages.length} of ${maxReferenceImages} reference images`}
+                                                    >
+                                                        {referenceImages.length}
+                                                        /{maxReferenceImages}
+                                                    </Text>
+                                                )}
+                                        </div>
+                                        {referenceImages.length > 0 && (
+                                            <UploadPrivacyNote />
+                                        )}
+                                    </fieldset>
+                                )}
+
+                                {(supportsFrames ||
+                                    videoReferenceMedia.length > 0) && (
+                                    <fieldset
+                                        aria-label="Video references"
+                                        className="m-0 flex min-w-0 flex-col gap-2 border-0 p-0"
+                                    >
+                                        <div
+                                            className={cn(
+                                                "flex flex-wrap items-start gap-3",
+                                                mediaDisabled &&
+                                                    "[&_button:disabled]:grayscale [&_label:has(input:disabled)]:grayscale",
+                                            )}
+                                        >
+                                            {queuedTiles}
+                                            {frameTiles}
+                                            {mediaTiles}
+                                        </div>
+                                        {clipStatus && (
+                                            <Text size="xs" tone="muted">
+                                                {clipStatus}
+                                            </Text>
+                                        )}
+                                        {((supportsFrames &&
+                                            referenceImages.length > 0) ||
+                                            hasReferenceMedia) && (
+                                            <UploadPrivacyNote />
+                                        )}
+                                    </fieldset>
+                                )}
+                            </fieldset>
+                            <div className="play-parameter-grid">
+                                {currentModel &&
+                                    currentModel.voices.length > 0 && (
+                                        <VoicePicker
+                                            key={currentModel.id}
+                                            voices={currentModel.voices}
+                                            value={selectedVoice}
+                                            onChange={(value) =>
+                                                setParam("voice", value)
+                                            }
+                                        />
+                                    )}
+
+                                {isStemSeparation && (
+                                    <OptionField
+                                        label="Stems"
+                                        options={["2", "6"]}
+                                        value={
+                                            stemVariationId === "two_stems_v1"
+                                                ? "2"
+                                                : "6"
+                                        }
+                                        onChange={(value) =>
+                                            setParam("stems", value)
+                                        }
+                                    />
+                                )}
+                                {transcription?.language && (
+                                    <FieldStack
+                                        label="Language"
+                                        orientation="inline"
+                                        className="min-w-0"
+                                    >
+                                        <Input
+                                            className="max-w-40"
+                                            placeholder="Auto (e.g. en)"
+                                            value={language}
+                                            onChange={(event) =>
+                                                setParam(
+                                                    "language",
                                                     event.target.value,
                                                 )
                                             }
                                         />
                                     </FieldStack>
-                                    {(decision.type === "choice" ||
-                                        decision.type === "score") && (
-                                        <DecisionCriteriaFields
-                                            type={decision.type}
-                                            values={decision.criteria}
-                                            onChange={(values) =>
-                                                setParam(
-                                                    decision.type === "score"
-                                                        ? "levels"
-                                                        : "choices",
-                                                    values.join("\n"),
-                                                )
-                                            }
-                                        />
-                                    )}
-                                </>
-                            )}
-                            {audioInput}
-                            {isReferenceImageListMode && (
-                                <fieldset
-                                    aria-label={
-                                        requiresImage
-                                            ? "Required image"
-                                            : "Reference images"
-                                    }
-                                    className="flex min-w-0 flex-col gap-2"
-                                >
-                                    <div className="flex flex-wrap items-end gap-2">
-                                        <FileUpload
-                                            value={referenceImages}
-                                            onChange={setReferenceImages}
-                                            maxFiles={maxReferenceImages}
-                                            {...uploadProps(
-                                                ["image"],
-                                                `Use up to ${maxReferenceImages === 1 ? "1 image" : `${maxReferenceImages} images`}.`,
-                                            )}
-                                            label="Image"
-                                        />
-                                        {maxReferenceImages > 1 &&
-                                            referenceImages.length > 0 && (
-                                                <Text
-                                                    size="xs"
-                                                    tone="muted"
-                                                    aria-label={`${referenceImages.length} of ${maxReferenceImages} reference images`}
-                                                >
-                                                    {referenceImages.length}/
-                                                    {maxReferenceImages}
-                                                </Text>
-                                            )}
-                                    </div>
-                                    {referenceImages.length > 0 && (
-                                        <UploadPrivacyNote />
-                                    )}
-                                </fieldset>
-                            )}
+                                )}
 
-                            {(supportsFrames ||
-                                videoReferenceMedia.length > 0) && (
-                                <fieldset
-                                    aria-label="Video references"
-                                    className="m-0 flex min-w-0 flex-col gap-2 border-0 p-0"
-                                >
-                                    <div
-                                        className={cn(
-                                            "flex flex-wrap items-start gap-3",
-                                            mediaDisabled &&
-                                                "[&_button:disabled]:grayscale [&_label:has(input:disabled)]:grayscale",
-                                        )}
-                                    >
-                                        {queuedTiles}
-                                        {frameTiles}
-                                        {mediaTiles}
-                                    </div>
-                                    {clipStatus && (
-                                        <Text size="xs" tone="muted">
-                                            {clipStatus}
-                                        </Text>
-                                    )}
-                                    {((supportsFrames &&
-                                        referenceImages.length > 0) ||
-                                        hasReferenceMedia) && (
-                                        <UploadPrivacyNote />
-                                    )}
-                                </fieldset>
-                            )}
-                        </fieldset>
-                        <div className="play-parameter-grid">
-                            {currentModel && currentModel.voices.length > 0 && (
-                                <VoicePicker
-                                    key={currentModel.id}
-                                    voices={currentModel.voices}
-                                    value={selectedVoice}
-                                    onChange={(value) =>
-                                        setParam("voice", value)
-                                    }
-                                />
-                            )}
-
-                            {isStemSeparation && (
-                                <OptionField
-                                    label="Stems"
-                                    options={["2", "6"]}
-                                    value={
-                                        stemVariationId === "two_stems_v1"
-                                            ? "2"
-                                            : "6"
-                                    }
-                                    onChange={(value) =>
-                                        setParam("stems", value)
-                                    }
-                                />
-                            )}
-                            {transcription?.language && (
-                                <FieldStack
-                                    label="Language"
-                                    orientation="inline"
-                                    className="min-w-0"
-                                >
-                                    <Input
-                                        className="max-w-40"
-                                        placeholder="Auto (e.g. en)"
-                                        value={language}
-                                        onChange={(event) =>
-                                            setParam(
-                                                "language",
-                                                event.target.value,
-                                            )
-                                        }
-                                    />
-                                </FieldStack>
-                            )}
-
-                            {showsAudioLength && (
-                                <FieldStack
-                                    label={
-                                        <span className="font-normal">
-                                            Duration
-                                        </span>
-                                    }
-                                    orientation="inline"
-                                    className="min-w-0"
-                                >
-                                    <div className="flex min-w-0 items-center gap-2">
-                                        <Input
-                                            className="w-24 min-w-0"
-                                            aria-label="Duration in seconds"
-                                            type="number"
-                                            hideNumberSteppers
-                                            min={0}
-                                            step="any"
-                                            placeholder={
-                                                currentModel.defaultDuration?.toString() ??
-                                                "Auto"
-                                            }
-                                            value={audioLength}
-                                            onChange={(event) =>
-                                                setParam(
-                                                    "length",
-                                                    event.target.value,
-                                                )
-                                            }
-                                        />
-                                        <Text
-                                            as="span"
-                                            size="sm"
-                                            tone="muted"
-                                            aria-hidden="true"
-                                        >
-                                            seconds
-                                        </Text>
-                                    </div>
-                                </FieldStack>
-                            )}
-                            {isVisualModel && (
-                                <>
-                                    <OptionField
-                                        label="Output format"
-                                        options={formatOptions}
-                                        value={format ?? "still"}
-                                        onChange={(value) =>
-                                            setParam(
-                                                "format",
-                                                value === "still" ? "" : value,
-                                            )
-                                        }
-                                        format={imageFormatLabel}
-                                    />
-                                    <OptionField
-                                        label="Resolution"
-                                        options={currentModel.resolutions}
-                                        value={mediaSettings.resolution}
-                                        onChange={(value) =>
-                                            setParam("size", value)
-                                        }
-                                        format={(resolution) =>
-                                            resolution.toUpperCase()
-                                        }
-                                    />
-
-                                    {currentModel.category === "video" && (
-                                        <>
-                                            <OptionField
-                                                label="Aspect ratio"
-                                                options={videoConfig.ratios}
-                                                value={videoAspectRatio}
-                                                onChange={(ratio) =>
-                                                    setParam(
-                                                        "aspect",
-                                                        ratio || "auto",
-                                                    )
-                                                }
-                                                format={(ratio) =>
-                                                    ratio || "Auto"
-                                                }
-                                            />
-                                            <OptionField
-                                                label="Sound"
-                                                options={
-                                                    videoConfig.sound ===
-                                                    "optional"
-                                                        ? ["on", "off"]
-                                                        : [videoConfig.sound]
-                                                }
-                                                value={
-                                                    videoSound ? "on" : "off"
-                                                }
-                                                onChange={(value) =>
-                                                    setParam("sound", value)
-                                                }
-                                                format={(value) =>
-                                                    value === "on"
-                                                        ? "On"
-                                                        : "Off"
-                                                }
-                                            />
-                                        </>
-                                    )}
-                                    {videoDuration && (
-                                        <VideoDurationField
-                                            duration={videoDuration}
-                                            onChange={(seconds) =>
-                                                setParam("duration", seconds)
-                                            }
-                                        />
-                                    )}
-                                    {autoVideoDuration && (
-                                        <FieldStack
-                                            label="Duration"
-                                            orientation="inline"
-                                            className="min-w-0"
-                                        >
-                                            <Text size="sm" tone="muted">
-                                                Replicate chooses the duration.
-                                                Billing uses the output seconds.
-                                            </Text>
-                                        </FieldStack>
-                                    )}
-
-                                    {customSize && (
-                                        <fieldset
-                                            aria-labelledby={dimensionsLabelId}
-                                            className="grid min-w-0 grid-cols-[6.5rem_minmax(0,1fr)] items-center gap-x-4 gap-y-2 max-sm:grid-cols-[5.5rem_minmax(0,1fr)] max-sm:gap-x-2"
-                                        >
-                                            <Text
-                                                as="span"
-                                                id={dimensionsLabelId}
-                                                className="min-h-8 content-center"
-                                                size="sm"
-                                                weight="semibold"
-                                                tone="strong"
-                                            >
-                                                Dimensions
-                                            </Text>
-                                            <div className="flex min-w-0 items-center gap-2">
-                                                {(
-                                                    [
-                                                        [
-                                                            "Width",
-                                                            width,
-                                                            "width",
-                                                        ],
-                                                        [
-                                                            "Height",
-                                                            height,
-                                                            "height",
-                                                        ],
-                                                    ] as const
-                                                ).map(
-                                                    (
-                                                        [label, value, key],
-                                                        index,
-                                                    ) => (
-                                                        <Fragment key={label}>
-                                                            {index > 0 && (
-                                                                <span
-                                                                    aria-hidden="true"
-                                                                    className="text-theme-text-muted"
-                                                                >
-                                                                    ×
-                                                                </span>
-                                                            )}
-                                                            <Input
-                                                                aria-label={`${label} in pixels`}
-                                                                className="w-24 min-w-0 px-2"
-                                                                type="number"
-                                                                hideNumberSteppers
-                                                                min={1}
-                                                                step={1}
-                                                                placeholder="Auto"
-                                                                value={value}
-                                                                onChange={(
-                                                                    event,
-                                                                ) =>
-                                                                    setParam(
-                                                                        key,
-                                                                        event
-                                                                            .target
-                                                                            .value,
-                                                                    )
-                                                                }
-                                                            />
-                                                        </Fragment>
-                                                    ),
-                                                )}
-                                                <span
-                                                    aria-hidden="true"
-                                                    className="text-sm text-theme-text-muted"
-                                                >
-                                                    px
-                                                </span>
-                                            </div>
-                                        </fieldset>
-                                    )}
-
+                                {showsAudioLength && (
                                     <FieldStack
                                         label={
-                                            <span className="inline-flex items-center">
-                                                Seed
-                                                <InfoTip
-                                                    label="About seed"
-                                                    tapEnabled
-                                                    content="A positive integer up to 2,147,483,647 (10 digits). Controls generation randomness. Reusing a seed can help reproduce a result with the same model and inputs."
-                                                />
+                                            <span className="font-normal">
+                                                Duration
                                             </span>
                                         }
                                         orientation="inline"
                                         className="min-w-0"
                                     >
-                                        <Input
-                                            aria-label="Seed"
-                                            className="max-w-40"
-                                            type="number"
-                                            hideNumberSteppers
-                                            min={1}
-                                            max={2147483647}
-                                            step={1}
-                                            placeholder="Random"
-                                            value={seed}
-                                            onChange={(event) =>
+                                        <div className="flex min-w-0 items-center gap-2">
+                                            <Input
+                                                className="w-24 min-w-0"
+                                                aria-label="Duration in seconds"
+                                                type="number"
+                                                hideNumberSteppers
+                                                min={0}
+                                                step="any"
+                                                placeholder={
+                                                    currentModel.defaultDuration?.toString() ??
+                                                    "Auto"
+                                                }
+                                                value={audioLength}
+                                                onChange={(event) =>
+                                                    setParam(
+                                                        "length",
+                                                        event.target.value,
+                                                    )
+                                                }
+                                            />
+                                            <Text
+                                                as="span"
+                                                size="sm"
+                                                tone="muted"
+                                                aria-hidden="true"
+                                            >
+                                                seconds
+                                            </Text>
+                                        </div>
+                                    </FieldStack>
+                                )}
+                                {isVisualModel && (
+                                    <>
+                                        <OptionField
+                                            label="Output format"
+                                            options={formatOptions}
+                                            value={format ?? "still"}
+                                            onChange={(value) =>
                                                 setParam(
-                                                    "seed",
-                                                    event.target.value,
+                                                    "format",
+                                                    value === "still"
+                                                        ? ""
+                                                        : value,
                                                 )
                                             }
+                                            format={imageFormatLabel}
                                         />
-                                    </FieldStack>
-                                </>
-                            )}
-                        </div>
-                    </section>
+                                        <OptionField
+                                            label="Resolution"
+                                            options={currentModel.resolutions}
+                                            value={mediaSettings.resolution}
+                                            onChange={(value) =>
+                                                setParam("size", value)
+                                            }
+                                            format={(resolution) =>
+                                                resolution.toUpperCase()
+                                            }
+                                        />
+
+                                        {currentModel.category === "video" && (
+                                            <>
+                                                <OptionField
+                                                    label="Aspect ratio"
+                                                    options={videoConfig.ratios}
+                                                    value={videoAspectRatio}
+                                                    onChange={(ratio) =>
+                                                        setParam(
+                                                            "aspect",
+                                                            ratio || "auto",
+                                                        )
+                                                    }
+                                                    format={(ratio) =>
+                                                        ratio || "Auto"
+                                                    }
+                                                />
+                                                <OptionField
+                                                    label="Sound"
+                                                    options={
+                                                        videoConfig.sound ===
+                                                        "optional"
+                                                            ? ["on", "off"]
+                                                            : [
+                                                                  videoConfig.sound,
+                                                              ]
+                                                    }
+                                                    value={
+                                                        videoSound
+                                                            ? "on"
+                                                            : "off"
+                                                    }
+                                                    onChange={(value) =>
+                                                        setParam("sound", value)
+                                                    }
+                                                    format={(value) =>
+                                                        value === "on"
+                                                            ? "On"
+                                                            : "Off"
+                                                    }
+                                                />
+                                            </>
+                                        )}
+                                        {videoDuration && (
+                                            <VideoDurationField
+                                                duration={videoDuration}
+                                                onChange={(seconds) =>
+                                                    setParam(
+                                                        "duration",
+                                                        seconds,
+                                                    )
+                                                }
+                                            />
+                                        )}
+                                        {autoVideoDuration && (
+                                            <FieldStack
+                                                label="Duration"
+                                                orientation="inline"
+                                                className="min-w-0"
+                                            >
+                                                <Text size="sm" tone="muted">
+                                                    Replicate chooses the
+                                                    duration. Billing uses the
+                                                    output seconds.
+                                                </Text>
+                                            </FieldStack>
+                                        )}
+
+                                        {customSize && (
+                                            <fieldset
+                                                aria-labelledby={
+                                                    dimensionsLabelId
+                                                }
+                                                className="grid min-w-0 grid-cols-[6.5rem_minmax(0,1fr)] items-center gap-x-4 gap-y-2 max-sm:grid-cols-[5.5rem_minmax(0,1fr)] max-sm:gap-x-2"
+                                            >
+                                                <Text
+                                                    as="span"
+                                                    id={dimensionsLabelId}
+                                                    className="min-h-8 content-center"
+                                                    size="sm"
+                                                    weight="semibold"
+                                                    tone="strong"
+                                                >
+                                                    Dimensions
+                                                </Text>
+                                                <div className="flex min-w-0 items-center gap-2">
+                                                    {(
+                                                        [
+                                                            [
+                                                                "Width",
+                                                                width,
+                                                                "width",
+                                                            ],
+                                                            [
+                                                                "Height",
+                                                                height,
+                                                                "height",
+                                                            ],
+                                                        ] as const
+                                                    ).map(
+                                                        (
+                                                            [label, value, key],
+                                                            index,
+                                                        ) => (
+                                                            <Fragment
+                                                                key={label}
+                                                            >
+                                                                {index > 0 && (
+                                                                    <span
+                                                                        aria-hidden="true"
+                                                                        className="text-theme-text-muted"
+                                                                    >
+                                                                        ×
+                                                                    </span>
+                                                                )}
+                                                                <Input
+                                                                    aria-label={`${label} in pixels`}
+                                                                    className="w-24 min-w-0 px-2"
+                                                                    type="number"
+                                                                    hideNumberSteppers
+                                                                    min={1}
+                                                                    step={1}
+                                                                    placeholder="Auto"
+                                                                    value={
+                                                                        value
+                                                                    }
+                                                                    onChange={(
+                                                                        event,
+                                                                    ) =>
+                                                                        setParam(
+                                                                            key,
+                                                                            event
+                                                                                .target
+                                                                                .value,
+                                                                        )
+                                                                    }
+                                                                />
+                                                            </Fragment>
+                                                        ),
+                                                    )}
+                                                    <span
+                                                        aria-hidden="true"
+                                                        className="text-sm text-theme-text-muted"
+                                                    >
+                                                        px
+                                                    </span>
+                                                </div>
+                                            </fieldset>
+                                        )}
+
+                                        <FieldStack
+                                            label={
+                                                <span className="inline-flex items-center">
+                                                    Seed
+                                                    <InfoTip
+                                                        label="About seed"
+                                                        tapEnabled
+                                                        content="A positive integer up to 2,147,483,647 (10 digits). Controls generation randomness. Reusing a seed can help reproduce a result with the same model and inputs."
+                                                    />
+                                                </span>
+                                            }
+                                            orientation="inline"
+                                            className="min-w-0"
+                                        >
+                                            <Input
+                                                aria-label="Seed"
+                                                className="max-w-40"
+                                                type="number"
+                                                hideNumberSteppers
+                                                min={1}
+                                                max={2147483647}
+                                                step={1}
+                                                placeholder="Random"
+                                                value={seed}
+                                                onChange={(event) =>
+                                                    setParam(
+                                                        "seed",
+                                                        event.target.value,
+                                                    )
+                                                }
+                                            />
+                                        </FieldStack>
+                                    </>
+                                )}
+                            </div>
+                        </section>
+                    </div>
 
                     {/* Not connected is not a broken state, so the button
                         becomes the connect action. When it genuinely
@@ -3407,6 +3421,24 @@ export function Playground({ drafts }: { drafts: ConnectDrafts }) {
                         >
                             {blockedReason !== clipError && blockedReason}
                         </Text>
+                        {/* What pressing it costs, once nothing is in the way. */}
+                        {currentModel && !blockedReason && (
+                            <Text as="div" size="sm" data-theme="neutral">
+                                <RunStatBadge
+                                    cost={cost}
+                                    time={time}
+                                    walletKind={
+                                        currentModel.paidOnly ? "paid" : "tier"
+                                    }
+                                    costDetail={
+                                        cost === "Free"
+                                            ? "This model is free to use."
+                                            : "Median cost of a successful paid request over the last 7 days. Your settings can change the price."
+                                    }
+                                    pricingHref={`${ENTER_URL}/models?${new URLSearchParams({ category: currentModel.category, q: currentModel.id })}`}
+                                />
+                            </Text>
+                        )}
                     </div>
                     {/* Said once per conversation: gone after the first message. */}
                     {isAgent &&

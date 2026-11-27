@@ -5,11 +5,11 @@ import { isNewModel } from "../../../../shared/model-recency";
 
 export function MediaModelOption({
     model,
-    iconClassName = "size-4",
+    iconClassName = "size-4 text-theme-text-muted",
     showPricing = true,
     perDollar,
 }: {
-    /** Icon size; the closed selector shows it larger than a menu row. */
+    /** Icon size and colour; the closed selector shows it larger, in the accent. */
     iconClassName?: string;
     showPricing?: boolean;
     perDollar?: string;
@@ -29,7 +29,7 @@ export function MediaModelOption({
         <span className="flex w-full min-w-0 items-center gap-2">
             <ModelBrandIcon
                 model={model}
-                className={`${iconClassName} shrink-0 text-theme-text-muted`}
+                className={`${iconClassName} shrink-0`}
             />
             <span className="flex min-w-0 flex-1 items-baseline gap-[0.6em]">
                 <span className="truncate">{model.title}</span>

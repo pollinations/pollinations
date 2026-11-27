@@ -317,8 +317,8 @@ main > * {
     );
 }
 
-/* Play's inputs sit on the page, not in a card: each field is its own
-   surface, so it needs no border until it is focused or invalid. */
+/* Inside Play's setup card each field is set into it as a darker surface, so
+   it needs no border until it is focused or invalid. */
 .play-inputs
     :is(.polli-input, .polli-textarea, .polli-input-shell):not(
         :focus,
@@ -326,7 +326,7 @@ main > * {
         [data-error],
         [data-invalid]
     ) {
-    background-color: var(--polli-color-surface-opaque);
+    background-color: var(--polli-color-surface-block);
     border-color: transparent;
 }
 

@@ -611,7 +611,7 @@ export function AgentChat({
                     aria-label={`Conversation with ${agentTitle}`}
                     // The thread is one card. A question is a card inside it;
                     // an answer sits on the thread itself.
-                    className="flex min-w-0 flex-col gap-3 rounded-card bg-surface-opaque p-4"
+                    className="flex min-w-0 flex-col gap-3 rounded-card bg-surface-block p-4"
                 >
                     {turns.map((turn) => (
                         // What was asked in a card of its own, then what

@@ -1,0 +1,8 @@
+/.lock
+__pycache__/
+/cache/
+/cases/
+/quick/
+/run.json
+/usage-*.json
+/DONE

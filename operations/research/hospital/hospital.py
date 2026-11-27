@@ -1,0 +1,265 @@
+#!/usr/bin/env python3
+"""Local, serial, one-stage hospital driver. No GitHub writes."""
+import argparse, datetime as dt, fcntl, json, os, pathlib, re, shlex, signal, subprocess, sys, time
+ROOT = pathlib.Path(__file__).resolve().parent
+REPO = pathlib.Path.home() / 'pollinations'
+TERMINAL = {'discharged', 'escalated', 'circuit-broken', 'changes-requested'}
+STAGES = ['workup', 'plan-review', 'implement', 'review', 'discharge']
+ROLES = {'implement': 'fellow', 'plan-review': 'review-attending', 'review': 'review-attending'}
+POLL = 10
+STAGE_SECONDS = 600
+REVIEW_MODEL = 'openai/gpt-6.1-sol'
+# AGENTS.md: a PR that changes what one of these npm packages ships bumps its version.
+SHIPS = {'packages/sdk': ['src/'], 'packages/ui': ['src/'], 'packages/polli-cli': ['src/', 'bin/', 'SKILL.md']}
+
+def now(): return dt.datetime.now(dt.timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+def save(p, x): p.write_text(json.dumps(x, indent=2) + '\n')
+def git(*args): return subprocess.check_output(['git', '-C', str(REPO), *args], text=True).strip()
+def note(folder, tag, body):
+    with (folder / 'CHART.md').open('a') as f: f.write(f'\n<!-- HOSPITAL:{tag} -->\n{now()} UTC\n\n{body}\n')
+
+# run.json stays local (gitignored): the run's start, limits and key IDs.
+def config(): return json.loads((ROOT / 'run.json').read_text())
+
+def usage():
+    raw = subprocess.check_output(['polli', 'usage', '--history', '--json', '--limit', '200'], text=True, timeout=25)
+    rows = json.loads(raw)
+    if not isinstance(rows, list): raise RuntimeError('Unrecognized usage response; fail closed')
+    ledger = ROOT / 'usage-ledger.json'
+    existing = json.loads(ledger.read_text()) if ledger.exists() else {}
+    for r in rows: existing[r['cursor_event_id']] = r
+    save(ledger, existing)
+    return list(existing.values())
+
+def costs(rows, keys, start, end=None):
+    """Cost per role label of the run's keys. Matches key IDs: key names repeat across sandboxes."""
+    result = {}
+    for r in rows:
+        label = keys.get(r.get('api_key_id'))
+        if label and r['timestamp'] >= start and (end is None or r['timestamp'] <= end):
+            result[label] = result.get(label, 0) + float(r.get('cost_usd', 0))
+    return result
+
+def run_test(cmd):
+    """Runs one test command and keeps its raw output: the only test evidence the driver accepts."""
+    folder = pathlib.Path(os.environ['HOSPITAL_CASE']) / 'tests'
+    stage = os.environ['HOSPITAL_STAGE']
+    folder.mkdir(exist_ok=True)
+    log = folder / f'{stage}-{len(list(folder.glob(f"{stage}-*.log"))) + 1}.log'
+    with log.open('w') as f:
+        f.write(f'$ cd {os.getcwd()} && {shlex.join(cmd)}\n')
+        f.flush()
+        code = subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT).returncode
+        f.write(f'\nexit {code}\n')
+    print(f'[full log: {log}]\n' + log.read_text()[-6000:])
+    return code
+
+def exit_codes(folder, stage):
+    found = (re.search(r'\nexit (-?\d+)\n$', p.read_text()) for p in (folder / 'tests').glob(f'{stage}-*.log'))
+    return [int(m.group(1)) for m in found if m]
+
+def missing_evidence(folder, stage):
+    codes = exit_codes(folder, stage)
+    if stage == 'implement' and 0 not in codes: return 'no passing run-test log'
+    if stage == 'review' and not (0 in codes and any(codes)): return 'no red and green run-test logs'
+
+def missing_version_bumps(diff):
+    """Packages whose shipped files the diff changes without a version line in their package.json. Free: runs before any model."""
+    changed, bumped = set(), set()
+    for chunk in re.split(r'^(?=diff --git )', diff, flags=re.M):
+        m = re.match(r'diff --git a/\S+ b/(\S+)', chunk)
+        if not m: continue
+        path = m.group(1)
+        changed.add(path)
+        if path.endswith('/package.json') and re.search(r'^\+\s*"version":', chunk, re.M): bumped.add(path)
+    return [pkg for pkg, shipped in SHIPS.items() if f'{pkg}/package.json' not in bumped
+            and any(p.startswith(f'{pkg}/{s}') and '.test.' not in p for p in changed for s in shipped)]
+
+def events(text):
+    for line in text.splitlines():
+        try: e = json.loads(line)
+        except ValueError: continue
+        if isinstance(e, dict): yield e
+
+def final_note(role, log, output):
+    """The stage's note, or what the model logged before the driver stopped it: a killed stage keeps its findings."""
+    text = log.read_text()
+    if role == 'review-attending':
+        if output.exists(): return output.read_text()
+        return 'PARTIAL NOTE: the stage stopped before its final note. Log tail:\n' + text[-6000:]
+    results = [e['result'] for e in events(text) if e.get('type') == 'result' and e.get('result')]
+    if results: return results[-1]
+    steps = []
+    for e in events(text):
+        for b in e['message'].get('content', []) if e.get('type') == 'assistant' else []:
+            if b.get('type') == 'text': steps.append(b['text'])
+            elif b.get('type') == 'tool_use': steps.append(f"[{b.get('name')}] {json.dumps(b.get('input'))[:300]}")
+    return 'PARTIAL NOTE: the stage stopped before its final note. Steps so far:\n' + '\n'.join(steps)[-6000:]
+
+def verdict(body):
+    found = re.findall(r'^\W*VERDICT:\s*(APPROVE|REWORK|ESCALATE|CHANGES)\b', body, re.M)
+    return found[-1] if found else None
+
+def role_cmd(role, prompt, output, model='anthropic/claude-opus-5.5', effort=None):
+    if role == 'review-attending':
+        return ['codex', 'exec', '--model', REVIEW_MODEL, '--dangerously-bypass-approvals-and-sandbox', '-C', str(REPO), '-o', str(output), prompt]
+    # Only the tools a role needs: no subagents or web access, and a smaller prompt.
+    # stream-json logs each step as it happens, so a stopped stage still has its findings.
+    return ['claude', '-p', '--settings', str(pathlib.Path.home() / '.pollinations/claude-code.json'), '--model', model,
+            '--tools', 'Bash,Read,Edit,Write,Grep,Glob', '--dangerously-skip-permissions', '--output-format', 'stream-json', '--verbose',
+            *(['--effort', effort] if effort else []), prompt]
+
+def run_role(cmd, log, env, over):
+    """Runs one model process; stops it when over(usage rows) names a reason or the stage runs out of time."""
+    with log.open('w') as f:
+        proc = subprocess.Popen(cmd, cwd=REPO, env=env, stdout=f, stderr=subprocess.STDOUT, start_new_session=True)
+        started = time.monotonic(); stop = None
+        while proc.poll() is None:
+            time.sleep(POLL)
+            try: stop = over(usage())
+            except Exception: stop = 'Usage unavailable: fail closed'
+            if time.monotonic() - started > STAGE_SECONDS: stop = f'Stage exceeded {STAGE_SECONDS} s; no flailing'
+            if stop:
+                os.killpg(proc.pid, signal.SIGTERM)
+                try: proc.wait(timeout=10)
+                except subprocess.TimeoutExpired: os.killpg(proc.pid, signal.SIGKILL); proc.wait()
+                break
+    return stop, proc.returncode
+
+def quick_review(number, rival, model, run, keys, effort=None, base='origin/main'):
+    """One review pass by one model, before and blind to the hospital: the baseline the hospital must beat."""
+    if git('status', '--porcelain'): raise SystemExit('Dirty repository')
+    folder = ROOT / 'quick' / str(number)
+    name = model.split('/')[-1] + (f'-{effort}' if effort else '')
+    folder.mkdir(parents=True, exist_ok=True)
+    task = f'Compare PR #{number} and PR #{rival}, which fix the same issue, and recommend which to merge.' if rival else f'Review PR #{number} for merge.'
+    diffs = ', '.join(f'{ROOT}/cache/pr-{n}.diff' for n in [number, rival] if n)
+    prompt = f'''You are one independent reviewer. {task} Cached diffs: {diffs}. Repo: {REPO}, on a scratch branch at {base}; you may apply a diff there. Run every test command through `python3 {ROOT}/hospital.py run-test -- <command>` from the directory it needs. Do not read {ROOT}/cases or {ROOT}/quick.
+Do not spawn agents or call another model. No external writes, secrets, live APIs, installs, full test suites; do not commit. Aim for about 15 tool calls and read only the lines you need. Print your review as final output, under 500 words: blockers that require the diff to change, questions for the maintainer, and the evidence for each. End with a standalone line VERDICT: APPROVE (merge as is), VERDICT: CHANGES (the diff must change) or VERDICT: ESCALATE (cannot judge offline).'''
+    (folder / f'{name}.prompt').write_text(prompt)
+    git('switch', '-C', f'quick/{number}', base)
+    start, output = now(), folder / f'{name}.md'
+    env = {**os.environ, 'HOSPITAL_CASE': str(folder), 'HOSPITAL_STAGE': name}
+    over = lambda rows: f"Run exceeded {run['trial_limit']} Pollen" if sum(costs(rows, keys, run['start']).values()) >= run['trial_limit'] else None
+    stop, code = run_role(role_cmd('quick', prompt, output, model, effort), folder / f'{name}.log', env, over)
+    output.write_text(final_note('quick', folder / f'{name}.log', output))
+    git('reset', '--hard'); git('clean', '-fd')
+    save(folder / f'{name}.json', dict(model=model, effort=effort, base=git('rev-parse', base), start=start, end=now(), stop=stop, exit=code, verdict=verdict(output.read_text())))
+    print(f'{name}: {verdict(output.read_text())}')
+
+def close(folder, state, outcome, reason, keys):
+    state.update(outcome=outcome, end=now())
+    note(folder, 'HANDOFF' if outcome != 'discharged' else 'CLOSED', reason)
+    state['cost_by_role'] = costs(usage(), keys, state['start'], state['end'])
+    save(folder / 'state.json', state)
+
+def main():
+    if sys.argv[1:2] == ['run-test']:
+        raise SystemExit(run_test(sys.argv[3:] if sys.argv[2:3] == ['--'] else sys.argv[2:]))
+    p = argparse.ArgumentParser()
+    p.add_argument('action', choices=['admit', 'quick-review', *STAGES, 'status', 'close'])
+    p.add_argument('number', nargs='?', type=int)
+    p.add_argument('--kind', choices=['bug', 'feature', 'pr'])
+    p.add_argument('--reason')
+    p.add_argument('--rival', type=int, help='an open PR that fixes the same issue; the case compares both')
+    p.add_argument('--model', help='quick-review: the one model that reviews')
+    p.add_argument('--effort', choices=['low', 'medium', 'high', 'xhigh', 'max'], help="quick-review: Claude Code's reasoning effort (its default is high)")
+    p.add_argument('--base', default='origin/main', help='quick-review: the commit the scratch branch starts from')
+    a = p.parse_args()
+    lock = (ROOT / '.lock').open('w')
+    fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    run = config()
+    keys = run['keys']
+    rows = usage()
+    total = sum(costs(rows, keys, run['start']).values())
+    print(f'Run billed so far: {total:.6f} Pollen', flush=True)
+    if a.action == 'status':
+        for path in sorted((ROOT / 'cases').glob('*/state.json')):
+            s = json.loads(path.read_text()); print(s['number'], s['outcome'], costs(rows, keys, s['start'], s.get('end')))
+        return
+    if a.action == 'quick-review':
+        if total >= run['trial_limit']: raise SystemExit('Trial cost stop')
+        return quick_review(a.number, a.rival, a.model, run, keys, a.effort, a.base)
+    folder = ROOT / 'cases' / str(a.number)
+    if a.action == 'admit':
+        if total >= run['trial_limit']: raise SystemExit('Trial cost stop')
+        if len(list((ROOT/'cases').glob('*/state.json'))) >= run['max_cases']: raise SystemExit('Case count stop')
+        if any(json.loads(x.read_text())['outcome'] not in TERMINAL for x in (ROOT/'cases').glob('*/state.json')): raise SystemExit('Close active case first')
+        if folder.exists() or git('status','--porcelain'): raise SystemExit('Existing case or dirty repository')
+        source = next(x for x in json.loads((ROOT/'cache'/'issues.json').read_text()) if x['number']==a.number)
+        if source['state'] != 'open' or any(x['name']=='POLLEN-QUEST' for x in source['labels']): raise SystemExit('Ineligible case')
+        # Run 1's triage missed an open PR that already fixed its issue.
+        related = [f"{x['html_url']} {x['title']}" for x in json.loads((ROOT/'cache'/'pulls.json').read_text())
+                   if x['number'] != a.number and re.search(rf'#{a.number}\b', f"{x['title']} {x.get('body') or ''}")]
+        folder.mkdir(parents=True)
+        save(folder/'source.json',source)
+        git('switch','-c',f'hospital/{a.number}','origin/main')
+        s = dict(number=a.number, kind=a.kind, rival=a.rival, start=now(), base=git('rev-parse','HEAD'), outcome='active', next='workup', reworks=0)
+        save(folder/'state.json',s)
+        (folder/'CHART.md').write_text((ROOT/'chart-template.md').read_text().replace('{{number}}',str(a.number)))
+        note(folder,'ADMISSION',f"Kind: {a.kind}\nStart: {s['start']} UTC\nBranch: hospital/{a.number}\nBase: {s['base']}\nSource: {source['html_url']}\n{source['title']}\nOpen PRs that mention this case: {', '.join(related) or 'none in cache'}"+(f"\nCompeting PR: #{a.rival}, which fixes the same issue. The maintainer asked the hospital to compare both." if a.rival else ''))
+        unbumped = missing_version_bumps((ROOT/'cache'/f'pr-{a.number}.diff').read_text()) if a.kind == 'pr' else []
+        if unbumped:
+            close(folder,s,'changes-requested',f"Static check, no model run: the diff changes what {', '.join(unbumped)} ships without bumping its package.json version (AGENTS.md: published packages bump their version, including their own package-lock.json).",keys)
+        return
+    s = json.loads((folder/'state.json').read_text())
+    if s['outcome'] in TERMINAL: raise SystemExit('Case already closed')
+    if a.action == 'close':
+        close(folder,s,'escalated','Precedents checked: P1-P3. I-PASS: stable local work; '+(a.reason or 'Manual stop')+'; action: maintainer resolves blocker; no merge approval; receiver must restate handoff.',keys)
+        return
+    casecost = sum(costs(rows,keys,s['start']).values())
+    if total >= run['trial_limit'] or casecost >= run['case_limit']:
+        close(folder,s,'escalated','Precedents checked P2. I-PASS: budget stop; preserve branch; no further models; maintainer may resume under a new budget.',keys); return
+    if a.action != s['next']: raise SystemExit(f"Expected stage {s['next']}")
+    if git('branch','--show-current') != f'hospital/{a.number}': raise SystemExit('Wrong branch')
+    role = ROLES.get(a.action, a.action)
+    prompt = f'''You are running exactly one hospital stage: {a.action}. Read {ROOT}/PROTOCOL.md, {ROOT}/roles/{role}.md, {folder}/CHART.md, {folder}/source.json, and {ROOT}/PRECEDENTS.md. Repo: {REPO}. Base commit: {s['base']}. Kind: {s['kind']}. Cached GitHub data: {ROOT}/cache/ (a PR's diff is pr-<number>.diff). Test logs so far: {folder}/tests/. Do not read {ROOT}/quick.{f" Competing PR #{s['rival']} fixes the same issue (pr-{s['rival']}.diff): the workup compares both and recommends one, and implementation applies the recommended PR's cached diff." if s.get('rival') else ''}
+Run every test command through `python3 {ROOT}/hospital.py run-test -- <command>` from the directory it needs. Its logs are the only test evidence the driver and discharge accept.
+Do not spawn agents or call another model. No external writes, secrets, live APIs, installs, full test suites. Work only in the current hospital branch. Do not modify hospital records; print your note as final output. Keep it under 700 words, with concrete evidence and a final standalone line VERDICT: APPROVE, VERDICT: REWORK, or VERDICT: ESCALATE. In a PR case, VERDICT: CHANGES ends the case when the PR's own diff must change before merge; REWORK is only for the hospital's plan or implementation. You have a small billed budget: aim for about 15 tool calls, and read only the lines you need. If verification needs live services or production data, or you cannot conclude within that scope, stop and escalate with what you found; a stage stopped at its time limit keeps only a partial note. No user questions: unresolved blockers get I-PASS. Do not commit; driver preserves work. For PR case, implementation means applying the cached PR diff after approved plan, not inventing a different fix.'''
+    attempt = len(list(folder.glob(f'{a.action}-*.log'))) + 1
+    log = folder/f'{a.action}-{attempt}.log'
+    output = folder/f'{a.action}-{attempt}.md'
+    (folder/f'{a.action}-{attempt}.prompt').write_text(prompt)
+    env = {**os.environ, 'HOSPITAL_CASE': str(folder), 'HOSPITAL_STAGE': a.action}
+    before = git('diff',s['base'])
+    def over(rows):
+        if sum(costs(rows,keys,run['start']).values()) >= run['trial_limit']: return f"Run exceeded {run['trial_limit']} Pollen"
+        if sum(costs(rows,keys,s['start']).values()) >= run['case_limit']: return f"Case exceeded {run['case_limit']} Pollen"
+    stop, code = run_role(role_cmd(role,prompt,output),log,env,over)
+    body = final_note(role,log,output)
+    output.write_text(body)
+    note(folder,a.action.upper().replace('-','_'),body)
+    if stop or code != 0:
+        close(folder,s,'escalated','Precedents checked P1-P3. I-PASS: stage stopped; '+(stop or f'runner exit {code}')+'; inspect stage log; preserve branch; receiver must restate blocker.',keys); return
+    if a.action in ['workup','plan-review','discharge'] and (git('diff',s['base']) != before or git('ls-files','--others','--exclude-standard')):
+        close(folder,s,'escalated','Precedents checked P1. I-PASS: unauthorized code before gate or during audit; inspect diff; do not merge.',keys); return
+    v = verdict(body)
+    if v == 'ESCALATE':
+        close(folder,s,'escalated',body,keys); return
+    if v == 'CHANGES' and s['kind'] == 'pr':
+        # The hospital never rewrites a contributor's diff: blockers in it go back to the PR author.
+        close(folder,s,'changes-requested',body,keys); return
+    if v == 'REWORK':
+        s['reworks'] += 1
+        if s['reworks'] >= 2:
+            close(folder,s,'circuit-broken','Precedents checked P3. Two rework requests; '+body,keys); return
+        s['next'] = 'workup' if a.action in ['workup','plan-review'] else 'implement'
+    elif v == 'APPROVE':
+        if a.action in ['implement','review']:
+            gap = missing_evidence(folder,a.action)
+            if gap:
+                close(folder,s,'escalated',f'Precedents checked P3. I-PASS: approval without test evidence ({gap}); see {folder}/tests/.',keys); return
+            git('add','-A')
+            lines = sum(int(n) for line in git('diff','--cached','--numstat',s['base']).splitlines() for n in line.split('\t')[:2] if n.isdigit())
+            if lines > 1000:
+                close(folder,s,'escalated','Precedents checked P1. I-PASS: >1,000 lines; decompose into local child cases with dependency graph before continuing.',keys); return
+            if git('diff','--cached','--name-only'):
+                git('-c','user.name=Hospital Dry Run','-c','user.email=hospital@localhost','commit','-m',f'hospital: {a.action} case {a.number}')
+        if a.action == 'discharge':
+            close(folder,s,'discharged','Local dry-run discharge only. Audit passed; nothing published.',keys); return
+        s['next'] = STAGES[STAGES.index(a.action)+1]
+    else:
+        close(folder,s,'escalated','Precedents checked P1. I-PASS: missing structured verdict; inspect record; no automatic retry.',keys); return
+    save(folder/'state.json',s)
+    print(f"Next: {s['next']}")
+if __name__ == '__main__': main()

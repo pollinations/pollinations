@@ -1,0 +1,85 @@
+$ cd /home/user/pollinations/gen.pollinations.ai && unshare -rn python3 -c 'import os,subprocess; subprocess.run(["ip","link","set","lo","up"],check=True); os.execvp("env",["env","TEST_VCR_MODE=replay-only","npx","vitest","run",'"'"'test/image/params.test.ts'"'"'])'
+
+ RUN  v3.2.4 /home/user/pollinations/gen.pollinations.ai
+
+Using secrets defined in .dev.vars.test
+[vpw:debug] Adding `enable_nodejs_tty_module` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:debug] Adding `enable_nodejs_fs_module` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:debug] Adding `enable_nodejs_http_modules` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:debug] Adding `enable_nodejs_perf_hooks_module` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:info] Starting single runtime for vitest.config.ts...
+ ❯ test/image/params.test.ts (33 tests | 5 failed) 280ms
+   ✓ ImageParamsSchema > normalizes seed -1 to the sentinel seed 13ms
+   ✓ ImageParamsSchema > rejects transparent backgrounds for gpt-image-2 8ms
+   ✓ ImageParamsSchema > keeps transparent backgrounds available for gptimage models 9ms
+   ✓ ImageParamsSchema > accepts resolutions declared by the model 8ms
+   ✓ ImageParamsSchema > accepts the one resolution a fixed-resolution video model produces 8ms
+   ✓ ImageParamsSchema > leaves audio unset when the caller omits it 8ms
+   ✓ ImageParamsSchema > accepts the same boolean tokens as the text route 8ms
+   ✓ ImageParamsSchema > accepts 768p on the OpenAI-compatible image route 8ms
+   ✓ ImageParamsSchema > rejects native-only reference media on OpenAI POST requests 7ms
+   ✓ ImageParamsSchema > enforces the public minimax-h3 contract 7ms
+   ✓ ImageParamsSchema > enforces the public minimax/minimax-h3-max contract 8ms
+   ✓ ImageParamsSchema > enforces the public minimax/minimax-h3-max-turbo contract 7ms
+   ✓ ImageParamsSchema > bounds video duration for every public route 8ms
+   ✓ ImageParamsSchema > enforces the public Gemini Omni 1.1 Flash contract 7ms
+   ✓ ImageParamsSchema > rejects unsupported Grok Imagine Image 2.0 quality 8ms
+   ✓ ImageParamsSchema > does not silently upgrade invalid Grok Imagine Image 2.0 quality 7ms
+   ✓ ImageParamsSchema > rejects an unsupported resolution 8ms
+   ✓ ImageParamsSchema > rejects resolution on models without resolution tiers 7ms
+   ✓ ImageParamsSchema > parses and validates reference media independently from frame images 8ms
+   ✓ ImageParamsSchema > rejects reference media on unsupported models 7ms
+   ✓ ImageParamsSchema > accepts reference media on minimax-h3-max and rejects on turbo 8ms
+   ✓ ImageParamsSchema > passes provider-specific reference combinations through 7ms
+   ✓ ImageParamsSchema > rejects unsafe reference media URLs 7ms
+   ✓ ImageParamsSchema > accepts inferenceport-ai/lightning-image-turbo 6ms
+   ✓ ImageParamsSchema > rejects an unregistered short model name 7ms
+   ✓ ImageParamsSchema > parses two image references for lightning-image-turbo 7ms
+   ✓ ImageParamsSchema > rejects resolution on lightning-image-turbo 7ms
+   ✓ ImageParamsSchema > accepts default dimensions and explicit 1024x1024 for lightning-image-turbo 7ms
+   × ImageParamsSchema > rejects non-1024 dimensions on lightning-image-turbo ({"width":768,"height":1024}) 9ms
+     → expected true to be false // Object.is equality
+   × ImageParamsSchema > rejects non-1024 dimensions on lightning-image-turbo ({"width":1024,"height":768}) 2ms
+     → expected true to be false // Object.is equality
+   × ImageParamsSchema > rejects non-1024 dimensions on lightning-image-turbo ({"width":1536,"height":1536}) 3ms
+     → expected true to be false // Object.is equality
+   × ImageParamsSchema > rejects non-1024 dimensions on lightning-image-turbo ({"width":512}) 2ms
+     → expected true to be false // Object.is equality
+   × ImageParamsSchema > rejects non-1024 dimensions on lightning-image-turbo ({"height":512}) 2ms
+     → expected true to be false // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/image/params.test.ts > ImageParamsSchema > rejects non-1024 dimensions on lightning-image-turbo ({"width":768,"height":1024})
+ FAIL  test/image/params.test.ts > ImageParamsSchema > rejects non-1024 dimensions on lightning-image-turbo ({"width":1024,"height":768})
+ FAIL  test/image/params.test.ts > ImageParamsSchema > rejects non-1024 dimensions on lightning-image-turbo ({"width":1536,"height":1536})
+ FAIL  test/image/params.test.ts > ImageParamsSchema > rejects non-1024 dimensions on lightning-image-turbo ({"width":512})
+ FAIL  test/image/params.test.ts > ImageParamsSchema > rejects non-1024 dimensions on lightning-image-turbo ({"height":512})
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ test/image/params.test.ts:442:32
+    440|             ...dims,
+    441|         });
+    442|         expect(result.success).toBe(false);
+       |                                ^
+    443|     });
+    444| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 28 passed (33)
+   Start at  01:29:36
+   Duration  5.04s (transform 1.43s, setup 4.03s, collect 19ms, tests 280ms, environment 0ms, prepare 98ms)
+
+[vpw:debug] Shutting down runtimes...
+[vpw:debug] Disposing remote proxy sessions...
+
+exit 1

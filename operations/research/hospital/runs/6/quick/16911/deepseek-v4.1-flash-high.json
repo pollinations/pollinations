@@ -1,0 +1,10 @@
+{
+  "model": "deepseek/deepseek-v4.1-flash",
+  "effort": "high",
+  "base": "d3309b1d8849059b8e008919825c899643fd65a8",
+  "start": "2026-10-15 03:03:12",
+  "end": "2026-10-15 03:13:17",
+  "stop": "Stage exceeded 600 s; no flailing",
+  "exit": 143,
+  "verdict": null
+}

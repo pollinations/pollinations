@@ -1,0 +1,15 @@
+{
+  "number": 17084,
+  "kind": "pr",
+  "start": "2026-10-11 18:41:23",
+  "base": "953c897635352bdcdc5811c4cb0824566e74f321",
+  "outcome": "escalated",
+  "next": "plan-review",
+  "reworks": 0,
+  "end": "2026-10-11 18:44:50",
+  "cost_by_key": {
+    "polli-harness-claude-code": 0.8517616,
+    "polli-sandbox-il8713rah47igszlv5yzt": 1.2998345,
+    "Device HNVRSAXK": 0.00570917
+  }
+}

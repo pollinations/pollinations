@@ -1,0 +1,12 @@
+$ cd /home/user/pollinations/packages/mcp && node --test test/textService.test.js
+✔ generateText accepts assistant tool calls with null content for tool-use continuation (5.547357ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 154.71555
+
+exit 0

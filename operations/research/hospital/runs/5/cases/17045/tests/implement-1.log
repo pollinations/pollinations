@@ -1,0 +1,21 @@
+$ cd /home/user/pollinations/gen.pollinations.ai && unshare -rn python3 -c 'import os,subprocess,sys; subprocess.run(["ip","link","set","lo","up"],check=True); os.execvp("env",["env","TEST_VCR_MODE=replay-only","npx","vitest","run",sys.argv[1]])' test/image/params.test.ts
+
+ RUN  v3.2.4 /home/user/pollinations/gen.pollinations.ai
+
+Using secrets defined in .dev.vars.test
+[vpw:debug] Adding `enable_nodejs_tty_module` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:debug] Adding `enable_nodejs_fs_module` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:debug] Adding `enable_nodejs_http_modules` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:debug] Adding `enable_nodejs_perf_hooks_module` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:info] Starting single runtime for vitest.config.ts...
+ ✓ test/image/params.test.ts (33 tests) 275ms
+
+ Test Files  1 passed (1)
+      Tests  33 passed (33)
+   Start at  01:28:29
+   Duration  5.28s (transform 1.49s, setup 4.21s, collect 21ms, tests 275ms, environment 0ms, prepare 99ms)
+
+[vpw:debug] Shutting down runtimes...
+[vpw:debug] Disposing remote proxy sessions...
+
+exit 0

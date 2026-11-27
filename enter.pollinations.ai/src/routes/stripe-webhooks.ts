@@ -461,8 +461,8 @@ function emitPaymentIntentAnalytics(
 
 /**
  * Handle successful checkout session completion.
- * Credits pollen to user's packBalance and persists observability fields.
- * Pollen amount is derived from the selected pack metadata.
+ * Credits the user's paid balance and persists observability fields.
+ * The credit amount in USD is derived from the selected pack metadata.
  */
 const handleCheckoutSessionCompleted = async (
     event: Stripe.Event,
@@ -478,7 +478,7 @@ const handleCheckoutSessionCompleted = async (
 
     const userId = metadata.userId;
     // Localized presentment subtotal (Adaptive Pricing), used only to confirm
-    // the session was actually paid — never as a credit source. Pollen credited
+    // the session was actually paid — never as a credit source. The amount credited
     // is the pack's fixed USD amount, looked up from packKey below.
     const presentmentSubtotal = Math.round(
         (session.amount_subtotal || 0) / 100,
@@ -502,7 +502,7 @@ const handleCheckoutSessionCompleted = async (
         };
     }
 
-    // Credit the pack's USD amount (1 pollen ≈ $1). Pack prices are fixed
+    // Credit the pack's USD amount. Pack prices are fixed
     // constants, so the packKey from metadata is enough to look it up.
     const db = drizzle(env.DB);
 
@@ -778,7 +778,7 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                         `Stripe auto top-up invoice credited: ${invoice.id} (+${result.pollenCredited} pollen)`,
                     );
                 }
-                // The credit outcome, so a paid invoice left without pollen
+                // The credit outcome, so a paid invoice with no balance credit
                 // shows up next to its payment.
                 c.executionCtx.waitUntil(
                     sendStripeEventToTinybird(c.env, {

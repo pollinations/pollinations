@@ -1,5 +1,6 @@
 import debug from "debug";
 import { findModelByName } from "../availableModels.js";
+import { mappedReasoningEffort } from "../transforms/createReasoningEffortTransform.js";
 import type {
     ChatMessage,
     ServiceError,
@@ -63,6 +64,10 @@ export function resolveModelConfig(
     const defaults = {
         ...((config.defaultOptions || {}) as Record<string, unknown>),
     };
+    const effort = mappedReasoningEffort(
+        options.reasoning_effort,
+        staticModelDef?.reasoningEffortMap,
+    );
     // Either caller-supplied token limit must win before alias conversion.
     if (options.max_tokens != null || options.max_completion_tokens != null) {
         delete defaults.max_tokens;
@@ -74,6 +79,7 @@ export function resolveModelConfig(
         options: {
             ...defaults,
             ...definedOptions,
+            ...(effort === undefined ? {} : { reasoning_effort: effort }),
             // A priced route's processing tier cannot be upgraded by the caller.
             ...(typeof config.serviceTier === "string"
                 ? { service_tier: config.serviceTier }

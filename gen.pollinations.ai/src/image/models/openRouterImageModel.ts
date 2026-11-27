@@ -24,11 +24,12 @@ import { writeExifMetadata } from "../writeExifMetadata.ts";
 import { checkMaiInputs } from "./azureMaiImageModel.ts";
 import { resolveQwenImage3Size } from "./falQwenImageModel.ts";
 
+import { resolveSeedreamGatewayRatio } from "./seedreamReplicateModel.ts";
+
 const logOps = debug("pollinations:openrouter-image:ops");
 const logError = debug("pollinations:openrouter-image:error");
 
 const OPENROUTER_IMAGE_URL = "https://openrouter.ai/api/v1/images";
-const GROK_IMAGINE_QUALITY_MODEL = "x-ai/grok-imagine-image-quality";
 const GROK_IMAGINE_IMAGE_2_MODEL = "x-ai/grok-imagine-image-2.0";
 const RECRAFT_VECTOR_MODEL = "recraft/recraft-v4.1-vector";
 const RECRAFT_FLASH_MODEL = "recraft/recraft-v4.1-flash";
@@ -57,25 +58,6 @@ const FLUX3_ASPECT_RATIOS = [
 const SEEDREAM_PRO_MODEL = "bytedance-seed/seedream-4.5";
 const QWEN_IMAGE_3_PRO_MODEL = "qwen/qwen-image-3-pro";
 const SEEDREAM_FLASH_MODEL = "bytedance-seed/seedream-5-0-flash";
-const SEEDREAM_FLASH_ASPECT_RATIOS = [
-    "1:1",
-    "1:2",
-    "2:1",
-    "2:3",
-    "3:2",
-    "3:4",
-    "4:3",
-    "4:5",
-    "5:4",
-    "9:16",
-    "16:9",
-    "9:19.5",
-    "19.5:9",
-    "9:20",
-    "20:9",
-    "9:21",
-    "21:9",
-] as const;
 const SVG_MEDIA_TYPE = "image/svg+xml";
 const SEEDREAM_PRO_ASPECT_RATIOS = [
     "1:1",
@@ -443,10 +425,13 @@ export async function callOpenRouterSeedreamProAPI(
     };
 }
 
-export async function callOpenRouterSeedreamFlashAPI(
+async function callOpenRouterSeedreamImageAPI(
     prompt: string,
     safeParams: ImageParams,
+    upstreamModel: string,
+    actualModel: string,
 ): Promise<ImageGenerationResult> {
+    const is55 = upstreamModel === "bytedance-seed/seedream-5-5";
     const apiKey = requireOpenRouterImageApiKey();
     const downloadedImages = await Promise.all(
         safeParams.image.map((image) => downloadUserImage(image)),
@@ -458,20 +443,12 @@ export async function callOpenRouterSeedreamFlashAPI(
         },
     }));
     const requestBody: Record<string, unknown> = {
-        model: SEEDREAM_FLASH_MODEL,
+        model: upstreamModel,
         prompt,
         n: 1,
         seed: safeParams.seed,
         resolution: safeParams.resolution === "2k" ? "2K" : "1K",
-        aspect_ratio:
-            safeParams.aspectRatio === "adaptive"
-                ? "auto"
-                : (safeParams.aspectRatio ??
-                  closestRatioLogSpace(
-                      safeParams.width,
-                      safeParams.height,
-                      SEEDREAM_FLASH_ASPECT_RATIOS,
-                  )),
+        aspect_ratio: resolveSeedreamGatewayRatio(safeParams, is55),
         provider: {
             only: ["seed"],
             allow_fallbacks: false,
@@ -484,7 +461,7 @@ export async function callOpenRouterSeedreamFlashAPI(
     const data = await postOpenRouterImage(
         apiKey,
         requestBody,
-        "OpenRouter Seedream 5.0 Flash request failed",
+        "OpenRouter Seedream image request failed",
     );
     const encodedImage = data.data?.[0]?.b64_json;
     if (!encodedImage) {
@@ -500,7 +477,7 @@ export async function callOpenRouterSeedreamFlashAPI(
         invalidOpenRouterImageUsage(data.usage);
     }
 
-    logOps("Seedream 5.0 Flash generation complete", {
+    logOps("Seedream image generation complete", {
         referenceImages: inputReferences.length,
         providerCost,
     });
@@ -508,11 +485,41 @@ export async function callOpenRouterSeedreamFlashAPI(
     return {
         buffer: base64ToBuffer(encodedImage),
         trackingData: {
-            actualModel: "bytedance/seedream-5.0-flash",
+            actualModel,
             providerBilling: { units: providerCost, unitCost: 1.055 },
-            usage: { completionImageTokens: 1 },
+            usage: {
+                ...(is55 &&
+                    inputReferences.length > 0 && {
+                        promptImageTokens: inputReferences.length,
+                    }),
+                completionImageTokens: 1,
+            },
         },
     };
+}
+
+export function callOpenRouterSeedreamFlashAPI(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<ImageGenerationResult> {
+    return callOpenRouterSeedreamImageAPI(
+        prompt,
+        safeParams,
+        SEEDREAM_FLASH_MODEL,
+        "bytedance/seedream-5.0-flash",
+    );
+}
+
+export function callOpenRouterSeedream55API(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<ImageGenerationResult> {
+    return callOpenRouterSeedreamImageAPI(
+        prompt,
+        safeParams,
+        "bytedance-seed/seedream-5-5",
+        "bytedance-seed/seedream-5-5:openrouter",
+    );
 }
 
 type OpenRouterAlibabaQwenRoute = {
@@ -622,58 +629,90 @@ export function callOpenRouterQwenImage21ProAPI(
     );
 }
 
-export async function callOpenRouterGrokImagineProAPI(
+export async function callOpenRouterMiniMaxH3ImageAPI(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {
     const apiKey = requireOpenRouterImageApiKey();
-    const inputReferences = safeParams.image.map((url) => ({
-        type: "image_url",
-        image_url: { url },
-    }));
+    const references = await Promise.all(safeParams.image.map(toDataUri));
     const requestBody: Record<string, unknown> = {
-        model: GROK_IMAGINE_QUALITY_MODEL,
+        model: safeParams.model.split(":")[0],
         prompt,
         n: 1,
-        resolution: "1K",
+        seed: safeParams.seed,
+        resolution: (safeParams.resolution ?? "1k").toUpperCase(),
+        provider: { only: ["minimax"], allow_fallbacks: false },
     };
-
-    const aspectRatio = closestAspectRatio(safeParams.width, safeParams.height);
-    if (aspectRatio) requestBody.aspect_ratio = aspectRatio;
-
-    if (inputReferences.length > 0) {
-        requestBody.input_references = inputReferences;
+    if (safeParams.aspectRatio !== "adaptive") {
+        requestBody.aspect_ratio =
+            safeParams.aspectRatio ??
+            closestRatioLogSpace(safeParams.width, safeParams.height, [
+                "1:1",
+                "1:2",
+                "1:3",
+                "2:1",
+                "2:3",
+                "3:1",
+                "3:2",
+                "4:3",
+                "3:4",
+                "16:9",
+                "9:16",
+                "21:9",
+            ]);
     }
-
+    if (references.length > 0) {
+        requestBody.input_references = references.map((url) => ({
+            type: "image_url",
+            image_url: { url },
+        }));
+    }
     const data = await postOpenRouterImage(
         apiKey,
         requestBody,
-        "OpenRouter image generation request failed",
+        "OpenRouter MiniMax H3 Image request failed",
     );
     const encodedImage = data.data?.[0]?.b64_json;
-    if (!encodedImage) {
-        throw UpstreamError.fromProvider(502, {
-            message: "OpenRouter image API returned no image",
-            responseBody: JSON.stringify(data),
-            requestUrl: new URL(OPENROUTER_IMAGE_URL),
-        });
+    if (!encodedImage) throw buildOpenRouterNoImageError(data);
+    const providerCost = data.usage?.cost;
+    if (
+        typeof providerCost !== "number" ||
+        !Number.isFinite(providerCost) ||
+        providerCost <= 0
+    ) {
+        invalidOpenRouterImageUsage(data.usage);
     }
-
-    logOps("Grok Imagine Pro generation complete", {
-        referenceImages: inputReferences.length,
-        providerCost: data.usage?.cost,
-    });
-
+    const promptTotal = data.usage?.prompt_tokens;
+    const promptImage = data.usage?.prompt_tokens_details?.image_tokens;
+    const completionImage = data.usage?.completion_tokens_details?.image_tokens;
+    const completionTotal = data.usage?.completion_tokens;
+    const usage: Usage = {
+        // On edits, some receipts combine text and reference tokens without a split.
+        ...(isTokenCount(promptTotal) &&
+        (!references.length || isTokenCount(promptImage))
+            ? {
+                  promptTextTokens: Math.max(
+                      0,
+                      promptTotal -
+                          (isTokenCount(promptImage) ? promptImage : 0),
+                  ),
+              }
+            : {}),
+        ...(isTokenCount(promptImage)
+            ? { promptImageTokens: promptImage }
+            : {}),
+        ...(isTokenCount(completionImage)
+            ? { completionImageTokens: completionImage }
+            : isTokenCount(completionTotal)
+              ? { completionImageTokens: completionTotal }
+              : {}),
+    };
     return {
         buffer: base64ToBuffer(encodedImage),
         trackingData: {
-            actualModel: "x-ai/grok-imagine-image-quality",
-            usage: {
-                ...(inputReferences.length > 0
-                    ? { promptImageTokens: inputReferences.length }
-                    : {}),
-                completionImageTokens: 1,
-            },
+            actualModel: safeParams.model,
+            usage,
+            providerBilling: { units: providerCost, unitCost: 1.055 },
         },
     };
 }

@@ -54,7 +54,9 @@ export type ModelVariables = {
 
 /** Required checks for every provider this request may reach. */
 export function getRequiredSafetyFeatures(
-    model: ModelVariables["model"] | undefined,
+    model:
+        | Pick<ModelVariables["model"], "definition" | "fallbackEntries">
+        | undefined,
 ): SafetyFeature[] {
     const features = new Set(model?.definition.requiredSafetyFeatures ?? []);
     for (const fallback of model?.fallbackEntries ?? []) {
@@ -134,15 +136,15 @@ function resolveModelEntry(
         });
     }
 
-    // A private community endpoint is owner-only: to everyone else it doesn't
-    // exist. Reuse the same "invalid model" response as an unknown name so
+    // A private community endpoint or a reserved registry model is owner-only:
+    // to everyone else it doesn't exist. Reuse the same "invalid model" response as an unknown name so
     // private models aren't discoverable by probing.
     const community = entry.communityEndpoint;
-    if (
-        community &&
-        community.visibility !== "public" &&
-        community.ownerUserId !== callerUserId
-    ) {
+    const ownerUserId =
+        community?.visibility === "public"
+            ? undefined
+            : (community?.ownerUserId ?? entry.definition.ownerUserId);
+    if (ownerUserId !== undefined && ownerUserId !== callerUserId) {
         throw new HTTPException(400, {
             message: `Invalid model or alias: "${model}". Must be a valid model name or alias.`,
         });
@@ -258,7 +260,9 @@ export function resolveModel(
         // Extract model from request
         let rawModel: string | null = null;
 
-        if (c.req.method === "GET") {
+        // Hono dispatches HEAD to the GET handler, so the query carries the
+        // model for both; reading GET alone made HEAD generate the default.
+        if (c.req.method === "GET" || c.req.method === "HEAD") {
             rawModel = c.req.query("model") || null;
         } else if (c.req.method === "POST") {
             const contentType = c.req.header("content-type") || "";

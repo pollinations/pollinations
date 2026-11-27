@@ -380,6 +380,14 @@ export async function withModelFallback<
     let refusal: PaymentRequiredError | undefined;
     let failure: FallbackAttempt | undefined;
     for (const [index, candidate] of candidates.entries()) {
+        const statuses = candidate.definition?.fallbackOnStatuses;
+        if (statuses) {
+            const status =
+                failure?.error instanceof Error
+                    ? upstreamStatus(failure.error)
+                    : undefined;
+            if (status === undefined || !statuses.includes(status)) continue;
+        }
         // Local gates are not upstream failures and must not trigger or be
         // attributed to another fallback candidate. A payment refusal only
         // skips its own model.

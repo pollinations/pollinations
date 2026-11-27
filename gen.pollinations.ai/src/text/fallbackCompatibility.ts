@@ -4,6 +4,7 @@ import {
 } from "@shared/community-endpoints.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 
+import { requestsAudioOutput } from "./requestUtils.ts";
 import { isGoogleSearchTool } from "./transforms/createGeminiToolsTransform.ts";
 
 function forcesToolChoice(toolChoice: unknown): boolean {
@@ -85,6 +86,11 @@ export function textCapabilityError(
     communityEndpoint?: CommunityEndpointRuntime,
 ): string | undefined {
     if (!definition) return;
+    if (
+        requestsAudioOutput(request) &&
+        !definition.outputModalities?.includes("audio")
+    )
+        return "This model does not support audio output";
     if (
         definition.search === false &&
         Array.isArray(request.tools) &&

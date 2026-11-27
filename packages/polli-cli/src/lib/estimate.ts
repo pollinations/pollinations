@@ -1,4 +1,5 @@
 import { gen } from "./api.js";
+import { resolveApiKey } from "./config.js";
 import { fail, getOutputMode, printResult } from "./output.js";
 
 // What `/image/models` reports for a model; only the fields an estimate needs.
@@ -104,15 +105,24 @@ export function estimateMediaCost(model: MediaModel, req: MediaRequest) {
 
 const round = (n: number) => Number(n.toPrecision(4));
 
-/** `--estimate` for `gen image` / `gen video`: reads the public model list
- * (no generation, no Pollen spent) and prints the estimate. */
+/** Reads catalog pricing for `--estimate` without generating media. */
 export async function printEstimate(modelName: string, req: MediaRequest) {
-    const models = await gen<MediaModel[]>("/image/models").catch((err) =>
-        fail("Failed to fetch model pricing", err),
-    );
-    const model = models.find(
-        (m) => m.name === modelName || m.aliases?.includes(modelName),
-    );
+    const findModel = async (apiKey: string) => {
+        const models = await gen<MediaModel[]>("/image/models", {
+            apiKey,
+        }).catch((err) => fail("Failed to fetch model pricing", err));
+        return models.find(
+            (model) =>
+                model.name === modelName || model.aliases?.includes(modelName),
+        );
+    };
+    // The public catalog includes paid-only models even for Quest-only keys.
+    // The keyed catalog can still find a model private to its owner.
+    let model = await findModel("");
+    if (!model) {
+        const apiKey = resolveApiKey();
+        if (apiKey) model = await findModel(apiKey);
+    }
     if (!model)
         fail(
             `Unknown ${req.kind} model: ${modelName}. Run: polli models --type ${req.kind}`,
@@ -146,7 +156,7 @@ export async function printEstimate(modelName: string, req: MediaRequest) {
     }
     printResult({
         model: model?.name,
-        estimate: total === null ? "unknown" : `${round(total)} pollen`,
+        estimate: total === null ? "unknown" : `$${round(total)}`,
         breakdown:
             lines
                 .map(

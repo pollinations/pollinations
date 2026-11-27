@@ -1,64 +1,5 @@
 import type { ModelCapability, ModelPrice } from "./types.ts";
 
-const BRAND_LOGOS: Record<string, string> = {
-    Alibaba: "alibaba",
-    Amazon: "amazon",
-    Anthropic: "anthropic",
-    AssemblyAI: "assemblyai",
-    "Black Forest Labs": "black-forest-labs",
-    ByteDance: "bytedance",
-    Cohere: "cohere",
-    Deemos: "deemos",
-    DeepSeek: "deepseek",
-    ElevenLabs: "elevenlabs",
-    "Fish Audio": "fish-audio",
-    Google: "google",
-    Hexgrad: "hexgrad",
-    HeyGen: "heygen",
-    Hyper3D: "deemos",
-    Ideogram: "ideogram",
-    Inception: "inception",
-    InferencePort: "inferenceport",
-    inclusionAI: "inclusionai",
-    "Jared Palmer": "jared-palmer",
-    "Kandinsky Lab": "kandinsky",
-    Krea: "krea",
-    Kuaishou: "kling",
-    Lightricks: "lightricks",
-    "Liquid AI": "liquid-ai",
-    "Mirelo AI": "mirelo",
-    Lykon: "lykon",
-    Meituan: "meituan",
-    Meta: "meta",
-    Microsoft: "microsoft",
-    MiniMax: "minimax",
-    Mistral: "mistral",
-    "Moonshot AI": "moonshot",
-    "Nex AGI": "nex-agi",
-    NVIDIA: "nvidia",
-    OpenAI: "openai",
-    Perplexity: "perplexity",
-    Pollinations: "pollinations",
-    Poolside: "poolside",
-    Pruna: "pruna",
-    Qwen: "qwen",
-    Recraft: "recraft",
-    Respan: "respan",
-    Sesame: "sesame",
-    Sonilo: "sonilo",
-    Stealth: "stealth",
-    "Stability AI": "stability",
-    StepFun: "stepfun",
-    Tencent: "tencent",
-    "Thinking Machines": "thinking-machines",
-    Tripo: "tripo",
-    TypeSafe: "typesafe",
-    "vLLM Semantic Router": "vllm-sr",
-    Xiaomi: "xiaomi",
-    "Z.ai": "zai",
-    xAI: "xai",
-};
-
 export const getFixedResolution = (
     model: Pick<ModelPrice, "pricingDimensions">,
 ): string | undefined => {
@@ -82,16 +23,6 @@ export const getModelDisplayName = (model: ModelPrice): string | undefined => {
 export const getModelDescriptionWithoutName = (
     model: ModelPrice,
 ): string | undefined => model.description || undefined;
-
-export const getModelBrandLogoPath = (
-    model: ModelPrice,
-): string | undefined => {
-    if (model.community) {
-        return model.brandIconUrl;
-    }
-    const logoName = model.publisher ? BRAND_LOGOS[model.publisher] : undefined;
-    return logoName ? `/brand-logos/${logoName}.svg` : undefined;
-};
 
 export type InputModality = "text" | "image" | "video" | "audio";
 
@@ -169,17 +100,7 @@ export const hasPollinationsTools = (model: ModelPrice): boolean =>
     hasCapability(model, "pollinations_models");
 
 /**
- * Check if a model is "new" (added within the last 7 days).
- * Uses the `addedDate` field, which is set once on creation and never updated.
- */
-export const isNewModel = (model: ModelPrice): boolean => {
-    if (!model.addedDate) return false;
-    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-    return model.addedDate > sevenDaysAgo;
-};
-
-/**
- * Check if a model requires paid balance only, not Quest Pollen.
+ * Check if a model requires paid balance only, not Quest balance.
  */
 export const isPaidOnly = (model: ModelPrice): boolean =>
     model.paidOnly === true;

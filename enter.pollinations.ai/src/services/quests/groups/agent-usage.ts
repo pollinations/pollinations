@@ -35,18 +35,20 @@ const useCommunityModelQuest: QuestDefinition = {
     id: "use_community_model",
     title: "Try a community model",
     description:
-        "Make one successful request to a [community model](https://gen.pollinations.ai/docs#tag/community-models) that costs pollen. Free community models don't count. Agents have their own quest.",
+        "Make one successful request to a [community model](https://gen.pollinations.ai/docs#tag/community-models) that isn't free. Free community models don't count. Agents have their own quest.",
     category: "setup",
     scope: "perUser",
     rewardAmount: 0.25,
     balanceBucket: "tier",
+    // Retained only so existing rewards remain visible and claimable.
+    state: "completed",
 };
 
 const createUsedCommunityModelQuest: QuestDefinition = {
     id: "create_used_community_model",
     title: "Your community model gets used",
     description:
-        "Publish a [community model](https://enter.pollinations.ai/my-models?tab=models). Earn this after other people spend more than 0.5 Paid Pollen in total on your community models. Your own requests and agents do not count.",
+        "Publish a [community model](https://enter.pollinations.ai/my-models?tab=models). Earn this after other people spend more than $0.50 from their paid balance in total on your community models. Your own requests and agents do not count.",
     category: "grow",
     scope: "perUser",
     rewardAmount: 2,
@@ -69,7 +71,6 @@ export const BYOM_QUEST_IDS = [
 // Each live quest completes when its flag from quest_agent_usage is 1.
 const QUEST_FLAGS = [
     ["usedAgent", useAgentQuest],
-    ["usedCommunityModel", useCommunityModelQuest],
     ["createdUsedCommunityModel", createUsedCommunityModelQuest],
 ] as const;
 

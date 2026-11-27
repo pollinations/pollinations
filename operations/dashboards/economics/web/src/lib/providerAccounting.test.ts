@@ -79,25 +79,28 @@ const emptyData = (over: Partial<Data>): Data => ({
 });
 
 describe("vendorPlanes", () => {
-    it("keeps user-approved expiry assumptions distinct from verified terms", () => {
-        const snapshot = vendorLedger({
-            type: "balance",
-            credit: 100,
-            end: "",
-            resource_sku: "current-balance-expiry-assumed",
-        });
-        expect(balanceCreditTerms(snapshot)).toEqual({
-            known: false,
-            assumed: true,
-            expiry: null,
-        });
-        const account = providerAccountBalanceRows(
-            emptyData({ vendorLedger: [snapshot] }),
-            new Date("2026-05-15T00:00:00Z"),
-        ).find((row) => row.vendor === "aws");
-        expect(account?.creditTermsKnown).toBe(false);
-        expect(account?.expiryAssumed).toBe(true);
-    });
+    it.each(["", "2026-05-31"])(
+        "keeps user-approved expiry %s distinct from verified terms",
+        (end) => {
+            const snapshot = vendorLedger({
+                type: "balance",
+                credit: 100,
+                end,
+                resource_sku: "current-balance-expiry-assumed",
+            });
+            expect(balanceCreditTerms(snapshot)).toEqual({
+                known: false,
+                assumed: true,
+                expiry: end || null,
+            });
+            const account = providerAccountBalanceRows(
+                emptyData({ vendorLedger: [snapshot] }),
+                new Date("2026-05-15T00:00:00Z"),
+            ).find((row) => row.vendor === "aws");
+            expect(account?.creditTermsKnown).toBe(false);
+            expect(account?.expiryAssumed).toBe(true);
+        },
+    );
 
     it("sums only the latest complete lot snapshot without combining prior totals", () => {
         const common = {
@@ -165,6 +168,11 @@ describe("vendorPlanes", () => {
         expect(lots[2].cashUsd).toBe(40);
         expect(consumeBalanceLots(lots, 60, "2026-09-30")).toBe(20);
         expect(consumeBalanceLots(lots, 10, "2026-10-01")).toBe(10);
+    });
+    it("preserves a supplier deficit without consuming it as prepaid cash", () => {
+        const lots = [{ creditUsd: 0, cashUsd: -0.28, expiry: null }];
+        expect(consumeBalanceLots(lots, 1, "2026-11-01")).toBe(1);
+        expect(lots[0].cashUsd).toBe(-0.28);
     });
     it("does not normalize an invalid expiry or interpret blank as unlimited", () => {
         expect(

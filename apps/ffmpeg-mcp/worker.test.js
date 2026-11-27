@@ -4,7 +4,10 @@ import {
     Client,
     StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
-import { MCP_USAGE_HEADERS } from "../../shared/registry/mcp.ts";
+import {
+    FFMPEG_MCP_PRICE_PER_SECOND,
+    MCP_USAGE_HEADERS,
+} from "../../shared/registry/mcp.ts";
 import { runFfmpeg, runFfprobe } from "./container-runtime.js";
 import { createWorker } from "./worker.js";
 
@@ -248,6 +251,13 @@ test("serves stateless MCP without caller credentials", async () => {
         tools.map(({ name }) => name),
         ["runFfmpeg", "probeMedia"],
     );
+    for (const tool of tools) {
+        assert.ok(
+            tool.description.includes(
+                `$${FFMPEG_MCP_PRICE_PER_SECOND.toFixed(8)} per active second`,
+            ),
+        );
+    }
     assert.match(
         tools[0].inputSchema.properties.args.description,
         /exact names/,
@@ -350,6 +360,45 @@ test("accepts public HTTPS media and raw FFmpeg input arguments", async () => {
 
     assert.equal(calls.run.length, 1);
     await client.close();
+});
+
+test("caps FFmpeg at 16 sources before fetching or executing", async () => {
+    const sources = Array.from(
+        { length: 16 },
+        (_, index) => `https://media.pollinations.ai/source-${index}`,
+    );
+    const { calls, env, worker } = createHarness({ expectedSources: sources });
+    const client = await connect(worker, env, calls);
+    const args = ["-i", "input15"];
+    try {
+        const rejected = await client.callTool({
+            name: "runFfmpeg",
+            arguments: {
+                sources: [...sources, SOURCE],
+                args,
+                outputExtension: "mp4",
+            },
+        });
+        assert.equal(rejected.isError, true);
+        assert.match(rejected.content[0].text, /at most 16 sources per run/);
+        assert.equal(calls.sourceFetches.length, 0);
+        assert.equal(calls.run.length, 0);
+        assert.equal(calls.upload.length, 0);
+        assert.equal(
+            calls.responses.at(-1).headers.get(MCP_USAGE_HEADERS.cost),
+            null,
+        );
+
+        const result = await client.callTool({
+            name: "runFfmpeg",
+            arguments: { sources, args, outputExtension: "mp4" },
+        });
+        assert.equal(result.isError, undefined);
+        assert.deepEqual(calls.sourceFetches, sources);
+        assert.equal(calls.run[0].inputs.length, 16);
+    } finally {
+        await client.close();
+    }
 });
 
 test("revalidates public HTTPS redirects", async () => {

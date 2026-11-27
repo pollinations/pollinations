@@ -7,7 +7,10 @@ import {
     Chip,
     ColorModeToggle,
     cn,
+    DatabaseIcon,
+    DownloadIcon,
     Drawer,
+    Dropdown,
     DropdownItem,
     EyeIcon,
     GlobeIcon,
@@ -46,6 +49,11 @@ import {
 } from "./components/Filters";
 import { ReconcileProContext } from "./components/ReconcilePro";
 import { GoogleDriveIcon, TinybirdIcon } from "./components/SourceIcons";
+import {
+    type DashboardExportSection,
+    dashboardExport,
+    dashboardSectionExport,
+} from "./lib/dashboardExport";
 import { dataConfidence, unreconciledBankAmount } from "./lib/dataConfidence";
 import { FINANCE_FOLDER_URL } from "./lib/driveSources";
 import {
@@ -67,12 +75,19 @@ import {
     type ReconciliationPage,
     reconciliationState,
 } from "./lib/reconciliation";
-import { type DataSource, fixturesMode, loadAll, TbError } from "./lib/tb";
+import {
+    DATA_SOURCES,
+    type DataSource,
+    fixturesMode,
+    loadAll,
+    TbError,
+} from "./lib/tb";
 import { trendPeriod } from "./lib/trends";
 import { unitEconomicsReport } from "./lib/unitEconomics";
 import type { Data } from "./types";
 import { BalancesTab } from "./views/CreditsTab";
 import { GpuTab } from "./views/GpuTab";
+import { InfrastructureTab } from "./views/InfrastructureTab";
 import { OpPollenTab } from "./views/OpPollenTab";
 import { OpTransactionsTab } from "./views/OpTransactionsTab";
 import { ReconciliationTab } from "./views/ReconciliationTab";
@@ -95,6 +110,8 @@ type InsightTab =
     | "runway"
     | "vendors"
     | "inference"
+    | "tools"
+    | "infrastructure"
     | "revenue-share"
     | "balances"
     | "gpu";
@@ -123,8 +140,53 @@ const VIEW_SOURCES: Record<ActiveView, readonly DataSource[]> = {
     close: ["opTransactions", "vendorLedger", "opPollen", "privateConfig"],
     vendors: ["opTransactions", "vendorLedger", "opPollen", "privateConfig"],
     inference: ["opTransactions", "vendorLedger", "opPollen", "privateConfig"],
+    tools: ["vendorLedger", "opPollen"],
+    infrastructure: ["vendorLedger"],
     gpu: ["opTransactions", "vendorLedger", "opPollen", "privateConfig"],
 };
+
+const DOWNLOAD_OPTIONS = [
+    { section: "all", label: "All dashboard data", sources: DATA_SOURCES },
+    { section: "runway", label: "Runway", sources: VIEW_SOURCES.runway },
+    {
+        section: "trends",
+        label: "Trends",
+        sources: [...VIEW_SOURCES.trends, "privateConfig"],
+    },
+    {
+        section: "vendorBalances",
+        label: "Vendor balances",
+        sources: VIEW_SOURCES.balances,
+    },
+    { section: "providers", label: "Providers", sources: VIEW_SOURCES.vendors },
+    {
+        section: "inference",
+        label: "Inference",
+        sources: VIEW_SOURCES.inference,
+    },
+    { section: "gpus", label: "GPUs", sources: VIEW_SOURCES.gpu },
+    {
+        section: "tools",
+        label: "Tools & sandboxes",
+        sources: VIEW_SOURCES.tools,
+    },
+    {
+        section: "infrastructure",
+        label: "Infrastructure",
+        sources: VIEW_SOURCES.infrastructure,
+    },
+    {
+        section: "revenueShare",
+        label: "Revenue share",
+        sources: VIEW_SOURCES["revenue-share"],
+    },
+] as const satisfies readonly {
+    section: DashboardExportSection | "all";
+    label: string;
+    sources: readonly DataSource[];
+}[];
+
+type DownloadOption = (typeof DOWNLOAD_OPTIONS)[number];
 
 const RECONCILE_MODE_KEY = "economics.reconcile";
 
@@ -183,7 +245,7 @@ const INSIGHT_TABS = [
     {
         id: "vendors",
         label: "Providers",
-        note: "Direct AI-delivery economics by vendor-month across managed inference and GPU capacity; shared infrastructure is excluded.",
+        note: "Monthly costs by vendor across inference, GPUs, and infrastructure, including tools and sandboxes.",
         icon: GlobeIcon,
     },
     {
@@ -197,6 +259,18 @@ const INSIGHT_TABS = [
         label: "GPUs",
         note: "GPU capacity economics with vendor-pool results above and one direct-cost row per GPU resource below.",
         icon: RocketIcon,
+    },
+    {
+        id: "tools",
+        label: "Tools & sandboxes",
+        note: "Infrastructure detail: sandbox and MCP usage, with attributable service costs split into cash and credits.",
+        icon: RocketIcon,
+    },
+    {
+        id: "infrastructure",
+        label: "Infrastructure",
+        note: "The same Infrastructure category as Runway, including tools and sandboxes, split into cash and credits.",
+        icon: DatabaseIcon,
     },
     {
         id: "revenue-share",
@@ -473,6 +547,7 @@ function EconomicsDrawer({
     activeView,
     data,
     reconciliationBadge,
+    downloadControl,
     footer,
     onCollapse,
     onViewChange,
@@ -481,6 +556,7 @@ function EconomicsDrawer({
     activeView: ActiveView;
     data: Data | null;
     reconciliationBadge: ReactNode;
+    downloadControl: ReactNode;
     footer: ReactNode;
     onCollapse?: () => void;
     onViewChange: (value: ActiveView) => void;
@@ -515,6 +591,7 @@ function EconomicsDrawer({
                 />
             </ScrollArea>
             <div className="flex shrink-0 flex-col gap-2 border-t border-theme-text-strong/10 px-1 pt-4">
+                {downloadControl}
                 {signOutError && <Alert>{signOutError}</Alert>}
                 <AccountMenu
                     name={
@@ -569,6 +646,7 @@ function EconomicsShell({
     children,
     data,
     reconciliationBadge,
+    downloadControl,
     footer,
     onViewChange,
 }: {
@@ -577,6 +655,7 @@ function EconomicsShell({
     children: ReactNode;
     data: Data | null;
     reconciliationBadge: ReactNode;
+    downloadControl: ReactNode;
     footer: ReactNode;
     onViewChange: (value: ActiveView) => void;
 }) {
@@ -615,6 +694,7 @@ function EconomicsShell({
             activeView={activeView}
             data={data}
             reconciliationBadge={reconciliationBadge}
+            downloadControl={downloadControl}
             footer={footer}
             onViewChange={handleViewChange}
         />
@@ -631,6 +711,7 @@ function EconomicsShell({
                     activeView={activeView}
                     data={data}
                     reconciliationBadge={reconciliationBadge}
+                    downloadControl={downloadControl}
                     footer={footer}
                     onCollapse={() => setNavCollapsed(true)}
                     onViewChange={handleViewChange}
@@ -733,17 +814,17 @@ function viewInfoContent(activeView: ActiveView) {
         return (
             <ViewInfo>
                 <InfoItem lead="Scope">
-                    One vendor-month across managed inference and GPU capacity.
-                    Shared infrastructure is excluded.
+                    One vendor-month across inference, GPUs, and Infrastructure,
+                    including tools and sandboxes. Expand Services for the cost
+                    split.
                 </InfoItem>
                 <InfoItem lead="Paid and Quest">
                     Cards show consumed Paid and Quest value. Retained is after
                     creator shares; Quest is free usage.
                 </InfoItem>
-                <InfoItem lead="Mixed modes">
-                    Vendor totals hold when a vendor serves both modes; the
-                    split stays unallocated until Pollen records delivery mode
-                    per request.
+                <InfoItem lead="Service costs">
+                    The vendor ledger supplies the service split. Pollen usage
+                    and retained value are shown at vendor level.
                 </InfoItem>
                 <InfoItem lead="Result">
                     Result and Performance use full vendor cost, consumed
@@ -770,6 +851,42 @@ function viewInfoContent(activeView: ActiveView) {
                 <InfoItem lead="Result">
                     Retained minus cash and consumed credits. Performance
                     divides that by retained; cost checks stay at vendor level.
+                </InfoItem>
+            </ViewInfo>
+        );
+    }
+    if (activeView === "tools") {
+        return (
+            <ViewInfo>
+                <InfoItem lead="Usage">
+                    Paid and Quest Pollen consumed by sandbox leases and
+                    receipt-billed MCP calls. Machines MCP adds no charge to the
+                    sandbox lease.
+                </InfoItem>
+                <InfoItem lead="Costs">
+                    Only attributable vendor bills appear here. Metered costs in
+                    Gen events are not additional invoice expenses. Shared Azure
+                    and Cloudflare bills remain in Infrastructure pending
+                    resource attribution.
+                </InfoItem>
+                <InfoItem lead="Runway">
+                    Tools &amp; sandboxes is a detail view of Infrastructure.
+                    Its costs are already included in Runway and Providers.
+                </InfoItem>
+            </ViewInfo>
+        );
+    }
+    if (activeView === "infrastructure") {
+        return (
+            <ViewInfo>
+                <InfoItem lead="Scope">
+                    Services such as Workers, databases, storage, networking,
+                    and safety controls, grouped by vendor and service month.
+                </InfoItem>
+                <InfoItem lead="Funding">
+                    Cash and used credits come from the Infrastructure lines of
+                    the vendor ledger, including Tools &amp; sandboxes. The
+                    total matches Runway’s Infrastructure category.
                 </InfoItem>
             </ViewInfo>
         );
@@ -960,6 +1077,51 @@ function Dashboard({ accountUser, planningDocument }: DashboardProps) {
     const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [attempt, setAttempt] = useState(0);
+    const [downloading, setDownloading] = useState(false);
+    const [downloadError, setDownloadError] = useState(false);
+
+    async function downloadData({ section, sources }: DownloadOption) {
+        setDownloading(true);
+        setDownloadError(false);
+        try {
+            const snapshot = await loadAll(
+                sources,
+                undefined,
+                planningDocument,
+            );
+            const now = new Date();
+            const report =
+                section === "all"
+                    ? dashboardExport(snapshot, now)
+                    : dashboardSectionExport(snapshot, section, now);
+            const fileSection =
+                section === "all"
+                    ? "dashboard"
+                    : section.replace(
+                          /[A-Z]/g,
+                          (letter) => `-${letter.toLowerCase()}`,
+                      );
+            const url = URL.createObjectURL(
+                new Blob([JSON.stringify(report)], {
+                    type: "application/json",
+                }),
+            );
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `economics-${fileSection}-${report.exportedAt.slice(0, 10)}.json`;
+            document.body.appendChild(link);
+            try {
+                link.click();
+            } finally {
+                link.remove();
+                window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+            }
+        } catch {
+            setDownloadError(true);
+        } finally {
+            setDownloading(false);
+        }
+    }
 
     useEffect(() => {
         const retryKey = attempt;
@@ -1125,6 +1287,58 @@ function Dashboard({ accountUser, planningDocument }: DashboardProps) {
         showVendorFilter ||
         showCategoryFilter;
 
+    const downloadControl = (
+        <>
+            <Dropdown
+                side="top"
+                portalled={false}
+                className="polli:max-h-[55dvh] polli:w-52 polli:max-w-[74vw] polli:overflow-y-auto polli:p-1"
+                trigger={(open) => (
+                    <Button
+                        intent="neutral"
+                        icon={<DownloadIcon />}
+                        className="polli:min-h-11 polli:w-full polli:justify-start polli:px-3"
+                        disabled={downloading}
+                        aria-busy={downloading}
+                    >
+                        <span className="flex-1 text-left">
+                            {downloading
+                                ? "Preparing download…"
+                                : "Download data"}
+                        </span>
+                        <ChevronIcon expanded={open} />
+                    </Button>
+                )}
+            >
+                {(close) =>
+                    DOWNLOAD_OPTIONS.map((option) => (
+                        <DropdownItem
+                            key={option.section}
+                            className={
+                                option.section === "all"
+                                    ? "polli:mb-1 polli:bg-theme-bg-subtle"
+                                    : undefined
+                            }
+                            onClick={() => {
+                                close();
+                                void downloadData(option);
+                            }}
+                        >
+                            {option.label}
+                        </DropdownItem>
+                    ))
+                }
+            </Dropdown>
+            {downloadError && (
+                <p
+                    role="alert"
+                    className="px-2 text-xs text-intent-warning-text"
+                >
+                    Couldn’t download the data. Try again.
+                </p>
+            )}
+        </>
+    );
     const drawerFooter = (
         <>
             <div className="flex flex-wrap items-center gap-2">
@@ -1310,6 +1524,16 @@ function Dashboard({ accountUser, planningDocument }: DashboardProps) {
                 {viewData && activeView === "gpu" && (
                     <GpuTab data={viewData} month={monthFilter} />
                 )}
+                {viewData &&
+                    (activeView === "infrastructure" ||
+                        activeView === "tools") && (
+                        <InfrastructureTab
+                            key={activeView}
+                            data={viewData}
+                            month={monthFilter}
+                            kind={activeView}
+                        />
+                    )}
             </ErrorBoundary>
         </>
     );
@@ -1323,6 +1547,7 @@ function Dashboard({ accountUser, planningDocument }: DashboardProps) {
                 accountUser={accountUser}
                 activeView={activeView}
                 data={data}
+                downloadControl={downloadControl}
                 footer={drawerFooter}
                 onViewChange={(value) => {
                     setCheckScope(null);

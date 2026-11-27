@@ -1,6 +1,7 @@
 import type { FC, ReactNode } from "react";
 import { cn } from "../../lib/cn.ts";
 import { CardIcon, SproutIcon } from "../../primitives/icons/index.tsx";
+import { Tooltip } from "../../primitives/Tooltip.tsx";
 
 type WalletBalanceKind = "paid" | "tier";
 
@@ -39,6 +40,68 @@ export const WalletKindIcon: FC<WalletKindIconProps> = ({
                 className,
             )}
         />
+    );
+};
+
+// Same wording as the balance tooltips on the Credits page.
+const walletKindHints: Record<WalletBalanceKind, string> = {
+    paid: "Paid balance: top-ups you bought. Used for paid-only models, or when Quest balance can't cover.",
+    tier: "Quest balance: earned from quests and your apps. Used first for regular models.",
+};
+
+export type WalletAmountProps = {
+    kind: WalletBalanceKind;
+    /** The formatted amount, e.g. "$5". */
+    children: ReactNode;
+    /** Grey, for amounts already claimed. */
+    muted?: boolean;
+    /** Inside a button the hint opens on hover only, so a tap still
+     *  presses the button. */
+    inButton?: boolean;
+    className?: string;
+};
+
+/** An amount led by its balance's icon: "🌱 $5" or "💳 $5". Both balances
+ *  are dollars, so the icon tells them apart; hovering or tapping it explains
+ *  the balance, like the Models page chips. */
+export const WalletAmount: FC<WalletAmountProps> = ({
+    kind,
+    children,
+    muted = false,
+    inButton = false,
+    className,
+}) => {
+    const Icon = walletKindIcons[kind];
+    return (
+        <span
+            className={cn(
+                "polli:inline-flex polli:items-center polli:gap-1 polli:tabular-nums",
+                // The balance colour marks it as that balance's money; a
+                // button keeps its own label colour.
+                !muted && !inButton && walletTextClasses[kind],
+                className,
+            )}
+        >
+            <Tooltip
+                triggerAs="span"
+                content={walletKindHints[kind]}
+                ariaLabel={walletKindHints[kind]}
+                tapEnabled={!inButton}
+                stopClickPropagation={!inButton}
+                className={cn(
+                    "polli:inline-flex polli:items-center",
+                    muted
+                        ? "polli:text-theme-text-muted"
+                        : walletTextClasses[kind],
+                )}
+            >
+                <Icon
+                    aria-hidden="true"
+                    className="polli:h-4 polli:w-4 polli:shrink-0"
+                />
+            </Tooltip>
+            {children}
+        </span>
     );
 };
 

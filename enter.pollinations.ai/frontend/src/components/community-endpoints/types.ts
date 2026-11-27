@@ -217,7 +217,7 @@ export type EndpointFormState = ModelListingFormState & {
     url: string;
     upstreamModel: string;
     bearerToken: string;
-    // Callers may only spend Paid Pollen. Useful for pay-as-you-go upstreams.
+    // Callers may only spend paid balance. Useful for pay-as-you-go upstreams.
     paidOnly: boolean;
     requiredSafetyFeatures: SafetyFeature[];
     // Public community model ids, tried in the order listed.

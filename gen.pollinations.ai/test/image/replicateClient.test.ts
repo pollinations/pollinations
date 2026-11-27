@@ -583,6 +583,21 @@ describe("toReplicateUpstreamError", () => {
         });
     });
 
+    it("explains Seedance's minimum reference video size", () => {
+        const providerMessage =
+            'Prediction failed: Async prediction failed: ModelError: The input was invalid. Please try again with different inputs. (E006) (uIJ6l3ruRD): Failed to generate video: {"error":{"code":"InvalidParameter","message":"The parameter `content[1]` specified in the request is not valid: the parameter video pixel count specified in the request must be greater than or equal to 407696 for model dreamina-seedance-2-5 in r2v."}}';
+        expect(
+            toReplicateUpstreamError(
+                new ReplicateError(providerMessage, 400),
+                "Seedance 2.5 generation failed",
+            ),
+        ).toMatchObject({
+            message:
+                "Seedance 2.5 generation failed: Reference video is too small: each frame needs at least 407696 pixels (854x480 or larger). Upscale the clip and try again.",
+            upstreamStatus: 400,
+        });
+    });
+
     it("does not mask non-Replicate failures", () => {
         const error = new TypeError("coding bug");
         expect(toReplicateUpstreamError(error, "ignored")).toBe(error);

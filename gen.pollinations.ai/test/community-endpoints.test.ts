@@ -118,7 +118,10 @@ import {
     getGenerationModelRegistry,
     resetGenerationModelRegistryCache,
 } from "../src/model-registry.ts";
-import { communityEndpointGatewayContext } from "../src/text/communityEndpoint.ts";
+import {
+    communityEndpointFetch,
+    communityEndpointGatewayContext,
+} from "../src/text/communityEndpoint.ts";
 import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
 const db = drizzle(env.DB);
@@ -688,6 +691,57 @@ async function createCommunityFallbackPair({
         fallbackToken,
     };
 }
+
+describe("community text header deadline", () => {
+    beforeEach(() => {
+        vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    });
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    it("aborts a request still awaiting headers at 300 seconds", async () => {
+        const caller = new AbortController();
+        const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(
+            (_input, init) =>
+                new Promise<Response>((_resolve, reject) => {
+                    const signal = init?.signal;
+                    signal?.addEventListener("abort", () =>
+                        reject(signal.reason),
+                    );
+                }),
+        );
+        const result = communityEndpointFetch("https://provider.test", {
+            signal: caller.signal,
+        }).catch((error) => error);
+        const signal = fetchMock.mock.calls[0]?.[1]?.signal;
+        vi.advanceTimersByTime(299_999);
+        expect(signal?.aborted).toBe(false);
+        vi.advanceTimersByTime(1);
+        expect(signal?.aborted).toBe(true);
+        await expect(result).resolves.toMatchObject({ name: "TimeoutError" });
+        expect(caller.signal.aborted).toBe(false);
+    });
+
+    it("clears the deadline after headers and keeps caller cancellation", async () => {
+        const caller = new AbortController();
+        const upstream = new Response("data: token\n\n", {
+            headers: { "Content-Type": "text/event-stream" },
+        });
+        const fetchMock = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValue(upstream);
+        const response = await communityEndpointFetch("https://provider.test", {
+            signal: caller.signal,
+        });
+        const signal = fetchMock.mock.calls[0]?.[1]?.signal;
+        vi.advanceTimersByTime(300_000);
+        expect(signal?.aborted).toBe(false);
+        await expect(response.text()).resolves.toBe("data: token\n\n");
+        caller.abort();
+        expect(signal?.aborted).toBe(true);
+    });
+});
 
 describe("community endpoint helpers", () => {
     it("resolves pending visibility and pricing as one effective listing", () => {
@@ -3318,6 +3372,7 @@ fixtureTest(
             const request = new Request(input, init);
 
             if (request.url === chatUrl) {
+                expect(init?.signal).toBeInstanceOf(AbortSignal);
                 expect(request.headers.get("authorization")).toBe(
                     "Bearer sk_saved_token",
                 );
@@ -4074,6 +4129,7 @@ fixtureTest(
             vi.fn(async (input, init) => {
                 const request = new Request(input, init);
                 if (request.url === responsesUrl) {
+                    expect(init?.signal).toBeInstanceOf(AbortSignal);
                     expect(request.headers.get("authorization")).toBe(
                         "Bearer exact-responses-token",
                     );
@@ -7099,6 +7155,9 @@ fixtureTest(
             }),
         );
         expect(urlImageResponse.status).toBe(200);
+        // The earlier b64_json request has the same prompt, model, size and
+        // quality; response_format is not part of the media identity.
+        expect(urlImageResponse.headers.get("x-cache")).toBe("HIT");
         await expect(urlImageResponse.json()).resolves.toMatchObject({
             data: [
                 {
@@ -7200,7 +7259,7 @@ fixtureTest(
             fetchMock.mock.calls.filter(([input, init]) =>
                 isCommunityImageGenerationsRequest(new Request(input, init)),
             ),
-        ).toHaveLength(5);
+        ).toHaveLength(4);
         expect(
             fetchMock.mock.calls.filter(([input, init]) =>
                 isCommunityImageEditsRequest(new Request(input, init)),
@@ -7211,7 +7270,7 @@ fixtureTest(
                 ([input, init]) =>
                     new Request(input, init).url === TEST_COMMUNITY_IMAGE_URL,
             ),
-        ).toHaveLength(4);
+        ).toHaveLength(3);
 
         const maximumImagePriceResponse = await fetchEnterApi(
             enterApi,
@@ -8736,7 +8795,7 @@ fixtureTest(
         );
         expect(aboveMaximumResponse.status).toBe(400);
         expect(await aboveMaximumResponse.text()).toContain(
-            `${MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS} Pollen per 1M tokens`,
+            `$${MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M tokens`,
         );
 
         const belowMinimumResponse = await updatePrice(
@@ -9415,6 +9474,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         community?: boolean;
         agent?: boolean;
         base_model?: string;
+        mcp_servers?: string[];
         pricing?: Record<string, string>;
         capabilities?: string[];
         input_modalities?: string[];
@@ -9426,6 +9486,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
             id: string;
             agent?: boolean;
             base_model?: string;
+            mcp_servers?: string[];
             pricing?: Record<string, string>;
             capabilities?: string[];
             input_modalities?: string[];
@@ -9454,6 +9515,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         community: true,
         agent: true,
         base_model: promptAgent.baseModel,
+        mcp_servers: promptAgent.mcpServers,
         pricing: baseModelInfo?.pricing,
         capabilities: agentCapabilities,
         input_modalities: baseModelInfo?.input_modalities,
@@ -9471,6 +9533,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         agent: true,
         tags: [{ name: "text" }, { name: "community" }, { name: "agent" }],
         base_model: promptAgent.baseModel,
+        mcp_servers: promptAgent.mcpServers,
         pricing: baseModelInfo?.pricing,
         capabilities: agentCapabilities,
         input_modalities: openaiBaseModel?.input_modalities,

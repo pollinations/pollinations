@@ -82,6 +82,35 @@ test("generateText returns the refusal text of a refusal-only completion", async
     assert.equal(result.content[0].text, "I can't help");
 });
 
+test("generateText rejects a completion that ends with finish_reason error", async (t) => {
+    const original = globalThis.fetch;
+    t.after(() => {
+        globalThis.fetch = original;
+    });
+    globalThis.fetch = async (input) =>
+        String(input).endsWith("/text/models")
+            ? Response.json([{ name: "test-model" }])
+            : Response.json({
+                  choices: [
+                      {
+                          message: { content: "Partial answer" },
+                          finish_reason: "error",
+                      },
+                  ],
+              });
+    const generateText = textTools.find(([name]) => name === "generateText")[3];
+    await assert.rejects(
+        generateText(
+            {
+                model: "test-model",
+                messages: [{ role: "user", content: "Write a report" }],
+            },
+            { http: { authInfo: { token: "sk_test" } } },
+        ),
+        /Chat completion failed/,
+    );
+});
+
 test("generateText labels MP3 audio with the audio/mpeg media type", async (t) => {
     const original = globalThis.fetch;
     t.after(() => {

@@ -24,52 +24,55 @@ export const CatalogCard: FC<{
     copy?: { value: string; label: string; wrap?: boolean };
     /** Beside the value to copy: whether it works, how to try or start it. */
     status?: ReactNode;
-}> = ({ logo, title, children, price, copy, status }) => (
-    <Surface className="flex flex-col gap-3 @min-[38rem]:grid @min-[38rem]:grid-cols-[minmax(0,1fr)_var(--catalog-price-width)] @min-[38rem]:gap-x-6">
-        <div className="flex min-w-0 flex-col gap-2.5 @min-[38rem]:col-start-1 @min-[38rem]:row-start-1 @min-[38rem]:self-start">
-            <div className="flex min-w-0 items-center gap-2.5">
-                {logo && (
-                    <>
-                        <span className="flex h-8 w-8 shrink-0 [&>*]:h-full [&>*]:w-full">
-                            {logo}
-                        </span>
-                        <span
-                            aria-hidden="true"
-                            className="h-8 w-px shrink-0 bg-divider"
-                        />
-                    </>
-                )}
-                <div className="min-w-0 flex-1">{title}</div>
+    /** Put the copy field and its action below both columns. */
+    fullWidthActions?: boolean;
+}> = ({ logo, title, children, price, copy, status, fullWidthActions }) => {
+    const actions = copy && (
+        <div
+            className={`flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5 ${fullWidthActions ? "@min-[38rem]:col-span-full" : "mt-1.5"}`}
+        >
+            <div className="w-fit min-w-0 max-w-full">
+                <CopyField
+                    label={copy.label}
+                    value={copy.value}
+                    size="sm"
+                    className={
+                        copy.wrap
+                            ? undefined
+                            : "@min-[38rem]:[&>span:first-child]:truncate"
+                    }
+                />
             </div>
-            <div className="flex min-w-0 flex-col gap-1">{children}</div>
-            {/* How to call it: the small copy pill, the size of the labels
-                and buttons beside it. */}
-            {copy && (
-                <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5">
-                    <div className="w-fit min-w-0 max-w-full">
-                        <CopyField
-                            label={copy.label}
-                            value={copy.value}
-                            size="sm"
-                            className={
-                                copy.wrap
-                                    ? undefined
-                                    : "@min-[38rem]:[&>span:first-child]:truncate"
-                            }
-                        />
-                    </div>
-                    {/* Beside the pill when it fits, under it otherwise. */}
-                    {status && (
-                        <div className="flex min-h-5 items-center gap-2">
-                            {status}
-                        </div>
-                    )}
-                </div>
+            {status && (
+                <div className="flex min-h-5 items-center gap-2">{status}</div>
             )}
         </div>
-        {/* No box: a line on its left beside the text, none stacked. */}
-        <div className="min-w-0 @min-[38rem]:col-start-2 @min-[38rem]:row-start-1 @min-[38rem]:self-start @min-[38rem]:border-l @min-[38rem]:border-divider @min-[38rem]:pl-4">
-            {price}
-        </div>
-    </Surface>
-);
+    );
+    return (
+        <Surface className="flex flex-col gap-3 @min-[38rem]:grid @min-[38rem]:grid-cols-[minmax(0,1fr)_var(--catalog-price-width)] @min-[38rem]:gap-x-6">
+            <div className="flex min-w-0 flex-col gap-2.5 @min-[38rem]:col-start-1 @min-[38rem]:row-start-1 @min-[38rem]:self-start">
+                <div className="flex min-w-0 items-center gap-2.5">
+                    {logo && (
+                        <>
+                            <span className="flex h-8 w-8 shrink-0 [&>*]:h-full [&>*]:w-full">
+                                {logo}
+                            </span>
+                            <span
+                                aria-hidden="true"
+                                className="h-8 w-px shrink-0 bg-divider"
+                            />
+                        </>
+                    )}
+                    <div className="min-w-0 flex-1">{title}</div>
+                </div>
+                <div className="flex min-w-0 flex-col gap-1">{children}</div>
+                {!fullWidthActions && actions}
+            </div>
+            {/* No box: a line on its left beside the text, none stacked. */}
+            <div className="min-w-0 @min-[38rem]:col-start-2 @min-[38rem]:row-start-1 @min-[38rem]:self-start @min-[38rem]:border-l @min-[38rem]:border-divider @min-[38rem]:pl-4">
+                {price}
+            </div>
+            {fullWidthActions && actions}
+        </Surface>
+    );
+};

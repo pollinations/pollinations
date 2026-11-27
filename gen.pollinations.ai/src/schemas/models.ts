@@ -11,7 +11,7 @@ export const splitList = (value: string) =>
 export const ModelListQueryParamsSchema = z.object({
     reliability: z.enum(["reliable", "all"]).optional().meta({
         description:
-            "Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and private visibility still apply. Exact-ID calls and fallback routing are unaffected.",
+            "Defaults to reliable: public community models and agents need more than 80% success across the last 50 eligible requests within seven days, or no observations; an agent whose base model no longer exists is hidden. Official models and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and private visibility still apply. Exact-ID calls and fallback routing are unaffected.",
     }),
     source: z.enum(["official", "community"]).optional().meta({
         description:

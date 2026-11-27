@@ -3,7 +3,7 @@ import { InlineLink } from "@pollinations/ui";
 export const OPEN_WEBUI_URL =
     import.meta.env.MODE === "staging"
         ? "https://openwebui-staging.elliot-b6e.workers.dev"
-        : "https://openwebui.pollinations.ai";
+        : "https://openwebui.pollinations.app";
 
 /**
  * Open WebUI signs in with Pollinations OAuth and fetches its model list with

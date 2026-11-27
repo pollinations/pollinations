@@ -69,10 +69,12 @@ const PROTOCOL_VENDORS: Record<string, string> = {
 const HOST_VENDORS: Record<string, string> = {
     "api.openai.com": "openai",
     "generativelanguage.googleapis.com": "google",
+    "bedrock-mantle.us-east-1.api.aws": "aws",
     "bedrock-runtime.us-east-1.amazonaws.com": "aws",
     "api.fireworks.ai": "fireworks",
     "api.deepinfra.com": "deepinfra",
     "api.inferenceport.ai": "inferenceport",
+    "api.inceptionlabs.ai": "inception",
     "api.mistral.ai": "mistral",
     "api.novita.ai": "novita",
     "api.perplexity.ai": "perplexity",

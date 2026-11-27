@@ -83,6 +83,8 @@ export type GenerationModelEntry = {
     info: ModelInfo;
     communityEndpoint?: CommunityEndpointRuntime;
     agentConfig?: AgentCatalogConfig;
+    // A hosted agent whose base model is gone cannot run: it counts as down.
+    baseModelMissing?: boolean;
     visible: boolean;
     // Entries that serve this model when its own upstream fails, in declared
     // order. A fallback's own list is not followed, so routing stays depth one.

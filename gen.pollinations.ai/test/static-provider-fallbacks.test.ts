@@ -50,6 +50,61 @@ describe("Baseten Bison 1 OpenRouter decision route", () => {
     });
 });
 
+describe("HeyGen Decision 1 routes", () => {
+    it("routes the paid multimodal model through its pinned OpenRouter endpoint", () => {
+        const primary = TEXT_SERVICES["heygen/heygen-decision-1"];
+        expect(primary).toMatchObject({
+            category: "decision",
+            provider: "openrouter",
+            paidOnly: true,
+            aliases: [],
+            inputModalities: ["text", "image", "audio", "video"],
+        });
+        expect(primary).not.toHaveProperty("fallbacks");
+        expect(primary.supportedEndpoints).toContain("/alpha/decisions");
+        const route = findModelByName("heygen/heygen-decision-1");
+        expect(route?.useSystemOneApi).toBe(true);
+        expect(route?.config()).toMatchObject({
+            directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+            defaultOptions: {
+                provider: { only: ["heygen"], allow_fallbacks: false },
+            },
+        });
+    });
+});
+
+describe("Inkling 2 Mini OpenRouter route", () => {
+    it("registers image inputs, tools and reasoning with canonical no-alias routing", () => {
+        const model = TEXT_SERVICES["thinkingmachines/inkling-2-mini"];
+        expect(model).toMatchObject({
+            provider: "openrouter",
+            paidOnly: true,
+            aliases: [],
+            category: "text",
+            inputModalities: ["text", "image"],
+            contextLength: 1048576,
+            tools: true,
+            reasoning: true,
+        });
+        expect(model.supportedParameters).toEqual(
+            expect.arrayContaining([
+                "tools",
+                "response_format",
+                "reasoning",
+                "include_reasoning",
+            ]),
+        );
+        expect(typeof model.billing?.resolveTotalCost).toBe("function");
+        expect(
+            findModelByName("thinkingmachines/inkling-2-mini")?.config(),
+        ).toMatchObject({
+            provider: "openrouter",
+            model: "thinkingmachines/inkling-2-mini",
+            defaultOptions: { provider: { sort: "price" } },
+        });
+    });
+});
+
 const OPENROUTER_ROUTES = [
     [
         "anthropic/claude-opus-4.7:openrouter:vertex-global",

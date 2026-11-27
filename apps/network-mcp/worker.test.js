@@ -437,4 +437,29 @@ test("inspect_mac parses and normalizes MAC addresses across formats", async (t)
     });
     const bResult = JSON.parse(broadcast.content[0].text);
     assert.equal(bResult.properties.is_broadcast, true);
+
+    const raw = await client.callTool({
+        name: "inspect_mac",
+        arguments: { address: "001A2B3C4D5E" },
+    });
+    assert.notEqual(raw.isError, true);
+    assert.equal(
+        JSON.parse(raw.content[0].text).formats.colon,
+        "00:1a:2b:3c:4d:5e",
+    );
+
+    for (const invalid of [
+        "00:1A-2B:3C:4D:5E",
+        "00::1A::2B::3C::4D::5E",
+        ":00:1A:2B:3C:4D:5E",
+        "0:01A2B3C4D5E",
+        "00.1a.2b.3c.4d.5e",
+        "001a2b3c4d5e....",
+    ]) {
+        const res = await client.callTool({
+            name: "inspect_mac",
+            arguments: { address: invalid },
+        });
+        assert.equal(res.isError, true, invalid);
+    }
 });

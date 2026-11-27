@@ -1,15 +1,18 @@
 import { z } from "zod";
 
+const MAC_PATTERN =
+    /^(?:[0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5}|[0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5}|[0-9a-fA-F]{4}(?:\.[0-9a-fA-F]{4}){2}|[0-9a-fA-F]{12})$/;
+
 function parseMac(address) {
     const cleaned = address.trim();
-    // Remove common separators : - .
-    const hexOnly = cleaned.replace(/[:.-]/g, "");
 
-    if (!/^[0-9a-fA-F]{12}$/.test(hexOnly)) {
+    if (!MAC_PATTERN.test(cleaned)) {
         throw new Error(
-            "Invalid MAC address: must be 12 hex characters (e.g. 00:1A:2B:3C:4D:5E or 001a.2b3c.4d5e)",
+            "Invalid MAC address: expected colon (00:1A:2B:3C:4D:5E), hyphen (00-1A-2B-3C-4D-5E), Cisco dot (001a.2b3c.4d5e), or 12-char raw hex format",
         );
     }
+
+    const hexOnly = cleaned.replace(/[:.-]/g, "");
 
     const normalizedHex = hexOnly.toLowerCase();
     const bytes = [];

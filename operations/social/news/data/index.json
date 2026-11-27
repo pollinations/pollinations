@@ -1,114 +1,7 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-26T06:07:16.982188+00:00",
+  "generated_at": "2026-11-27T06:08:04.221724+00:00",
   "models": [
-    {
-      "id": "2026-10-27:openai/gpt-image-1-mini",
-      "model_id": "openai/gpt-image-1-mini",
-      "title": "GPT Image 1 Mini",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "image",
-      "date": "2026-10-27",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "paid_only": {
-          "before": false,
-          "after": true
-        },
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "promptTextTokens": "0.0000015",
-            "promptCachedTokens": "0.00000015",
-            "promptImageTokens": "0.000001875",
-            "completionImageTokens": "0.000006"
-          },
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.000002",
-            "promptCachedTokens": "0.0000002",
-            "promptImageTokens": "0.0000025",
-            "completionImageTokens": "0.000008"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-27:openai/gpt-image-1.5",
-      "model_id": "openai/gpt-image-1.5",
-      "title": "GPT Image 1.5",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "image",
-      "date": "2026-10-27",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "paid_only": {
-          "before": false,
-          "after": true
-        },
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "promptTextTokens": "0.00000375",
-            "promptCachedTokens": "0.0000009375",
-            "promptImageTokens": "0.000006",
-            "completionTextTokens": "0.0000075",
-            "completionImageTokens": "0.000024"
-          },
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.000005",
-            "promptCachedTokens": "0.00000125",
-            "promptImageTokens": "0.000008",
-            "completionTextTokens": "0.00001",
-            "completionImageTokens": "0.000032"
-          }
-        }
-      }
-    },
-    {
-      "id": "2026-10-27:openai/gpt-image-2",
-      "model_id": "openai/gpt-image-2",
-      "title": "GPT Image 2",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "image",
-      "date": "2026-10-27",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "paid_only": {
-          "before": false,
-          "after": true
-        },
-        "pricing": {
-          "before": {
-            "currency": "pollen",
-            "promptTextTokens": "0.00000375",
-            "promptCachedTokens": "0.0000009375",
-            "promptImageTokens": "0.000006",
-            "completionImageTokens": "0.0000225"
-          },
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.000005",
-            "promptCachedTokens": "0.00000125",
-            "promptImageTokens": "0.000008",
-            "completionImageTokens": "0.00003"
-          }
-        }
-      }
-    },
     {
       "id": "2026-10-30:anthropic/claude-fable-5.1",
       "model_id": "anthropic/claude-fable-5.1",
@@ -3248,6 +3141,34 @@
           "after": null
         }
       }
+    },
+    {
+      "id": "2026-11-26:openai/gpt-oss-20b",
+      "model_id": "openai/gpt-oss-20b",
+      "title": "GPT-OSS 20B",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-11-26",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000005",
+            "completionTextTokens": "0.00000018"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000003",
+            "promptCachedTokens": "0.000000015",
+            "completionTextTokens": "0.00000014"
+          }
+        }
+      }
     }
   ],
   "api": [
@@ -3650,6 +3571,36 @@
     }
   ],
   "daily": [
+    {
+      "date": "2026-11-26",
+      "emoji": "🎵",
+      "title": "Realtime voice in the SDK",
+      "text": "Use `connectRealtime()` for voice or live transcription sessions, or `useRealtime()` in a React app. The SDK also includes PCM16 audio helpers and a browser voice-chat example. [Get the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
+      "prs": [
+        20088
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-26",
+      "emoji": "🎨",
+      "title": "Illustrated Classic API errors",
+      "text": "Classic API errors now have illustrated browser pages. Image requests made through `<img>` tags can show a JPEG error card instead of a broken image; scripts keep their existing error formats.",
+      "prs": [
+        20628
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-11-26",
+      "emoji": "🤖",
+      "title": "Agent MCP tools listed",
+      "text": "Prompt-agent entries in the model catalog and OpenAI-compatible model list now include `mcp_servers` when their tools are visible to Gen. Clients can use the registry IDs to show which MCP servers an agent can call. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        20652
+      ],
+      "kind": "api"
+    },
     {
       "date": "2026-11-24",
       "emoji": "🤖",

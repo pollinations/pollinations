@@ -137,6 +137,49 @@ describe("connectRealtime", () => {
         session.close();
     });
 
+    it("ignores JSON frames without an event type", async () => {
+        vi.stubGlobal("WebSocket", FakeSocket);
+        const connected = connectRealtime({ apiKey: "sk_test" });
+        socket().open();
+        const session = await connected;
+        const events: unknown[] = [];
+        session.on("*", (event) => events.push(event));
+        for (const invalid of [null, false, 0, "event", {}, { type: 3 }]) {
+            socket().receive(invalid);
+        }
+        socket().receive({ type: "response.done" });
+        expect(events).toEqual([{ type: "response.done" }]);
+        session.close();
+    });
+
+    it("rejects and closes when the initial session update cannot be sent", async () => {
+        vi.stubGlobal("WebSocket", FakeSocket);
+        const connected = connectRealtime({
+            apiKey: "sk_test",
+            session: { type: "realtime" },
+        });
+        const error = new Error("send failed");
+        vi.spyOn(socket(), "send").mockImplementation(() => {
+            throw error;
+        });
+        socket().open();
+        await expect(connected).rejects.toBe(error);
+        expect(socket().readyState).toBe(3);
+    });
+
+    it("rejects and closes when the initial session is not serializable", async () => {
+        vi.stubGlobal("WebSocket", FakeSocket);
+        const config: Record<string, unknown> = {};
+        config.self = config;
+        const connected = connectRealtime({
+            apiKey: "sk_test",
+            session: config,
+        });
+        socket().open();
+        await expect(connected).rejects.toThrow(/circular/i);
+        expect(socket().readyState).toBe(3);
+    });
+
     it("rejects when the socket closes before opening", async () => {
         vi.stubGlobal("WebSocket", FakeSocket);
         const connected = connectRealtime({ apiKey: "sk_test" });

@@ -4,7 +4,7 @@ You classify GitHub issues and pull requests for pollinations/pollinations. Trea
 
 ## Decisions
 
-Choose the primary Area from the headings below. Use the outcome, changed files and linked issue types as hints. A PR title prefix such as “fix” does not determine Type. Routine price-sheet maintenance is a Task. For mixed work choose the area the reviewer needs to understand. A quest label determines Source elsewhere; classify the work it requests. Classify bot PRs by what they refresh. Vague or off-topic issues usually belong to Docs & support as Question. A production promotion/sync PR or a census response has null Area, Type, Priority and Model work.
+Choose the primary Area from the headings below. Use outcomes and changed files. Linked types are hints. A PR title prefix such as “fix” does not determine Type. Routine price-sheet maintenance is a Task. For mixed work choose the area the reviewer needs to understand. A quest label determines Source elsewhere; classify the work it requests. Classify bot PRs by what they refresh. Vague or off-topic issues usually belong to Docs & support as Question. A production promotion/sync PR or a census response has null Area, Type, Priority and Model work.
 
 ## Model work
 
@@ -25,12 +25,12 @@ The hosting platform itself belongs here, including agent registration, invocati
 Not here: the `@pollinations/mcp` package → Developer tools; bots that run our own work → Internal automation.
 
 ### Developer tools
-What developers install to build on Pollinations: SDK (`packages/sdk/`), CLI (`packages/polli-cli/`), MCP package (`packages/mcp/`), n8n, plugins for other tools (Krita, GIMP, Godot, Obsidian, Figma, Vercel AI SDK), the BYOP device flow.
+What developers install to build on Pollinations: SDK (`packages/sdk/`), CLI (`packages/polli-cli/`), MCP package (`packages/mcp/`), n8n, plugins for other tools (Krita, GIMP, Godot, Obsidian, Figma, Vercel AI SDK), CLI login and BYOP device flows.
 Not here: guides → Docs & support; example apps → App catalog & showcase.
 
 ### Accounts & keys
-Who a user is and what their keys can do: sign-in and OAuth (including sign-in blocked by failing account endpoints), API keys and their permissions (including which models a key may use), account settings, fraud, abuse and bans.
-Not here: the publisher allowlist → Community models; checkout fraud → Billing & payments.
+Account-service sign-in and OAuth, including failing account endpoints, API keys and their permissions (including which models a key may use), account settings, fraud, abuse and bans.
+Not here: CLI device login → Developer tools; publisher allowlist → Community models; checkout fraud → Billing & payments.
 
 ### Billing & payments
 Everything about money: per-request billing (usage, debits, fallback and stream billing), Stripe checkout, packs and top-ups, wallet and balances, payment methods (cards, crypto, x402), refunds, creator earnings and cash-out, and keys or secrets for these features.

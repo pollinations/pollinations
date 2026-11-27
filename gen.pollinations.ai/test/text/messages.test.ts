@@ -13,9 +13,7 @@ import { CreateMessageRequestSchema } from "@/text/messages/schema.ts";
 import { chatToMessagesStream } from "@/text/messages/stream.ts";
 import {
     chatToMessagesResponse,
-    MessagesProviderError,
     messagesToChatRequest,
-    stopReason,
     toolUseInput,
 } from "@/text/messages/translate.ts";
 import { responsesToChatCompletion } from "@/text/responses/chatResponse.ts";
@@ -1031,7 +1029,11 @@ describe("POST /v1/messages", () => {
 
     /** Mock the provider and Tinybird; returns what each received. */
     function mockUpstream(
-        options: { withUsage?: boolean; withThinking?: boolean } = {},
+        options: {
+            withUsage?: boolean;
+            withThinking?: boolean;
+            failCompletion?: boolean;
+        } = {},
     ): {
         events: TinybirdEvent[];
         providerBodies: Record<string, unknown>[];
@@ -1039,6 +1041,7 @@ describe("POST /v1/messages", () => {
         const events: TinybirdEvent[] = [];
         const providerBodies: Record<string, unknown>[] = [];
         const providerUsage = options.withUsage === false ? {} : { usage };
+        const finishReason = options.failCompletion ? "error" : "stop";
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
                 const upstream = new Request(input, init);
@@ -1080,7 +1083,9 @@ describe("POST /v1/messages", () => {
                         sse([
                             { choices: [{ delta: { content: "Hello" } }] },
                             {
-                                choices: [{ delta: {}, finish_reason: "stop" }],
+                                choices: [
+                                    { delta: {}, finish_reason: finishReason },
+                                ],
                             },
                             { choices: [], ...providerUsage },
                             "[DONE]",
@@ -1096,7 +1101,7 @@ describe("POST /v1/messages", () => {
                     choices: [
                         {
                             index: 0,
-                            finish_reason: "stop",
+                            finish_reason: finishReason,
                             message: {
                                 role: "assistant",
                                 content: "Hello",
@@ -1230,6 +1235,43 @@ describe("POST /v1/messages", () => {
             expect(
                 afterChat.tierBalance - afterMessages.tierBalance,
             ).toBeCloseTo(chatCharge, 10);
+        },
+    );
+
+    it.each([false, true])(
+        "returns a provider finish error without billing the caller, stream=%s",
+        async (stream) => {
+            const caller = await createTestApiKey({
+                user: { tierBalance: 100 },
+            });
+            const { events } = mockUpstream({ failCompletion: true });
+            const { response, text } = await call(
+                "/v1/messages",
+                {
+                    model,
+                    stream,
+                    max_tokens: 256,
+                    messages: [{ role: "user", content: `failed ${stream}` }],
+                },
+                caller.key,
+            );
+            expect(response.status).toBe(stream ? 200 : 502);
+            const error = stream ? parseEvents(text).at(-1) : JSON.parse(text);
+            expect(error).toMatchObject({
+                type: "error",
+                error: {
+                    type: "api_error",
+                    message:
+                        "Chat Completions provider failed to complete the response",
+                },
+            });
+            expect(events.filter((event) => "isBilledUsage" in event)).toEqual([
+                expect.objectContaining({ isBilledUsage: false }),
+            ]);
+            expect(
+                (await getUserBalance(drizzle(env.DB), caller.userId))
+                    .tierBalance,
+            ).toBe(100);
         },
     );
 
@@ -1801,30 +1843,6 @@ it("does not invent empty arguments when length stops before tool input", () => 
 });
 
 describe("Messages finish_reason error handling", () => {
-    it("rejects finish_reason error in stopReason and chatToMessagesResponse", () => {
-        expect(() => stopReason("error", false)).toThrow(MessagesProviderError);
-        expect(() =>
-            chatToMessagesResponse(
-                {
-                    id: "err",
-                    object: "chat.completion",
-                    created: 1,
-                    choices: [
-                        {
-                            finish_reason: "error",
-                            message: {
-                                role: "assistant",
-                                content: "partial answer",
-                            },
-                        },
-                    ],
-                    usage,
-                },
-                model,
-            ),
-        ).toThrow(MessagesProviderError);
-    });
-
     it("returns 502 instead of end_turn when /v1/messages gets finish_reason error", async () => {
         const routes = createMessagesRoutes(() =>
             Response.json({
@@ -1885,11 +1903,10 @@ describe("Messages finish_reason error handling", () => {
             expectedMessage: "Stream provider aborted",
         },
         {
-            name: "finish_reason error before [DONE]",
+            name: "finish_reason error without [DONE]",
             chunks: [
                 { choices: [{ delta: { content: "partial" } }] },
                 { choices: [{ delta: {}, finish_reason: "error" }], usage },
-                "[DONE]",
             ],
             expectedMessage:
                 "Chat Completions provider failed to complete the response",

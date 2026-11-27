@@ -31,32 +31,6 @@ export function apiErrorStatus(details: unknown, status: number): number {
     return remapUpstreamStatus(status);
 }
 
-function extractErrorText(error: unknown): string | undefined {
-    if (typeof error === "string") return error.trim() || undefined;
-    if (!error || typeof error !== "object") return undefined;
-    const record = error as {
-        message?: unknown;
-        error?: { message?: unknown };
-    };
-    for (const candidate of [record.message, record.error?.message]) {
-        if (typeof candidate === "string" && candidate.trim()) {
-            return candidate.trim();
-        }
-    }
-    return undefined;
-}
-
-/** Extract a human-readable message when a choice reports a terminal error. */
-export function choiceErrorMessage(
-    choice: { finish_reason?: string | null; error?: unknown } | undefined,
-    fallback = "Chat Completions provider failed to complete the response",
-): string | undefined {
-    if (!choice || (choice.finish_reason !== "error" && !choice.error)) {
-        return undefined;
-    }
-    return extractErrorText(choice.error) ?? fallback;
-}
-
 export function throwTextError(error: ServiceError): never {
     // Preserve local refusals and already classified upstream errors, including
     // their status, remedy links, and the type used by text notices.

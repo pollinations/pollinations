@@ -1,9 +1,9 @@
+import { chatCompletionChoiceError } from "@shared/http/chat-completion-error.ts";
 import {
     type CompletionUsage,
     CompletionUsageSchema,
 } from "@shared/schemas/openai.ts";
 import { createParser } from "eventsource-parser";
-import { choiceErrorMessage } from "../errors.ts";
 import {
     GEMINI_SIGNATURE_PREFIX,
     messagesUsage,
@@ -118,13 +118,6 @@ export function chatToMessagesStream(
                 send("content_block_delta", { index: blockIndex, delta });
             };
             const complete = () => {
-                if (finishReason === "error") {
-                    fail(
-                        choiceErrorMessage({ finish_reason: finishReason }) ??
-                            "Provider stream failed",
-                    );
-                    return;
-                }
                 if (!CompletionUsageSchema.safeParse(usage).success) {
                     fail("Provider returned no usage");
                     return;
@@ -178,16 +171,16 @@ export function chatToMessagesStream(
                     fail(chunk.error.message ?? "Provider stream failed");
                     return;
                 }
+                const finishError = chatCompletionChoiceError(chunk, {
+                    includeUnmarkedErrors: true,
+                });
+                if (finishError) {
+                    fail(finishError);
+                    return;
+                }
                 if (chunk.usage) usage = chunk.usage;
                 const choice = chunk.choices?.[0];
                 if (!choice) return;
-                if (choice.error) {
-                    fail(
-                        choiceErrorMessage(choice, "Provider stream failed") ??
-                            "Provider stream failed",
-                    );
-                    return;
-                }
                 if (choice.finish_reason) finishReason = choice.finish_reason;
                 const delta = choice.delta ?? {};
                 const reasoning = delta.reasoning_content ?? delta.reasoning;
@@ -283,9 +276,13 @@ export function chatToMessagesStream(
                     }
                     if (!ended) fail("Provider stream ended before completion");
                 } catch (error) {
-                    fail(
-                        error instanceof Error ? error.message : String(error),
-                    );
+                    if (!ended) {
+                        fail(
+                            error instanceof Error
+                                ? error.message
+                                : String(error),
+                        );
+                    }
                 }
             })();
         },

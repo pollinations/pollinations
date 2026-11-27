@@ -6,6 +6,10 @@ import {
     wrapLanguageModel,
 } from "ai";
 import {
+    chatCompletionChoiceError,
+    extractProviderErrorMessage,
+} from "../http/chat-completion-error.ts";
+import {
     type CompletionUsage,
     CompletionUsageSchema,
 } from "../schemas/openai.ts";
@@ -18,33 +22,15 @@ type AgentStep = {
 const MODEL_FAILURE = "Agent model failed to complete the response";
 
 function choiceFinishError(body: unknown): string | null {
-    if (!body || typeof body !== "object") return null;
-    const record = body as {
-        error?: unknown;
-        choices?: Array<{ finish_reason?: unknown; error?: unknown }>;
-    };
-    const topError = extractErrorMessage(record.error);
-    if (topError) return topError;
-    for (const choice of record.choices ?? []) {
-        if (choice?.finish_reason !== "error" && !choice?.error) continue;
-        return extractErrorMessage(choice.error) ?? MODEL_FAILURE;
-    }
-    return null;
-}
-
-function extractErrorMessage(error: unknown): string | null {
-    if (typeof error === "string") return error.trim() || null;
-    if (!error || typeof error !== "object") return null;
-    const record = error as {
-        message?: unknown;
-        error?: { message?: unknown };
-    };
-    for (const candidate of [record.message, record.error?.message]) {
-        if (typeof candidate === "string" && candidate.trim()) {
-            return candidate.trim();
-        }
-    }
-    return null;
+    const error = (body as { error?: unknown } | null)?.error;
+    return (
+        extractProviderErrorMessage(error)?.trim() ??
+        chatCompletionChoiceError(body, {
+            fallback: MODEL_FAILURE,
+            includeUnmarkedErrors: true,
+        }) ??
+        null
+    );
 }
 
 function agentModelError({
@@ -58,6 +44,7 @@ function agentModelError({
     if (finishReason.raw === "error" || finishReason.unified === "error") {
         return new Error(MODEL_FAILURE);
     }
+    return undefined;
 }
 
 const rejectFailedStep: LanguageModelMiddleware = {
@@ -71,8 +58,8 @@ const rejectFailedStep: LanguageModelMiddleware = {
         const { stream, ...result } = await doStream();
         type Part =
             typeof stream extends ReadableStream<infer Value> ? Value : never;
-        // The SDK can invoke tools as soon as it sees the tool parts. Hold
-        // them until the provider has finished the step successfully.
+        // The SDK invokes tool input callbacks on start/delta as well as
+        // executing completed tool calls. Release both after a successful step.
         const toolParts: Part[] = [];
         let failed = false;
         return {

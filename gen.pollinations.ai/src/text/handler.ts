@@ -1,5 +1,6 @@
 import { UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { chatCompletionChoiceError } from "@shared/http/chat-completion-error.ts";
 import {
     buildUsageHeaders,
     FALLBACK_TARGET_HEADER,
@@ -35,7 +36,7 @@ import {
 } from "./chat/usage.js";
 import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
 import { syncTextEnvironment } from "./environment.js";
-import { choiceErrorMessage, throwTextError } from "./errors.js";
+import { throwTextError } from "./errors.js";
 import {
     supportsTextFallbackRequest,
     textCapabilityError,
@@ -319,14 +320,10 @@ function sendTextContentResponse(
         });
     }
 
-    const errorChoice = completion.choices.find(
-        (choice) => choice.finish_reason === "error",
-    );
-    if (errorChoice) {
+    const finishError = chatCompletionChoiceError(completion);
+    if (finishError) {
         throw new UpstreamError(502, {
-            message:
-                choiceErrorMessage(errorChoice) ??
-                "Chat Completions provider failed to complete the response",
+            message: finishError,
             requestUrl: upstreamRequestUrl,
             responseBody: JSON.stringify(completion),
         });

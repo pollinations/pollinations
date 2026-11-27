@@ -6,7 +6,7 @@ import { collectOutput } from "@shared/agents/output.ts";
 import { handleAgentResponsesRequest } from "@shared/agents/responses.ts";
 import { runSdkAgent } from "@shared/agents/sdk-runner.ts";
 import type { AgentRunner } from "@shared/agents/types.ts";
-import { ToolLoopAgent } from "ai";
+import { jsonSchema, ToolLoopAgent, tool } from "ai";
 import OpenAI from "openai";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -1634,6 +1634,15 @@ describe("managed agent Responses runtime", () => {
     it.each([false, true])(
         "rejects finish_reason error with the provider message (stream:%s)",
         async (stream) => {
+            const onInputStart = vi.fn();
+            const onInputDelta = vi.fn();
+            const execute = vi.fn();
+            const toolCall = {
+                index: 0,
+                id: "call_test",
+                type: "function",
+                function: { name: "record", arguments: "{}" },
+            };
             const validUsage = {
                 prompt_tokens: 10,
                 completion_tokens: 5,
@@ -1644,7 +1653,17 @@ describe("managed agent Responses runtime", () => {
                 fetch: async () =>
                     stream
                         ? new Response(
-                              'data: {"choices":[{"delta":{"content":"partial"},"finish_reason":null}]}\n\n' +
+                              `data: ${JSON.stringify({
+                                  choices: [
+                                      {
+                                          delta: {
+                                              content: "partial",
+                                              tool_calls: [toolCall],
+                                          },
+                                          finish_reason: null,
+                                      },
+                                  ],
+                              })}\n\n` +
                                   `data: ${JSON.stringify({
                                       choices: [
                                           {
@@ -1670,6 +1689,7 @@ describe("managed agent Responses runtime", () => {
                                       message: {
                                           role: "assistant",
                                           content: "partial",
+                                          tool_calls: [toolCall],
                                       },
                                       finish_reason: "error",
                                       error: { message: "Upstream aborted" },
@@ -1681,6 +1701,14 @@ describe("managed agent Responses runtime", () => {
             const agent = new ToolLoopAgent({
                 model: provider("test"),
                 maxRetries: 0,
+                tools: {
+                    record: tool({
+                        inputSchema: jsonSchema({ type: "object" }),
+                        onInputStart,
+                        onInputDelta,
+                        execute,
+                    }),
+                },
             });
             await expect(
                 runSdkAgent(agent, {
@@ -1690,6 +1718,9 @@ describe("managed agent Responses runtime", () => {
                     onPart: () => {},
                 }),
             ).rejects.toThrow("Upstream aborted");
+            expect(onInputStart).not.toHaveBeenCalled();
+            expect(onInputDelta).not.toHaveBeenCalled();
+            expect(execute).not.toHaveBeenCalled();
         },
     );
 });

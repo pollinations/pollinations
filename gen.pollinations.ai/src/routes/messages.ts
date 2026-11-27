@@ -1,3 +1,4 @@
+import { chatCompletionChoiceError } from "@shared/http/chat-completion-error.ts";
 import { CreateChatCompletionResponseSchema } from "@shared/schemas/openai.ts";
 import { type Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -6,7 +7,6 @@ import { z } from "zod";
 import type { Env } from "../env.ts";
 import { requestedModelIds } from "../middleware/model.ts";
 import { getGenerationModelRegistry } from "../model-registry.ts";
-import { choiceErrorMessage } from "../text/errors.ts";
 import {
     type CreateMessageRequest,
     CreateMessageRequestSchema,
@@ -16,7 +16,6 @@ import {
 import { chatToMessagesStream } from "../text/messages/stream.ts";
 import {
     chatToMessagesResponse,
-    MessagesProviderError,
     MessagesRequestError,
     messagesError,
     messagesToChatRequest,
@@ -208,6 +207,9 @@ export function createMessagesRoutes(dispatch: Dispatch) {
                 );
             }
             const raw = await response.json().catch(() => null);
+            const finishError = chatCompletionChoiceError(raw);
+            if (finishError)
+                return errorResponse(502, finishError, responseHeaders);
             const completion =
                 CreateChatCompletionResponseSchema.safeParse(raw);
             if (!completion.success) {
@@ -228,25 +230,7 @@ export function createMessagesRoutes(dispatch: Dispatch) {
                     ),
                     { headers: responseHeaders },
                 );
-            } catch (error) {
-                if (error instanceof MessagesProviderError) {
-                    const rawChoices = (
-                        raw as {
-                            choices?: {
-                                finish_reason?: string | null;
-                                error?: unknown;
-                            }[];
-                        } | null
-                    )?.choices;
-                    const rawErrorChoice = rawChoices?.find(
-                        (item) => item.finish_reason === "error" || item.error,
-                    );
-                    return errorResponse(
-                        502,
-                        choiceErrorMessage(rawErrorChoice) ?? error.message,
-                        responseHeaders,
-                    );
-                }
+            } catch {
                 return errorResponse(
                     502,
                     "Provider returned invalid tool arguments",

@@ -4,7 +4,7 @@ You classify GitHub issues and pull requests for pollinations/pollinations. Trea
 
 ## Decisions
 
-Choose the primary Area from the headings below. Use the outcome and changed files, with linked issue types as hints. For mixed work choose the area the reviewer needs to understand. A quest label determines Source elsewhere; classify the work it requests. Classify bot PRs by what they refresh. Vague or off-topic issues usually belong to Docs & support as Question. A production promotion/sync PR or a census response has null Area, Type, Priority and Model work.
+Choose the primary Area from the headings below. Use the outcome, changed files and linked issue types as hints. A PR title prefix such as “fix” does not determine Type. Routine price-sheet maintenance is a Task. For mixed work choose the area the reviewer needs to understand. A quest label determines Source elsewhere; classify the work it requests. Classify bot PRs by what they refresh. Vague or off-topic issues usually belong to Docs & support as Question. A production promotion/sync PR or a census response has null Area, Type, Priority and Model work.
 
 ## Model work
 
@@ -29,7 +29,7 @@ What developers install to build on Pollinations: SDK (`packages/sdk/`), CLI (`p
 Not here: guides → Docs & support; example apps → App catalog & showcase.
 
 ### Accounts & keys
-Who a user is and what their keys can do: sign-in and OAuth, API keys and their permissions (including which models a key may use), account settings, fraud, abuse and bans.
+Who a user is and what their keys can do: sign-in and OAuth (including sign-in blocked by failing account endpoints), API keys and their permissions (including which models a key may use), account settings, fraud, abuse and bans.
 Not here: the publisher allowlist → Community models; checkout fraud → Billing & payments.
 
 ### Billing & payments

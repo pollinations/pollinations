@@ -477,7 +477,9 @@ export const portkeyConfig: PortkeyConfigMap = {
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-6-luna-classic/chat/completions?api-version=2025-04-01-preview",
-            azureOpenAIParameters,
+            // Flex: half price, no latency SLA; Azure answers 429 (unbilled)
+            // when it has no Flex capacity, which Classic shows as busy
+            { ...azureOpenAIParameters, serviceTier: "flex" },
         ),
 
     // -- AWS Bedrock fallback (GPT-6) ---------------------------------------

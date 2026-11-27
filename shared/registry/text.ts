@@ -953,11 +953,12 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2026-11-26").getTime(),
         paidOnly: false,
         priceMultiplier: 1,
+        // Azure Flex tier: half the Standard rates
         cost: {
-            promptTextTokens: perMillion(0.1),
-            promptCachedTokens: perMillion(0.01),
-            promptCacheWriteTokens: perMillion(0.125),
-            completionTextTokens: perMillion(0.5),
+            promptTextTokens: perMillion(0.05),
+            promptCachedTokens: perMillion(0.005),
+            promptCacheWriteTokens: perMillion(0.0625),
+            completionTextTokens: perMillion(0.25),
         },
         title: "GPT-6 Luna (Classic)",
         description: "Answer free Classic API requests on a capped deployment.",

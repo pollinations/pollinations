@@ -12,6 +12,9 @@ on:
         description: "Check the existing Pollinations caller identity without organizing items"
         type: boolean
         default: false
+      probe_model_digest:
+        description: "Owner check only. Optional SHA-256 of a verified tool-free private model ID for the paired transport probe"
+        required: false
       pr_numbers:
         description: "Space-separated PR numbers (empty with no issue numbers = all open PRs)"
         required: false
@@ -31,7 +34,8 @@ jobs:
   check-weaver-owner:
     if: github.event_name == 'workflow_dispatch' && inputs.check_weaver_owner
     runs-on: ubuntu-latest
-    permissions: {}
+    permissions:
+      contents: read
     steps:
       - name: Check the Pollinations caller identity
         env:
@@ -51,6 +55,16 @@ jobs:
                  elif (.githubUsername | ascii_downcase) == "pollinations-ai" then "Linked GitHub user matches pollinations-ai"
                  else "Linked GitHub user differs from pollinations-ai" end)
               end' | tee -a "$GITHUB_STEP_SUMMARY"
+      - uses: actions/checkout@v5
+        if: inputs.probe_model_digest != ''
+        with:
+          persist-credentials: false
+      - name: Probe private-agent Chat Completions
+        if: inputs.probe_model_digest != ''
+        env:
+          POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
+          PROBE_MODEL_DIGEST: ${{ inputs.probe_model_digest }}
+        run: python operations/infrastructure/project-manager/probe_agent.py
 
   organize:
     # Reclassify after a workflow label changes the source.

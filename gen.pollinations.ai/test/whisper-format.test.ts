@@ -113,7 +113,9 @@ describe("whisper request", () => {
                 prompt: "Pollinations uses Pollen.",
                 temperature: 0,
                 isDeepInfra,
+                model: "openai/whisper-large-v3-turbo",
             });
+            expect(form.get("model")).toBe("openai/whisper-large-v3-turbo");
             expect(form.get("prompt")).toBe("Pollinations uses Pollen.");
             expect(form.get("temperature")).toBe("0");
         }
@@ -123,6 +125,7 @@ describe("whisper request", () => {
         const form = buildWhisperForm({
             file: new File(["audio"], "audio.wav", { type: "audio/wav" }),
             isDeepInfra: false,
+            model: "whisper-large-v3",
         });
         expect(form.has("prompt")).toBe(false);
         expect(form.has("temperature")).toBe(false);

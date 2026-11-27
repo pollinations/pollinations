@@ -932,6 +932,47 @@ it.each([
     },
 );
 
+it("falls back from a failed completion and only bills the successful provider", async () => {
+    const model = "openai/gpt-5-nano";
+    const { response, text, calls, events } = await chatThroughHandler(
+        model,
+        ["myceli-prod-eastus.openai.azure.com", "api.openai.com"],
+        async (request) => {
+            const fallback = new URL(request.url).hostname === "api.openai.com";
+            return Response.json({
+                id: "failed-primary",
+                object: "chat.completion",
+                model,
+                choices: [
+                    {
+                        index: 0,
+                        message: {
+                            role: "assistant",
+                            content: fallback
+                                ? "Recovered answer"
+                                : "Partial answer",
+                        },
+                        finish_reason: fallback ? "stop" : "error",
+                    },
+                ],
+                usage,
+            });
+        },
+        false,
+    );
+    expect(response.status, text).toBe(200);
+    expect(JSON.parse(text).choices[0].message.content).toBe(
+        "Recovered answer",
+    );
+    expect(calls).toBe(2);
+    expect(
+        events.filter((event) => event.eventType === "generate.text"),
+    ).toEqual([
+        expect.objectContaining({ responseStatus: 502, isBilledUsage: false }),
+        expect.objectContaining({ responseStatus: 200, isBilledUsage: true }),
+    ]);
+});
+
 it.each([0, 1])(
     "preserves an answered choice at index %s alongside an empty length choice",
     async (answeredIndex) => {

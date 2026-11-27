@@ -6,6 +6,7 @@
 
 import type { Logger } from "@logtape/logtape";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { chatCompletionChoiceError } from "@shared/http/chat-completion-error.ts";
 import { putGenerationResult, refreshR2ObjectTtl } from "@shared/r2-storage.ts";
 import {
     parseSafeFeatures,
@@ -31,6 +32,8 @@ const CACHED_HEADER_PREFIXES = ["x-usage-", "x-moderation-", "x-safety-"];
 const SAFETY_CACHE_VERSION = "bedrock-input-v1";
 // Part of every stream key since #16911; changing it orphans all cached streams.
 const STREAM_CACHE_VERSION = "stream-output-v1";
+// Older Chat entries can contain partial completions marked as failed.
+const CHAT_COMPLETION_CACHE_VERSION = "chat-completion-v2";
 
 /**
  * Streams are not coordinated, so skipping their write only drops the cache
@@ -53,7 +56,8 @@ function isStreamingErrorResponse(
         try {
             const event = JSON.parse(line.slice("data:".length).trim());
             return Boolean(
-                event && typeof event === "object" && "error" in event,
+                (event && typeof event === "object" && "error" in event) ||
+                    chatCompletionChoiceError(event),
             );
         } catch {
             return false;
@@ -145,6 +149,8 @@ export async function generateCacheKey(
         parts.push(SAFETY_CACHE_VERSION);
     }
     if (streams) parts.push(STREAM_CACHE_VERSION);
+    if (url.pathname === "/v1/chat/completions")
+        parts.push(CHAT_COMPLETION_CACHE_VERSION);
     if (partition) parts.push(`partition:${partition}`);
 
     // Generate a hash of all parts using Web Crypto API

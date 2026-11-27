@@ -171,9 +171,7 @@ export function chatToMessagesStream(
                     fail(chunk.error.message ?? "Provider stream failed");
                     return;
                 }
-                const finishError = chatCompletionChoiceError(chunk, {
-                    includeUnmarkedErrors: true,
-                });
+                const finishError = chatCompletionChoiceError(chunk);
                 if (finishError) {
                     fail(finishError);
                     return;

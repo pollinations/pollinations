@@ -1041,7 +1041,6 @@ describe("POST /v1/messages", () => {
         const events: TinybirdEvent[] = [];
         const providerBodies: Record<string, unknown>[] = [];
         const providerUsage = options.withUsage === false ? {} : { usage };
-        const finishReason = options.failCompletion ? "error" : "stop";
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
                 const upstream = new Request(input, init);
@@ -1078,6 +1077,7 @@ describe("POST /v1/messages", () => {
                 }
                 if (!body?.messages) return Response.json({ data: [] });
                 providerBodies.push(body);
+                const finishReason = options.failCompletion ? "error" : "stop";
                 if (body.stream) {
                     return new Response(
                         sse([
@@ -1098,6 +1098,9 @@ describe("POST /v1/messages", () => {
                     object: "chat.completion",
                     created: 1,
                     model,
+                    ...(options.failCompletion && {
+                        payg_credits_charged: 1,
+                    }),
                     choices: [
                         {
                             index: 0,
@@ -1238,40 +1241,71 @@ describe("POST /v1/messages", () => {
         },
     );
 
-    it.each([false, true])(
-        "returns a provider finish error without billing the caller, stream=%s",
-        async (stream) => {
+    it.each(
+        (["/v1/messages", "/v1/chat/completions"] as const).flatMap((path) =>
+            [false, true].map((stream) => ({ path, stream })),
+        ),
+    )(
+        "retries failed $path completions without charging or caching, stream=$stream",
+        async ({ path, stream }) => {
             const caller = await createTestApiKey({
-                user: { tierBalance: 100 },
+                user: { packBalance: 100 },
             });
-            const { events } = mockUpstream({ failCompletion: true });
-            const { response, text } = await call(
-                "/v1/messages",
-                {
-                    model,
-                    stream,
-                    max_tokens: 256,
-                    messages: [{ role: "user", content: `failed ${stream}` }],
-                },
-                caller.key,
-            );
+            const options = { failCompletion: true };
+            const { events, providerBodies } = mockUpstream(options);
+            const body = {
+                model: "cohere/command-a-plus",
+                stream,
+                max_tokens: 256,
+                messages: [
+                    { role: "user", content: `failed ${path} ${stream}` },
+                ],
+            };
+            const { response, text } = await call(path, body, caller.key);
             expect(response.status).toBe(stream ? 200 : 502);
-            const error = stream ? parseEvents(text).at(-1) : JSON.parse(text);
-            expect(error).toMatchObject({
-                type: "error",
-                error: {
-                    type: "api_error",
-                    message:
-                        "Chat Completions provider failed to complete the response",
-                },
-            });
-            expect(events.filter((event) => "isBilledUsage" in event)).toEqual([
-                expect.objectContaining({ isBilledUsage: false }),
-            ]);
+            expect(text).not.toContain("payg_credits_charged");
+            if (path === "/v1/messages") {
+                const error = stream
+                    ? parseEvents(text).at(-1)
+                    : JSON.parse(text);
+                expect(error).toMatchObject({
+                    type: "error",
+                    error: {
+                        type: "api_error",
+                        message:
+                            "Chat Completions provider failed to complete the response",
+                    },
+                });
+            } else {
+                expect(text).toContain(
+                    stream
+                        ? '"finish_reason":"error"'
+                        : "Chat Completions provider failed to complete the response",
+                );
+            }
+            const generationEvents = events.filter(
+                (event) => "isBilledUsage" in event,
+            );
+            expect(generationEvents).not.toHaveLength(0);
+            expect(
+                generationEvents.every((event) => !event.isBilledUsage),
+            ).toBe(true);
             expect(
                 (await getUserBalance(drizzle(env.DB), caller.userId))
-                    .tierBalance,
+                    .packBalance,
             ).toBe(100);
+
+            const failedCalls = providerBodies.length;
+            options.failCompletion = false;
+            const recovered = await call(path, body, caller.key);
+            expect(recovered.response.status, recovered.text).toBe(200);
+            expect(recovered.text).toContain("Hello");
+            expect(recovered.response.headers.get("X-Cache")).toBe("MISS");
+            expect(providerBodies).toHaveLength(failedCalls + 1);
+
+            const cached = await call(path, body, caller.key);
+            expect(cached.response.headers.get("X-Cache")).toBe("HIT");
+            expect(providerBodies).toHaveLength(failedCalls + 1);
         },
     );
 
@@ -1843,47 +1877,50 @@ it("does not invent empty arguments when length stops before tool input", () => 
 });
 
 describe("Messages finish_reason error handling", () => {
-    it("returns 502 instead of end_turn when /v1/messages gets finish_reason error", async () => {
-        const routes = createMessagesRoutes(() =>
-            Response.json({
-                id: "err",
-                object: "chat.completion",
-                created: 1,
-                choices: [
-                    {
-                        finish_reason: "error",
-                        message: {
-                            role: "assistant",
-                            content: "partial answer",
+    it.each(["error", "stop"])(
+        "returns 502 for nested choice.error with finish_reason %s",
+        async (finishReason) => {
+            const routes = createMessagesRoutes(() =>
+                Response.json({
+                    id: "err",
+                    object: "chat.completion",
+                    created: 1,
+                    choices: [
+                        {
+                            finish_reason: finishReason,
+                            message: {
+                                role: "assistant",
+                                content: "partial answer",
+                            },
+                            error: { message: "  Upstream provider aborted  " },
                         },
-                        error: { message: "Upstream provider aborted" },
-                    },
-                ],
-                usage,
-            }),
-        );
-        const response = await routes.request(
-            "https://gen.pollinations.ai/v1/messages",
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    model,
-                    max_tokens: 32,
-                    messages: [{ role: "user", content: "hi" }],
+                    ],
+                    usage,
                 }),
-            },
-            env,
-        );
-        expect(response.status).toBe(502);
-        await expect(response.json()).resolves.toEqual({
-            type: "error",
-            error: {
-                type: "api_error",
-                message: "Upstream provider aborted",
-            },
-        });
-    });
+            );
+            const response = await routes.request(
+                "https://gen.pollinations.ai/v1/messages",
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        model,
+                        max_tokens: 32,
+                        messages: [{ role: "user", content: "hi" }],
+                    }),
+                },
+                env,
+            );
+            expect(response.status).toBe(502);
+            await expect(response.json()).resolves.toEqual({
+                type: "error",
+                error: {
+                    type: "api_error",
+                    message: "Upstream provider aborted",
+                },
+            });
+        },
+    );
 
     it.each([
         {
@@ -1894,7 +1931,7 @@ describe("Messages finish_reason error handling", () => {
                     choices: [
                         {
                             delta: {},
-                            finish_reason: "error",
+                            finish_reason: "stop",
                             error: { message: "Stream provider aborted" },
                         },
                     ],

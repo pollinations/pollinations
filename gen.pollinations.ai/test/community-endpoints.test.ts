@@ -4919,7 +4919,7 @@ fixtureTest.each(
                                     message.role === "tool" &&
                                     message.content.includes("exa proxied"),
                             ),
-                        ).toBe(true);
+                        ).toBe(outcome !== "failed");
                     }
                     const message =
                         modelCalls === 1
@@ -4939,11 +4939,11 @@ fixtureTest.each(
                               }
                             : { role: "assistant", content: "managed answer" };
                     const finishReason =
-                        modelCalls === 1
-                            ? outcome === "failed"
-                                ? "error"
-                                : "tool_calls"
-                            : "stop";
+                        outcome === "failed"
+                            ? "error"
+                            : modelCalls === 1
+                              ? "tool_calls"
+                              : "stop";
                     const usage =
                         modelCalls >= 2 && outcome === "missing"
                             ? undefined
@@ -5054,13 +5054,16 @@ fixtureTest.each(
         if (outcome === "failed") {
             expect(response.status, body).toBe(stream ? 200 : 502);
             expect(body).toContain(
-                "Agent model failed to complete the response",
+                stream
+                    ? "Agent model failed to complete the response"
+                    : "Chat Completions provider failed to complete the response",
             );
             if (stream && route === "responses") {
                 expect(body).toContain('"type":"response.failed"');
                 expect(body).not.toContain('"type":"response.completed"');
             }
-            expect(modelCalls).toBe(1);
+            // JSON failures can try the declared provider backup within this step.
+            expect(modelCalls).toBe(stream ? 1 : 2);
             expect(mcpCalls).toBe(0);
             const balanceAfter = await getUserBalance(db, caller.userId);
             expect(balanceAfter.packBalance).toBe(balanceBefore.packBalance);

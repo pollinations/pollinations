@@ -320,15 +320,6 @@ function sendTextContentResponse(
         });
     }
 
-    const finishError = chatCompletionChoiceError(completion);
-    if (finishError) {
-        throw new UpstreamError(502, {
-            message: finishError,
-            requestUrl: upstreamRequestUrl,
-            responseBody: JSON.stringify(completion),
-        });
-    }
-
     const message = completion.choices[0].message;
 
     if (typeof message !== "object" || !message) {
@@ -444,7 +435,24 @@ async function generateTextResponse(
             );
         const { result: completion, candidate } = await withModelFallback(
             candidates,
-            (attempt) => generateChatAttempt(c, requestData, attempt),
+            async (attempt) => {
+                const completion = await generateChatAttempt(
+                    c,
+                    requestData,
+                    attempt,
+                );
+                const finishError = chatCompletionChoiceError(completion);
+                if (finishError) {
+                    throw new UpstreamError(502, {
+                        message: finishError,
+                        requestUrl: completion.upstreamRequestUrl,
+                        responseBody: JSON.stringify(
+                            publicChatCompletion(completion),
+                        ),
+                    });
+                }
+                return completion;
+            },
             c.var.track?.attempts,
             (attempt) => requireModelAttemptAccess(c, attempt),
         );

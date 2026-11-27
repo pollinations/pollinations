@@ -24,11 +24,8 @@ const MODEL_FAILURE = "Agent model failed to complete the response";
 function choiceFinishError(body: unknown): string | null {
     const error = (body as { error?: unknown } | null)?.error;
     return (
-        extractProviderErrorMessage(error)?.trim() ??
-        chatCompletionChoiceError(body, {
-            fallback: MODEL_FAILURE,
-            includeUnmarkedErrors: true,
-        }) ??
+        extractProviderErrorMessage(error) ??
+        chatCompletionChoiceError(body, MODEL_FAILURE) ??
         null
     );
 }

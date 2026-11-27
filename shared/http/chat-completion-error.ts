@@ -10,27 +10,23 @@ export function extractProviderErrorMessage(details: unknown): string | null {
         message?: unknown;
     };
     for (const candidate of [error?.message, message]) {
-        if (typeof candidate === "string" && candidate.trim()) return candidate;
+        const text = typeof candidate === "string" ? candidate.trim() : "";
+        if (text) return text;
     }
     return null;
 }
 
 export function chatCompletionChoiceError(
     completion: unknown,
-    {
-        fallback = CHAT_COMPLETION_FAILURE,
-        includeUnmarkedErrors = false,
-    }: { fallback?: string; includeUnmarkedErrors?: boolean } = {},
+    fallback = CHAT_COMPLETION_FAILURE,
 ): string | undefined {
     if (!completion || typeof completion !== "object") return undefined;
     const { choices } = completion as { choices?: unknown };
     if (!Array.isArray(choices)) return undefined;
     const failed = choices.find(
-        (choice) =>
-            choice?.finish_reason === "error" ||
-            (includeUnmarkedErrors && choice?.error),
+        (choice) => choice?.finish_reason === "error" || choice?.error,
     );
     return failed
-        ? (extractProviderErrorMessage(failed.error)?.trim() ?? fallback)
+        ? (extractProviderErrorMessage(failed.error) ?? fallback)
         : undefined;
 }

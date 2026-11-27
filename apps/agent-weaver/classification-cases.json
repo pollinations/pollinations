@@ -461,5 +461,30 @@
     "coverage": [
       "workaround"
     ]
+  },
+  {
+    "id": "13677",
+    "source": "https://github.com/pollinations/pollinations/pull/13677",
+    "revision": "754b49fd32b9d2f2498b49b20d0da06c4db2ebd0",
+    "evidence": {
+      "kind": "pull request",
+      "author": "ElliotEtag",
+      "author_type": "User",
+      "title": "fix: update DeepSeek V4 Flash pricing",
+      "body": "## Summary\n\n- Updates `deepseek` on Fireworks from `$0.14/$0.028/$0.28` to `$0.22/$0.007/$0.66` per million input/cached-input/output tokens.\n- Keeps the canonical name, five compatibility aliases, Quest-Pollen access, multiplier `1`, exact route `accounts/fireworks/models/deepseek-v4-flash-0731`, capabilities, and no-fallback contract unchanged.\n- Regenerates the required effective cost/price snapshot.",
+      "files": [
+        "enter.pollinations.ai/test/__snapshots__/effective-prices.snapshot.test.ts.snap",
+        "shared/registry/text.ts"
+      ],
+      "linked": []
+    },
+    "expected": {
+      "area": "Models",
+      "type": "Task",
+      "priority": null,
+      "model_work": "Update"
+    },
+    "rationale": "Routine price-sheet maintenance for a working model. The public model and its route stay available.",
+    "coverage": []
   }
 ]

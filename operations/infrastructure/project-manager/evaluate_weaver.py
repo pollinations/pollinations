@@ -146,7 +146,10 @@ def main():
     output.write_text(json.dumps(report, indent=2) + "\n")
     if mode == "baseline":
         for c in selected:
-            records[c["id"]] = baseline_record(c, report["cases"][c["id"]]["trials"], os.environ.get("GITHUB_RUN_ID"))
+            case_id = c["id"]
+            if previous := records.get(case_id):
+                calibration.setdefault("earlier_cases", {}).setdefault(case_id, []).append(previous)
+            records[case_id] = baseline_record(c, report["cases"][case_id]["trials"], os.environ.get("GITHUB_RUN_ID"))
         output.with_name("calibration.json").write_text(json.dumps(
             {**calibration, "sampling": "fresh", "model": AI_MODEL, "prompt_sha256": digest(original), "cases": records}, indent=2) + "\n")
         passed = [c for c in cases if records[c["id"]]["trials"] == 3 and not records[c["id"]]["misses"]]

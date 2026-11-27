@@ -261,6 +261,22 @@ class WeaverTest(unittest.TestCase):
             for expected in ("#42", "Skipped project and type writes", "Missed opening reward", "/actions/runs/123"):
                 self.assertIn(expected, summary.read_text())
 
+    def test_preview_requires_independent_completions(self):
+        import evaluate_weaver as evaluation
+
+        case = json.loads((manager.WEAVER_DIR / "classification-cases.json").read_text())[0]
+        response = Mock(status_code=200, headers={"X-Cache": "MISS"})
+        response.json.return_value = {"id": "completion-1", "choices": [{"message": {
+            "content": json.dumps({**case["expected"], "reasoning": "Verified."})}}]}
+        seen = set()
+        with patch.object(manager.requests, "post", return_value=response) as post:
+            self.assertNotIn("error", evaluation.trial(case, manager.read_brief(), None, seen))
+            self.assertEqual(post.call_args.kwargs["json"]["seed"], -1)
+            self.assertIn("error", evaluation.trial(case, manager.read_brief(), None, seen))
+            response.headers["X-Cache"] = "HIT"
+            response.json.return_value["id"] = "different-id"
+            self.assertIn("error", evaluation.trial(case, manager.read_brief(), None, seen))
+
     def test_baseline_misses_survive_and_cannot_fill_required_coverage(self):
         import evaluate_weaver as evaluation
 

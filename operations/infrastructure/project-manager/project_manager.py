@@ -443,6 +443,17 @@ def write_reward_comment():
         fail(f"Failed to post the reward comment on #{ISSUE_NUMBER}: {r.status_code} - {r.text[:200]}")
 
 
+def report_skipped_classification(reason):
+    message = f"{reason} for #{ISSUE_NUMBER}. Skipped project and type writes."
+    if reward_eligible():
+        message += " Missed opening reward announcement. Rerun the original opening event to recover it."
+    print(f"::warning::{message}")
+    if summary := os.getenv("GITHUB_STEP_SUMMARY"):
+        run_url = f"{os.getenv('GITHUB_SERVER_URL')}/{os.getenv('GITHUB_REPOSITORY')}/actions/runs/{os.getenv('GITHUB_RUN_ID')}"
+        with open(summary, "a") as stream:
+            print(f"{message} [Original run]({run_url})", file=stream)
+
+
 def main():
     if not GITHUB_TOKEN or not POLLINATIONS_TOKEN:
         fail("GITHUB_TOKEN and POLLINATIONS_TOKEN are required")
@@ -468,17 +479,13 @@ def main():
     if not IS_PULL_REQUEST and "APP-SUBMISSION" in labels:
         answer = {"area": APP_SUBMISSION_AREA, "type": None, "priority": None}
     else:
-        answer = classify(brief, areas)
+        try:
+            answer = classify(brief, areas)
+        except SystemExit:
+            report_skipped_classification("Classification failed")
+            raise
         if answer is None:
-            # An outage is not the contributor's failure: leave the item for a workflow_dispatch run.
-            message = f"Classifier unavailable for #{ISSUE_NUMBER}. Skipped project and type writes."
-            if reward_eligible():
-                message += " Missed opening reward announcement. Rerun the original opening event to recover it."
-            print(f"::warning::{message}")
-            if summary := os.getenv("GITHUB_STEP_SUMMARY"):
-                run_url = f"{os.getenv('GITHUB_SERVER_URL')}/{os.getenv('GITHUB_REPOSITORY')}/actions/runs/{os.getenv('GITHUB_RUN_ID')}"
-                with open(summary, "a") as stream:
-                    print(f"{message} [Original run]({run_url})", file=stream)
+            report_skipped_classification("Classifier unavailable")
             return
         if not IS_PULL_REQUEST and answer["area"] is None:
             log_debug(f"#{ISSUE_NUMBER} is not work (census response); skipping")

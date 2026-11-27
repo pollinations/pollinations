@@ -24,7 +24,7 @@ printf 'Listing %s, callable model %s\n' "$id" "$model"
 polli --json agents get "$id" | bash apps/agent-weaver/config.sh verify "$id" "$model"
 ```
 
-For updates, use `polli --json agents update "$id" --config "$config"` on the original listing and repeat the authenticated readback. The verifier compares the stored prompt, listing and callable IDs, metadata, base model, visibility and tools. If the inference key cannot read settings, use the authorized owner session for readback. A missing or mismatched readback blocks release. Keep the direct classifier selected while updating the listing.
+For updates, use `polli --json agents update "$id" --config "$config"` on the original listing and repeat the authenticated readback. The verifier compares the stored prompt, listing and callable IDs, metadata, base model, visibility and tools. The organizer credential returned HTTP 403 on the owner agents endpoint. Use the authorized shared-owner session for registration and readback, and keep the organizer credential for inference. [Permission check](https://github.com/pollinations/pollinations/actions/runs/46034574350) A missing or mismatched readback blocks release. Keep the direct classifier selected while updating the listing.
 
 ## Evaluate
 
@@ -44,12 +44,16 @@ This gate compares observed accuracy in a finite sample. The five holdout items 
 ## Activate and observe
 
 1. Land the reviewed manifest on `main` while the organizer and its documentation point to the baseline. Register from that commit, save the IDs and prompt digest, and run authenticated readback as described above.
-2. Verify the shortened release preview passes, then run the hosted release preview with the organizer's inference credential and the callable ID from readback. Require both paired gates to pass on the frozen prompt and cases before activation.
+2. Run the hosted release preview with the organizer's inference credential and the callable ID from readback. Require the shortened and hosted paired gates to pass on the frozen prompt and cases before activation.
 3. After approval, use a separate activation PR to set the organizer job's `WEAVER_MODEL` environment value to the exact verified callable ID. Update the policy links in `AGENTS.md`, the issue-maker skill and the operations guides in the same commit. The current workflow ignores a repository variable of that name. Manual backfills continue to use the direct model.
 4. Have the release owner watch the first newly opened issue and PR through completion. Inspect the actual Dev fields, preservation of populated fields, and eligible reward announcement. On failure, revert the activation commit to restore the direct classifier and its documentation. Rerun a missed opening announcement from its original opening event.
 5. After those live checks succeed, remove the one-time owner-check job, its `check_weaver_owner` and `probe_model_digest` inputs and `probe_agent.py`. Keep the preview for future policy edits. For subsequent policy releases, read back the updated listing and run the hosted preview before accepting the change.
 
 The first holdout was reserved at `f4ebb023e6`. Within the most recent 100 issues and 100 PRs opened November 5–20, 2026, we excluded training sources, bot accounts and routine submissions, quests, censuses and promotions. We sorted eligible IDs by the SHA-256 of `0d56352a95:<number>` and took three issues and two PRs. The candidate was frozen at `ce9c2a852c` before the cases were labeled. The fixtures contain public source snapshots or summaries and proposed expected fields for maintainer review.
+
+## Direct release result, November 27
+
+The frozen candidate passed the paired gate. It matched **39/39** scored development answers against **37/39** for the original. Both matched **12/15** holdout answers. On all three trials of #19893, both chose Community models for the hosted-agent editing failure. All 138 completions, including diagnostic trials, were distinct cache misses. Hosted registration and preview follow the merge of #20608. [Paired release run](https://github.com/pollinations/pollinations/actions/runs/46034566700)
 
 ## Repeated comparisons, November 27
 

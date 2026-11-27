@@ -21,13 +21,24 @@ describe("formatDollars", () => {
     // every digit: stripping trailing zeros returned a dangling "$0.".
     it.each([
         [1e-11, "<$0.0000000001"],
-        [-1e-11, "-<$0.0000000001"],
+        [-1e-11, ">-$0.0000000001"],
         [4.9e-11, "<$0.0000000001"],
+        [-4.9e-11, ">-$0.0000000001"],
         // Float residue from an arithmetic balance can land here too.
         [0.1 + 0.2 - 0.3, "<$0.0000000001"],
     ])("bounds sub-resolution %d as %s", (amount, expected) => {
         expect(formatDollars(amount)).toBe(expected);
     });
+
+    it.each([
+        [5.1e-11, "$0.0000000001"],
+        [-5.1e-11, "-$0.0000000001"],
+    ])(
+        "rounds %d just above the display threshold to %s",
+        (amount, expected) => {
+            expect(formatDollars(amount)).toBe(expected);
+        },
+    );
 });
 
 const originalLevel = chalk.level;

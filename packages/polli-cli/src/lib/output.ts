@@ -29,8 +29,8 @@ const MIN_DISPLAYED_DOLLARS = 0.0000000001;
 
 /**
  * A balance or budget for people to read: "$2.50", "-$0.30". Amounts under
- * a cent keep two significant digits ("$0.004"), so a usable balance never
- * shows as "$0.00".
+ * a cent keep up to two significant digits ("$0.004"), capped at ten decimal
+ * places, so a usable balance never shows as "$0.00".
  *
  * Below the smallest amount the two-significant-digit display can round to
  * ("$0.0000000001"), a nonzero amount reads as a bound instead of trimming
@@ -46,7 +46,7 @@ export const formatDollars = (amount: number) => {
             : Math.min(10, 1 - Math.floor(Math.log10(abs)));
     const digits = abs.toFixed(decimals);
     if (decimals > 2 && digits === `0.${"0".repeat(decimals)}`)
-        return `${sign}<$${MIN_DISPLAYED_DOLLARS.toFixed(10)}`;
+        return `${amount < 0 ? ">-$" : "<$"}${MIN_DISPLAYED_DOLLARS.toFixed(10)}`;
     const text = decimals > 2 ? digits.replace(/0+$/, "") : digits;
     return `${sign}$${text}`;
 };

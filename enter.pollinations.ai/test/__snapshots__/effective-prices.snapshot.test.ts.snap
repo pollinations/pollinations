@@ -4520,6 +4520,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptAudioSeconds": 0.0000452777777777778,
     },
   },
+  "openai/whisper-large-v3-turbo": {
+    "cost": {
+      "promptAudioSeconds": 0.00000333333333333333,
+    },
+    "price": {
+      "promptAudioSeconds": 0.00000333333333333333,
+    },
+  },
   "openai/whisper-large-v3:deepinfra": {
     "cost": {
       "promptAudioSeconds": 0.0000075,

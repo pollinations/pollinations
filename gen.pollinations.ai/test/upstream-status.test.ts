@@ -36,3 +36,7 @@ test("preserves upstream unsupported media type errors", () => {
 test("maps upstream Cloudflare timeouts to bad gateway", () => {
     expect(remapUpstreamStatus(524)).toBe(502);
 });
+
+test("maps an upstream 410 to bad gateway so a deleted upstream counts as down", () => {
+    expect(remapUpstreamStatus(410)).toBe(502);
+});

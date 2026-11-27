@@ -88,6 +88,8 @@ TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=g
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
 BEDROCK_GUARDRAIL_VERSION = "2"
+BEDROCK_SENSITIVE_GUARDRAIL_ID = "w8m8kctnvi7b"
+BEDROCK_SENSITIVE_GUARDRAIL_VERSION = "1"
 # Azure sandboxes: local dev uses staging's login and group (its secret is in
 # secrets/dev.vars.json), so Azure templates can be tried before they ship.
 AZURE_SANDBOX_TENANT_ID = "f542dd61-ecf3-4524-8905-30f2e2a2e967"
@@ -262,6 +264,7 @@ new_sqlite_classes = ["AzurePortWake"]
 
 [env.production.vars]
 ENVIRONMENT = "production"
+BEDROCK_SHIELD_INLINE = "on"
 D1_CALL_TELEMETRY = "on"
 SITES_HOST_SUFFIX = ".pollinations.app"
 SANDBOX_DOMAIN = "pollinations.app"
@@ -276,6 +279,8 @@ TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=g
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
 BEDROCK_GUARDRAIL_VERSION = "2"
+BEDROCK_SENSITIVE_GUARDRAIL_ID = "w8m8kctnvi7b"
+BEDROCK_SENSITIVE_GUARDRAIL_VERSION = "1"
 # Azure sandboxes (src/routes/azure-sandboxes.ts): gen's own login, whose
 # secret is AZURE_SANDBOX_CLIENT_SECRET, its sandbox group, and the image
 # operations/infrastructure/azure-sandboxes/build.mjs imported there (CI opens
@@ -424,6 +429,7 @@ new_sqlite_classes = ["AzurePortWake"]
 
 [env.staging.vars]
 ENVIRONMENT = "staging"
+BEDROCK_SHIELD_INLINE = "on"
 D1_CALL_TELEMETRY = "on"
 SITES_HOST_SUFFIX = "--staging.pollinations.app"
 SANDBOX_DOMAIN = "pollinations.app"
@@ -434,6 +440,8 @@ TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=g
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
 BEDROCK_GUARDRAIL_VERSION = "2"
+BEDROCK_SENSITIVE_GUARDRAIL_ID = "w8m8kctnvi7b"
+BEDROCK_SENSITIVE_GUARDRAIL_VERSION = "1"
 # Azure sandboxes: as in production, with staging's own login and group.
 AZURE_SANDBOX_TENANT_ID = "f542dd61-ecf3-4524-8905-30f2e2a2e967"
 AZURE_SANDBOX_CLIENT_ID = "e1653f2d-5948-466a-bf34-1addc9f45b15"
@@ -590,6 +598,8 @@ XAI_API_KEY = "not-a-secret-workers-test-only"
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "test-guardrail"
 BEDROCK_GUARDRAIL_VERSION = "1"
+BEDROCK_SENSITIVE_GUARDRAIL_ID = "test-sensitive-guardrail"
+BEDROCK_SENSITIVE_GUARDRAIL_VERSION = "1"
 
 [[env.production.services]]
 binding = "NETWORK_MCP"

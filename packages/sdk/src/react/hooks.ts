@@ -12,6 +12,11 @@ import {
     pollinationsErrorFromResponse,
 } from "../error-response.js";
 import { fetchModelCatalog, type ModelCatalog } from "../models.js";
+import {
+    connectRealtime,
+    type RealtimeEvent,
+    type RealtimeSession,
+} from "../realtime.js";
 import type {
     AccountBalance,
     AccountProfile,
@@ -492,4 +497,107 @@ export function useTranscription() {
         [audio: ArrayBuffer | Blob, options?: TranscribeOptions],
         TranscriptionResponse
     >(transcriptionRequest);
+}
+
+export type RealtimeStatus = "idle" | "connecting" | "open" | "closed";
+
+export interface UseRealtimeOptions {
+    /** Realtime model. Defaults to "openai/gpt-realtime-2.1". */
+    model?: string;
+    /** Session config, sent as the first event. */
+    session?: Record<string, unknown>;
+    /** Called with every server event. The latest callback is used. */
+    onEvent?: (event: RealtimeEvent) => void;
+}
+
+export interface UseRealtimeValue {
+    status: RealtimeStatus;
+    /** The open session, or null. */
+    session: RealtimeSession | null;
+    error: Error | null;
+    /** Opens a session on the signed-in user's key, closing an open one. */
+    connect: () => Promise<RealtimeSession | null>;
+    /** Closes the session. */
+    close: () => void;
+}
+
+/**
+ * A realtime voice or transcription session on the signed-in user's key.
+ * Nothing connects until `connect()`, so a session starts on a user action.
+ * A key change, a logout and unmount close it.
+ */
+export function useRealtime(
+    options: UseRealtimeOptions = {},
+): UseRealtimeValue {
+    const { apiKey } = useRequiredAuth();
+    const [status, setStatus] = useState<RealtimeStatus>("idle");
+    const [session, setSession] = useState<RealtimeSession | null>(null);
+    const [error, setError] = useState<Error | null>(null);
+    const optionsRef = useRef(options);
+    const controllerRef = useRef<AbortController | null>(null);
+
+    useEffect(() => {
+        optionsRef.current = options;
+    });
+
+    const close = useCallback(() => {
+        controllerRef.current?.abort();
+        controllerRef.current = null;
+        setSession(null);
+        setStatus((status) => (status === "idle" ? "idle" : "closed"));
+    }, []);
+
+    const connect = useCallback(async () => {
+        close();
+        if (!apiKey) {
+            setError(new Error("Log in to Pollinations to start a session"));
+            return null;
+        }
+        const controller = new AbortController();
+        controllerRef.current = controller;
+        setStatus("connecting");
+        setError(null);
+        try {
+            const { model, session } = optionsRef.current;
+            const next = await connectRealtime({
+                model,
+                session,
+                apiKey,
+                signal: controller.signal,
+            });
+            // close() or a newer connect() ran while this one was opening;
+            // the abort already closed its socket.
+            if (controller.signal.aborted) return null;
+            // Read the callback per event, so a rerender's onEvent is used.
+            next.on("*", (event) => optionsRef.current.onEvent?.(event));
+            setSession(next);
+            setStatus("open");
+            void next.closed.then(({ code, reason }) => {
+                if (controllerRef.current !== controller) return;
+                controllerRef.current = null;
+                setSession(null);
+                setStatus("closed");
+                // The gateway reports a refused event only as the close reason.
+                if (code !== 1000) {
+                    setError(
+                        new Error(reason || `The session closed (${code})`),
+                    );
+                }
+            });
+            return next;
+        } catch (err) {
+            if (controller.signal.aborted) return null;
+            controllerRef.current = null;
+            setError(err instanceof Error ? err : new Error(String(err)));
+            setStatus("closed");
+            return null;
+        }
+    }, [apiKey, close]);
+
+    useEffect(() => close, [close, apiKey]);
+
+    return useMemo(
+        () => ({ status, session, error, connect, close }),
+        [status, session, error, connect, close],
+    );
 }

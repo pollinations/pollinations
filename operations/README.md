@@ -36,7 +36,7 @@ Internal tools that run Pollinations, grouped by what they are for. Apps with a 
 
 | Folder | What it is |
 | --- | --- |
-| [`app-management`](app-management/) | Community app list (`app.json`), submission reviews, screenshots, metrics and the README app table |
+| [`app-management`](app-management/) | Community app list (`app.json`), submission reviews, screenshots, metrics and the README app table. The submission workflows call [`run-review.sh`](app-management/ingestion/run-review.sh) and [`run-publication.sh`](app-management/ingestion/run-publication.sh) |
 
 ## Infrastructure
 

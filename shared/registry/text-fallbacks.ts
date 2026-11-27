@@ -209,13 +209,14 @@ export const TEXT_FALLBACKS = {
         },
     },
     "openai/gpt-oss-20b": {
-        // DeepInfra direct rates (2026-10-24), below the OVHcloud primary.
-        "openai/gpt-oss-20b:deepinfra": {
-            provider: "deepinfra",
-            addedDate: new Date("2026-10-24").getTime(),
+        // Bedrock Mantle Standard rates (AWS price list, 2026-11-26), above the
+        // DeepInfra primary. Mantle keeps reasoning out of the message content.
+        "openai/gpt-oss-20b:aws": {
+            provider: "aws",
+            addedDate: new Date("2026-11-26").getTime(),
             cost: {
-                promptTextTokens: perMillion(0.03),
-                completionTextTokens: perMillion(0.14),
+                promptTextTokens: perMillion(0.07),
+                completionTextTokens: perMillion(0.3),
             },
         },
     },

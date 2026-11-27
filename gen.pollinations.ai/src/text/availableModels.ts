@@ -338,13 +338,14 @@ const models: ModelDefinition[] = [
         transform: gptOssEffort,
     },
     {
+        name: "openai/gpt-oss-20b:aws",
+        config: portkeyConfig["openai/gpt-oss-20b:aws"],
+        transform: gptOssEffort,
+    },
+    {
         name: "openai/gpt-5.4:aws",
         config: portkeyConfig["gpt-5.4-bedrock"],
         transform: omitOpenAISampling,
-    },
-    {
-        name: "openai/gpt-oss-20b:deepinfra",
-        config: portkeyConfig["openai/gpt-oss-20b:deepinfra"],
     },
     {
         name: "openai/gpt-5.4",
@@ -505,6 +506,13 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-6-luna",
         config: portkeyConfig["gpt-6-luna"],
+        transform: omitOpenAISampling,
+        reasoningEffortMap: minimalToLow,
+        useResponsesApi: true,
+    },
+    {
+        name: "openai/gpt-6-luna:classic",
+        config: portkeyConfig["gpt-6-luna-classic"],
         transform: omitOpenAISampling,
         reasoningEffortMap: minimalToLow,
         useResponsesApi: true,

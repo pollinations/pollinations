@@ -57,9 +57,7 @@ export function CommunityEndpointCard({
     const isPublic = endpoint.visibility === "public";
     const isAgent = endpoint.type !== "proxy";
     const filteredByReliability =
-        isPublic &&
-        endpoint.type === "proxy" &&
-        !isModelReliable(health?.success_rate);
+        isPublic && !isModelReliable(health?.success_rate);
     const hasUpstreamEndpoint =
         endpoint.type === "proxy" || endpoint.type === "endpoint_agent";
     const priceGroups =
@@ -162,7 +160,7 @@ export function CommunityEndpointCard({
                 </Alert>
             )}
 
-            {isPublic && endpoint.type === "proxy" && healthUnavailable && (
+            {isPublic && healthUnavailable && (
                 <Alert
                     intent="warning"
                     className="mt-3"
@@ -240,9 +238,7 @@ export function CommunityEndpointCard({
             <EndpointHealth
                 id={endpoint.id}
                 proxy={endpoint.type === "proxy"}
-                listing={
-                    isPublic && endpoint.type === "proxy" ? health : undefined
-                }
+                listing={isPublic ? health : undefined}
             />
         </Surface>
     );

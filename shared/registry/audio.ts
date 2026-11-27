@@ -715,6 +715,25 @@ const AUDIO_BASE_SERVICES = {
         outputModalities: ["text"],
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
+    "openai/whisper-large-v3-turbo": {
+        aliases: [],
+        provider: "deepinfra",
+        publisher: "OpenAI",
+        category: "audio",
+        addedDate: new Date("2026-11-27").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            // DeepInfra model metadata: $0.00000333/input second ($0.012/hour).
+            promptAudioSeconds: 0.012 / 3600,
+        },
+        title: "Whisper Large V3 Turbo",
+        description:
+            "Transcribe speech quickly and cheaply, with word timestamps and subtitle files.",
+        inputModalities: ["audio"],
+        outputModalities: ["text"],
+        supportedEndpoints: ["/v1/audio/transcriptions"],
+    },
     "openai/gpt-transcribe": {
         // gpt-4o-transcribe is the name OpenAI clients send by default.
         aliases: ["gpt-transcribe", "gpt-4o-transcribe"],

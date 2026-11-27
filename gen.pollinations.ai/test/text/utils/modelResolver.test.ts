@@ -246,15 +246,35 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe("global.anthropic.claude-opus-5");
     });
 
-    it("routes the GPT-OSS 20B fallback to DeepInfra", () => {
+    it("routes the Classic GPT-6 Luna to its own Azure deployment on Flex", () => {
         const result = resolveModelConfig(messages, {
-            model: "openai/gpt-oss-20b:deepinfra",
+            model: "openai/gpt-6-luna:classic",
+            service_tier: "priority",
         });
 
-        expect(result.options.model).toBe("openai/gpt-oss-20b");
-        expect(result.options.modelConfig).toMatchObject({
-            provider: "openai",
+        // Azure's v1 Responses API picks the deployment from the model field
+        expect(result.options.model).toBe("gpt-6-luna-classic");
+        // The route, not the caller, picks the half-price Flex tier
+        expect(result.options.service_tier).toBe("flex");
+    });
+
+    it("routes GPT-OSS 20B to DeepInfra, then Bedrock Mantle", () => {
+        expect(
+            resolveModelConfig(messages, { model: "openai/gpt-oss-20b" })
+                .options.modelConfig,
+        ).toMatchObject({
             "custom-host": "https://api.deepinfra.com/v1/openai",
+            model: "openai/gpt-oss-20b",
+        });
+        expect(
+            resolveModelConfig(messages, {
+                model: "openai/gpt-oss-20b:aws",
+            }).options.modelConfig,
+        ).toMatchObject({
+            provider: "bedrock",
+            directEndpoint:
+                "https://bedrock-mantle.us-east-1.api.aws/v1/chat/completions",
+            model: "openai.gpt-oss-20b",
         });
     });
 
@@ -914,16 +934,20 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("pins Mercury to Inception on OpenRouter without fallback", () => {
-        const result = resolveModelConfig(messages, {
-            model: "inception/mercury-2",
-        });
-
-        expect(result.options.model).toBe("inception/mercury-2");
-        expect(result.options.provider).toEqual({
-            only: ["Inception"],
-            allow_fallbacks: false,
-        });
+    it.each([
+        ["inception/mercury-2", "mercury-2"],
+        ["mercury-2", "mercury-2"],
+        ["inception", "mercury-2"],
+        ["inception-mercury", "mercury-2"],
+        ["mercury", "mercury-2"],
+        ["inception/mercury-3", "mercury-3"],
+    ])("routes %s directly to Inception", (model, upstream) => {
+        const result = resolveModelConfig(messages, { model });
+        expect(result.options.model).toBe(upstream);
+        expect(result.options.modelConfig?.directEndpoint).toBe(
+            "https://api.inceptionlabs.ai/v1/chat/completions",
+        );
+        expect(result.options.provider).toBeUndefined();
     });
 
     it("routes Kimi K3.1 Pro Highspeed through Vercel AI Gateway without fallback", () => {
@@ -939,29 +963,12 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
-    it("pins Mercury 3 to Inception on OpenRouter without fallback", () => {
-        const result = resolveModelConfig(messages, {
-            model: "inception/mercury-3",
-        });
-
-        expect(result.options.model).toBe("inception/mercury-3");
-        expect(result.options.provider).toEqual({
-            only: ["Inception"],
-            allow_fallbacks: false,
-        });
-    });
-
-    it("pins Mercury 2.5 Preview to Inception on OpenRouter without fallback", () => {
-        const result = resolveModelConfig(messages, {
-            model: "inception/mercury-2.5-preview",
-        });
-
-        expect(result.options.model).toBe("inception/mercury-2.5-preview");
-        expect(result.options.max_tokens).toBe(64000);
-        expect(result.options.provider).toEqual({
-            only: ["Inception"],
-            allow_fallbacks: false,
-        });
+    it("rejects retired Mercury 2.5 Preview", () => {
+        expect(() =>
+            resolveModelConfig(messages, {
+                model: "inception/mercury-2.5-preview",
+            }),
+        ).toThrow("Model configuration not found");
     });
 
     it.each([
@@ -1487,7 +1494,6 @@ describe("resolveModelConfig", () => {
         ["gemma", "google/gemma-4-26b-a4b-it", "deepinfra/fp8"],
         ["gemma-4-31b", "google/gemma-4-31b-it", "crusoe/bf16"],
         ["mimo-v2.5", "xiaomi/mimo-v2.5", "xiaomi/fp8"],
-        ["mimo-v2.5-pro", "xiaomi/mimo-v2.5-pro", "xiaomi/fp8"],
         ["minimax-m2.7", "minimax/minimax-m2.7", "novita/fp8"],
     ])(
         "pins %s to %s through %s without fallback",

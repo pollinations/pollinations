@@ -198,14 +198,17 @@ const retiredPublicIds = [
     "nemotron-3.5-lightning",
     "qwen3.8-27b",
 ] as const;
-const retiredNovaAliases: Record<string, string> = {
+// Preserve the migration's historical mappings for models removed from the live registry.
+const retiredModelAliases: Record<string, string> = {
+    "grok-imagine-pro": "x-ai/grok-imagine-image-quality",
+    "mimo-v2.5-pro": "xiaomi/mimo-v2.5-pro",
     "nova-canvas": "amazon/nova-canvas-v1",
     "nova-reel": "amazon/nova-reel-v1",
 };
-const retiredNovaCanonicalIds = new Set(Object.values(retiredNovaAliases));
+const retiredCanonicalIds = new Set(Object.values(retiredModelAliases));
 const historicalModelName = (id: string): string =>
-    retiredNovaAliases[id] ??
-    (retiredNovaCanonicalIds.has(id) ? id : resolveModelName(id));
+    retiredModelAliases[id] ??
+    (retiredCanonicalIds.has(id) ? id : resolveModelName(id));
 const publishedMappings = retiredPublicIds.map(
     (id) => [id, historicalModelName(id)] as const,
 );
@@ -286,8 +289,8 @@ describe("standardize model permissions migration", () => {
         expect(migrationSql).toContain("WITH renames(old_id, new_id)");
         expect(migrationSql).not.toContain("AS MATERIALIZED");
         for (const [retiredId, canonicalId] of modelMappings) {
-            if (retiredNovaAliases[retiredId]) {
-                expect(canonicalId).toBe(retiredNovaAliases[retiredId]);
+            if (retiredModelAliases[retiredId]) {
+                expect(canonicalId).toBe(retiredModelAliases[retiredId]);
                 expect(() => resolveModelName(retiredId)).toThrow();
             } else if (retiredId !== "zimage-fal") {
                 const currentId = resolveModelName(canonicalId);

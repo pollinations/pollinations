@@ -1275,6 +1275,8 @@
         "claude-sonnet-4.6": "claude",
         "USE1-Guardrail-ContentPolicyUnitsConsumed": null,
         "USE1-Guardrail-SensitiveInformationPolicyPaidUnitsConsumed": null,
+        "USE1-GuardrailChecks-ContentFilterCheckUnitsConsumed": null,
+        "USE1-GuardrailChecks-PromptAttackCheckUnitsConsumed": null,
         "USE1-Kimi-K2-Thinking-input-tokens": "kimi",
         "USE1-Kimi-K2-Thinking-output-tokens": "kimi",
         "USE1-minimax.minimax-m2.5-input-tokens": "minimax",
@@ -4938,7 +4940,11 @@
     },
     {
       "id": "inception",
-      "aliases": []
+      "aliases": [],
+      "modelLabels": {
+        "mercury-2": "inception/mercury-2",
+        "mercury-3": "inception/mercury-3"
+      }
     },
     {
       "id": "inferenceport",

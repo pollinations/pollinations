@@ -1,12 +1,7 @@
 import { InlineLink, Section, TabButton } from "@pollinations/ui";
 import { type FC, type ReactNode, useState } from "react";
 import { FAQ } from "./faq.tsx";
-import {
-    Announcements,
-    Changelog,
-    currentAnnouncements,
-    Updates,
-} from "./news-banner.tsx";
+import { Changelog, Updates } from "./news-banner.tsx";
 import { newsDaily, useNewsIndex } from "./news-index.ts";
 
 const CHANGELOG_LINKS = (
@@ -25,18 +20,7 @@ type Tab = { label: string; links?: ReactNode; panel: ReactNode };
 export const NewsFaq: FC = () => {
     // Fetched on load, so the index tabs are ready when opened.
     const index = useNewsIndex();
-    const today = new Date().toISOString().slice(0, 10);
-    const announcements = currentAnnouncements(today);
-    // Announcements lead while one is current; the index tabs always show.
     const tabs: Tab[] = [
-        ...(announcements.length > 0
-            ? [
-                  {
-                      label: "Announcements",
-                      panel: <Announcements items={announcements} />,
-                  },
-              ]
-            : []),
         {
             label: "Updates",
             panel: <Updates items={index ? newsDaily(index) : []} />,

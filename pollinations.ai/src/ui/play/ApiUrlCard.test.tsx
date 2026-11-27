@@ -62,4 +62,19 @@ describe("API URL card", () => {
         );
         expect(example).toContain("-F 'file=@YOUR_AUDIO_FILE'");
     });
+    it("copies a Decide JSON request without an audio output", () => {
+        const endpoint = "https://gen.pollinations.ai/alpha/decisions";
+        const example = apiExample(endpoint, {
+            state: "My export failed",
+            questions: { decision: { type: "noul", instructions: "Urgent?" } },
+        });
+        expect(example).toContain("Content-Type: application/json");
+        expect(example).toContain('"type":"noul"');
+        expect(example).not.toContain("output.mp3");
+        const pending = renderToStaticMarkup(
+            <ApiUrlCard url={endpoint} pendingMessage="Complete the form." />,
+        );
+        expect(pending).toContain("Complete the form.");
+        expect(pending).not.toContain("Copy API example");
+    });
 });

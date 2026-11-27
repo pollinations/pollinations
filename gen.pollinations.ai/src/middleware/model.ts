@@ -136,15 +136,15 @@ function resolveModelEntry(
         });
     }
 
-    // A private community endpoint is owner-only: to everyone else it doesn't
-    // exist. Reuse the same "invalid model" response as an unknown name so
+    // A private community endpoint or a reserved registry model is owner-only:
+    // to everyone else it doesn't exist. Reuse the same "invalid model" response as an unknown name so
     // private models aren't discoverable by probing.
     const community = entry.communityEndpoint;
-    if (
-        community &&
-        community.visibility !== "public" &&
-        community.ownerUserId !== callerUserId
-    ) {
+    const ownerUserId =
+        community?.visibility === "public"
+            ? undefined
+            : (community?.ownerUserId ?? entry.definition.ownerUserId);
+    if (ownerUserId !== undefined && ownerUserId !== callerUserId) {
         throw new HTTPException(400, {
             message: `Invalid model or alias: "${model}". Must be a valid model name or alias.`,
         });

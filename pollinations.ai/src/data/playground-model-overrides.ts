@@ -18,6 +18,7 @@ type PlaygroundModelOverride = {
     source: string;
     supports4K?: boolean;
     imageFormats?: PreviewFormats;
+    decisionQuestionTypes?: string[];
     audioTask?: string;
     audioCatalog?: AudioCatalogMetadata;
     audioGroup?: string;
@@ -27,6 +28,7 @@ type PlaygroundModelOverride = {
     defaultRatio?: string;
     soundToggleDefault?: boolean;
     exclusiveReferences?: boolean;
+    autoDurationWithReferenceVideo?: boolean;
     maxDurationWithReference?: number;
 };
 

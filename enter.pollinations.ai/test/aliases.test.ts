@@ -185,6 +185,8 @@ test("Azure models use the approved public-price multipliers", () => {
         ["openai/gpt-image-1-mini", 1],
         ["openai/gpt-image-1.5", 1],
         ["openai/gpt-image-2", 1],
+        // Hidden route for the free Classic API, billed to Classic's account.
+        ["openai/gpt-6-luna:classic", 1],
         ["deepseek/deepseek-v4.1-flash", 0.5],
         ["deepseek/deepseek-v4.1-flash-1017", 0.5],
     ]);

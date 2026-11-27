@@ -2,7 +2,9 @@ import { expect, it } from "vitest";
 import {
     getAudioModelsInfo,
     getImageModelsInfo,
+    getTextModelsInfo,
 } from "../../../shared/registry/model-info";
+import { decisionForm } from "../ui/play/decision";
 import type { ImageFormats } from "../ui/play/image-output";
 import { previewImageFormats } from "../ui/play/image-output";
 import {
@@ -13,10 +15,11 @@ import inventory from "./playground-model-overrides.json";
 
 it("keeps model overrides aligned with public registry entries", () => {
     const models = new Map(
-        [...getAudioModelsInfo(), ...getImageModelsInfo()].map((model) => [
-            model.name,
-            model,
-        ]),
+        [
+            ...getAudioModelsInfo(),
+            ...getImageModelsInfo(),
+            ...getTextModelsInfo(),
+        ].map((model) => [model.name, model]),
     );
     for (const id of Object.keys(inventory)) {
         const model = models.get(id) as
@@ -28,6 +31,14 @@ it("keeps model overrides aligned with public registry entries", () => {
         expect(override?.reason.trim(), id).toBeTruthy();
         expect(override?.source.trim(), id).toBeTruthy();
         if (!model || !override) continue;
+
+        if (override.decisionQuestionTypes) {
+            expect(model.category, id).toBe("decision");
+            expect(model.supported_endpoints, id).toContain("/alpha/decisions");
+            expect(decisionForm(id, {}).types, id).toEqual(
+                override.decisionQuestionTypes,
+            );
+        }
 
         if (override.audioCatalog?.max_reference_audios) {
             expect(model.input_modalities, id).toContain("audio");

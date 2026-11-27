@@ -28,9 +28,8 @@ and update the legal register with the operational change.
 The former `enter-services` / `enter-services-staging` EC2 boxes
 (`text-pollinations.service`, `image-pollinations.service`) are decommissioned;
 text and image generation run inside the `gen.pollinations.ai` Worker. The
-Discord bots that lived on `enter-services` now run on the `monitoring-agents`
-EC2 box — see `apps/discord-bot-family/README.md` and
-`operations/infrastructure/gpu/GPU_INSTANCES.md`.
+CatGPT and Opposite Prompt run on Azure. See the
+[bot deployment guide](../../../apps/discord-bot-family/README.md).
 
 ---
 

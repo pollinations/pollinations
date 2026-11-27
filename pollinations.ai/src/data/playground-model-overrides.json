@@ -56,6 +56,7 @@
         "source": "gen.pollinations.ai/src/image/models/seedanceV2VideoModel.ts",
         "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
         "soundToggleDefault": true,
+        "autoDurationWithReferenceVideo": true,
         "exclusiveReferences": true,
         "audioCatalog": {
             "max_reference_audios": 3,
@@ -156,6 +157,11 @@
         "source": "gen.pollinations.ai/src/image/models/vertexAIGeminiImageModel.ts",
         "supports4K": true
     },
+    "google/gemini-decision-1": {
+        "reason": "All three question types verified with text context on the production decisions endpoint (2026-11-20).",
+        "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
+        "decisionQuestionTypes": ["noul", "choice", "score"]
+    },
     "google/lyria-3-clip-preview": {
         "reason": "The speech endpoint also serves music and sound generation.",
         "source": "shared/registry/audio.ts",
@@ -183,6 +189,21 @@
         "source": "gen.pollinations.ai/src/image/models/hotshotXLModel.ts",
         "imageFormats": { "gif": { "mode": "native", "input_modalities": ["text"] } }
     },
+    "ideogram-ai/ideogram-vector-1": {
+        "reason": "Preview native SVG with optional image input until the catalog publishes the format.",
+        "source": "gen.pollinations.ai/src/image/models/ideogramVectorModel.ts",
+        "imageFormats": { "svg": { "mode": "native", "input_modalities": ["text", "image"] } }
+    },
+    "jaredpalmer/kev-4b": {
+        "reason": "Question types verified with text context on the production decisions endpoint (2026-11-19).",
+        "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
+        "decisionQuestionTypes": ["noul", "choice", "score"]
+    },
+    "heygen/heygen-decision-1": {
+        "reason": "Question types verified with text and media on OpenRouter.",
+        "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
+        "decisionQuestionTypes": ["noul", "choice", "score"]
+    },
     "kandinskylab/kandinsky-6.0-lite": {
         "reason": "Match the video adapter’s aspect ratios. Start in landscape when omitted dimensions would yield a square. Expose the optional soundtrack.",
         "source": "gen.pollinations.ai/src/image/models/falFallbackMediaModel.ts",
@@ -196,6 +217,32 @@
         "ratios": ["", "16:9", "9:16", "1:1"],
         "defaultRatio": "16:9",
         "soundToggleDefault": false
+    },
+    "kwaivgi/kling-v4.0-flash": {
+        "reason": "Match the text-to-video adapter’s aspect ratios. Start in landscape when omitted dimensions would yield a square.",
+        "source": "gen.pollinations.ai/src/image/models/klingVideoModel.ts",
+        "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
+        "defaultRatio": "16:9"
+    },
+    "liquid/d1": {
+        "reason": "Question types verified with text context on the production decisions endpoint (2026-11-19).",
+        "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
+        "decisionQuestionTypes": ["noul", "choice", "score"]
+    },
+    "liquid/d1.2": {
+        "reason": "Question types verified with text context on the production decisions endpoint (2026-11-19).",
+        "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
+        "decisionQuestionTypes": ["noul", "choice", "score"]
+    },
+    "microsoft/microsoft-decision-1": {
+        "reason": "Question types verified with text context on the production decisions endpoint (2026-11-19).",
+        "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
+        "decisionQuestionTypes": ["noul", "choice", "score"]
+    },
+    "microsoft/microsoft-decision-1.1": {
+        "reason": "Question types verified with text context on the production decisions endpoint (2026-11-19).",
+        "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
+        "decisionQuestionTypes": ["noul", "choice", "score"]
     },
     "minimax/minimax-h3": {
         "reason": "Match the video adapter’s aspect ratios.",
@@ -236,6 +283,16 @@
         "source": "gen.pollinations.ai/test/image/gptImageRouting.test.ts",
         "imageFormats": { "jpeg": { "mode": "default" }, "gif": { "mode": "selectable", "input_modalities": ["text"], "frame_defaults": { "frame_count": 8, "frame_duration_ms": 120 } } }
     },
+    "openai/gpt-6-luna-decisions": {
+        "reason": "Question types verified with text context on the production decisions endpoint (2026-11-19).",
+        "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
+        "decisionQuestionTypes": ["noul", "choice", "score"]
+    },
+    "perplexity/pplx-decider-v1.2": {
+        "reason": "Question types verified with text context on the production decisions endpoint (2026-11-19).",
+        "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
+        "decisionQuestionTypes": ["noul", "choice", "score"]
+    },
     "prunaai/p-image-edit": {
         "reason": "Editing requires a source image on the shared image route.",
         "source": "gen.pollinations.ai/src/image/models/prunaModel.ts",
@@ -247,10 +304,20 @@
         "ratios": ["", "16:9", "9:16", "1:1", "4:3", "3:4"],
         "defaultRatio": "16:9"
     },
+    "quiverai/arrow-2": {
+        "reason": "Preview native SVG with optional image input until the catalog publishes the format.",
+        "source": "gen.pollinations.ai/src/image/models/quiverSvgModel.ts",
+        "imageFormats": { "svg": { "mode": "native", "input_modalities": ["text", "image"] } }
+    },
     "recraft/recraft-v4.1-vector": {
         "reason": "Preview native SVG with optional image input until the catalog publishes the format.",
         "source": "gen.pollinations.ai/src/image/models/recraftFalModel.ts",
         "imageFormats": { "svg": { "mode": "native", "input_modalities": ["text", "image"] } }
+    },
+    "respan/span-01-lite": {
+        "reason": "Question types verified with text context on the production decisions endpoint (2026-11-19).",
+        "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
+        "decisionQuestionTypes": ["noul"]
     },
     "sonilo/sonilo-1.1-sfx": {
         "reason": "Sound effects follow the input video’s length.",
@@ -274,6 +341,16 @@
         "audioCatalog": {
             "max_reference_audios": 1
         }
+    },
+    "typesafe/jev-1.14": {
+        "reason": "Question types verified with text context on the production decisions endpoint (2026-11-19).",
+        "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
+        "decisionQuestionTypes": ["noul", "choice", "score"]
+    },
+    "vllm-sr/d3": {
+        "reason": "Question types verified with text context on the production decisions endpoint (2026-11-19).",
+        "source": "gen.pollinations.ai/src/text/systemOneClient.ts",
+        "decisionQuestionTypes": ["noul", "choice", "score"]
     },
     "x-ai/grok-imagine-video": {
         "reason": "Match the video adapter’s aspect ratios. Start in landscape when omitted dimensions would yield a square.",

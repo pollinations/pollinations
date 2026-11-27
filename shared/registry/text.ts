@@ -602,7 +602,7 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2026-09-04").getTime(),
         // Provider retires this route on 2028-01-11.
         priceMultiplier: 0.75,
-        paidOnly: false,
+        paidOnly: true,
         cost: {
             promptTextTokens: perMillion(10.0),
             promptCachedTokens: perMillion(1.0),

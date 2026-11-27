@@ -88,15 +88,18 @@ export async function* sseEvents(
                 const parsed = parseLine(line);
                 complete = parsed.done;
                 if (complete) break;
-                if (parsed.event) yield parsed.event;
+                if ("event" in parsed)
+                    yield parsed.event as Record<string, unknown>;
             }
         }
         // A stream may end right after its last line, without the trailing
         // newline; that buffered line is still a complete event.
         if (!complete) {
+            buffer += decoder.decode();
             const parsed = parseLine(buffer);
             complete = parsed.done;
-            if (parsed.event) yield parsed.event;
+            if ("event" in parsed)
+                yield parsed.event as Record<string, unknown>;
         }
         if (!complete) throw new Error("Stream interrupted before [DONE]");
     } finally {

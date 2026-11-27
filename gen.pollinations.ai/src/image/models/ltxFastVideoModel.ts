@@ -88,7 +88,7 @@ export async function callLtxFastVideo(
         try {
             const prediction = await runReplicatePrediction<
                 Record<string, unknown>,
-                string
+                string | string[]
             >({
                 model: PRIMARY,
                 input: {
@@ -98,7 +98,9 @@ export async function callLtxFastVideo(
                     last_frame_image: end,
                 },
             });
-            videoUrl = prediction.output;
+            videoUrl = Array.isArray(prediction.output)
+                ? prediction.output[0]
+                : prediction.output;
             seconds = prediction.videoOutputDurationSeconds;
         } catch (error) {
             throw toReplicateUpstreamError(error, "LTX Fast generation failed");

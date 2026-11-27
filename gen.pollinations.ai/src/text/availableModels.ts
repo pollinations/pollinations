@@ -1527,6 +1527,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["tencent/hy3"],
     },
     {
+        name: "inclusionai/ling-3.2-flash",
+        config: portkeyConfig["inclusionai/ling-3.2-flash"],
+    },
+    {
         name: "inclusionai/ling-3.1-flash",
         config: portkeyConfig["inclusionai/ling-3.1-flash"],
         transform: separateNovitaReasoning,

@@ -724,6 +724,18 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("routes Ling 3.2 Flash directly to OpenRouter", () => {
+        const result = resolveModelConfig(messages, {
+            model: "inclusionai/ling-3.2-flash",
+        });
+
+        expect(result.options.model).toBe("inclusionai/ling-3.2-flash");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openrouter",
+            model: "inclusionai/ling-3.2-flash",
+        });
+    });
+
     it("pins Ling 3.0 Flash VL to DeepInfra fp16 on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "inclusionai/ling-3.0-flash-vl",

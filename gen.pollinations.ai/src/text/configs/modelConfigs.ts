@@ -618,6 +618,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         createDeepInfraModelConfig({ model: "XiaomiMiMo/MiMo-V2.6-Flash" }),
     "xiaomi/mimo-v2.6-pro:deepinfra": () =>
         createDeepInfraModelConfig({ model: "XiaomiMiMo/MiMo-V2.6-Pro" }),
+    "inclusionai/ling-3.2-flash": () =>
+        createOpenRouterModelConfig({
+            model: "inclusionai/ling-3.2-flash",
+        }),
     "inclusionai/ling-3.1-flash": () =>
         createNovitaModelConfig({ model: "inclusionai/ling-3.1-flash" }),
     "inclusionai/ling-3.1-flash:vercel:novita": () =>

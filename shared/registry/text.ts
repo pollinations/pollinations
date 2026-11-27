@@ -3086,6 +3086,31 @@ const TEXT_BASE_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
+    "inclusionai/ling-3.2-flash": {
+        supportedParameters: CHAT_PARAMETERS.openRouterLing32,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "inclusionAI",
+        category: "text",
+        addedDate: new Date("2026-11-27").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter list rates (2026-11-27), including the mandatory 5.5%
+            // OpenRouter credit fee.
+            promptTextTokens: perMillion(0.3) * 1.055,
+            promptCachedTokens: perMillion(0.06) * 1.055,
+            completionTextTokens: perMillion(0.9) * 1.055,
+        },
+        title: "Ling 3.2 Flash",
+        description: "Long-context agentic work over text and images",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "inclusionai/ling-3.1-flash": {
         supportedParameters: CHAT_PARAMETERS.openRouterLing31,
         aliases: [],

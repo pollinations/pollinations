@@ -101,7 +101,7 @@ export function createMessagesRoutes(dispatch: Dispatch) {
                 "",
                 "Runs every model that lists `/v1/messages` in `supported_endpoints`. These are the same text models as Chat Completions, with the same balance checks, key permissions, rate limits, caching, and billing. Supports streaming, tools, images, PDF documents (base64), system prompts, stop sequences, `cache_control`, and thinking. Thinking maps to `reasoning_effort`; provider reasoning returns as `thinking` blocks.",
                 "",
-                "Errors use Anthropic's error shape. `count_tokens`, batches, files, server tools, and `x-api-key` auth are not supported.",
+                "Errors use Anthropic's error shape. Authenticate with a bearer token or `x-api-key`; `count_tokens`, batches, files, and server tools are not supported.",
             ].join("\n"),
             responses: {
                 200: {

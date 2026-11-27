@@ -96,7 +96,7 @@ def area_names(brief: str) -> list:
     return re.findall(r"^### (.+)$", section, re.MULTILINE)
 
 
-def ask_ai(system_prompt: str, user_prompt: str, *, hosted_model=None, metrics=None) -> Optional[dict]:
+def ask_ai(system_prompt: str, user_prompt: str, *, hosted_model=None, metrics=None, fresh=False) -> Optional[dict]:
     """Return an object, or None when inference is temporarily unavailable."""
     messages = [{"role": "user", "content": user_prompt}]
     payload = {
@@ -105,6 +105,8 @@ def ask_ai(system_prompt: str, user_prompt: str, *, hosted_model=None, metrics=N
         "reasoning_effort": "low",
         "max_tokens": 2000,
     }
+    if fresh and not hosted_model:
+        payload["seed"] = -1  # Agent requests already have an isolated cache partition per run.
     if not hosted_model:
         messages.insert(0, {"role": "system", "content": system_prompt})
         payload["response_format"] = {"type": "json_object"}
@@ -124,7 +126,7 @@ def ask_ai(system_prompt: str, user_prompt: str, *, hosted_model=None, metrics=N
         else:
             status = response.status_code
             if metrics is not None:
-                record.update(http_status=status, request_id=response.headers.get("X-Request-Id"))
+                record.update(http_status=status, request_id=response.headers.get("X-Request-Id"), cache=response.headers.get("X-Cache"))
             if 400 <= status < 500 and status != 429:
                 raise SystemExit(f"AI rejected request: HTTP {status}")
             if status == 200:
@@ -132,8 +134,7 @@ def ask_ai(system_prompt: str, user_prompt: str, *, hosted_model=None, metrics=N
                     data = response.json()
                     if metrics is not None:
                         usage = data.get("usage") or {}
-                        record.update(prompt_tokens=usage.get("prompt_tokens"), completion_tokens=usage.get("completion_tokens"),
-                                      reported_cost_usd=usage.get("cost"))
+                        record.update(completion_id=data.get("id"), usage=usage)
                     content = data["choices"][0]["message"]["content"].strip()
                     if hosted_model and (fence := re.fullmatch(r"```(?:json)?\s*(.*?)\s*```", content, re.DOTALL)):
                         content = fence.group(1)

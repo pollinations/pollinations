@@ -172,6 +172,7 @@ class WeaverTest(unittest.TestCase):
     def test_saved_configuration_matches_markdown_and_rejects_drift(self):
         script = ["bash", str(manager.WEAVER_DIR / "config.sh")]
         config = json.loads(subprocess.check_output(script))
+        self.assertEqual(config, json.loads((manager.WEAVER_DIR / "agent.json").read_text()))
         prompt = (manager.WEAVER_DIR / "system-prompt.md").read_text().strip()
         self.assertEqual(config["systemPrompt"], prompt)
         self.assertLessEqual(len(prompt.encode("utf-16-le")) // 2, 8000)

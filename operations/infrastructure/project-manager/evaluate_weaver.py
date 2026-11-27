@@ -42,12 +42,12 @@ def coverage_gaps(cases):
     return sorted(missing)
 
 
-def trial(case, brief, model):
+def trial(case, brief, model, seen):
     started = time.monotonic()
     calls = []
     result = {"calls": calls}
     try:
-        raw = ask_ai(brief, item_prompt(**case["evidence"]), hosted_model=model, metrics=calls)
+        raw = ask_ai(brief, item_prompt(**case["evidence"]), hosted_model=model, metrics=calls, fresh=True)
         if raw is None:
             result["error"] = "invalid JSON" if any(c.get("error") == "invalid JSON" for c in calls) else "unavailable"
         else:
@@ -60,32 +60,40 @@ def trial(case, brief, model):
             classification_answer(raw, area_names(brief), case["evidence"]["kind"] == "pull request", hosted=bool(model))
     except (ValueError, SystemExit) as error:
         result["error"] = str(error)
+    if raw_call := next((c for c in reversed(calls) if c.get("http_status") == 200), None):
+        completion_id = raw_call.get("completion_id")
+        if not completion_id or completion_id in seen or raw_call.get("cache") == "HIT":
+            result["error"] = "fresh generation could not be verified"
+        seen.add(completion_id)
     result["seconds"] = round(time.monotonic() - started, 2)
     return result
 
 
-def collect_billed_cost(cases):
-    # Match only these gateway requests against the caller key's recent ledger.
-    calls = {call["request_id"]: call for case in cases.values() for trial in case["trials"]
-             for call in trial["calls"] if call.get("request_id") and call.get("http_status") == 200}
-    if not calls:
-        return
-    for delay in (0, 10, 20):
-        time.sleep(delay)
-        try:
-            response = requests.get("https://gen.pollinations.ai/account/key/usage", params={"days": 1, "limit": 500},
-                                    headers={"Authorization": "Bearer " + os.environ["POLLINATIONS_TOKEN"]}, timeout=30)
-            response.raise_for_status()
-            for row in response.json()["usage"]:
-                event = row["cursor_event_id"]
-                request = event.removesuffix("-0")
-                if request in calls:
-                    calls[request]["billed_usd"] = row["cost_usd"]
-            if all("billed_usd" in call for call in calls.values()):
-                return
-        except (requests.RequestException, KeyError, TypeError, ValueError):
-            print("Key usage unavailable; unverified charges are omitted.")
-            return
+def estimate_cost(report):
+    # Rate this text-only preview at its catalog price; report the basis separately from a billed amount.
+    try:
+        response = requests.get("https://gen.pollinations.ai/text/models",
+                                headers={"Authorization": "Bearer " + os.environ["POLLINATIONS_TOKEN"]}, timeout=30)
+        response.raise_for_status()
+        rates = next(m["pricing"] for m in response.json() if m["name"] == report["model"])
+        report["catalog_pricing"] = rates
+        for case in report["cases"].values():
+            for t in case["trials"]:
+                for call in t["calls"]:
+                    if "usage" not in call or call.get("cache") == "HIT":
+                        continue
+                    usage = call["usage"]
+                    details = usage.get("prompt_tokens_details") or {}
+                    cached = details.get("cached_tokens") or 0
+                    written = details.get("cache_write_tokens") or 0
+                    uncached = usage["prompt_tokens"] - cached - written
+                    if uncached >= 0:
+                        call["estimated_pollen"] = (
+                            uncached * float(rates["promptTextTokens"]) + cached * float(rates["promptCachedTokens"])
+                            + written * float(rates["promptCacheWriteTokens"])
+                            + usage["completion_tokens"] * float(rates["completionTextTokens"]))
+    except (requests.RequestException, StopIteration, KeyError, TypeError, ValueError):
+        print("Catalog estimate unavailable; retain usage and request IDs for reconciliation.")
 
 
 def main():
@@ -109,6 +117,8 @@ def main():
     if calibration and (calibration["prompt_sha256"] != digest(original) or calibration["model"] != AI_MODEL):
         raise SystemExit("The baseline policy or model changed. Archive the old calibration before starting a new one.")
     records = calibration.get("cases", {})
+    if records and calibration.get("sampling") != "fresh":
+        raise SystemExit("Cached responses cannot qualify cases")
     fresh = [c for c in cases if records.get(c["id"], {}).get("case_sha256") != case_digest(c)]
     if mode != "baseline" and fresh:
         raise SystemExit("Calibrate the new or revised cases before scoring candidates")
@@ -122,7 +132,8 @@ def main():
         raise SystemExit("Missing calibrated coverage: " + ", ".join(gaps))
 
     def measure(case):
-        return case, [trial(case, brief, model) for _ in range(3)]
+        seen = set()
+        return case, [trial(case, brief, model, seen) for _ in range(3)]
 
     with ThreadPoolExecutor(max_workers=4) as workers:
         for case, attempts in workers.map(measure, selected):
@@ -130,14 +141,14 @@ def main():
             report["cases"][case["id"]] = {"expected": case["expected"], "matches": matches, "trials": attempts}
             print(f'{case["id"]}: {matches}/3 expected answers', flush=True)
 
-    collect_billed_cost(report["cases"])
+    estimate_cost(report)
     output = Path(os.environ["WEAVER_RESULT"])
     output.write_text(json.dumps(report, indent=2) + "\n")
     if mode == "baseline":
         for c in selected:
             records[c["id"]] = baseline_record(c, report["cases"][c["id"]]["trials"], os.environ.get("GITHUB_RUN_ID"))
         output.with_name("calibration.json").write_text(json.dumps(
-            {"model": AI_MODEL, "prompt_sha256": digest(original), "cases": records}, indent=2) + "\n")
+            {**calibration, "sampling": "fresh", "model": AI_MODEL, "prompt_sha256": digest(original), "cases": records}, indent=2) + "\n")
         passed = [c for c in cases if records[c["id"]]["trials"] == 3 and not records[c["id"]]["misses"]]
     else:
         passed = [c for c in selected if report["cases"][c["id"]]["matches"] == 3]

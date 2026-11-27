@@ -21,7 +21,7 @@ What community members publish (models, agents, MCP servers) and keeping it heal
 Not here: payouts to publishers → Billing & payments.
 
 ### Agents & agent tools
-Agents we host and the tools they use: hosted and prompt agents (Floret in `apps/agent-floret/`), agent harnesses (Claude Code, Hermes, Codex), the agent computer (shell, git, sandboxes), hosted MCP servers in `apps/`, client tools.
+The hosting platform itself belongs here, including agent registration, invocation and readiness. Agents we host and the tools they use: hosted and prompt agents (Floret in `apps/agent-floret/`), agent harnesses (Claude Code, Hermes, Codex), the agent computer (shell, git, sandboxes), hosted MCP servers in `apps/`, client tools.
 Not here: the `@pollinations/mcp` package → Developer tools; bots that run our own work → Internal automation.
 
 ### Developer tools
@@ -83,7 +83,7 @@ Not here: service health → API & reliability.
 
 Harm to users today, not how valuable a request is or who asked. A separate job may later move an issue to Express; never pick Express yourself.
 
-- **High**: broken or blocking for users, including billing problems and outages.
+- **High**: broken or blocking for users, including billing problems and outages. A named model returning no usable output is blocking when no working path is reported.
 - **Medium**: wrong, but there is a workaround or the impact is limited.
 - **Low**: feature requests, ideas, questions, docs, cosmetic issues, internal tasks.
 

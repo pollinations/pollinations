@@ -67,7 +67,8 @@
       "model_work": "Repair"
     },
     "rationale": "The named text model returns no result.",
-    "coverage": []
+    "coverage": [],
+    "diagnostic_only": true
   },
   {
     "id": "17867",
@@ -113,7 +114,8 @@
       "model_work": null
     },
     "rationale": "A small token limit exposes the wrong API parameter in an error; the report identifies a usable range.",
-    "coverage": []
+    "coverage": [],
+    "diagnostic_only": true
   },
   {
     "id": "19833",
@@ -216,7 +218,8 @@
       "model_work": "Update"
     },
     "rationale": "An existing model returns to list price at the end of a promotion.",
-    "coverage": []
+    "coverage": [],
+    "diagnostic_only": true
   },
   {
     "id": "20524",
@@ -412,7 +415,8 @@
     "rationale": "One model fails on high effort in non-streaming mode. Streaming works for the same request.",
     "coverage": [
       "workaround"
-    ]
+    ],
+    "diagnostic_only": true
   },
   {
     "id": "12870",
@@ -433,10 +437,9 @@
       "priority": "Medium",
       "model_work": null
     },
-    "rationale": "The model browser shows an empty table, but the public catalog endpoints still return the models.",
-    "coverage": [
-      "workaround"
-    ]
+    "rationale": "The blank table limits model discovery in the dashboard. Users can still generate, so the impact is limited.",
+    "coverage": [],
+    "diagnostic_only": true
   },
   {
     "id": "19013",

@@ -16,10 +16,10 @@ on:
         description: "Owner check only. Optional SHA-256 of a verified tool-free private model ID for the paired transport probe"
         required: false
       weaver_preview:
-        description: "Evaluate three answers per frozen case, with no GitHub writes"
+        description: "Read-only classification preview or repeated direct comparison"
         type: choice
         default: none
-        options: [none, baseline, shortened, hosted]
+        options: [none, baseline, shortened, hosted, compare-misses, compare-holdout]
       preview_model:
         description: "Hosted preview only. Callable ID from the verified owner readback"
         required: false
@@ -91,9 +91,7 @@ jobs:
         if: always()
         with:
           name: weaver-${{ inputs.weaver_preview }}
-          path: |
-            ${{ runner.temp }}/weaver-results.json
-            ${{ runner.temp }}/calibration.json
+          path: ${{ runner.temp }}/weaver-results.json
           if-no-files-found: warn
 
   organize:

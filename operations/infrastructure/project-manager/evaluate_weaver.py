@@ -21,12 +21,12 @@ def case_digest(case):
     return digest(json.dumps(case, ensure_ascii=False, sort_keys=True))
 
 
-def baseline_record(case, trials, run):
+def trial_misses(trials):
     misses = {}
     for i, t in enumerate(trials, 1):
         if t.get("error") or t.get("differences"):
             misses[str(i)] = {k: t[k] for k in ("error", "differences") if t.get(k)}
-    return {"case_sha256": case_digest(case), "run": run, "trials": len(trials), "misses": misses}
+    return misses
 
 
 def coverage_gaps(cases):
@@ -96,76 +96,81 @@ def estimate_cost(report):
         print("Catalog estimate unavailable; retain usage and request IDs for reconciliation.")
 
 
+def measure(case, arms, repetitions):
+    """Alternate which prompt goes first; share the completion-ID check across both arms."""
+    seen = set()
+    results = {name: [] for name in arms}
+    for i in range(repetitions):
+        for name in (list(arms) if i % 2 == 0 else reversed(arms)):
+            brief, model = arms[name]
+            results[name].append(trial(case, brief, model, seen))
+    return results
+
+
 def main():
     mode = sys.argv[1]
-    if mode not in {"baseline", "shortened", "hosted"}:
-        raise SystemExit("Choose baseline, shortened or hosted")
-    cases_path = WEAVER_DIR / "classification-cases.json"
-    cases = json.loads(cases_path.read_text())
-    fingerprint = digest(json.dumps(cases, ensure_ascii=False, sort_keys=True))
-    original = read_brief()
-    brief = original if mode == "baseline" else (WEAVER_DIR / "system-prompt.md").read_text().strip()
-    model = os.environ["PREVIEW_WEAVER_MODEL"] if mode == "hosted" else None
-    if mode == "hosted" and model != "community/pollinations-ai/weaver":
-        raise SystemExit("Provide the callable ID verified by the owner readback")
+    if mode not in {"baseline", "shortened", "hosted", "compare-misses", "compare-holdout"}:
+        raise SystemExit("Unknown Weaver preview")
     if not os.getenv("POLLINATIONS_TOKEN"):
         raise SystemExit("Missing Pollinations credential")
-    report = {"mode": mode, "commit": os.getenv("GITHUB_SHA"), "model": model or AI_MODEL,
-              "cases_sha256": fingerprint, "prompt_sha256": digest(brief), "cases": {}}
-    index_path = WEAVER_DIR / "calibration.json"
-    calibration = json.loads(index_path.read_text()) if index_path.exists() else {}
-    if calibration and (calibration["prompt_sha256"] != digest(original) or calibration["model"] != AI_MODEL):
-        raise SystemExit("The baseline policy or model changed. Archive the old calibration before starting a new one.")
-    records = calibration.get("cases", {})
-    if records and calibration.get("sampling") != "fresh":
-        raise SystemExit("Cached responses cannot qualify cases")
-    fresh = [c for c in cases if records.get(c["id"], {}).get("case_sha256") != case_digest(c)]
-    if mode != "baseline" and fresh:
-        raise SystemExit("Calibrate the new or revised cases before scoring candidates")
-    if mode != "baseline":
-        report["excluded"] = {c["id"]: records[c["id"]] for c in cases if records[c["id"]]["misses"]}
-    if mode == "baseline":
-        selected = fresh
-    else:
-        selected = [c for c in cases if records[c["id"]]["trials"] == 3 and not records[c["id"]]["misses"]]
-    if gaps := coverage_gaps(cases if mode == "baseline" else selected):
-        raise SystemExit("Missing calibrated coverage: " + ", ".join(gaps))
+    cases = json.loads((WEAVER_DIR / "classification-cases.json").read_text())
+    if gaps := coverage_gaps([c for c in cases if not c.get("diagnostic_only")]):
+        raise SystemExit("Missing development coverage: " + ", ".join(gaps))
+    holdout = []
+    if mode in {"compare-holdout", "hosted"}:
+        holdout = json.loads((WEAVER_DIR / "holdout-cases.json").read_text())
+        if not holdout or {c["source"] for c in cases} & {c["source"] for c in holdout}:
+            raise SystemExit("Holdout sources must be new")
+    if mode == "compare-misses":
+        cases = [c for c in cases if c["id"] in {"12870", "19013"}]
+        if len(cases) != 2:
+            raise SystemExit("The comparison requires both reviewed cases")
+    elif mode == "compare-holdout":
+        cases = holdout
+    elif mode == "hosted":
+        cases += holdout
 
-    def measure(case):
-        seen = set()
-        return case, [trial(case, brief, model, seen) for _ in range(3)]
-
+    candidate = (WEAVER_DIR / "system-prompt.md").read_text().strip()
+    prompts = {"baseline": (read_brief(), None), "shortened": (candidate, None)}
+    if mode == "hosted":
+        model = os.getenv("PREVIEW_WEAVER_MODEL")
+        if model != "community/pollinations-ai/weaver":
+            raise SystemExit("Provide the callable ID verified by the owner readback")
+        prompts["hosted"] = (candidate, model)
+    arms = prompts if mode.startswith("compare-") else {mode: prompts[mode]}
+    reports = {name: {"model": model or AI_MODEL, "prompt_sha256": digest(brief), "cases": {}}
+               for name, (brief, model) in arms.items()}
+    repetitions = 10 if mode == "compare-misses" else 3
+    holdout_ids = {c["id"] for c in holdout}
+    summaries = []
+    invalid = 0
     with ThreadPoolExecutor(max_workers=4) as workers:
-        for case, attempts in workers.map(measure, selected):
-            matches = sum("error" not in t and not t["differences"] for t in attempts)
-            report["cases"][case["id"]] = {"expected": case["expected"], "matches": matches, "trials": attempts}
-            print(f'{case["id"]}: {matches}/3 expected answers', flush=True)
-
-    estimate_cost(report)
-    output = Path(os.environ["WEAVER_RESULT"])
-    output.write_text(json.dumps(report, indent=2) + "\n")
-    if mode == "baseline":
-        for c in selected:
-            case_id = c["id"]
-            if previous := records.get(case_id):
-                calibration.setdefault("earlier_cases", {}).setdefault(case_id, []).append(previous)
-            records[case_id] = baseline_record(c, report["cases"][case_id]["trials"], os.environ.get("GITHUB_RUN_ID"))
-        output.with_name("calibration.json").write_text(json.dumps(
-            {**calibration, "sampling": "fresh", "model": AI_MODEL, "prompt_sha256": digest(original), "cases": records}, indent=2) + "\n")
-        passed = [c for c in cases if records[c["id"]]["trials"] == 3 and not records[c["id"]]["misses"]]
-    else:
-        passed = [c for c in selected if report["cases"][c["id"]]["matches"] == 3]
-        cases = selected
-    gaps = coverage_gaps(passed)
-    summary = f"{mode}: {len(passed)} of {len(cases)} cases matched on all three runs."
-    if gaps:
-        summary += " Missing coverage: " + ", ".join(gaps) + "."
+        jobs = [(case, workers.submit(measure, case, arms, repetitions)) for case in cases]
+        for case, job in jobs:
+            for name, trials in job.result().items():
+                errors = sum("error" in t for t in trials)
+                invalid += errors
+                misses = trial_misses(trials)
+                matches = len(trials) - len(misses)
+                group = "holdout" if case["id"] in holdout_ids else "development"
+                if case.get("diagnostic_only"):
+                    group = "diagnostic"
+                reports[name]["cases"][case["id"]] = {
+                    "group": group, "expected": case["expected"], "matches": matches, "trials": trials,
+                    "misses": misses,
+                }
+                summaries.append(f"| {case['id']} | {group} | {name} | {matches}/{len(trials)} | {errors} |")
+    for report in reports.values():
+        estimate_cost(report)
+    output = {"mode": mode, "commit": os.getenv("GITHUB_SHA"), "cases_sha256": case_digest(cases), "arms": reports}
+    Path(os.environ["WEAVER_RESULT"]).write_text(json.dumps(output, indent=2) + "\n")
+    summary = "\n".join(["| Case | Set | Prompt | Exact | Invalid |", "|---|---|---|---:|---:|", *summaries])
     print(summary)
     if path := os.getenv("GITHUB_STEP_SUMMARY"):
         with open(path, "a") as stream:
             print(summary, file=stream)
-    if mode != "baseline" and len(passed) != len(cases):
-        raise SystemExit(1)
+    if invalid:
+        raise SystemExit(f"{invalid} invalid or unavailable trials. See the artifact.")
 
 
 if __name__ == "__main__":

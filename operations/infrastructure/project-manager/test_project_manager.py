@@ -277,6 +277,27 @@ class WeaverTest(unittest.TestCase):
             response.json.return_value["id"] = "different-id"
             self.assertIn("error", evaluation.trial(case, manager.read_brief(), None, seen))
 
+    def test_paired_comparison_balances_order_and_rejects_replay_across_prompts(self):
+        import evaluate_weaver as evaluation
+
+        case = json.loads((manager.WEAVER_DIR / "classification-cases.json").read_text())[0]
+        original = manager.read_brief()
+        candidate = (manager.WEAVER_DIR / "system-prompt.md").read_text().strip()
+        responses = []
+        for completion_id in ("first", "second", "first", "fourth"):
+            response = Mock(status_code=200, headers={"X-Cache": "MISS"})
+            response.json.return_value = {"id": completion_id, "choices": [{"message": {
+                "content": json.dumps(case["expected"])}}]}
+            responses.append(response)
+        with patch.object(manager.requests, "post", side_effect=responses) as post:
+            arms = {"baseline": (original, None), "shortened": (candidate, None)}
+            results = evaluation.measure(case, arms, 2)
+        sent = [c.kwargs["json"] for c in post.call_args_list]
+        self.assertEqual([body["messages"][0]["content"] for body in sent], [original, candidate, candidate, original])
+        self.assertTrue(all(body["seed"] == -1 and body["messages"][1] == sent[0]["messages"][1] for body in sent))
+        self.assertFalse(evaluation.trial_misses(results["baseline"]))
+        self.assertIn("2", evaluation.trial_misses(results["shortened"]))
+
     def test_baseline_misses_survive_and_cannot_fill_required_coverage(self):
         import evaluate_weaver as evaluation
 
@@ -285,8 +306,7 @@ class WeaverTest(unittest.TestCase):
         reduced = [c for c in cases if c["expected"]["priority"] != "Medium"]
         self.assertIn("two distinct Medium issues", evaluation.coverage_gaps(reduced))
         trials = [{"differences": {}}, {"differences": {"priority": "High"}}, {"error": "unavailable"}]
-        record = evaluation.baseline_record(cases[0], trials, "123")
-        self.assertEqual(record["misses"], {"2": {"differences": {"priority": "High"}}, "3": {"error": "unavailable"}})
+        self.assertEqual(evaluation.trial_misses(trials), {"2": {"differences": {"priority": "High"}}, "3": {"error": "unavailable"}})
 
 
 class RewardCommentTest(unittest.TestCase):

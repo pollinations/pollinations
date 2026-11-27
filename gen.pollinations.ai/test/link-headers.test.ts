@@ -47,6 +47,19 @@ describe("agent discovery Link headers", () => {
         }
     });
 
+    it("advertises the machine entry points on the public catalogs", async () => {
+        for (const path of ["/models", "/v1/models", "/mcp"]) {
+            for (const method of ["GET", "HEAD"]) {
+                const response = await fetchWorker(path, { method });
+                expect(response.status).toBe(200);
+                expect(response.headers.get("Link")).toBe(
+                    AGENT_DISCOVERY_LINKS,
+                );
+                await response.body?.cancel();
+            }
+        }
+    });
+
     it("appends to an existing Link header instead of replacing it", async () => {
         const app = new Hono<Env>();
         app.use("*", agentDiscoveryLinks());

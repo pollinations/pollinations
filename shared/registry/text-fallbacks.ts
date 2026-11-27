@@ -257,6 +257,17 @@ export const TEXT_FALLBACKS = {
             priceMultiplier: 1,
         },
     },
+    "baseten/bison-1": {
+        // Both gateways use Baseten. This covers gateway failures.
+        "baseten/bison-1:openrouter:baseten": {
+            provider: "openrouter",
+            priceMultiplier: 1,
+            cost: {
+                promptTextTokens: perMillion(0.1) * 1.055,
+                completionTextTokens: perMillion(0),
+            },
+        },
+    },
     "typesafe/jev-1.14": {
         // Same TypeSafe backend; covers gateway failures, not TypeSafe outages.
         "typesafe/jev-1.14:openrouter:typesafe": {

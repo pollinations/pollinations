@@ -6,6 +6,7 @@ import {
 } from "@shared/schemas/openai.ts";
 import { completionToChatStream } from "./chat/stream.js";
 import { withUpstreamRequestUrl } from "./genericOpenAIClient.js";
+import { imageUrlToBase64Transform } from "./transforms/imageUrlToBase64Transform.ts";
 import type {
     ChatCompletion,
     ChatMessage,
@@ -240,6 +241,50 @@ function toTypedDecisionRequest(
     };
 }
 
+async function toOpenAIDecisionInput(
+    state: unknown,
+    options: TransformOptions,
+) {
+    const parts = Array.isArray(state) ? state : [state];
+    if (
+        options.modelConfig?.requiresBase64ImageUrls !== true ||
+        !parts.some((part) => isPlainObject(part) && part.type === "image_url")
+    ) {
+        return decisionText(state);
+    }
+    const content = parts.map((part) => {
+        if (isPlainObject(part) && part.type === "image_url") {
+            const image = part.image_url;
+            const url = isPlainObject(image) ? image.url : image;
+            if (typeof url !== "string" || !url) {
+                throw nativeRequestError("Expected an image URL.");
+            }
+            return { type: "image_url" as const, image_url: { url } };
+        }
+        const text =
+            isPlainObject(part) &&
+            part.type === "text" &&
+            typeof part.text === "string"
+                ? part.text
+                : decisionText(part);
+        return { type: "text" as const, text };
+    });
+    const { messages } = await imageUrlToBase64Transform(
+        [{ role: "user", content }],
+        options,
+    );
+    return [
+        {
+            role: "user",
+            content: (messages[0].content as typeof content).map((part) =>
+                part.type === "image_url"
+                    ? { type: "input_image", image_url: part.image_url.url }
+                    : { type: "input_text", text: part.text },
+            ),
+        },
+    ];
+}
+
 function toOpenAIQuestions(questions: Record<string, unknown>) {
     return Object.entries(questions).map(([name, question]) => {
         if (!isPlainObject(question))
@@ -419,6 +464,9 @@ export async function requestDecision(
     const apiKey = options.modelConfig?.authKey;
     const endpoint = options.modelConfig?.directEndpoint;
     const model = options.modelConfig?.model;
+    const defaultOptions = options.modelConfig?.defaultOptions as
+        | Record<string, unknown>
+        | undefined;
     if (typeof apiKey !== "string" || !apiKey || typeof endpoint !== "string") {
         throw serviceError(
             `The decisions route is not configured for ${model}.`,
@@ -445,14 +493,13 @@ export async function requestDecision(
                     ? { model, ...toTypedDecisionRequest(request, "gemini") }
                     : openai
                       ? {
+                            ...defaultOptions,
                             model,
-                            input: decisionText(state),
+                            input: await toOpenAIDecisionInput(state, options),
                             questions: toOpenAIQuestions(questions),
                         }
                       : {
-                            ...(options.modelConfig?.defaultOptions as
-                                | Record<string, unknown>
-                                | undefined),
+                            ...defaultOptions,
                             ...(d3
                                 ? toTypedDecisionRequest(request, "d3")
                                 : request),

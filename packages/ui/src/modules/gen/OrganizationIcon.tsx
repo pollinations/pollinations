@@ -6,6 +6,7 @@ import logoAnthropic from "../../brand/organizations/anthropic.svg";
 import logoAssemblyai from "../../brand/organizations/assemblyai.svg";
 import logoAws from "../../brand/organizations/aws.svg";
 import logoAzure from "../../brand/organizations/azure.svg";
+import logoBaseten from "../../brand/organizations/baseten.svg";
 import logoBlackForestLabs from "../../brand/organizations/black-forest-labs.svg";
 import logoBytedance from "../../brand/organizations/bytedance.svg";
 import logoByteplus from "../../brand/organizations/byteplus.svg";
@@ -86,6 +87,7 @@ const logos: Record<string, string> = {
     "AssemblyAI": logoAssemblyai,
     "AWS": logoAws,
     "Azure": logoAzure,
+    "Baseten": logoBaseten,
     "Black Forest Labs": logoBlackForestLabs,
     "ByteDance": logoBytedance,
     "BytePlus": logoByteplus,

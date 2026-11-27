@@ -25,6 +25,42 @@ import {
 } from "../src/text/fallbackCompatibility.ts";
 import { resolveDirectResponsesTarget } from "../src/text/responses/client.ts";
 
+describe("Baseten Bison 1 decision routes", () => {
+    it("registers a paid-only canonical model and an OpenRouter fallback", () => {
+        const model = TEXT_SERVICES["baseten/bison-1"];
+        expect(model).toMatchObject({
+            provider: "vercel",
+            category: "decision",
+            paidOnly: true,
+            aliases: [],
+            inputModalities: ["text", "image"],
+            contextLength: 32768,
+            fallbacks: ["baseten/bison-1:openrouter:baseten"],
+        });
+        expect(model.supportedEndpoints).toContain("/alpha/decisions");
+        const primary = findModelByName("baseten/bison-1");
+        expect(primary?.useSystemOneApi).toBe(true);
+        expect(primary?.config()).toMatchObject({
+            model: "baseten/bison-1",
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/decisions",
+            decisionsProtocol: "openai",
+            requiresBase64ImageUrls: true,
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["baseten"] } },
+            },
+        });
+        const fallback = findModelByName("baseten/bison-1:openrouter:baseten");
+        expect(fallback?.useSystemOneApi).toBe(true);
+        expect(fallback?.config()).toMatchObject({
+            model: "baseten/bison-1",
+            directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+            defaultOptions: {
+                provider: { only: ["baseten"], allow_fallbacks: false },
+            },
+        });
+    });
+});
+
 describe("HeyGen Decision 1 routes", () => {
     it("routes the paid multimodal model through its pinned OpenRouter endpoint", () => {
         const primary = TEXT_SERVICES["heygen/heygen-decision-1"];

@@ -1,0 +1,135 @@
+[
+  {
+    "id": "19893",
+    "source": "https://github.com/pollinations/pollinations/issues/19893",
+    "revision": "2026-11-18T19:42:55Z",
+    "evidence": {
+      "kind": "issue",
+      "author": "ale-rls",
+      "author_type": "User",
+      "title": "A prompt agent can't be edited once its base model is no longer callable",
+      "body": "### Reproduction\n\n1. Create a prompt agent in the dashboard on a base model that is later retired, made fallback-only, or (for a community model) made private or deleted.\n2. Open My listings, edit the agent, change only the description or visibility, and save.\n\nThe save fails with `baseModel \"...\" is not a callable text model`, so nothing about the agent can be changed until a different base model is picked.\n\n### Expected behavior\n\nThe edit saves. The update route says \"Only a changed baseModel is checked, so other edits still save\", and a PATCH without `baseModel` does save.",
+      "files": [],
+      "linked": []
+    },
+    "expected": {
+      "area": "Agents & agent tools",
+      "type": "Bug",
+      "priority": "Medium",
+      "model_work": null
+    },
+    "rationale": "An outdated base model prevents editing agent metadata in the dashboard. A PATCH omitting the model still works."
+  },
+  {
+    "id": "20046",
+    "source": "https://github.com/pollinations/pollinations/issues/20046",
+    "revision": "2026-11-19T18:33:39Z",
+    "evidence": {
+      "kind": "issue",
+      "author": "kreggscode",
+      "author_type": "User",
+      "title": "api: malformed standard content parts fall through the chat schema's provider-extension catch-all",
+      "body": "Malformed standard content parts reach the provider. The API sometimes returns success for an incomplete part and sometimes returns an upstream validation error. The report asks for consistent local validation of standard parts while retaining support for provider extensions.",
+      "files": [],
+      "linked": []
+    },
+    "expected": {
+      "area": "API & reliability",
+      "type": "Bug",
+      "priority": "Medium",
+      "model_work": null
+    },
+    "rationale": "The shared request validator mishandles malformed standard parts. Correctly formed requests can still be used."
+  },
+  {
+    "id": "19897",
+    "source": "https://github.com/pollinations/pollinations/issues/19897",
+    "revision": "2026-11-16T19:39:32Z",
+    "evidence": {
+      "kind": "issue",
+      "author": "ale-rls",
+      "author_type": "User",
+      "title": "Polli strips `$` and braces from code in its replies",
+      "body": "### Reproduction\n\nAsk Polli for a JavaScript template literal or a shell line with two variables, for example \"show a template literal that joins first and second\".\n\nThe reply shows `` `first and {second}` `` instead of `` `${first} and ${second}` ``; `echo \"${NAME}\" > $FILE` becomes `echo \"NAME\" > FILE`.\n\n### Expected behavior\n\nCode spans and fenced code blocks are shown as written. Only real inline math such as `$\\alpha_{1}$` is converted.",
+      "files": [],
+      "linked": []
+    },
+    "expected": {
+      "area": "Internal automation",
+      "type": "Bug",
+      "priority": "Medium",
+      "model_work": null
+    },
+    "rationale": "Polli's Discord formatter alters code examples in replies. The reported impact is limited to that formatting."
+  },
+  {
+    "id": "20367",
+    "source": "https://github.com/pollinations/pollinations/pull/20367",
+    "revision": "ede7d794cdd7c59abc5713294ef03300c8987cda",
+    "evidence": {
+      "kind": "pull request",
+      "author": "ElliotEtag",
+      "author_type": "User",
+      "title": "feat(catalog): expose audio input metadata",
+      "body": "### Public API\n\nAdds three optional response fields to the existing model catalog listings and `GET /v1/models/{model}`.\n\n- `max_reference_audios` declares the maximum number of reference audio clips per request.\n- `audio_input_constraints` declares per-clip and combined duration hints and whether audio requires a visual reference.\n- Top-level `transcription_options` lists supported optional request inputs (`language`, `prompt`). Omission means unspecified. An empty array means neither is supported.\n\nExisting endpoints, request schemas, validation, routing, and pricing stay the same. Includes SDK types and Floret comparison coverage. The Playground draft can run independently using its model overrides.",
+      "files": [
+        "apps/floret/model-catalog.js",
+        "apps/floret/model-catalog.test.js",
+        "gen.pollinations.ai/src/routes/proxy.ts",
+        "gen.pollinations.ai/test/models-retrieve.test.ts",
+        "package-lock.json",
+        "packages/sdk/CHANGELOG.md",
+        "packages/sdk/package-lock.json",
+        "packages/sdk/package.json",
+        "packages/sdk/src/types.ts",
+        "shared/registry/audio.ts",
+        "shared/registry/image.ts",
+        "shared/registry/model-info.ts",
+        "shared/registry/registry.ts",
+        "shared/schemas/openai.ts"
+      ],
+      "linked": []
+    },
+    "expected": {
+      "area": "Models",
+      "type": "Feature",
+      "priority": null,
+      "model_work": "Update"
+    },
+    "rationale": "The catalog exposes audio input capabilities of working models through the public API and SDK."
+  },
+  {
+    "id": "20316",
+    "source": "https://github.com/pollinations/pollinations/pull/20316",
+    "revision": "99a5a48b5c913b89fc1430615194ca00f73c1dcc",
+    "evidence": {
+      "kind": "pull request",
+      "author": "g33ky00",
+      "author_type": "User",
+      "title": "feat(sdk): add realtime reconnect, transcription helpers, and barge-in utilities",
+      "body": "Complements #20029 and #20305 (both open) with high-value-add modules neither covers:\n\n- `realtime-reconnect.ts`: exponential-backoff reconnection wrapper (injectable connect fn).\n- `realtime-transcription.ts`: typed helpers for VAD, input_audio_buffer.clear, segment management, delta/completed events.\n- `realtime-interruption.ts`: response.cancel + turn-taking helper.\n\nNew files only to minimize conflicts. Tests: 12/12 pass, biome clean.\n\nFixes #20024",
+      "files": [
+        "packages/sdk/src/index.ts",
+        "packages/sdk/src/realtime-interruption.test.ts",
+        "packages/sdk/src/realtime-interruption.ts",
+        "packages/sdk/src/realtime-reconnect.test.ts",
+        "packages/sdk/src/realtime-reconnect.ts",
+        "packages/sdk/src/realtime-transcription.test.ts",
+        "packages/sdk/src/realtime-transcription.ts"
+      ],
+      "linked": [
+        {
+          "number": 20024,
+          "type": "Feature"
+        }
+      ]
+    },
+    "expected": {
+      "area": "Developer tools",
+      "type": "Feature",
+      "priority": null,
+      "model_work": null
+    },
+    "rationale": "New optional SDK helpers let developers reconnect and manage realtime transcription and interruptions."
+  }
+]

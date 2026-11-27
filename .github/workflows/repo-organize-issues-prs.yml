@@ -35,7 +35,7 @@ on:
         default: true
 
 concurrency:
-  group: project-manager-${{ github.event.issue.number || github.event.pull_request.number }}
+  group: project-manager-${{ github.event.issue.number || github.event.pull_request.number || (inputs.weaver_preview && inputs.weaver_preview != 'none' && github.run_id) || 'manual' }}
   cancel-in-progress: false
 
 jobs:

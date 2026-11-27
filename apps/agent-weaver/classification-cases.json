@@ -439,7 +439,8 @@
     },
     "rationale": "The blank table limits model discovery in the dashboard. Users can still generate, so the impact is limited.",
     "coverage": [],
-    "diagnostic_only": true
+    "diagnostic_only": true,
+    "repeat_comparison": true
   },
   {
     "id": "19013",
@@ -463,7 +464,8 @@
     "rationale": "New agents answer successfully on retry about twenty seconds after creation.",
     "coverage": [
       "workaround"
-    ]
+    ],
+    "repeat_comparison": true
   },
   {
     "id": "13677",

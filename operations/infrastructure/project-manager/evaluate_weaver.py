@@ -122,9 +122,9 @@ def main():
         if not holdout or {c["source"] for c in cases} & {c["source"] for c in holdout}:
             raise SystemExit("Holdout sources must be new")
     if mode == "compare-misses":
-        cases = [c for c in cases if c["id"] in {"12870", "19013"}]
-        if len(cases) != 2:
-            raise SystemExit("The comparison requires both reviewed cases")
+        cases = [c for c in cases if c.get("repeat_comparison")]
+        if not cases:
+            raise SystemExit("Select disputed cases in classification-cases.json first")
     elif mode == "compare-holdout":
         cases = holdout
     elif mode == "hosted":

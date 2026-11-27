@@ -1,0 +1,77 @@
+{
+  "date": "2026-11-26",
+  "period_start": "2026-11-26",
+  "period_end": "2026-11-26",
+  "title": "Realtime voice support in the SDK",
+  "summary": "Realtime voice reached the SDK, Classic API errors got illustrated explanations, and agent listings gained clearer reliability and tool information.\n\nThe SDK added `connectRealtime()` for voice and transcription sessions, PCM16 audio helpers, and a React `useRealtime()` hook. A browser example shows microphone streaming and spoken replies.\n\nClassic text and image errors gained illustrated browser pages, while image requests in `<img>` tags can receive JPEG error cards instead of broken images. Free Classic text replies are now capped at 100 per IP per UTC day, alongside the existing 45-second interval. Script error formats remain unchanged.\n\nDefault listings now filter public community agents using their recent request health and hide hosted agents whose base model cannot be found. Agents without health observations remain listed; `reliability=all` still includes filtered agents. Prompt-agent catalog entries can now identify their available MCP servers through `mcp_servers`, and the discovery rule is documented.",
+  "pr_count": 9,
+  "prs": [
+    {
+      "number": 20088,
+      "date": "2026-11-26"
+    },
+    {
+      "number": 20491,
+      "date": "2026-11-26"
+    },
+    {
+      "number": 20620,
+      "date": "2026-11-26"
+    },
+    {
+      "number": 20628,
+      "date": "2026-11-26"
+    },
+    {
+      "number": 20649,
+      "date": "2026-11-26"
+    },
+    {
+      "number": 20652,
+      "date": "2026-11-26"
+    },
+    {
+      "number": 20656,
+      "date": "2026-11-26"
+    },
+    {
+      "number": 20661,
+      "date": "2026-11-26"
+    },
+    {
+      "number": 20662,
+      "date": "2026-11-26"
+    }
+  ],
+  "generated_at": "2026-11-27T06:06:36.069884+00:00",
+  "daily": [
+    {
+      "emoji": "🎵",
+      "title": "Realtime voice in the SDK",
+      "text": "Use `connectRealtime()` for voice or live transcription sessions, or `useRealtime()` in a React app. The SDK also includes PCM16 audio helpers and a browser voice-chat example. [Get the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
+      "prs": [
+        20088
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Illustrated Classic API errors",
+      "text": "Classic API errors now have illustrated browser pages. Image requests made through `<img>` tags can show a JPEG error card instead of a broken image; scripts keep their existing error formats.",
+      "prs": [
+        20628
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Agent MCP tools listed",
+      "text": "Prompt-agent entries in the model catalog and OpenAI-compatible model list now include `mcp_servers` when their tools are visible to Gen. Clients can use the registry IDs to show which MCP servers an agent can call. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        20652
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
+}

@@ -1,0 +1,14 @@
+{
+  "platform": "x",
+  "scope": "daily",
+  "date": "2026-11-26",
+  "period_start": "2026-11-26",
+  "period_end": "2026-11-26",
+  "generated_at": "2026-11-27T06:06:36.069884+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/8c04e6bdd1c491e5642dcffeaa7929ef4c5e52ada251f51ab58671ab8c866d96"
+    }
+  ],
+  "text": "Added `connectRealtime()` to the SDK for voice and transcription sessions, with PCM16 helpers and a React `useRealtime()` hook. The browser example streams mic audio and returns spoken replies."
+}

@@ -141,8 +141,9 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: false,
         cost: {
-            promptTextTokens: perMillion(0.05),
-            completionTextTokens: perMillion(0.18),
+            promptTextTokens: perMillion(0.03),
+            promptCachedTokens: perMillion(0.015),
+            completionTextTokens: perMillion(0.14),
         },
         title: "GPT-OSS 20B",
         description:

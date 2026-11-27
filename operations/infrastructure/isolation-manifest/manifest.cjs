@@ -2,11 +2,11 @@
 const { isDeepStrictEqual } = require("node:util");
 
 const SLOTS = ["pilot-a", "pilot-b"];
-const CLASSES = [
-    "CommunityModelRateLimiter",
-    "GenerationCoordinator",
-    "AzurePortWake",
-];
+const DURABLE_OBJECTS = {
+    COMMUNITY_MODEL_RATE_LIMITER: "CommunityModelRateLimiter",
+    GENERATION_COORDINATOR: "GenerationCoordinator",
+    AZURE_PORT_WAKE: "AzurePortWake",
+};
 
 function createPlan() {
     return {
@@ -24,7 +24,7 @@ function createPlan() {
                     kv: { KV: "kv" },
                     r2: { TEXT_BUCKET: "text" },
                     services: { ENTER: "enter" },
-                    durableObjects: [...CLASSES],
+                    durableObjects: { ...DURABLE_OBJECTS },
                 },
             },
             resources: { d1: ["db"], kv: ["kv"], r2: ["text"] },

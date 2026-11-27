@@ -36,9 +36,10 @@ test("two independent slots and only the intended within-slot bindings", () => {
         assert.equal(env.workers.enter.kv.KV, env.workers.gen.kv.KV);
         assert.equal(env.workers.enter.kv.SETUP_HOLDS, env.workers.gen.kv.KV);
     }
-    plan.environments[0].workers.gen.durableObjects.pop();
+    delete plan.environments[0].workers.gen.durableObjects.AZURE_PORT_WAKE;
     assert.equal(
-        createPlan().environments[1].workers.gen.durableObjects.length,
+        Object.keys(createPlan().environments[1].workers.gen.durableObjects)
+            .length,
         3,
     );
 });
@@ -79,7 +80,7 @@ test("reject changed or added branch capabilities and spoofed service targets", 
             p.environments[0].workers.enter.secrets = ["SOPS"];
         },
         (p) => {
-            p.environments[0].workers.gen.durableObjects.push("Extra");
+            p.environments[0].workers.gen.durableObjects.EXTRA = "Extra";
         },
         (p) => {
             p.environments[0].workers.enter.kv.KV = "pilot-b/kv";

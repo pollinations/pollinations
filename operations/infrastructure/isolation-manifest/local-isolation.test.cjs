@@ -57,7 +57,7 @@ export default {
         });
         if (value !== null) await env.TEXT_BUCKET.put("marker", value);
         const durableObjects = {};
-        for (const name of ["CommunityModelRateLimiter", "GenerationCoordinator", "AzurePortWake"]) {
+        for (const name of ["COMMUNITY_MODEL_RATE_LIMITER", "GENERATION_COORDINATOR", "AZURE_PORT_WAKE"]) {
             const namespace = env[name];
             const response = await namespace.get(namespace.idFromName("marker"))
                 .fetch("http://object.invalid/marker", { method: request.method, body: value });
@@ -94,9 +94,7 @@ function localWorkers(plan) {
                 kvNamespaces: scoped(worker.kv),
                 r2Buckets: scoped(worker.r2 ?? {}),
                 serviceBindings: scoped(worker.services),
-                durableObjects: Object.fromEntries(
-                    (worker.durableObjects ?? []).map((name) => [name, name]),
-                ),
+                durableObjects: worker.durableObjects ?? {},
             };
         }),
     );
@@ -108,9 +106,9 @@ const expected = (value) => ({
     kv: value,
     r2: value,
     durableObjects: {
-        CommunityModelRateLimiter: value,
-        GenerationCoordinator: value,
-        AzurePortWake: value,
+        COMMUNITY_MODEL_RATE_LIMITER: value,
+        GENERATION_COORDINATOR: value,
+        AZURE_PORT_WAKE: value,
     },
 });
 

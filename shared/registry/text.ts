@@ -1989,17 +1989,18 @@ const TEXT_BASE_SERVICES = {
     "baseten/bison-1": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
         aliases: [],
-        provider: "openrouter",
+        provider: "vercel",
         publisher: "Baseten",
         category: "decision",
         addedDate: new Date("2026-11-20").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            promptTextTokens: perMillion(0.1) * 1.055,
+            promptTextTokens: perMillion(0.1),
             completionTextTokens: perMillion(0),
         },
         title: "Bison 1",
+        maxReferenceImages: 16,
         description:
             "A 31B-parameter decision model that scores predefined choices and classifications with calibrated probabilities from text, JSON or image context.",
         supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],

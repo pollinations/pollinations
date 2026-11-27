@@ -141,7 +141,17 @@ export const portkeyConfig: PortkeyConfigMap = {
             },
         },
     }),
-    "baseten/bison-1": () => ({
+    "baseten/bison-1": () =>
+        createVercelAIGatewayModelConfig({
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/decisions",
+            decisionsProtocol: "openai",
+            requiresBase64ImageUrls: true,
+            model: "baseten/bison-1",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["baseten"] } },
+            },
+        }),
+    "baseten/bison-1:openrouter:baseten": () => ({
         provider: "openrouter",
         directEndpoint: "https://openrouter.ai/api/alpha/decisions",
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),

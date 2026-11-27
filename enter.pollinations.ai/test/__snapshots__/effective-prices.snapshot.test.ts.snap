@@ -563,6 +563,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "baseten/bison-1": {
     "cost": {
       "completionTextTokens": 0,
+      "promptTextTokens": 0.0000001,
+    },
+    "price": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0.0000001,
+    },
+  },
+  "baseten/bison-1:openrouter:baseten": {
+    "cost": {
+      "completionTextTokens": 0,
       "promptTextTokens": 0.0000001055,
     },
     "price": {

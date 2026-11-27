@@ -1,10 +1,9 @@
 import { createHmac } from "node:crypto";
 import type { SafetyFeature } from "@shared/schemas/safety.ts";
 import { z } from "zod";
-import {
-    applyGuardrail,
-    type BedrockGuardrailEnv,
-    type BedrockResponse,
+import type {
+    BedrockGuardrailEnv,
+    BedrockResponse,
 } from "./bedrock-guardrail.ts";
 import { classifyTriggers } from "./safety-features.ts";
 
@@ -54,15 +53,12 @@ export async function scanSensitiveMessages(input: {
     account: string;
     model?: string;
     requestUrl: string;
+    scan: (texts: string[]) => Promise<BedrockResponse>;
     cacheWrite: (write: Promise<void>) => void;
 }): Promise<{ response: BedrockResponse; reusedParts: number }> {
-    const { texts, parts, guardrail } = input;
+    const { texts, parts, guardrail, scan } = input;
     const full = async () => ({
-        response: await applyGuardrail(
-            parts.map((part) => part.text),
-            "INPUT",
-            guardrail,
-        ),
+        response: await scan(parts.map((part) => part.text)),
         reusedParts: 0,
     });
     // Bound work on full histories before hashing. Bedrock still uses the same selected window.
@@ -131,11 +127,7 @@ export async function scanSensitiveMessages(input: {
     });
 
     const response: BedrockResponse = misses.length
-        ? await applyGuardrail(
-              misses.map((part) => part.text),
-              "INPUT",
-              guardrail,
-          )
+        ? await scan(misses.map((part) => part.text))
         : {
               action: "NONE",
               usage: {
@@ -191,6 +183,7 @@ export async function scanSensitiveMessages(input: {
         }
     }
     if (misses.length && entries.length) {
+        // Appending text keeps the original five-minute expiry for this snapshot.
         const expiresAt =
             snapshot?.expiresAt ?? Date.now() + TTL_SECONDS * 1000;
         const remaining = Math.ceil((expiresAt - Date.now()) / 1000);

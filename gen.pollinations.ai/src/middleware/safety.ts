@@ -18,6 +18,7 @@ import { routePath } from "hono/route";
 import type { Env } from "@/env.ts";
 import {
     applyGuardrail,
+    type BedrockGuardrailEnv,
     type BedrockResponse,
     checkShield,
     isSensitiveOnly,
@@ -132,6 +133,21 @@ async function checkSafetyTexts(
     let redaction: BedrockResponse | undefined;
     let cacheReusedParts: number | undefined;
     const userId = c.var.auth?.user?.id;
+    let bedrockCalls = 0;
+    let bedrockInputParts = 0;
+    let bedrockInputCharacters = 0;
+    function recordBedrockInput(input: string[]) {
+        bedrockCalls++;
+        bedrockInputParts += input.length;
+        bedrockInputCharacters += input.reduce(
+            (total, text) => total + text.length,
+            0,
+        );
+    }
+    function scanBedrock(input: string[], config: BedrockGuardrailEnv) {
+        recordBedrockInput(input);
+        return applyGuardrail(input, "INPUT", config);
+    }
     const scanStartedAt = Date.now();
     try {
         if (
@@ -150,17 +166,19 @@ async function checkSafetyTexts(
                 account: userId,
                 model: c.var.model?.resolved,
                 requestUrl: c.req.url,
+                scan: (input) => scanBedrock(input, guardrailEnv),
                 cacheWrite: (write) => c.executionCtx.waitUntil(write),
             });
             response = result.response;
             cacheReusedParts = result.reusedParts;
         } else {
+            if (shieldCredentials) recordBedrockInput(scannedTexts);
             [response, redaction, shield] = await Promise.all([
                 guardrailEnv
-                    ? applyGuardrail(scannedTexts, "INPUT", guardrailEnv)
+                    ? scanBedrock(scannedTexts, guardrailEnv)
                     : undefined,
                 redactionEnv
-                    ? applyGuardrail(scannedTexts, "INPUT", redactionEnv)
+                    ? scanBedrock(scannedTexts, redactionEnv)
                     : undefined,
                 shieldCredentials
                     ? checkShield(scannedTexts, shieldCredentials)
@@ -230,6 +248,9 @@ async function checkSafetyTexts(
         requiredFeatures,
         scannedCharacters,
         scannedParts: guardrailInputs.length,
+        bedrockCalls,
+        bedrockInputParts,
+        bedrockInputCharacters,
         ...(cacheReusedParts !== undefined && { cacheReusedParts }),
         guardrailAction:
             shield?.blocked || redaction?.action === "GUARDRAIL_INTERVENED"

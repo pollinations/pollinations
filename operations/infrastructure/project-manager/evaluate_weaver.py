@@ -8,6 +8,8 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+import requests
+
 from project_manager import AI_MODEL, MODEL_WORK, PRIORITIES, WEAVER_DIR, area_names, ask_ai, classification_answer, item_prompt, read_brief
 
 
@@ -62,6 +64,30 @@ def trial(case, brief, model):
     return result
 
 
+def collect_billed_cost(cases):
+    # Match only these gateway requests against the caller key's recent ledger.
+    calls = {call["request_id"]: call for case in cases.values() for trial in case["trials"]
+             for call in trial["calls"] if call.get("request_id") and call.get("http_status") == 200}
+    if not calls:
+        return
+    for delay in (0, 10, 20):
+        time.sleep(delay)
+        try:
+            response = requests.get("https://gen.pollinations.ai/account/key/usage", params={"days": 1, "limit": 500},
+                                    headers={"Authorization": "Bearer " + os.environ["POLLINATIONS_TOKEN"]}, timeout=30)
+            response.raise_for_status()
+            for row in response.json()["usage"]:
+                event = row["cursor_event_id"]
+                request = event.removesuffix("-0")
+                if request in calls:
+                    calls[request]["billed_usd"] = row["cost_usd"]
+            if all("billed_usd" in call for call in calls.values()):
+                return
+        except (requests.RequestException, KeyError, TypeError, ValueError):
+            print("Key usage unavailable; unverified charges are omitted.")
+            return
+
+
 def main():
     mode = sys.argv[1]
     if mode not in {"baseline", "shortened", "hosted"}:
@@ -72,7 +98,7 @@ def main():
     original = read_brief()
     brief = original if mode == "baseline" else (WEAVER_DIR / "system-prompt.md").read_text().strip()
     model = os.environ["PREVIEW_WEAVER_MODEL"] if mode == "hosted" else None
-    if mode == "hosted" and not model:
+    if mode == "hosted" and model != "community/pollinations-ai/weaver":
         raise SystemExit("Provide the callable ID verified by the owner readback")
     if not os.getenv("POLLINATIONS_TOKEN"):
         raise SystemExit("Missing Pollinations credential")
@@ -86,6 +112,8 @@ def main():
     fresh = [c for c in cases if records.get(c["id"], {}).get("case_sha256") != case_digest(c)]
     if mode != "baseline" and fresh:
         raise SystemExit("Calibrate the new or revised cases before scoring candidates")
+    if mode != "baseline":
+        report["excluded"] = {c["id"]: records[c["id"]] for c in cases if records[c["id"]]["misses"]}
     if mode == "baseline":
         selected = fresh
     else:
@@ -102,6 +130,7 @@ def main():
             report["cases"][case["id"]] = {"expected": case["expected"], "matches": matches, "trials": attempts}
             print(f'{case["id"]}: {matches}/3 expected answers', flush=True)
 
+    collect_billed_cost(report["cases"])
     output = Path(os.environ["WEAVER_RESULT"])
     output.write_text(json.dumps(report, indent=2) + "\n")
     if mode == "baseline":

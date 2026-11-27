@@ -2,6 +2,9 @@ import importlib.util
 import unittest
 import json
 import os
+import subprocess
+from contextlib import redirect_stdout
+from io import StringIO
 import tempfile
 from pathlib import Path
 from unittest.mock import Mock, call, patch
@@ -163,6 +166,110 @@ class ClassificationTest(unittest.TestCase):
                 manager.closing_issues()
             self.assertEqual(manager.closing_issues(), [])
         manager.closing_issues.cache_clear()
+
+
+class WeaverTest(unittest.TestCase):
+    def test_saved_configuration_matches_markdown_and_rejects_drift(self):
+        script = ["bash", str(manager.WEAVER_DIR / "config.sh")]
+        config = json.loads(subprocess.check_output(script))
+        prompt = (manager.WEAVER_DIR / "system-prompt.md").read_text().strip()
+        self.assertEqual(config["systemPrompt"], prompt)
+        self.assertLessEqual(len(prompt.encode("utf-16-le")) // 2, 8000)
+        self.assertEqual(manager.area_names(prompt), manager.area_names(manager.read_brief()))
+        self.assertEqual((config["baseModel"], config["visibility"], config["mcpServers"]),
+                         (manager.AI_MODEL, "private", []))
+        saved = dict(config, id="id", model="community/pollinations-ai/weaver", type="prompt_agent")
+        for change in ({}, {"systemPrompt": prompt + " changed"}, {"visibility": "public"},
+                       {"mcpServers": ["pollinations"]}, {"baseModel": "other"}, {"id": "other"}, {"model": "other"}):
+            with self.subTest(change=list(change)):
+                status = subprocess.run(script + ["verify", "id", saved["model"]], text=True,
+                                        input=json.dumps({**saved, **change}), capture_output=True)
+                self.assertEqual(status.returncode == 0, not change)
+
+    def test_hosted_request_sends_only_facts_and_accepts_one_json_fence(self):
+        response = Mock(status_code=200)
+        response.json.return_value = {"choices": [{"message": {"content": '```json\n{"area":null}\n```'}}]}
+        with patch.object(manager.requests, "post", return_value=response) as post:
+            self.assertEqual(manager.ask_ai("reviewed policy", "item facts", hosted_model="weaver"), {"area": None})
+            payload = post.call_args.kwargs["json"]
+            self.assertEqual(payload["messages"], [{"role": "user", "content": "item facts"}])
+            self.assertEqual(payload["model"], "weaver")
+            self.assertNotIn("response_format", payload)
+            response.json.return_value["choices"][0]["message"]["content"] = "{}"
+            manager.ask_ai("original", "item facts")
+            direct = post.call_args.kwargs["json"]
+            self.assertEqual(direct["messages"][0], {"role": "system", "content": "original"})
+            self.assertEqual(direct["response_format"], {"type": "json_object"})
+
+    def test_invalid_hosted_output_and_rejected_key_fail(self):
+        with patch.object(manager.time, "sleep"):
+            for content in ("Here is {}.", "{} {}", "[]", "```json\n{}\n``` followed by advice"):
+                response = Mock(status_code=200)
+                response.json.return_value = {"choices": [{"message": {"content": content}}]}
+                with patch.object(manager.requests, "post", return_value=response) as post, self.assertRaisesRegex(SystemExit, "invalid output"):
+                    manager.ask_ai("", "facts", hosted_model="weaver")
+                self.assertEqual(post.call_count, 3)
+            with patch.object(manager.requests, "post", return_value=Mock(status_code=403)) as post, self.assertRaisesRegex(SystemExit, "403"):
+                manager.ask_ai("", "facts", hosted_model="weaver")
+            post.assert_called_once()
+
+    def test_writer_preserves_set_priorities(self):
+        priority = {"id": "Priority"}
+        fields = {"Area": {}, "Priority": priority, "Source": {}, "Model work": {}}
+        for existing in (None, "Medium", "Express"):
+            with self.subTest(existing=existing), \
+                 patch.multiple(manager, IS_PULL_REQUEST=False, ISSUE_NUMBER=42, ISSUE_NODE_ID="node",
+                                POLLINATIONS_TOKEN="test", GITHUB_TOKEN="test", GITHUB_EVENT={}, ITEM_DATA={}), \
+                 patch.object(manager, "dev_fields", return_value=fields), \
+                 patch.object(manager, "classify", return_value={"area": "Models", "type": "Bug", "priority": "High"}), \
+                 patch.object(manager, "current_dev_fields", return_value={"priority": {"name": existing}}), \
+                 patch.object(manager, "add_to_dev", return_value="item"), patch.object(manager, "set_issue_type"), \
+                 patch.object(manager, "set_field") as write:
+                manager.main()
+            writes = [c for c in write.call_args_list if c.args[1] is priority]
+            self.assertEqual(writes, [] if existing else [call("item", priority, "High")])
+
+    def test_only_opening_uses_weaver_and_rejects_invalid_fields(self):
+        good = {"area": "Models", "type": "Bug", "priority": "Medium", "model_work": "Repair", "reasoning": "One model fails."}
+        with patch.dict(os.environ, {"WEAVER_MODEL": "weaver"}), patch.object(manager, "IS_PULL_REQUEST", False):
+            for action, expected in (("opened", "weaver"), ("labeled", None), (None, None)):
+                with patch.object(manager, "GITHUB_EVENT", {"action": action}), patch.object(manager, "ask_ai", return_value=good) as ask:
+                    manager.classify("brief", ["Models"])
+                    self.assertEqual(ask.call_args.kwargs["hosted_model"], expected)
+            for invalid in ({}, {**good, "priority": "Express"}, {**good, "area": None}, {**good, "extra": "instruction"}):
+                with patch.object(manager, "GITHUB_EVENT", {"action": "opened"}), patch.object(manager, "ask_ai", return_value=invalid), self.assertRaises(SystemExit):
+                    manager.classify("brief", ["Models"])
+        with self.assertRaises(ValueError):
+            manager.classification_answer(good, ["Models"], True, hosted=True)
+
+    def test_opening_outage_warns_and_records_missing_reward_without_writes(self):
+        item = {"created_at": "2026-11-20T00:00:00Z", "user": {"type": "User"}}
+        with tempfile.TemporaryDirectory() as directory:
+            summary = Path(directory) / "summary"
+            with patch.dict(os.environ, {"WEAVER_MODEL": "weaver", "GITHUB_STEP_SUMMARY": str(summary),
+                                         "GITHUB_SERVER_URL": "https://github.com", "GITHUB_REPOSITORY": "org/repo", "GITHUB_RUN_ID": "123"}), \
+                 patch.multiple(manager, IS_PULL_REQUEST=False, ISSUE_NUMBER=42, ISSUE_NODE_ID="node", GITHUB_TOKEN="test",
+                                POLLINATIONS_TOKEN="test", GITHUB_EVENT={"action": "opened"}, ITEM_DATA=item), \
+                 patch.object(manager, "dev_fields", return_value={}), patch.object(manager, "add_to_dev") as add, \
+                 patch.object(manager, "write_reward_comment") as reward, patch.object(manager.time, "sleep"), \
+                 patch.object(manager.requests, "post", return_value=Mock(status_code=429)), redirect_stdout(StringIO()) as out:
+                manager.main()
+            add.assert_not_called()
+            reward.assert_not_called()
+            self.assertIn("::warning::", out.getvalue())
+            for expected in ("#42", "Skipped project and type writes", "Missed opening reward", "/actions/runs/123"):
+                self.assertIn(expected, summary.read_text())
+
+    def test_baseline_misses_survive_and_cannot_fill_required_coverage(self):
+        import evaluate_weaver as evaluation
+
+        cases = json.loads((manager.WEAVER_DIR / "classification-cases.json").read_text())
+        self.assertFalse(evaluation.coverage_gaps(cases))
+        reduced = [c for c in cases if c["expected"]["priority"] != "Medium"]
+        self.assertIn("two distinct Medium issues", evaluation.coverage_gaps(reduced))
+        trials = [{"differences": {}}, {"differences": {"priority": "High"}}, {"error": "unavailable"}]
+        record = evaluation.baseline_record(cases[0], trials, "123")
+        self.assertEqual(record["misses"], {"2": {"differences": {"priority": "High"}}, "3": {"error": "unavailable"}})
 
 
 class RewardCommentTest(unittest.TestCase):

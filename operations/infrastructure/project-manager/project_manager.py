@@ -453,7 +453,7 @@ def main():
         log_debug(f"#{ISSUE_NUMBER} is a survey response; skipping")
         return
 
-    brief = ((WEAVER_DIR / "system-prompt.md").read_text() if os.getenv("WEAVER_MODEL") else read_brief())
+    brief = ((WEAVER_DIR / "system-prompt.md").read_text().strip() if os.getenv("WEAVER_MODEL") else read_brief())
     areas = area_names(brief)
     fields = dev_fields(areas)
 

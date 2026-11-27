@@ -10,6 +10,39 @@ type AgentStep = {
     providerMetadata?: Record<string, Record<string, unknown>>;
 };
 
+function choiceFinishError(body: unknown): string | null {
+    if (!body || typeof body !== "object") return null;
+    const record = body as {
+        error?: unknown;
+        choices?: Array<{ finish_reason?: unknown; error?: unknown }>;
+    };
+    const topError = extractErrorMessage(record.error);
+    if (topError) return topError;
+    for (const choice of record.choices ?? []) {
+        if (choice?.finish_reason !== "error" && !choice?.error) continue;
+        return (
+            extractErrorMessage(choice.error) ??
+            "Agent model failed to complete the response"
+        );
+    }
+    return null;
+}
+
+function extractErrorMessage(error: unknown): string | null {
+    if (typeof error === "string") return error.trim() || null;
+    if (!error || typeof error !== "object") return null;
+    const record = error as {
+        message?: unknown;
+        error?: { message?: unknown };
+    };
+    for (const candidate of [record.message, record.error?.message]) {
+        if (typeof candidate === "string" && candidate.trim()) {
+            return candidate.trim();
+        }
+    }
+    return null;
+}
+
 export function createAgentModelProvider({
     baseURL,
     fetch: fetcher,
@@ -29,11 +62,13 @@ export function createAgentModelProvider({
                 return {
                     pollinations: {
                         completionUsage: completionUsageFromBody(parsedBody),
+                        finishError: choiceFinishError(parsedBody),
                     },
                 };
             },
             createStreamExtractor() {
                 let usage: unknown;
+                let finishError: string | null = null;
                 return {
                     processChunk(chunk) {
                         if (
@@ -45,6 +80,7 @@ export function createAgentModelProvider({
                             // Providers may send provisional counts before final usage.
                             usage = chunk.usage;
                         }
+                        finishError = choiceFinishError(chunk) ?? finishError;
                     },
                     buildMetadata() {
                         return {
@@ -53,6 +89,7 @@ export function createAgentModelProvider({
                                     usage == null
                                         ? null
                                         : completionUsage(usage),
+                                finishError,
                             },
                         };
                     },
@@ -80,6 +117,9 @@ export function awaitsCaller(
 }
 
 export function openAIFinishReason(reason: FinishReason): string {
+    if (reason === "error") {
+        throw new Error("Agent model failed to complete the response");
+    }
     if (reason === "tool-calls") return "tool_calls";
     if (reason === "content-filter") return "content_filter";
     if (reason === "stop" || reason === "length") return reason;
@@ -116,6 +156,14 @@ function sumUsageField(
 }
 
 export function strictAgentUsage(steps: AgentStep[]): AgentUsage {
+    const finishError = steps
+        .map((step) => step.providerMetadata?.pollinations?.finishError)
+        .find(
+            (message): message is string =>
+                typeof message === "string" && message.length > 0,
+        );
+    if (finishError) throw new Error(finishError);
+
     const usages = steps.map((step) => {
         const usage = completionUsage(
             step.providerMetadata?.pollinations?.completionUsage,

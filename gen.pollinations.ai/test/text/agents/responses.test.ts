@@ -1,5 +1,6 @@
 import {
     createAgentModelProvider,
+    openAIFinishReason,
     strictAgentUsage,
 } from "@shared/agents/model.ts";
 import { collectOutput } from "@shared/agents/output.ts";
@@ -1629,4 +1630,64 @@ describe("managed agent Responses runtime", () => {
         }
         expect(fetchMock).toHaveBeenCalledTimes(1);
     });
+
+    it.each([false, true])(
+        "rejects finish_reason error in strictAgentUsage and openAIFinishReason (stream:%s)",
+        async (stream) => {
+            const validUsage = {
+                prompt_tokens: 10,
+                completion_tokens: 5,
+                total_tokens: 15,
+            };
+            const provider = createAgentModelProvider({
+                baseURL: "https://gen.test/v1",
+                fetch: async () =>
+                    stream
+                        ? new Response(
+                              'data: {"choices":[{"delta":{"content":"partial"},"finish_reason":null}]}\n\n' +
+                                  `data: ${JSON.stringify({
+                                      choices: [
+                                          {
+                                              delta: {},
+                                              finish_reason: "error",
+                                              error: {
+                                                  message: "Upstream aborted",
+                                              },
+                                          },
+                                      ],
+                                      usage: validUsage,
+                                  })}\n\n` +
+                                  "data: [DONE]\n\n",
+                              {
+                                  headers: {
+                                      "content-type": "text/event-stream",
+                                  },
+                              },
+                          )
+                        : Response.json({
+                              choices: [
+                                  {
+                                      message: {
+                                          role: "assistant",
+                                          content: "partial",
+                                      },
+                                      finish_reason: "error",
+                                      error: { message: "Upstream aborted" },
+                                  },
+                              ],
+                              usage: validUsage,
+                          }),
+            });
+            const agent = new ToolLoopAgent({
+                model: provider("test"),
+                maxRetries: 0,
+            });
+            const result = stream
+                ? await agent.stream({ prompt: "hello" })
+                : await agent.generate({ prompt: "hello" });
+            const [, steps] = await Promise.all([result.text, result.steps]);
+            expect(() => strictAgentUsage(steps)).toThrow("Upstream aborted");
+            expect(() => openAIFinishReason("error")).toThrow();
+        },
+    );
 });

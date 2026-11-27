@@ -1284,3 +1284,69 @@ it.each([false, true])(
         expect(balance.packBalance).toBeCloseTo(100 - 0.0001, 10);
     },
 );
+
+it("returns 502 and skips caching when GET /text finishes with error", async () => {
+    const { key, userId } = await createTestApiKey({
+        expiresIn: 600,
+        user: { packBalance: 100 },
+    });
+    let calls = 0;
+    const wire = JSON.stringify({
+        id: "chatcmpl-text-error",
+        object: "chat.completion",
+        created: 1760000000,
+        model: "cohere/command-a-plus",
+        choices: [
+            {
+                index: 0,
+                message: { role: "assistant", content: "partial answer" },
+                finish_reason: "error",
+                error: { message: "Provider aborted mid-reply" },
+            },
+        ],
+        usage,
+    });
+    const fetchSpy = vi
+        .spyOn(globalThis, "fetch")
+        .mockImplementation(async (input, init) => {
+            const request = new Request(input, init);
+            const target =
+                request.headers.get("x-portkey-custom-host") ?? request.url;
+            if (new URL(target).host === "openrouter.ai") {
+                calls++;
+                return new Response(wire, {
+                    headers: { "content-type": "application/json" },
+                });
+            }
+            return Response.json({ data: [] });
+        });
+    try {
+        const prompt = `text-error-${crypto.randomUUID()}`;
+        const url = `https://gen.pollinations.ai/text/${encodeURIComponent(prompt)}?model=cohere/command-a-plus`;
+        for (const expectedCalls of [1, 2]) {
+            const context = createExecutionContext();
+            const response = await worker.fetch(
+                new Request(url, {
+                    headers: { authorization: `Bearer ${key}` },
+                }),
+                withInlineGenerationCoordinator(env),
+                context,
+            );
+            const text = await response.text();
+            await waitOnExecutionContext(context);
+            expect(response.status, text).toBe(502);
+            expect(JSON.parse(text)).toMatchObject({
+                status: 502,
+                error: {
+                    code: "BAD_GATEWAY",
+                    message: "Provider aborted mid-reply",
+                },
+            });
+            expect(calls).toBe(expectedCalls);
+        }
+        const balance = await getUserBalance(drizzle(env.DB), userId);
+        expect(balance.packBalance).toBe(100);
+    } finally {
+        fetchSpy.mockRestore();
+    }
+});

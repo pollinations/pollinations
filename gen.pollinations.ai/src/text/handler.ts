@@ -35,7 +35,7 @@ import {
 } from "./chat/usage.js";
 import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
 import { syncTextEnvironment } from "./environment.js";
-import { throwTextError } from "./errors.js";
+import { choiceErrorMessage, throwTextError } from "./errors.js";
 import {
     supportsTextFallbackRequest,
     textCapabilityError,
@@ -314,6 +314,19 @@ function sendTextContentResponse(
     if (!completion.choices?.[0]) {
         throw new UpstreamError(502, {
             message: "Unrecognized response format from text model",
+            requestUrl: upstreamRequestUrl,
+            responseBody: JSON.stringify(completion),
+        });
+    }
+
+    const errorChoice = completion.choices.find(
+        (choice) => choice.finish_reason === "error",
+    );
+    if (errorChoice) {
+        throw new UpstreamError(502, {
+            message:
+                choiceErrorMessage(errorChoice) ??
+                "Chat Completions provider failed to complete the response",
             requestUrl: upstreamRequestUrl,
             responseBody: JSON.stringify(completion),
         });

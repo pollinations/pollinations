@@ -4,6 +4,7 @@ import type {
     CreateChatCompletionRequest,
     CreateChatCompletionResponse,
 } from "@shared/schemas/openai.ts";
+import { choiceErrorMessage } from "../errors.ts";
 import type {
     CreateMessageRequest,
     CreateMessageResponse,
@@ -22,6 +23,10 @@ export const GEMINI_SIGNATURE_PREFIX = "gemini:";
 
 export class MessagesRequestError extends Error {
     override readonly name = "MessagesRequestError";
+}
+
+export class MessagesProviderError extends Error {
+    override readonly name = "MessagesProviderError";
 }
 
 function cacheControl(block: { cache_control?: unknown }) {
@@ -387,6 +392,11 @@ export function stopReason(
     finishReason: string | null | undefined,
     hasToolUse: boolean,
 ): string {
+    if (finishReason === "error") {
+        throw new MessagesProviderError(
+            choiceErrorMessage({ finish_reason: finishReason }),
+        );
+    }
     if (finishReason === "length") return "max_tokens";
     if (hasToolUse) return "tool_use";
     if (finishReason === "content_filter") return "refusal";
@@ -432,6 +442,12 @@ export function chatToMessagesResponse(
     completion: CreateChatCompletionResponse,
     model: string,
 ): CreateMessageResponse {
+    const errorChoice = completion.choices.find(
+        (item) => item.finish_reason === "error",
+    );
+    if (errorChoice) {
+        throw new MessagesProviderError(choiceErrorMessage(errorChoice));
+    }
     const choice = completion.choices[0];
     const message = choice?.message;
     const content: CreateMessageResponse["content"] = [];

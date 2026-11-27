@@ -6,6 +6,7 @@ import { z } from "zod";
 import type { Env } from "../env.ts";
 import { requestedModelIds } from "../middleware/model.ts";
 import { getGenerationModelRegistry } from "../model-registry.ts";
+import { choiceErrorMessage } from "../text/errors.ts";
 import {
     type CreateMessageRequest,
     CreateMessageRequestSchema,
@@ -15,6 +16,7 @@ import {
 import { chatToMessagesStream } from "../text/messages/stream.ts";
 import {
     chatToMessagesResponse,
+    MessagesProviderError,
     MessagesRequestError,
     messagesError,
     messagesToChatRequest,
@@ -205,9 +207,9 @@ export function createMessagesRoutes(dispatch: Dispatch) {
                     { headers: responseHeaders },
                 );
             }
-            const completion = CreateChatCompletionResponseSchema.safeParse(
-                await response.json().catch(() => null),
-            );
+            const raw = await response.json().catch(() => null);
+            const completion =
+                CreateChatCompletionResponseSchema.safeParse(raw);
             if (!completion.success) {
                 return errorResponse(
                     502,
@@ -226,7 +228,25 @@ export function createMessagesRoutes(dispatch: Dispatch) {
                     ),
                     { headers: responseHeaders },
                 );
-            } catch {
+            } catch (error) {
+                if (error instanceof MessagesProviderError) {
+                    const rawChoices = (
+                        raw as {
+                            choices?: {
+                                finish_reason?: string | null;
+                                error?: unknown;
+                            }[];
+                        } | null
+                    )?.choices;
+                    const rawErrorChoice = rawChoices?.find(
+                        (item) => item.finish_reason === "error" || item.error,
+                    );
+                    return errorResponse(
+                        502,
+                        choiceErrorMessage(rawErrorChoice) ?? error.message,
+                        responseHeaders,
+                    );
+                }
                 return errorResponse(
                     502,
                     "Provider returned invalid tool arguments",

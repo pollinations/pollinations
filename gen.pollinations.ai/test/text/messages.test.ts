@@ -13,7 +13,9 @@ import { CreateMessageRequestSchema } from "@/text/messages/schema.ts";
 import { chatToMessagesStream } from "@/text/messages/stream.ts";
 import {
     chatToMessagesResponse,
+    MessagesProviderError,
     messagesToChatRequest,
+    stopReason,
     toolUseInput,
 } from "@/text/messages/translate.ts";
 import { responsesToChatCompletion } from "@/text/responses/chatResponse.ts";
@@ -1796,4 +1798,112 @@ it("does not invent empty arguments when length stops before tool input", () => 
     );
     expect(result.content).toEqual([]);
     expect(result.stop_reason).toBe("max_tokens");
+});
+
+describe("Messages finish_reason error handling", () => {
+    it("rejects finish_reason error in stopReason and chatToMessagesResponse", () => {
+        expect(() => stopReason("error", false)).toThrow(MessagesProviderError);
+        expect(() =>
+            chatToMessagesResponse(
+                {
+                    id: "err",
+                    object: "chat.completion",
+                    created: 1,
+                    choices: [
+                        {
+                            finish_reason: "error",
+                            message: {
+                                role: "assistant",
+                                content: "partial answer",
+                            },
+                        },
+                    ],
+                    usage,
+                },
+                model,
+            ),
+        ).toThrow(MessagesProviderError);
+    });
+
+    it("returns 502 instead of end_turn when /v1/messages gets finish_reason error", async () => {
+        const routes = createMessagesRoutes(() =>
+            Response.json({
+                id: "err",
+                object: "chat.completion",
+                created: 1,
+                choices: [
+                    {
+                        finish_reason: "error",
+                        message: {
+                            role: "assistant",
+                            content: "partial answer",
+                        },
+                        error: { message: "Upstream provider aborted" },
+                    },
+                ],
+                usage,
+            }),
+        );
+        const response = await routes.request(
+            "https://gen.pollinations.ai/v1/messages",
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model,
+                    max_tokens: 32,
+                    messages: [{ role: "user", content: "hi" }],
+                }),
+            },
+            env,
+        );
+        expect(response.status).toBe(502);
+        await expect(response.json()).resolves.toEqual({
+            type: "error",
+            error: {
+                type: "api_error",
+                message: "Upstream provider aborted",
+            },
+        });
+    });
+
+    it.each([
+        {
+            name: "nested choice.error",
+            chunks: [
+                { choices: [{ delta: { content: "partial" } }] },
+                {
+                    choices: [
+                        {
+                            delta: {},
+                            finish_reason: "error",
+                            error: { message: "Stream provider aborted" },
+                        },
+                    ],
+                },
+            ],
+            expectedMessage: "Stream provider aborted",
+        },
+        {
+            name: "finish_reason error before [DONE]",
+            chunks: [
+                { choices: [{ delta: { content: "partial" } }] },
+                { choices: [{ delta: {}, finish_reason: "error" }], usage },
+                "[DONE]",
+            ],
+            expectedMessage:
+                "Chat Completions provider failed to complete the response",
+        },
+    ])(
+        "emits an error event instead of end_turn for streaming $name",
+        async ({ chunks, expectedMessage }) => {
+            const events = await translateStream(chunks);
+            expect(events.some((e) => e.type === "message_delta")).toBe(false);
+            expect(events.some((e) => e.type === "message_stop")).toBe(false);
+            expect(events.at(-1)).toEqual({
+                type: "error",
+                error: { type: "api_error", message: expectedMessage },
+            });
+        },
+    );
 });

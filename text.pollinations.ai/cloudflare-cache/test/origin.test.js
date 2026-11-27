@@ -79,7 +79,7 @@ test("a free GET answers gen's text with the VM's headers and is stored", async 
     );
 });
 
-test("gen gets the legacy defaults: bridge key, Classic Luna, low reasoning, 1,500 tokens, clamped parameters", async () => {
+test("gen gets the legacy defaults: bridge key, Classic Luna, no reasoning, 1,500 tokens, clamped parameters", async () => {
     const get = await call(
         "/gen:echo?temperature=9&top_p=-1&presence_penalty=5&frequency_penalty=-9&seed=4.7&json=true&model=openai&voice=nova",
     );
@@ -102,7 +102,7 @@ test("gen gets the legacy defaults: bridge key, Classic Luna, low reasoning, 1,5
         top_p: 0,
         presence_penalty: 2,
         frequency_penalty: -2,
-        reasoning_effort: "low",
+        reasoning_effort: "none",
         response_format: { type: "json_object" },
         stream: false,
         max_tokens: 1500,
@@ -130,10 +130,10 @@ test("gen gets the legacy defaults: bridge key, Classic Luna, low reasoning, 1,5
     ]);
     // Callers can raise neither the reply length nor the reasoning effort
     expect(body.max_tokens).toBe(1500);
-    expect(body.reasoning_effort).toBe("low");
+    expect(body.reasoning_effort).toBe("none");
 
     const override = await call("/gen:echo?reasoning_effort=medium");
-    expect(JSON.parse(override.text).body.reasoning_effort).toBe("low");
+    expect(JSON.parse(override.text).body.reasoning_effort).toBe("none");
 
     // "/openai*" without messages: the rest of the path is the user message
     const openai = await call("/openaigen:echo", { method: "POST" });
@@ -228,7 +228,7 @@ test("a stream ends after data: [DONE] and is stored once complete", async () =>
     const { response, text } = await call("/stream?stream=true", { testEnv });
 
     expect(response.status).toBe(200);
-    expect(bodies[0].reasoning_effort).toBe("low");
+    expect(bodies[0].reasoning_effort).toBe("none");
     expect(response.headers.get("content-type")).toBe(
         "text/event-stream; charset=utf-8",
     );
@@ -450,7 +450,7 @@ test("the VM's other routes: redirect, models and crossdomain", async () => {
 });
 
 test("a matching If-None-Match gets Express's empty 304, after the generation has run", async () => {
-    const etag = 'W/"120-0ULSngh507QdZSptB3ceWTsPppU"';
+    const etag = 'W/"11f-cwo+ObgN7rVI93jcSxTh/SjiB+o"';
     // The live 304 of 2026-10-12, without the edge's headers; the tag is
     // the listing's since it names GPT-6 Luna
     const live = {
@@ -463,7 +463,7 @@ test("a matching If-None-Match gets Express's empty 304, after the generation ha
     for (const noneMatch of [
         etag,
         "*",
-        '"120-0ULSngh507QdZSptB3ceWTsPppU"',
+        '"11f-cwo+ObgN7rVI93jcSxTh/SjiB+o"',
         `W/"other",  ${etag}`,
     ]) {
         const { response, text } = await call("/models", {

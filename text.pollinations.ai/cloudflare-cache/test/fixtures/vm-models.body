@@ -1,1 +1,1 @@
-[{"name":"openai-fast","description":"GPT-6 Luna, low reasoning (Azure)","reasoning":true,"tier":"anonymous","community":false,"input_modalities":["text"],"output_modalities":["text"],"tools":true,"aliases":["openai","gpt-oss","gpt-oss-20b","ovh-reasoning"],"vision":false,"audio":false}]
+[{"name":"openai-fast","description":"GPT-6 Luna, no reasoning (Azure)","reasoning":true,"tier":"anonymous","community":false,"input_modalities":["text"],"output_modalities":["text"],"tools":true,"aliases":["openai","gpt-oss","gpt-oss-20b","ovh-reasoning"],"vision":false,"audio":false}]

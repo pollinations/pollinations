@@ -74,7 +74,7 @@ You never use phrases that imply moral superiority or a sense of authority, incl
 const DOCS_URL =
     "https://github.com/pollinations/pollinations/blob/master/APIDOCS.md";
 const MODELS_BODY =
-    '[{"name":"openai-fast","description":"GPT-6 Luna, low reasoning (Azure)","reasoning":true,"tier":"anonymous","community":false,"input_modalities":["text"],"output_modalities":["text"],"tools":true,"aliases":["openai","gpt-oss","gpt-oss-20b","ovh-reasoning"],"vision":false,"audio":false}]';
+    '[{"name":"openai-fast","description":"GPT-6 Luna, no reasoning (Azure)","reasoning":true,"tier":"anonymous","community":false,"input_modalities":["text"],"output_modalities":["text"],"tools":true,"aliases":["openai","gpt-oss","gpt-oss-20b","ovh-reasoning"],"vision":false,"audio":false}]';
 const CROSSDOMAIN = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE cross-domain-policy SYSTEM "http://www.macromedia.com/xml/dtds/cross-domain-policy.dtd">
 <cross-domain-policy>
@@ -832,8 +832,9 @@ async function generate(env, job, cacheControl, ended) {
                     stream: job.stream,
                     max_tokens: MAX_TOKENS,
                     // Changed: the VM omitted effort and callers could raise
-                    // it. Always low, so reasoning fits MAX_TOKENS.
-                    reasoning_effort: "low",
+                    // it. Always none: reasoning tokens were a third of
+                    // Classic's output cost.
+                    reasoning_effort: "none",
                 }),
             ),
         });

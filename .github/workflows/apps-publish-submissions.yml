@@ -54,7 +54,9 @@ jobs:
           package-manager-cache: false
 
       - name: Install screenshot dependency
-        run: bash operations/app-management/ingestion/run-review.sh install-screenshot
+        run: |
+          npm install --prefix "$RUNNER_TEMP/sharp" --no-audit --no-fund sharp@0.34.5
+          echo "NODE_PATH=$RUNNER_TEMP/sharp/node_modules" >> "$GITHUB_ENV"
 
       - name: Revalidate approved submission
         id: app

@@ -1,11 +1,7 @@
 #!/usr/bin/env bash
-set -e
+set -eo pipefail
 
 case "$1" in
-  install-screenshot)
-    npm install --prefix "$RUNNER_TEMP/sharp" --no-audit --no-fund sharp@0.34.5
-    echo "NODE_PATH=$RUNNER_TEMP/sharp/node_modules" >> "$GITHUB_ENV"
-    ;;
   validate)
     set +e
     node operations/app-management/ingestion/validate-submission.js > "$RUNNER_TEMP/app-validation.json"

@@ -568,6 +568,35 @@ test("model listings expose reference media limits on /v1/models", async () => {
     expect(list.data.some((model) => model.max_reference_images)).toBe(true);
 });
 
+test("model listings say when a model rejects structured output", async ({
+    paidApiKey,
+}) => {
+    type ListedModel = {
+        id: string;
+        supports_structured_output?: boolean;
+    };
+    const response = await fetchWorker("/v1/models", {
+        headers: { Authorization: `Bearer ${paidApiKey}` },
+    });
+    expect(response.status).toBe(200);
+    const list = (await response.json()) as { data: ListedModel[] };
+    const registry = await getGenerationModelRegistry(env);
+    expect(list.data.length).toBeGreaterThan(0);
+
+    for (const model of list.data) {
+        const info = registry.resolve(model.id)?.info;
+        expect(model.supports_structured_output, model.id).toEqual(
+            info?.supports_structured_output,
+        );
+    }
+    // Llama 4 Scout is the visible model that declares the rejection, so the
+    // listing has to carry it instead of leaving agents to discover it by 400.
+    const rejecting = list.data.find(
+        (model) => model.id === "meta/llama-4-scout",
+    );
+    expect(rejecting?.supports_structured_output).toBe(false);
+});
+
 test("retrieves a model by canonical ID", async () => {
     const response = await fetchWorker(
         `/v1/models/${encodeURIComponent("openai/gpt-5-nano")}`,

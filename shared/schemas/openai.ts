@@ -858,6 +858,10 @@ export const OpenAIModelSchema = z
             .describe(
                 "Controls honored by this model through `/v1/chat/completions`; omitted when unverified and not applicable to `/v1/responses`.",
             ),
+        supports_structured_output:
+            ModelInfoSchema.shape.supports_structured_output.describe(
+                "False when the model rejects JSON and JSON-schema `response_format` values, so requests must use text format; omitted when unverified or supported.",
+            ),
         tools: z.boolean().optional(),
         reasoning: z.boolean().optional(),
         alpha: ModelInfoSchema.shape.alpha.describe(

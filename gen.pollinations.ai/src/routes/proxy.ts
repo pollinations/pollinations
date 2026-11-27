@@ -413,6 +413,9 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         },
         capabilities: entry.info.capabilities,
         supported_parameters: entry.info.supported_parameters,
+        ...(entry.info.supports_structured_output !== undefined && {
+            supports_structured_output: entry.info.supports_structured_output,
+        }),
         ...(entry.info.tools && { tools: entry.info.tools }),
         ...(entry.info.reasoning && { reasoning: entry.info.reasoning }),
         ...(entry.info.alpha && { alpha: entry.info.alpha }),

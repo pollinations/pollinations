@@ -389,5 +389,77 @@
     "coverage": [
       "bot-correction"
     ]
+  },
+  {
+    "id": "19529",
+    "source": "https://github.com/pollinations/pollinations/issues/19529",
+    "revision": "2026-11-12T07:43:27Z",
+    "evidence": {
+      "kind": "issue",
+      "author": "kreggscode",
+      "author_type": "User",
+      "title": "api: mistral-small-4 with reasoning_effort=high always returns 502",
+      "body": "`POST /v1/chat/completions` with `model: \"mistralai/mistral-small-4\"` and `reasoning_effort: \"high\"` always returns **502**, because Mistral returns `choices[0].message.content` as an array of thinking/text chunks and the response schema requires a string.\n\n`reasoning_effort: \"none\"` and omitting it both return 200, so the trigger is the reasoning output itself.\n\nThe same call with `stream: true` returns 200, so only the non-streaming validation path breaks.",
+      "files": [],
+      "linked": []
+    },
+    "expected": {
+      "area": "Models",
+      "type": "Bug",
+      "priority": "Medium",
+      "model_work": "Repair"
+    },
+    "rationale": "One model fails on high effort in non-streaming mode. Streaming works for the same request.",
+    "coverage": [
+      "workaround"
+    ]
+  },
+  {
+    "id": "12870",
+    "source": "https://github.com/pollinations/pollinations/issues/12870",
+    "revision": "2026-10-02T17:28:57Z",
+    "evidence": {
+      "kind": "issue",
+      "author": "pollinations-ai[bot]",
+      "author_type": "a person, relayed from Discord",
+      "title": "Models page (enter.pollinations.ai/models) renders empty table — catalog fetch silently returns zero rows",
+      "body": "## Summary\n\nThe Models page at https://enter.pollinations.ai/models renders an **empty table** across multiple browsers with no console errors and no error banner. Hard refresh and browser changes do not fix it. The backend `/models` endpoints are healthy and return full JSON.",
+      "files": [],
+      "linked": []
+    },
+    "expected": {
+      "area": "Dashboard",
+      "type": "Bug",
+      "priority": "Medium",
+      "model_work": null
+    },
+    "rationale": "The model browser shows an empty table, but the public catalog endpoints still return the models.",
+    "coverage": [
+      "workaround"
+    ]
+  },
+  {
+    "id": "19013",
+    "source": "https://github.com/pollinations/pollinations/issues/19013",
+    "revision": "2026-11-03T12:33:57Z",
+    "evidence": {
+      "kind": "issue",
+      "author": "patbing",
+      "author_type": "User",
+      "title": "A new prompt agent answers 400 \"Invalid model or alias\" for about 20 s after POST /account/agents",
+      "body": "### What happens\n\nI create a private prompt agent with `POST /account/agents` and call it right away through `POST /v1/chat/completions` with `model: \"community/<owner>/<name>\"` and the owner's key. The create call succeeds, but the first chat call returns:\n\n```\nHTTP 400  Invalid model or alias\n```\n\nRetrying about 20 seconds later returns 200 with the agent's reply. Observed on 2026-11-02 while building an app for #17999 (three agents created in a row, each behaved the same way).",
+      "files": [],
+      "linked": []
+    },
+    "expected": {
+      "area": "Agents & agent tools",
+      "type": "Bug",
+      "priority": "Medium",
+      "model_work": null
+    },
+    "rationale": "New agents answer successfully on retry about twenty seconds after creation.",
+    "coverage": [
+      "workaround"
+    ]
   }
 ]

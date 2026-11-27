@@ -1,0 +1,125 @@
+{
+  "model": "openai/gpt-6-luna",
+  "prompt_sha256": "4a4302fc4c3ecef6dec6c185589fe148e0a10086666367c3aa4890efb441130f",
+  "cases": {
+    "18704": {
+      "case_sha256": "b38cec94d358549f6b9ca371eb8d0659d292d49e1332d882138b7d558a98dd0a",
+      "run": "46028534095",
+      "trials": 3,
+      "misses": {}
+    },
+    "8338": {
+      "case_sha256": "d938190948f98a45522edfe441b7728fea8d36f9d1545f27509604485bd8fa6f",
+      "run": "46028534095",
+      "trials": 3,
+      "misses": {}
+    },
+    "12232": {
+      "case_sha256": "1db36db367461ad07200d9681a8fa4b27fc42f362acd0219de71b11df9b07272",
+      "run": "46028534095",
+      "trials": 3,
+      "misses": {}
+    },
+    "17867": {
+      "case_sha256": "5661e4d295b60765c286f5f15dbdef10a89e32282617aee77fbf95b75b918729",
+      "run": "46028534095",
+      "trials": 3,
+      "misses": {
+        "1": {
+          "differences": {
+            "area": "Accounts & keys"
+          }
+        },
+        "2": {
+          "differences": {
+            "area": "Accounts & keys"
+          }
+        },
+        "3": {
+          "differences": {
+            "area": "Accounts & keys"
+          }
+        }
+      }
+    },
+    "16500": {
+      "case_sha256": "fe48861057827d716e5900e1a84ecd2725d145ecd6d6a03d074f0868ba5140df",
+      "run": "46028534095",
+      "trials": 3,
+      "misses": {
+        "1": {
+          "differences": {
+            "area": "Models",
+            "model_work": "Repair"
+          }
+        },
+        "2": {
+          "differences": {
+            "area": "Models",
+            "model_work": "Repair"
+          }
+        },
+        "3": {
+          "differences": {
+            "area": "Models",
+            "model_work": "Repair"
+          }
+        }
+      }
+    },
+    "19833": {
+      "case_sha256": "cacaf4fbbdb99c169ef3547a82719f02338398a970909f99d14445ac19c6088a",
+      "run": "46028534095",
+      "trials": 3,
+      "misses": {}
+    },
+    "20640": {
+      "case_sha256": "4207cb7c8b0c32b6a2064ab8c96e4658f8c753c179af5c837b6a80d5911624a0",
+      "run": "46028534095",
+      "trials": 3,
+      "misses": {}
+    },
+    "14346": {
+      "case_sha256": "b79020bb83702de2e3203fea3801e94331f2ef97011127b80b3746f5a8805ed0",
+      "run": "46028534095",
+      "trials": 3,
+      "misses": {}
+    },
+    "18307": {
+      "case_sha256": "83bb2c1efa1c23fbd45cd646f25a2365a6755b3620f04b64133e09a33df37974",
+      "run": "46028534095",
+      "trials": 3,
+      "misses": {}
+    },
+    "20524": {
+      "case_sha256": "9c16de59780616e0df16feabff163f7098d9d3349d6d87531e143564475ced58",
+      "run": "46028534095",
+      "trials": 3,
+      "misses": {}
+    },
+    "20534": {
+      "case_sha256": "a27c8e1110d70d7e25a67fc49b0b589a9b4d52d76bae85336c3b38d6214adcec",
+      "run": "46028534095",
+      "trials": 3,
+      "misses": {}
+    },
+    "20693": {
+      "case_sha256": "c5e652a4344726262f5d2391376fe63fd2456ad252c7ccb0f06abcc67699bc0a",
+      "run": "46028534095",
+      "trials": 3,
+      "misses": {}
+    },
+    "20640-policy-text": {
+      "case_sha256": "dfd3ecffb4de9557f4591cc3c29744fcc3e39fcec87ec6e5e63514017854a05c",
+      "run": "46028534095",
+      "trials": 3,
+      "misses": {}
+    },
+    "12232-bot-fix": {
+      "case_sha256": "8ab83d767456d8ce6f96db9d72ccb5b300f19ea437f82f372f282b8133ff3a5c",
+      "run": "46028534095",
+      "trials": 3,
+      "misses": {}
+    }
+  }
+}

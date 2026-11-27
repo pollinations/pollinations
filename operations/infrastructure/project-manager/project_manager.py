@@ -99,25 +99,41 @@ def area_names(brief: str) -> list:
 def ask_ai(system_prompt: str, user_prompt: str, *, hosted_model=None, metrics=None) -> Optional[dict]:
     """Return an object, or None when inference is temporarily unavailable."""
     messages = [{"role": "user", "content": user_prompt}]
-    payload = {"model": hosted_model or AI_MODEL, "messages": messages,
-               "reasoning_effort": "low", "max_tokens": 2000}
+    payload = {
+        "model": hosted_model or AI_MODEL,
+        "messages": messages,
+        "reasoning_effort": "low",
+        "max_tokens": 2000,
+    }
     if not hosted_model:
         messages.insert(0, {"role": "system", "content": system_prompt})
         payload["response_format"] = {"type": "json_object"}
+    invalid_output = False
     for attempt in range(3):
+        record = {}
+        if metrics is not None:
+            metrics.append(record)
         try:
-            response = requests.post(POLLINATIONS_API, headers={"Authorization": f"Bearer {POLLINATIONS_TOKEN}"},
-                                     json=payload, timeout=120)
-        except requests.RequestException as error:
-            log_error(f"AI transport failed: {error}")
+            response = requests.post(
+                POLLINATIONS_API, headers={"Authorization": f"Bearer {POLLINATIONS_TOKEN}"},
+                json=payload, timeout=120,
+            )
+        except requests.RequestException:
+            record["error"] = "transport"
+            log_error("AI transport failed")
         else:
-            if 400 <= response.status_code < 500 and response.status_code != 429:
-                fail(f"AI rejected request: HTTP {response.status_code}")
-            if response.status_code == 200:
+            status = response.status_code
+            if metrics is not None:
+                record.update(http_status=status, request_id=response.headers.get("X-Request-Id"))
+            if 400 <= status < 500 and status != 429:
+                raise SystemExit(f"AI rejected request: HTTP {status}")
+            if status == 200:
                 try:
                     data = response.json()
                     if metrics is not None:
-                        metrics.append({"usage": data.get("usage"), "id": data.get("id")})
+                        usage = data.get("usage") or {}
+                        record.update(prompt_tokens=usage.get("prompt_tokens"), completion_tokens=usage.get("completion_tokens"),
+                                      reported_cost_usd=usage.get("cost"))
                     content = data["choices"][0]["message"]["content"].strip()
                     if hosted_model and (fence := re.fullmatch(r"```(?:json)?\s*(.*?)\s*```", content, re.DOTALL)):
                         content = fence.group(1)
@@ -126,13 +142,15 @@ def ask_ai(system_prompt: str, user_prompt: str, *, hosted_model=None, metrics=N
                         raise ValueError("expected one object")
                     return parsed
                 except (ValueError, AttributeError, KeyError, IndexError, TypeError):
+                    invalid_output = True
+                    record["error"] = "invalid JSON"
                     log_error("AI returned invalid JSON output")
-                    if hosted_model and attempt == 2:
-                        fail("Weaver returned invalid output after three attempts")
             else:
-                log_error(f"AI HTTP {response.status_code}")
+                log_error(f"AI HTTP {status}")
         if attempt < 2:
             time.sleep(2**attempt)
+    if hosted_model and invalid_output:
+        raise SystemExit("Weaver returned invalid output and retries were exhausted")
     return None
 
 
@@ -398,11 +416,17 @@ def classification_answer(raw: dict, areas: list, is_pr: bool, *, hosted=False) 
     return {"area": area, "type": raw["type"], "priority": None if is_pr else raw["priority"], "model_work": model_work}
 
 
+def reward_eligible():
+    labels = {label["name"].upper() for label in ITEM_DATA.get("labels", [])}
+    excluded_issue = (labels & (NOT_WORK_LABELS | {"APP-SUBMISSION"}) or
+                      re.match(r"\[Community(?: Model)? Publisher Access\]", ISSUE_TITLE, re.I))
+    return (GITHUB_EVENT.get("action") == "opened" and ITEM_DATA.get("user", {}).get("type") != "Bot"
+            and ITEM_DATA.get("created_at", "") >= REWARDS_START and (IS_PULL_REQUEST or not excluded_issue))
+
+
 def write_reward_comment():
     """Announce the reward. Enter pays it without reading this comment."""
-    # Only when opened, so a re-run never repeats it.
-    if (GITHUB_EVENT.get("action") != "opened" or ITEM_DATA.get("user", {}).get("type") == "Bot"
-            or ITEM_DATA.get("created_at", "") < REWARDS_START):
+    if not reward_eligible():
         return
     if IS_PULL_REQUEST:
         reward, rule = 5, "The PR author can claim this once it is merged into main. A `reward-N` label on this PR, or else on the community quest it closes, sets the amount instead."
@@ -446,7 +470,9 @@ def main():
         answer = classify(brief, areas)
         if answer is None:
             # An outage is not the contributor's failure: leave the item for a workflow_dispatch run.
-            message = f"Classifier unavailable for #{ISSUE_NUMBER}. Skipped field writes and any eligible opening reward announcement."
+            message = f"Classifier unavailable for #{ISSUE_NUMBER}. Skipped project and type writes."
+            if reward_eligible():
+                message += " Missed opening reward announcement. Rerun the original opening event to recover it."
             print(f"::warning::{message}")
             if summary := os.getenv("GITHUB_STEP_SUMMARY"):
                 run_url = f"{os.getenv('GITHUB_SERVER_URL')}/{os.getenv('GITHUB_REPOSITORY')}/actions/runs/{os.getenv('GITHUB_RUN_ID')}"
@@ -489,8 +515,7 @@ def main():
 
     # App listings have their own reward; access requests earn none. Same rules as
     # ISSUE_REPORT_EXCLUDED_TITLE in enter.pollinations.ai/src/services/quests/groups/github-contributions.ts.
-    if IS_PULL_REQUEST or not ("APP-SUBMISSION" in labels or re.match(r"\[Community(?: Model)? Publisher Access\]", ISSUE_TITLE, re.I)):
-        write_reward_comment()
+    write_reward_comment()
 
 
 if __name__ == "__main__":

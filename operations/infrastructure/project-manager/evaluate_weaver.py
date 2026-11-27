@@ -15,6 +15,18 @@ def digest(value):
     return hashlib.sha256(value.encode()).hexdigest()
 
 
+def case_digest(case):
+    return digest(json.dumps(case, ensure_ascii=False, sort_keys=True))
+
+
+def baseline_record(case, trials, run):
+    misses = {}
+    for i, t in enumerate(trials, 1):
+        if t.get("error") or t.get("differences"):
+            misses[str(i)] = {k: t[k] for k in ("error", "differences") if t.get(k)}
+    return {"case_sha256": case_digest(case), "run": run, "trials": len(trials), "misses": misses}
+
+
 def coverage_gaps(cases):
     tags = {tag for case in cases for tag in case["coverage"]}
     missing = {"blocked", "billing", "workaround", "question", "promotion", "bot-correction",
@@ -35,15 +47,15 @@ def trial(case, brief, model):
     try:
         raw = ask_ai(brief, item_prompt(**case["evidence"]), hosted_model=model, metrics=calls)
         if raw is None:
-            result["error"] = "unavailable or unparseable"
+            result["error"] = "invalid JSON" if any(c.get("error") == "invalid JSON" for c in calls) else "unavailable"
         else:
-            classification_answer(raw, area_names(brief), case["evidence"]["kind"] == "pull request", hosted=bool(model))
             # Score the returned fields, including nulls, before the writer drops PR priority.
             result["actual"] = {k: raw.get(k) for k in case["expected"]}
             missing = [k for k in case["expected"] if k not in raw]
             if missing:
                 result["error"] = "missing fields: " + ", ".join(missing)
             result["differences"] = {k: v for k, v in result["actual"].items() if v != case["expected"][k]}
+            classification_answer(raw, area_names(brief), case["evidence"]["kind"] == "pull request", hosted=bool(model))
     except (ValueError, SystemExit) as error:
         result["error"] = str(error)
     result["seconds"] = round(time.monotonic() - started, 2)
@@ -66,27 +78,41 @@ def main():
         raise SystemExit("Missing Pollinations credential")
     report = {"mode": mode, "commit": os.getenv("GITHUB_SHA"), "model": model or AI_MODEL,
               "cases_sha256": fingerprint, "prompt_sha256": digest(brief), "cases": {}}
-    if mode != "baseline":
-        calibration = json.loads((WEAVER_DIR / "calibration.json").read_text())
-        if (calibration["cases_sha256"] != fingerprint or calibration["prompt_sha256"] != digest(original)
-                or calibration["model"] != AI_MODEL):
-            raise SystemExit("The cases, baseline prompt or base model changed. Recalibrate first.")
-        cases = [c for c in cases if calibration["cases"][c["id"]]["matches"] == 3]
-    if gaps := coverage_gaps(cases):
+    index_path = WEAVER_DIR / "calibration.json"
+    calibration = json.loads(index_path.read_text()) if index_path.exists() else {}
+    if calibration and (calibration["prompt_sha256"] != digest(original) or calibration["model"] != AI_MODEL):
+        raise SystemExit("The baseline policy or model changed. Archive the old calibration before starting a new one.")
+    records = calibration.get("cases", {})
+    fresh = [c for c in cases if records.get(c["id"], {}).get("case_sha256") != case_digest(c)]
+    if mode != "baseline" and fresh:
+        raise SystemExit("Calibrate the new or revised cases before scoring candidates")
+    if mode == "baseline":
+        selected = fresh
+    else:
+        selected = [c for c in cases if records[c["id"]]["trials"] == 3 and not records[c["id"]]["misses"]]
+    if gaps := coverage_gaps(cases if mode == "baseline" else selected):
         raise SystemExit("Missing calibrated coverage: " + ", ".join(gaps))
 
     def measure(case):
         return case, [trial(case, brief, model) for _ in range(3)]
 
     with ThreadPoolExecutor(max_workers=4) as workers:
-        for case, attempts in workers.map(measure, cases):
+        for case, attempts in workers.map(measure, selected):
             matches = sum("error" not in t and not t["differences"] for t in attempts)
             report["cases"][case["id"]] = {"expected": case["expected"], "matches": matches, "trials": attempts}
             print(f'{case["id"]}: {matches}/3 expected answers', flush=True)
 
     output = Path(os.environ["WEAVER_RESULT"])
     output.write_text(json.dumps(report, indent=2) + "\n")
-    passed = [c for c in cases if report["cases"][c["id"]]["matches"] == 3]
+    if mode == "baseline":
+        for c in selected:
+            records[c["id"]] = baseline_record(c, report["cases"][c["id"]]["trials"], os.environ.get("GITHUB_RUN_ID"))
+        output.with_name("calibration.json").write_text(json.dumps(
+            {"model": AI_MODEL, "prompt_sha256": digest(original), "cases": records}, indent=2) + "\n")
+        passed = [c for c in cases if records[c["id"]]["trials"] == 3 and not records[c["id"]]["misses"]]
+    else:
+        passed = [c for c in selected if report["cases"][c["id"]]["matches"] == 3]
+        cases = selected
     gaps = coverage_gaps(passed)
     summary = f"{mode}: {len(passed)} of {len(cases)} cases matched on all three runs."
     if gaps:

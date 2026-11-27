@@ -91,7 +91,9 @@ jobs:
         if: always()
         with:
           name: weaver-${{ inputs.weaver_preview }}
-          path: ${{ runner.temp }}/weaver-results.json
+          path: |
+            ${{ runner.temp }}/weaver-results.json
+            ${{ runner.temp }}/calibration.json
           if-no-files-found: warn
 
   organize:

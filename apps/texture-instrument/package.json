@@ -1,0 +1,9 @@
+{
+    "name": "pollinations-texture-instrument",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "check": "node check.mjs",
+        "dev": "python3 -m http.server 8080"
+    }
+}

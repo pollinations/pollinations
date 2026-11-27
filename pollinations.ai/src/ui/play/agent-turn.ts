@@ -30,6 +30,9 @@ export type AgentTurn = {
     error?: string;
     /** A finished reply's own items, sent back unchanged on later turns. */
     output?: unknown[];
+    /** When the latest run began and ended, for the time it took. */
+    startedAt?: number;
+    endedAt?: number;
 };
 
 /**
@@ -89,18 +92,42 @@ export function replyMedia(
                 urls.add(url.replace(/[.,;:!?*_]+$/, ""));
             continue;
         }
-        const output = item.result?.output as
-            | { content?: { type?: string; uri?: string }[] }
-            | undefined;
-        for (const part of output?.content ?? []) {
-            if (
-                part.type === "resource_link" &&
-                part.uri?.startsWith(MEDIA_HOST)
-            )
-                urls.add(part.uri);
-        }
+        for (const url of toolMedia(item)) urls.add(url);
     }
     return [...urls];
+}
+
+/** The files one tool call returned. */
+export function toolMedia(call: AgentToolCall): string[] {
+    const output = call.result?.output as
+        | { content?: { type?: string; uri?: string }[] }
+        | undefined;
+    return (output?.content ?? []).flatMap((part) =>
+        part.type === "resource_link" && part.uri?.startsWith(MEDIA_HOST)
+            ? [part.uri]
+            : [],
+    );
+}
+
+/**
+ * What the reply was for, as opposed to what it made on the way: the files
+ * from its last run of back-to-back tool calls that returned any. Frames made
+ * for a video stay in the process; the video is the result. A reply whose
+ * tools returned no file falls back to the links in its text.
+ */
+export function finalMedia(
+    items: AgentItem[],
+    textComplete: boolean,
+): string[] {
+    const made = items.map((item) =>
+        item.type === "tool" ? toolMedia(item) : [],
+    );
+    let end = made.length - 1;
+    while (end >= 0 && made[end].length === 0) end--;
+    if (end < 0) return replyMedia(items, textComplete);
+    let start = end;
+    while (start > 0 && made[start - 1].length > 0) start--;
+    return [...new Set(made.slice(start, end + 1).flat())];
 }
 
 /** The reply text without the Markdown that points at media shown below it. */

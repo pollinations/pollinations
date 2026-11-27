@@ -83,6 +83,12 @@ it("shows media from other hosts as links and loads nothing from them", async ()
     );
     const links = () =>
         renderer.root.findAllByType("a").map((link) => link.props.href);
+    // The reply's text is part of its process, which starts folded.
+    await act(async () =>
+        renderer.root
+            .findByType("details")
+            .props.onToggle({ currentTarget: { open: true } }),
+    );
     // The Markdown renderer loads with the first reply.
     await settled(() =>
         expect(links()).toContain("https://cdn.example/chart.png"),
@@ -111,6 +117,35 @@ it("keeps a conversation across tabs and clears it on disconnect", async () => {
     await act(async () => auth.logout());
     expect(chat.turns).toHaveLength(0);
     await act(async () => auth.setApiKey("sk_other"));
+    expect(chat.turns).toHaveLength(0);
+});
+
+it("brings a conversation back after a reload, until disconnect", async () => {
+    const saved = new Map<string, string>();
+    vi.stubGlobal("sessionStorage", {
+        getItem: (key: string) => saved.get(key) ?? null,
+        setItem: (key: string, value: string) => saved.set(key, value),
+        removeItem: (key: string) => saved.delete(key),
+    });
+    const first = await ask(reply("Hello"));
+    await act(async () => first.unmount());
+
+    // A reload: a new page that reads its key after the first render.
+    let reloaded!: ReactTestRenderer;
+    await act(async () => {
+        reloaded = create(page(AGENT));
+    });
+    await act(async () => auth.setApiKey("sk_test"));
+    expect(chat.turns).toMatchObject([
+        { prompt: "hi", status: "done", items: [{ text: "Hello" }] },
+    ]);
+
+    await act(async () => auth.logout());
+    await act(async () => reloaded.unmount());
+    await act(async () => {
+        create(page(AGENT));
+    });
+    await act(async () => auth.setApiKey("sk_test"));
     expect(chat.turns).toHaveLength(0);
 });
 

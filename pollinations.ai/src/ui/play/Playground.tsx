@@ -34,6 +34,8 @@ import {
     LoadingStatus,
     MediaPlaceholder,
     MicIcon,
+    PauseIcon,
+    PlayIcon,
     RobotIcon,
     ScrollArea,
     Slider,
@@ -84,7 +86,7 @@ import {
     playgroundModelOverride,
 } from "../../data/playground-model-overrides";
 import { PLAY_SEARCH_KEYS, type PlaySearch } from "../../routes/-play-search";
-import { AgentChat, useAgentChat } from "./AgentChat";
+import { AgentChat, NewChatButton, useAgentChat } from "./AgentChat";
 import { ApiUrlCard } from "./ApiUrlCard";
 import { audioEndpoint, audioTaskGroups, audioTaskIds } from "./audio-endpoint";
 import {
@@ -392,7 +394,7 @@ function AgentMedia({ url }: { url: string }) {
     if (result === undefined)
         return <LoadingStatus>Loading media…</LoadingStatus>;
     if (result === null) return <InlineLink href={url}>{url}</InlineLink>;
-    return <ResultPanel result={result} />;
+    return <ResultPanel result={result} playable />;
 }
 
 // Kept in memory so leaving /play and coming back restores the last inputs,
@@ -1207,7 +1209,111 @@ function BusyPlaceholder({ category }: { category: "image" | "video" }) {
     );
 }
 
-function ResultPanel({ result }: { result: PlaygroundResult }) {
+const clock = (seconds: number) =>
+    `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
+
+/** A clip with the basics in the site's own style: play, seek and time. */
+function ResultVideo({ src }: { src: string }) {
+    const video = useRef<HTMLVideoElement>(null);
+    const [playing, setPlaying] = useState(false);
+    const [position, setPosition] = useState(0);
+    const [duration, setDuration] = useState(0);
+    const toggle = () => {
+        const element = video.current;
+        if (!element) return;
+        if (element.paused) void element.play().catch(() => {});
+        else element.pause();
+    };
+    const seek = (seconds: number) => {
+        const next = Math.min(Math.max(seconds, 0), duration);
+        if (video.current) video.current.currentTime = next;
+        setPosition(next);
+    };
+    const readDuration = (element: HTMLVideoElement) =>
+        setDuration(Number.isFinite(element.duration) ? element.duration : 0);
+    return (
+        <div className="relative">
+            {/* The Play button below does the same for the keyboard. */}
+            <video
+                ref={video}
+                src={src}
+                playsInline
+                preload="metadata"
+                onClick={toggle}
+                onPlay={() => setPlaying(true)}
+                onPause={() => setPlaying(false)}
+                onEnded={() => setPlaying(false)}
+                onTimeUpdate={(event) =>
+                    setPosition(event.currentTarget.currentTime)
+                }
+                onLoadedMetadata={(event) => readDuration(event.currentTarget)}
+                onDurationChange={(event) => readDuration(event.currentTarget)}
+                className="block h-auto max-h-[min(70dvh,640px)] w-auto max-w-full cursor-pointer"
+            >
+                <track kind="captions" />
+            </video>
+            <div className="play-video-bar absolute inset-x-2 bottom-2 flex items-center gap-3 rounded-full bg-surface-opaque/90 py-1 pr-4 pl-1">
+                <Button
+                    size="icon"
+                    intent="neutral"
+                    aria-label={playing ? "Pause" : "Play"}
+                    title={playing ? "Pause" : "Play"}
+                    onClick={toggle}
+                    className="size-8! min-h-0! shrink-0 bg-transparent! p-0!"
+                >
+                    {playing ? (
+                        <PauseIcon className="size-4" />
+                    ) : (
+                        <PlayIcon className="size-4" />
+                    )}
+                </Button>
+                {/* A plain track: click or arrow keys to move through the clip. */}
+                <div
+                    role="slider"
+                    tabIndex={0}
+                    aria-label="Seek"
+                    aria-valuemin={0}
+                    aria-valuemax={Math.round(duration)}
+                    aria-valuenow={Math.round(position)}
+                    aria-valuetext={`${clock(position)} of ${clock(duration)}`}
+                    onClick={(event) => {
+                        const track =
+                            event.currentTarget.getBoundingClientRect();
+                        seek(
+                            ((event.clientX - track.left) / track.width) *
+                                duration,
+                        );
+                    }}
+                    onKeyDown={(event) => {
+                        if (event.key === "ArrowRight") seek(position + 1);
+                        else if (event.key === "ArrowLeft") seek(position - 1);
+                    }}
+                    className="play-video-extra relative h-1.5 min-w-0 flex-1 cursor-pointer rounded-full bg-theme-text-muted/30"
+                >
+                    <div
+                        className="absolute inset-y-0 left-0 rounded-full bg-(--polli-color-fill)"
+                        style={{
+                            width: `${duration ? (position / duration) * 100 : 0}%`,
+                        }}
+                    />
+                </div>
+                <span className="play-video-extra shrink-0 text-sm tabular-nums text-theme-text-strong">
+                    {clock(position)} / {clock(duration)}
+                </span>
+            </div>
+        </div>
+    );
+}
+
+function ResultPanel({
+    result,
+    playable = false,
+}: {
+    result: PlaygroundResult;
+    /** Give a clip its own controls in place, where it sits among pictures:
+     * the play button and its length say it is one. */
+    playable?: boolean;
+}) {
     const [expanded, setExpanded] = useState(false);
 
     if (result.type === "decision")
@@ -1279,7 +1385,13 @@ function ResultPanel({ result }: { result: PlaygroundResult }) {
                 <div className="relative w-fit max-w-full overflow-hidden rounded-card bg-surface-opaque text-theme-text-strong max-md:mx-auto">
                     <ResultDownloadButton
                         result={result}
-                        className="absolute bottom-3 right-3 z-10"
+                        className={cn(
+                            "absolute right-3 z-10",
+                            // Clear of a player's own controls.
+                            result.type === "video" && playable
+                                ? "top-3"
+                                : "bottom-3",
+                        )}
                     />
                     {result.type === "image" && (
                         <button
@@ -1296,7 +1408,10 @@ function ResultPanel({ result }: { result: PlaygroundResult }) {
                         </button>
                     )}
 
-                    {result.type === "video" && (
+                    {result.type === "video" && playable && (
+                        <ResultVideo src={result.url} />
+                    )}
+                    {result.type === "video" && !playable && (
                         // The inline preview drops its native controls so the
                         // whole frame is one click target for the lightbox —
                         // nesting controls inside a button would fight it.
@@ -2640,48 +2755,39 @@ export function Playground({ drafts }: { drafts: ConnectDrafts }) {
                             details={
                                 currentModel && (
                                     <>
-                                        {/* One badge: what a run costs and takes, then what the model does. */}
-                                        <Text
-                                            as="div"
-                                            size="sm"
-                                            data-theme="neutral"
-                                            className="w-fit max-w-full rounded-lg bg-theme-bg-active px-2.5 py-0.5 leading-5! text-theme-text-strong"
-                                        >
-                                            <RunStatBadge
-                                                cost={cost}
-                                                time={time}
-                                                walletKind={
-                                                    currentModel.paidOnly
-                                                        ? "paid"
-                                                        : "tier"
-                                                }
-                                                costDetail={
-                                                    cost === "Free"
-                                                        ? "This model is free to use."
-                                                        : "Median cost of a successful paid request over the last 7 days. Your settings can change the price."
-                                                }
-                                                pricingHref={`${ENTER_URL}/models?${new URLSearchParams({ category: currentModel.category, q: currentModel.id })}`}
-                                            />
-                                            {currentModel.description && (
-                                                <>
-                                                    <span
-                                                        aria-hidden="true"
-                                                        className="text-theme-text-muted"
-                                                    >
-                                                        {" — "}
-                                                    </span>
-                                                    {currentModel.description}
-                                                </>
-                                            )}
-                                        </Text>
-                                        <div className="flex flex-wrap items-center gap-2 text-xs empty:hidden">
+                                        {/* The facts in one wrapping row: what a
+                                            run costs and takes, then what the
+                                            model can do. Its description follows. */}
+                                        <div className="flex flex-wrap items-start gap-2">
+                                            <Text
+                                                as="div"
+                                                size="sm"
+                                                data-theme="neutral"
+                                                className="shrink-0 rounded-lg bg-theme-bg-active px-2.5 py-0.5 leading-5! text-theme-text-strong"
+                                            >
+                                                <RunStatBadge
+                                                    cost={cost}
+                                                    time={time}
+                                                    walletKind={
+                                                        currentModel.paidOnly
+                                                            ? "paid"
+                                                            : "tier"
+                                                    }
+                                                    costDetail={
+                                                        cost === "Free"
+                                                            ? "This model is free to use."
+                                                            : "Median cost of a successful paid request over the last 7 days. Your settings can change the price."
+                                                    }
+                                                    pricingHref={`${ENTER_URL}/models?${new URLSearchParams({ category: currentModel.category, q: currentModel.id })}`}
+                                                />
+                                            </Text>
                                             {modelAbilities(currentModel).some(
                                                 (ability) =>
                                                     !ability.shownByInputs,
                                             ) && (
                                                 <ul
                                                     aria-label="Abilities"
-                                                    className="m-0 flex list-none flex-wrap items-center gap-2 p-0"
+                                                    className="contents list-none"
                                                 >
                                                     {modelAbilities(
                                                         currentModel,
@@ -2706,7 +2812,7 @@ export function Playground({ drafts }: { drafts: ConnectDrafts }) {
                                                                     >
                                                                         <Icon
                                                                             aria-hidden="true"
-                                                                            className="size-3.5"
+                                                                            className="size-3.5 text-intent-info-text"
                                                                         />
                                                                         {label}
                                                                     </Chip>
@@ -2716,6 +2822,16 @@ export function Playground({ drafts }: { drafts: ConnectDrafts }) {
                                                 </ul>
                                             )}
                                         </div>
+                                        {currentModel.description && (
+                                            <Text
+                                                as="div"
+                                                size="sm"
+                                                data-theme="neutral"
+                                                className="w-fit max-w-full rounded-lg bg-theme-bg-active px-2.5 py-0.5 leading-5! text-theme-text-strong"
+                                            >
+                                                {currentModel.description}
+                                            </Text>
+                                        )}
                                     </>
                                 )
                             }
@@ -2733,7 +2849,6 @@ export function Playground({ drafts }: { drafts: ConnectDrafts }) {
                                 <AgentChat
                                     agentTitle={currentModel.title}
                                     turns={agentChat.turns}
-                                    busy={agentChat.busy}
                                     draft={prompt}
                                     onDraftChange={(value) =>
                                         setParam("prompt", value)
@@ -2743,7 +2858,6 @@ export function Playground({ drafts }: { drafts: ConnectDrafts }) {
                                             run();
                                     }}
                                     onRetry={agentChat.retry}
-                                    onClear={agentChat.clear}
                                     renderMedia={(url) => (
                                         <AgentMedia url={url} />
                                     )}
@@ -3251,7 +3365,11 @@ export function Playground({ drafts }: { drafts: ConnectDrafts }) {
                             // stays on the button; generate() ignores repeats.
                             disabled={!!blockedReason}
                             aria-disabled={isGenerating || undefined}
-                            aria-busy={isGenerating}
+                            // A working agent fills and animates the button
+                            // too: it stays pressable, as Stop.
+                            aria-busy={
+                                isGenerating || (isAgent && agentChat.busy)
+                            }
                             aria-describedby={
                                 clipError && blockedReason === clipError
                                     ? clipStatusId
@@ -3272,6 +3390,15 @@ export function Playground({ drafts }: { drafts: ConnectDrafts }) {
                                 generateText
                             )}
                         </Button>
+                        {isAgent &&
+                            currentModel &&
+                            agentChat.turns.length > 0 && (
+                                <NewChatButton
+                                    agentTitle={currentModel.title}
+                                    disabled={agentChat.busy}
+                                    onClear={agentChat.clear}
+                                />
+                            )}
                         <Text
                             id={statusId}
                             size="xs"

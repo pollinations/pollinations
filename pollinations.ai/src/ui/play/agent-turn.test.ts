@@ -1,6 +1,7 @@
 import { expect, it } from "vitest";
 import {
     type AgentItem,
+    finalMedia,
     replyMedia,
     userParts,
     withoutMedia,
@@ -47,6 +48,56 @@ it("treats only files on the media host as reply media", () => {
     expect(shown).toContain("javascript:alert(1)");
     expect(shown).toContain("https://cdn.example/x.png");
     expect(shown).not.toContain("media.pollinations.ai");
+});
+
+it("takes the last files made as the result and the rest as process", () => {
+    const made = (callId: string, ...files: string[]) => ({
+        type: "tool" as const,
+        callId,
+        name: "t",
+        arguments: {},
+        result: {
+            output: {
+                content: files.map((file) => ({
+                    type: "resource_link",
+                    uri: `https://media.pollinations.ai/${file}`,
+                })),
+            },
+        },
+    });
+    const say = (text: string) => ({ type: "text" as const, text });
+    // Frames, then the video stitched from them.
+    expect(
+        finalMedia(
+            [
+                made("1", "a.png"),
+                made("2", "b.png"),
+                say("Now the video."),
+                made("3", "clip.mp4"),
+                say("Done: https://media.pollinations.ai/a.png"),
+            ],
+            true,
+        ),
+    ).toEqual(["https://media.pollinations.ai/clip.mp4"]);
+    // Files made side by side are one result; a step without a file ends the run.
+    expect(
+        finalMedia(
+            [
+                made("1", "old.png"),
+                made("2"),
+                made("3", "a.png"),
+                made("4", "b.png"),
+            ],
+            true,
+        ),
+    ).toEqual([
+        "https://media.pollinations.ai/a.png",
+        "https://media.pollinations.ai/b.png",
+    ]);
+    // No tool returned a file: the links in the text are the result.
+    expect(
+        finalMedia([say("Here: https://media.pollinations.ai/x.png")], true),
+    ).toEqual(["https://media.pollinations.ai/x.png"]);
 });
 
 it("keeps a media link whole", () => {

@@ -688,6 +688,65 @@ When normalized timings are absent or null, `words` is empty; the audio is still
 Other options are `model`, `seed` and `signal`. Use models that advertise
 `/v1/audio/speech/with-timestamps` in `client.models('audio')`.
 
+## Realtime Voice
+
+Talk to `openai/gpt-realtime-2.1` over the OpenAI Realtime WebSocket. The
+helper opens the session and passes the protocol events through, so
+everything the API supports works:
+
+```javascript
+import { connectRealtime, pcm16ToBase64 } from '@pollinations/sdk';
+
+const session = await connectRealtime({
+  apiKey: process.env.POLLINATIONS_API_KEY,
+  session: {
+    type: 'realtime',
+    instructions: 'You are a concise voice assistant.',
+    audio: {
+      input: { format: { type: 'audio/pcm', rate: 24000 } },
+      output: { format: { type: 'audio/pcm', rate: 24000 } },
+    },
+  },
+});
+
+session.on('response.output_audio_transcript.delta', (event) => {
+  process.stdout.write(event.delta);
+});
+
+// 24 kHz mono PCM16, base64 encoded
+session.send({ type: 'input_audio_buffer.append', audio: pcm16ToBase64(samples) });
+```
+
+In React, `useRealtime()` opens the session on the signed-in user's key:
+
+```jsx
+const { status, session, error, connect, close } = useRealtime({
+  onEvent: (event) => console.log(event.type),
+});
+```
+
+A browser cannot set headers on a WebSocket handshake, so the key travels in
+the query string: use a secret key (`sk_`), not an App Key (`pk_`). Without an
+`apiKey`, the key comes from `POLLINATIONS_API_KEY` in the environment.
+`examples/realtime-voice.html` streams the microphone and plays the reply.
+
+Live transcription runs over the same helper with a transcription model:
+
+```javascript
+const session = await connectRealtime({
+  apiKey: process.env.POLLINATIONS_API_KEY,
+  model: 'openai/gpt-live-transcribe',
+  session: {
+    type: 'transcription',
+    audio: { input: { format: { type: 'audio/pcm', rate: 24000 } } },
+  },
+});
+
+session.on('conversation.item.input_audio_transcription.completed', (event) => {
+  console.log(event.transcript);
+});
+```
+
 ## Vision (Image Input)
 
 ```javascript

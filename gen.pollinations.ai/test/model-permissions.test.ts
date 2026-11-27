@@ -19,6 +19,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { expect } from "vitest";
 import { type AuthEnv, authFromSnapshot } from "../src/middleware/auth.ts";
+import { resolveModelDefinition } from "../src/middleware/model.ts";
 import { TEXT_BALANCE_NOTICE_ENABLED } from "../src/middleware/text-balance-notice.ts";
 
 async function fetchWorker(path: string, init: RequestInit = {}) {
@@ -110,6 +111,22 @@ test("retires MiMo V2.5 Pro and its aliases from chat and discovery", async ({
     expect(
         models.find(({ name }) => name === "xiaomi/mimo-v2.6-pro"),
     ).toMatchObject({ aliases: [] });
+});
+
+test("the Classic GPT-6 Luna route exists only for its owner", async ({
+    apiKey,
+}) => {
+    const model = "openai/gpt-6-luna:classic";
+    const { ownerUserId } = getRegistryModelDefinition(model);
+    expect(ownerUserId).toBeDefined();
+    await expect(
+        resolveModelDefinition(model, "generate.text", env, ownerUserId),
+    ).resolves.toMatchObject({ resolved: model });
+    const denied = await fetchWorker(`/text/owner-check?model=${model}`, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    expect(denied.status).toBe(400);
+    expect(await denied.text()).toContain("Invalid model or alias");
 });
 
 test("HEAD and GET validate the same query model before generation", async ({

@@ -2,12 +2,24 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
-## [5.1.0-alpha.37] - 2026-11-26
+## [5.1.0-alpha.38] - 2026-11-27
 
 ### Changed
 
 - The Responses chat transport reports every server-run tool call, not only `mcp__` ones, and emits `tool-input-start` as soon as a call begins. Calls to the caller's own `tools` are still ignored.
 - The Responses chat transport sends `file` parts with an image media type as `input_image` links, and other `file` parts as `input_file` links.
+
+## [5.1.0-alpha.37] - 2026-11-26
+
+### Added
+- `connectRealtime()` opens a realtime voice or transcription session on
+  `wss://gen.pollinations.ai/v1/realtime` and passes OpenAI Realtime events
+  through. `pcm16ToBase64()` and `base64ToPcm16()` convert the 24 kHz mono
+  PCM16 the models use. The key comes from `POLLINATIONS_API_KEY` when it is
+  not passed.
+- `useRealtime()` opens the same session on the signed-in user's key.
+- `examples/realtime-voice.html`, a voice chat page that signs in with
+  Pollinations and talks with `openai/gpt-realtime-2.1`.
 
 ## [5.1.0-alpha.36] - 2026-11-24
 

@@ -34,6 +34,16 @@ class TriageTest(unittest.TestCase):
         self.assertEqual(self.verdict("spam"), (None, "not_planned"))
         self.assertEqual(self.verdict("spam", confidence=0.8), (None, None))
 
+    def test_replies_ask_or_point_to_an_issue_with_one_link(self):
+        self.assertEqual(self.verdict("reply", "src/file.ts#L3"), (None, None))
+        url = self.evidence["issue-42"]["url"]
+        comment = "Covered by the open report. [Evidence](issue-42) [src/file.ts#L3] Keep `[DONE]`."
+        reply, reason = decision({"action": "reply", "comment": comment, "source": "issue-42", "confidence": 0.9}, self.evidence)
+        self.assertEqual(reply, f"Covered by the open report. Keep `[DONE]`.\n\n[issue-42]({url})")
+        self.assertIsNone(reason)
+        with self.assertRaises(ValueError):
+            decision({"action": "reply", "comment": "[Evidence](issue-42)", "source": None, "confidence": 0.9}, self.evidence)
+
     def test_existing_workflow_exclusions(self):
         issue = {"user": {"type": "User", "login": "reporter"}, "labels": []}
         self.assertTrue(eligible(issue))

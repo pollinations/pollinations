@@ -20,6 +20,24 @@ D1, KV, R2 and Durable Objects remain separate across the two slots even
 when both receive requests. Remote Cloudflare resources, real application
 entrypoints and real providers are not exercised.
 
+The separate real-Worker smoke test runs after building SDK, UI, Enter and Gen:
+
+```sh
+npm ci --ignore-scripts
+npm run build --workspace @pollinations/sdk
+npm run build --workspace @pollinations/ui
+(cd enter.pollinations.ai && CLOUDFLARE_ENV=local ../node_modules/.bin/vite build --mode development)
+(cd gen.pollinations.ai && ../node_modules/.bin/vite build --mode development)
+node --test operations/infrastructure/isolation-manifest/real-worker-smoke.cjs
+```
+
+It loads the actual built Worker bundles in two local slots, denies outbound
+fetch, checks Enter's health and Gen-to-Enter account routing, and checks that
+their D1 bindings are shared within a slot but separate across slots. It does
+not apply migrations, exercise authenticated generation or verify Cloudflare
+security. CI runs this build without persisting checkout credentials; this is
+not the separately protected publishing boundary needed for untrusted branches.
+
 See [SECURITY.md](SECURITY.md) for the publisher and gateway boundaries,
 deployment prerequisites, and acceptance tests for a real pilot.
 

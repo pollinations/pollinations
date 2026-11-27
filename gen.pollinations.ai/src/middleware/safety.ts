@@ -19,6 +19,8 @@ import type { Env } from "@/env.ts";
 import {
     applyGuardrail,
     type BedrockResponse,
+    checkShield,
+    resolveBedrockCredentials,
     resolveBedrockGuardrailEnv,
 } from "@/utils/bedrock-guardrail.ts";
 import { classifyTriggers } from "@/utils/safety-features.ts";
@@ -85,20 +87,60 @@ async function checkSafetyTexts(
         (length, text) => length + text.length,
         0,
     );
-    const guardrailEnv = resolveBedrockGuardrailEnv(c.env, features);
+    const inlineEnabled = c.env.BEDROCK_SHIELD_INLINE === "on";
+    const inlineShield = inlineEnabled && features.has("shield");
+    const legacyFeatures = new Set(features);
+    if (inlineShield) legacyFeatures.delete("shield");
+    const separateSensitiveFeatures = new Set<"privacy" | "secrets">();
+    // A legacy content block can replace redaction output and mark PII as blocked.
+    if (
+        inlineEnabled &&
+        features.has("privacy") &&
+        (features.has("sexual") || features.has("violence"))
+    ) {
+        for (const feature of ["privacy", "secrets"] as const) {
+            if (legacyFeatures.delete(feature))
+                separateSensitiveFeatures.add(feature);
+        }
+    }
+    const guardrailEnv = legacyFeatures.size
+        ? resolveBedrockGuardrailEnv(c.env, legacyFeatures)
+        : undefined;
+    const redactionEnv = separateSensitiveFeatures.size
+        ? resolveBedrockGuardrailEnv(c.env, separateSensitiveFeatures)
+        : undefined;
+    const shieldCredentials = inlineShield
+        ? resolveBedrockCredentials(c.env)
+        : undefined;
 
     setSafetyHeader(c, "X-Safety-Applied", [...features].join(","));
+    if (
+        (legacyFeatures.size && !guardrailEnv) ||
+        (separateSensitiveFeatures.size && !redactionEnv) ||
+        (inlineShield && !shieldCredentials)
+    ) {
+        setSafetyHeader(c, "X-Safety-Status", "misconfigured");
+        throw new HTTPException(503, {
+            message: "Safety service not configured",
+        });
+    }
 
-    let response: BedrockResponse;
+    let response: BedrockResponse | undefined;
+    let shield: Awaited<ReturnType<typeof checkShield>> | undefined;
+    let redaction: BedrockResponse | undefined;
     const scanStartedAt = Date.now();
     try {
-        if (!guardrailEnv) {
-            setSafetyHeader(c, "X-Safety-Status", "misconfigured");
-            throw new HTTPException(503, {
-                message: "Safety service not configured",
-            });
-        }
-        response = await applyGuardrail(scannedTexts, "INPUT", guardrailEnv);
+        [response, redaction, shield] = await Promise.all([
+            guardrailEnv
+                ? applyGuardrail(scannedTexts, "INPUT", guardrailEnv)
+                : undefined,
+            redactionEnv
+                ? applyGuardrail(scannedTexts, "INPUT", redactionEnv)
+                : undefined,
+            shieldCredentials
+                ? checkShield(scannedTexts, shieldCredentials)
+                : undefined,
+        ]);
     } catch (error) {
         if (error instanceof HTTPException) throw error;
         c.get("log").error("Bedrock guardrail failed: {error}", {
@@ -110,24 +152,41 @@ async function checkSafetyTexts(
         });
     }
 
-    const { blockedFeatures, redactedIds } = classifyTriggers(
-        response,
-        features,
-    );
+    const legacyTriggers = classifyTriggers(response ?? {}, legacyFeatures);
+    const sensitiveTriggers = redaction
+        ? classifyTriggers(redaction, separateSensitiveFeatures)
+        : undefined;
+    const blockedFeatures = legacyTriggers.blockedFeatures;
+    for (const feature of sensitiveTriggers?.blockedFeatures ?? []) {
+        blockedFeatures.add(feature);
+    }
+    if (shield?.blocked) blockedFeatures.add("shield");
+    const redactedIds =
+        sensitiveTriggers?.redactedIds ?? legacyTriggers.redactedIds;
     const userId = c.var.auth?.user?.id;
     const inputFingerprint =
         userId && c.env.BETTER_AUTH_SECRET
             ? createHmac("sha256", c.env.BETTER_AUTH_SECRET)
-                  .update("guardrail-input:v1\0")
+                  .update(
+                      inlineShield || redactionEnv
+                          ? "guardrail-input:inline-shield-v2\0"
+                          : "guardrail-input:v1\0",
+                  )
                   .update(
                       JSON.stringify([
                           c.env.ENVIRONMENT,
                           userId,
-                          guardrailEnv.region,
-                          guardrailEnv.guardrailIdentifier,
-                          guardrailEnv.guardrailVersion,
+                          guardrailEnv?.region ?? shieldCredentials?.region,
+                          guardrailEnv?.guardrailIdentifier,
+                          guardrailEnv?.guardrailVersion,
                           [...features].sort(),
                           scannedTexts,
+                          ...(redactionEnv
+                              ? [
+                                    redactionEnv.guardrailIdentifier,
+                                    redactionEnv.guardrailVersion,
+                                ]
+                              : []),
                       ]),
                   )
                   .digest("hex")
@@ -146,14 +205,24 @@ async function checkSafetyTexts(
         requiredFeatures,
         scannedCharacters,
         scannedParts: guardrailInputs.length,
-        guardrailAction: response.action,
+        guardrailAction:
+            shield?.blocked || redaction?.action === "GUARDRAIL_INTERVENED"
+                ? "GUARDRAIL_INTERVENED"
+                : (response?.action ?? "NONE"),
         blockedFeatures: [...blockedFeatures],
-        contentPolicyUnits: response.usage?.contentPolicyUnits,
-        sensitiveInformationPolicyUnits:
-            response.usage?.sensitiveInformationPolicyUnits,
+        contentPolicyUnits: response?.usage?.contentPolicyUnits,
+        sensitiveInformationPolicyUnits: redaction
+            ? (response?.usage?.sensitiveInformationPolicyUnits ?? 0) +
+              (redaction.usage?.sensitiveInformationPolicyUnits ?? 0)
+            : response?.usage?.sensitiveInformationPolicyUnits,
+        ...(shield && {
+            promptAttackPolicyUnits: shield.promptAttackPolicyUnits,
+            inlineContentPolicyUnits: shield.inlineContentPolicyUnits,
+        }),
     });
 
-    if (response.action !== "GUARDRAIL_INTERVENED") return texts;
+    if (!shield && !redaction && response?.action !== "GUARDRAIL_INTERVENED")
+        return texts;
 
     if (blockedFeatures.size > 0) {
         throw new UpstreamError(400, {
@@ -162,12 +231,17 @@ async function checkSafetyTexts(
         });
     }
 
-    if (!features.has("privacy")) return texts;
+    const redactedResponse = redaction ?? response;
+    if (
+        !features.has("privacy") ||
+        redactedResponse?.action !== "GUARDRAIL_INTERVENED"
+    )
+        return texts;
 
     const safeTexts = [...texts];
     let changed = false;
     for (const [outputIndex, input] of guardrailInputs.entries()) {
-        const redacted = response.outputs?.[outputIndex]?.text;
+        const redacted = redactedResponse.outputs?.[outputIndex]?.text;
         if (!redacted || redacted === input.text) continue;
         safeTexts[input.originalIndex] =
             texts[input.originalIndex].slice(0, input.offset) + redacted;
@@ -190,8 +264,8 @@ function selectGuardrailInputs(texts: string[]) {
     let remainingChars = SAFETY_MAX_TEXT_CHARS;
     let remainingParts = SAFETY_MAX_TEXT_PARTS;
 
-    // Keep safety to one Bedrock call. For large requests, scan the latest
-    // text window and leave earlier context unchanged.
+    // For large requests, scan the latest text window and leave earlier
+    // context unchanged.
     for (
         let index = texts.length - 1;
         index >= 0 && remainingChars > 0 && remainingParts > 0;

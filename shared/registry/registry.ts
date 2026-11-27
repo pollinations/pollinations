@@ -239,6 +239,8 @@ export type ModelDefinition = {
     hidden?: boolean; // Hidden from /models endpoints and dashboard, but still usable via API
     /** Internal provider route: hidden from discovery and rejected when selected by a caller. */
     fallbackOnly?: boolean;
+    /** Reserved for one account: to every other caller the model doesn't exist, as with a private community endpoint. */
+    ownerUserId?: string;
     /** Change when the same request starts producing different media, so old cached results are not served. */
     cacheVersion?: string;
     supportedEndpoints?: string[]; // Override the default endpoints for specialized models

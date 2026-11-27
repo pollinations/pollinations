@@ -2692,7 +2692,7 @@ test("a merged PR pays its own reward label, else the highest bounty it closes, 
             mergedAt: "2026-11-01T00:00:00Z",
             author: { databaseId: user.githubId },
         }));
-    await env.KV.delete("quests:github-issues:v2");
+    await env.KV.delete("quests:github-issues:v3");
     mocks.github.state.mergedPullRequests.push(
         pr(9500, { mergedAt: "2026-11-01T00:00:00Z", closingIssues: [9401] }),
     );
@@ -2771,11 +2771,157 @@ test("a merged PR pays once, whatever changes after it paid", async ({
         goal: "Build it.",
         reward: 10,
     });
-    await env.KV.delete("quests:github-issues:v2");
+    await env.KV.delete("quests:github-issues:v3");
     expect(await checkPrRewards(user.id)).toEqual([
         paid[0],
         { questId: "github:merged_pr:9799", pollenAmount: 5 },
         ...paid.slice(1),
+    ]);
+});
+
+test("per-PR quest bounties backfill only unpaid merges and preserve manual credits", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const user = await getOnlyUser();
+    await mocks.enable("github", "tinybird");
+    const db = drizzle(env.DB, { schema });
+    const login = user.githubUsername ?? "";
+    const marker =
+        "**This quest can have several winners:** every merged PR that adds a distinct improvement earns the reward.";
+    seedQuestIssue(mocks.github.state, {
+        issueNumber: 16856,
+        title: "Agent discovery",
+        goal: marker,
+        reward: 10,
+    });
+    seedQuestIssue(mocks.github.state, {
+        issueNumber: 15054,
+        title: "Agent challenge",
+        goal: "Ideas can differ a lot, so we may accept several: every merged agent earns the full reward.",
+        reward: 5,
+        completedByPrNumber: 17441,
+        completedByGithubId: user.githubId,
+        updatedAt: new Date("2026-10-20T12:00:00Z"),
+    });
+    seedQuestIssue(mocks.github.state, {
+        issueNumber: 9405,
+        title: "Contributor-authored quest",
+        goal: marker,
+        reward: 5,
+    });
+    const contributorQuest = mocks.github.state.questIssues.at(-1);
+    if (contributorQuest) contributorQuest.authorAssociation = "CONTRIBUTOR";
+
+    // An older PR that closes two quests can already be covered by the
+    // ordinary issue's reward.
+    const earlyMerge = new Date("2026-10-21T12:00:00Z");
+    const historic = mocks.github.state.questIssues.find(
+        (issue) => issue.number === 15054,
+    );
+    historic?.closedByPullRequestsReferences?.push({
+        number: 17442,
+        mergedAt: earlyMerge.toISOString(),
+        author: { databaseId: user.githubId },
+    });
+    seedQuestIssue(mocks.github.state, {
+        issueNumber: 9406,
+        title: "Ordinary quest sharing an older PR",
+        goal: "Build it.",
+        reward: 3,
+        completedByPrNumber: 17442,
+        completedByGithubId: user.githubId,
+        updatedAt: earlyMerge,
+    });
+    const legacyId = "github:issue:16856";
+    const manualId = "github:merged_pr:19595";
+    const oldEarnedAt = new Date("2026-11-16T11:54:16Z");
+    await db.insert(schema.rewards).values([
+        {
+            id: "ordinary-cross-linked-quest-reward",
+            idempotencyKey: rewardKey("github:issue:9406", user),
+            userId: user.id,
+            questId: "github:issue:9406",
+            title: "Ordinary quest sharing an older PR",
+            pollenAmount: 3,
+            balanceBucket: "tier",
+            earnedAt: new Date("2026-10-22T08:00:00Z"),
+        },
+        {
+            id: "previous-account-quest-reward",
+            idempotencyKey: rewardKey(legacyId, user),
+            userId: null,
+            questId: legacyId,
+            title: "Agent discovery",
+            pollenAmount: 10,
+            balanceBucket: "tier",
+            earnedAt: oldEarnedAt,
+            claimedAt: oldEarnedAt,
+        },
+        {
+            id: "manual-pr-credit",
+            idempotencyKey: rewardKey(manualId, user),
+            userId: user.id,
+            questId: manualId,
+            title: "Merged PR #19595: Alpha",
+            pollenAmount: 5,
+            balanceBucket: "tier",
+            earnedAt: new Date("2026-11-26T17:00:00Z"),
+            claimedAt: new Date("2026-11-26T17:00:00Z"),
+        },
+        {
+            id: "pr-linked-grant",
+            idempotencyKey: rewardKey("grant:other-pr", user),
+            userId: user.id,
+            questId: "grant:other-pr",
+            title: "Manual PR reward",
+            url: "https://github.com/pollinations/pollinations/pull/19701#issuecomment-1",
+            pollenAmount: 10,
+            balanceBucket: "tier",
+            earnedAt: new Date("2026-11-26T17:00:00Z"),
+        },
+    ]);
+
+    const pr = (number: number, mergedAt: string, issue = 16856) => ({
+        number,
+        authorLogin: login,
+        mergedAt,
+        closingIssues: [issue],
+    });
+    mocks.github.state.mergedPullRequests.push(
+        pr(17441, "2026-10-20T12:00:00Z", 15054),
+        pr(19697, "2026-11-16T09:00:00Z"),
+        pr(19698, "2026-11-16T10:44:33Z"),
+        pr(19595, "2026-11-19T23:32:07Z"),
+        pr(19701, "2026-11-20T12:00:00Z"),
+        pr(19702, "2026-11-21T12:00:00Z"),
+        { ...pr(19703, "2026-11-22T12:00:00Z"), labels: ["reward-15"] },
+        pr(19704, "2026-11-22T13:00:00Z", 9405),
+        pr(19705, "2026-11-22T14:00:00Z", 9405),
+    );
+
+    // Both earlier merges could have earned the one issue-level record.
+    // Later merges use the bounty, unless already paid or individually labelled.
+    const expected = [
+        { questId: "github:issue:9405", pollenAmount: 5 },
+        { questId: "github:issue:9406", pollenAmount: 3 },
+        { questId: "github:merged_pr:17441", pollenAmount: 5 },
+        { questId: "github:merged_pr:19595", pollenAmount: 5 },
+        { questId: "github:merged_pr:19702", pollenAmount: 10 },
+        { questId: "github:merged_pr:19703", pollenAmount: 15 },
+        { questId: "merged_pr", pollenAmount: 5 },
+    ];
+    expect(await checkPrRewards(user.id)).toEqual(expected);
+    expect(await checkPrRewards(user.id)).toEqual(expected);
+    const byPr = await db
+        .select({
+            questId: schema.rewards.questId,
+            claimedAt: schema.rewards.claimedAt,
+        })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.questId, "github:merged_pr:19702"));
+    expect(byPr).toEqual([
+        { questId: "github:merged_pr:19702", claimedAt: null },
     ]);
 });
 

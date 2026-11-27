@@ -311,7 +311,7 @@ describe("locked Quest pollen display", () => {
         expect(html).toContain("Verification needed");
         expect(html).toContain("make your first purchase");
         expect(html).toContain('href="/pollen#buy-pollen"');
-        expect(html).toContain('href="mailto:hello@pollinations.ai"');
+        expect(html).toContain('href="mailto:billing@pollinations.ai"');
         expect(html).not.toContain('role="alert"');
         expect(html).not.toContain("request a review");
 

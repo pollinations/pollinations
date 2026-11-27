@@ -246,15 +246,35 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe("global.anthropic.claude-opus-5");
     });
 
-    it("routes the GPT-OSS 20B fallback to DeepInfra", () => {
+    it("routes the Classic GPT-6 Luna to its own Azure deployment on Flex", () => {
         const result = resolveModelConfig(messages, {
-            model: "openai/gpt-oss-20b:deepinfra",
+            model: "openai/gpt-6-luna:classic",
+            service_tier: "priority",
         });
 
-        expect(result.options.model).toBe("openai/gpt-oss-20b");
-        expect(result.options.modelConfig).toMatchObject({
-            provider: "openai",
+        // Azure's v1 Responses API picks the deployment from the model field
+        expect(result.options.model).toBe("gpt-6-luna-classic");
+        // The route, not the caller, picks the half-price Flex tier
+        expect(result.options.service_tier).toBe("flex");
+    });
+
+    it("routes GPT-OSS 20B to DeepInfra, then Bedrock Mantle", () => {
+        expect(
+            resolveModelConfig(messages, { model: "openai/gpt-oss-20b" })
+                .options.modelConfig,
+        ).toMatchObject({
             "custom-host": "https://api.deepinfra.com/v1/openai",
+            model: "openai/gpt-oss-20b",
+        });
+        expect(
+            resolveModelConfig(messages, {
+                model: "openai/gpt-oss-20b:aws",
+            }).options.modelConfig,
+        ).toMatchObject({
+            provider: "bedrock",
+            directEndpoint:
+                "https://bedrock-mantle.us-east-1.api.aws/v1/chat/completions",
+            model: "openai.gpt-oss-20b",
         });
     });
 

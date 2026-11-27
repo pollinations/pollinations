@@ -134,15 +134,16 @@ const TEXT_BASE_SERVICES = {
     "openai/gpt-oss-20b": {
         supportedParameters: CHAT_PARAMETERS.ovhGptOss,
         aliases: ["gpt-oss-20b", "ovh-reasoning", "gpt-oss"],
-        provider: "ovhcloud",
+        provider: "deepinfra",
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
         priceMultiplier: 1,
         paidOnly: false,
         cost: {
-            promptTextTokens: perMillion(0.05),
-            completionTextTokens: perMillion(0.18),
+            promptTextTokens: perMillion(0.03),
+            promptCachedTokens: perMillion(0.015),
+            completionTextTokens: perMillion(0.14),
         },
         title: "GPT-OSS 20B",
         description:
@@ -936,6 +937,37 @@ const TEXT_BASE_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 1050000,
+        isSpecialized: false,
+    },
+    // Classic API (text.pollinations.ai) only: its own capped Azure deployment
+    // and no fallback, so free traffic never uses the official route's quota
+    "openai/gpt-6-luna:classic": {
+        supportedParameters: CHAT_PARAMETERS.azureResponses,
+        aliases: [],
+        hidden: true,
+        // polli@pollinations.ai, which owns the Classic API's key
+        ownerUserId: "LJVtOPiUl0C4uRku8kL8prpp95m8jLnt",
+        provider: "azure",
+        publisher: "OpenAI",
+        category: "text",
+        addedDate: new Date("2026-11-26").getTime(),
+        paidOnly: false,
+        priceMultiplier: 1,
+        // Azure Flex tier: half the Standard rates
+        cost: {
+            promptTextTokens: perMillion(0.05),
+            promptCachedTokens: perMillion(0.005),
+            promptCacheWriteTokens: perMillion(0.0625),
+            completionTextTokens: perMillion(0.25),
+        },
+        title: "GPT-6 Luna (Classic)",
+        description: "Answer free Classic API requests on a capped deployment.",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        // Below the 272K long-context price tier
+        contextLength: 272000,
         isSpecialized: false,
     },
     "inception/mercury-2": {

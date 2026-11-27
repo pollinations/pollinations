@@ -3902,6 +3902,20 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000001,
     },
   },
+  "openai/gpt-6-luna:classic": {
+    "cost": {
+      "completionTextTokens": 0.00000025,
+      "promptCacheWriteTokens": 0.0000000625,
+      "promptCachedTokens": 0.000000005,
+      "promptTextTokens": 0.00000005,
+    },
+    "price": {
+      "completionTextTokens": 0.00000025,
+      "promptCacheWriteTokens": 0.0000000625,
+      "promptCachedTokens": 0.000000005,
+      "promptTextTokens": 0.00000005,
+    },
+  },
   "openai/gpt-6-sol": {
     "cost": {
       "completionTextTokens": 0.00001,
@@ -4386,22 +4400,24 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "openai/gpt-oss-20b": {
     "cost": {
-      "completionTextTokens": 0.00000018,
-      "promptTextTokens": 0.00000005,
+      "completionTextTokens": 0.00000014,
+      "promptCachedTokens": 0.000000015,
+      "promptTextTokens": 0.00000003,
     },
     "price": {
-      "completionTextTokens": 0.00000018,
-      "promptTextTokens": 0.00000005,
+      "completionTextTokens": 0.00000014,
+      "promptCachedTokens": 0.000000015,
+      "promptTextTokens": 0.00000003,
     },
   },
-  "openai/gpt-oss-20b:deepinfra": {
+  "openai/gpt-oss-20b:aws": {
     "cost": {
-      "completionTextTokens": 0.00000014,
-      "promptTextTokens": 0.00000003,
+      "completionTextTokens": 0.0000003,
+      "promptTextTokens": 0.00000007,
     },
     "price": {
-      "completionTextTokens": 0.00000014,
-      "promptTextTokens": 0.00000003,
+      "completionTextTokens": 0.0000003,
+      "promptTextTokens": 0.00000007,
     },
   },
   "openai/gpt-realtime-2.1": {
@@ -4502,6 +4518,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "price": {
       "promptAudioSeconds": 0.0000452777777777778,
+    },
+  },
+  "openai/whisper-large-v3-turbo": {
+    "cost": {
+      "promptAudioSeconds": 0.00000333333333333333,
+    },
+    "price": {
+      "promptAudioSeconds": 0.00000333333333333333,
     },
   },
   "openai/whisper-large-v3:deepinfra": {

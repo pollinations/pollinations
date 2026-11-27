@@ -1,6 +1,6 @@
 """GitHub project manager: puts every new issue and pull request on the Dev project.
 
-Weaver’s system-prompt.md defines the project fields. The original brief is kept for rollback.
+The direct classifier uses baseline-prompt.md. Weaver has a separate candidate policy.
 """
 
 import sys

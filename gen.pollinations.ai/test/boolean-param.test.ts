@@ -96,3 +96,16 @@ describe("GenerateImageRequestQueryParamsSchema duration", () => {
         ).toThrow();
     });
 });
+
+describe("GenerateTextRequestQueryParamsSchema model", () => {
+    it("rejects an empty model string", () => {
+        expect(() =>
+            GenerateTextRequestQueryParamsSchema.parse({ model: "" }),
+        ).toThrow();
+    });
+
+    it("keeps model optional when omitted", () => {
+        const parsed = GenerateTextRequestQueryParamsSchema.parse({});
+        expect(parsed.model).toBeDefined();
+    });
+});

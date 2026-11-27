@@ -4223,15 +4223,35 @@ export async function handleSpeechWithTimestamps(
     );
 }
 
-/** Multipart body for the OVH and DeepInfra whisper-large-v3 endpoints. */
+/** Each Whisper route: whether it runs on DeepInfra (else OVH) and its upstream model ID. */
+const WHISPER_UPSTREAMS: Record<
+    string,
+    { isDeepInfra: boolean; model: string }
+> = {
+    "openai/whisper-large-v3": {
+        isDeepInfra: false,
+        model: "whisper-large-v3",
+    },
+    "openai/whisper-large-v3:deepinfra": {
+        isDeepInfra: true,
+        model: "openai/whisper-large-v3",
+    },
+    "openai/whisper-large-v3-turbo": {
+        isDeepInfra: true,
+        model: "openai/whisper-large-v3-turbo",
+    },
+};
+
+/** Multipart body for the OVH and DeepInfra Whisper endpoints. */
 export function buildWhisperForm(opts: {
     file: File;
     language?: string | null;
     prompt?: string | null;
     temperature?: number;
     isDeepInfra: boolean;
+    model: string;
 }): FormData {
-    const { file, language, prompt, temperature, isDeepInfra } = opts;
+    const { file, language, prompt, temperature, isDeepInfra, model } = opts;
     const form = new FormData();
     const filename =
         file.name && file.name !== "blob" ? file.name : "audio.mp3";
@@ -4241,10 +4261,7 @@ export function buildWhisperForm(opts: {
     if (temperature !== undefined)
         form.append("temperature", String(temperature));
     form.append("response_format", "verbose_json");
-    form.append(
-        "model",
-        isDeepInfra ? "openai/whisper-large-v3" : "whisper-large-v3",
-    );
+    form.append("model", model);
     if (isDeepInfra) {
         // DeepInfra returns segments either way, and drops words when
         // both granularities are requested.
@@ -4413,8 +4430,13 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
             });
         }
 
-        const isDeepInfra =
-            candidate.id === "openai/whisper-large-v3:deepinfra";
+        const upstream = WHISPER_UPSTREAMS[candidate.id];
+        if (!upstream) {
+            throw new UpstreamError(500 as ContentfulStatusCode, {
+                message: `No transcription route for ${candidate.id}`,
+            });
+        }
+        const { isDeepInfra } = upstream;
         const providerApiKey = isDeepInfra
             ? c.env.DEEPINFRA_API_KEY
             : c.env.OVHCLOUD_API_KEY;
@@ -4435,7 +4457,7 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
             language,
             prompt,
             temperature,
-            isDeepInfra,
+            ...upstream,
         });
 
         const whisperUrl = isDeepInfra

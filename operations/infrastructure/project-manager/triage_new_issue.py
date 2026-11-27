@@ -54,7 +54,8 @@ def collect_evidence(session, issue, terms):
     if search["incomplete_results"]:
         raise RuntimeError("GitHub issue search returned partial results")
     for other in search["items"]:
-        if other["number"] != issue["number"] and other["state"] == "open" and "pull_request" not in other:
+        # Only an older report can be the original, so two new reports cannot close each other.
+        if other["number"] < issue["number"] and other["state"] == "open" and "pull_request" not in other:
             evidence[f'issue-{other["number"]}'] = {"url": other["html_url"], "title": other["title"],
                                                     "body": (other["body"] or "")[:900]}
 
@@ -123,8 +124,9 @@ def decision(verdict, evidence):
         return None, "not_planned"
     if action == "duplicate" and (not source or not source.startswith("issue-")):
         raise InvalidModelAnswer("Duplicate needs an open issue")
-    if action == "resolved" and (not source or source.startswith("issue-")):
-        raise InvalidModelAnswer("Resolution needs production evidence")
+    # Documentation may be the very thing the reporter says is wrong.
+    if action == "resolved" and (not source or source.startswith("issue-") or source.partition("#")[0].endswith(".md")):
+        raise InvalidModelAnswer("Resolution needs production code")
     comment = verdict.get("comment")
     if not isinstance(comment, str) or not comment.strip():
         raise InvalidModelAnswer("Missing reply")
@@ -166,8 +168,15 @@ def main():
     if preview or not (comment or reason):
         return
     latest = current_issue()
-    if latest["state"] != "open" or not eligible(latest) or any(latest[k] != issue[k] for k in ("title", "body")):
+    # A reopened issue is a maintainer's decision; a rerun must not close it again.
+    if (latest["state"] != "open" or latest.get("state_reason") == "reopened" or not eligible(latest)
+            or any(latest[k] != issue[k] for k in ("title", "body"))):
         return
+    if verdict["action"] == "duplicate":
+        original = session.get(f'{API}/issues/{verdict["source"].removeprefix("issue-")}', timeout=30)
+        original.raise_for_status()
+        if original.json()["state"] != "open":
+            return
     if comment:
         # A rerun after posting but before closing must not repeat the public reply.
         marker = f"<!-- new-issue-triage:{number}:{reason or 'reply'} -->"

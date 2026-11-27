@@ -10,13 +10,15 @@ from triage_new_issue import API, collect_evidence, decision, eligible, main
 
 class TriageTest(unittest.TestCase):
     evidence = {"issue-42": {"url": "https://github.com/pollinations/pollinations/issues/42"},
-                "src/file.ts#L3": {"url": "https://github.com/pollinations/pollinations/blob/rev/src/file.ts#L3"}}
+                "src/file.ts#L3": {"url": "https://github.com/pollinations/pollinations/blob/rev/src/file.ts#L3"},
+                "APIDOCS.md#L3": {"url": "https://github.com/pollinations/pollinations/blob/rev/APIDOCS.md#L3"}}
 
     def verdict(self, action, source=None, confidence=0.9):
         return decision({"action": action, "comment": "Details", "source": source, "confidence": confidence}, self.evidence)
 
     def test_closures_need_matching_evidence_and_confidence(self):
-        for action, source in (("resolved", "issue-42"), ("duplicate", "issue-41"), ("duplicate", None)):
+        for action, source in (("resolved", "issue-42"), ("resolved", "APIDOCS.md#L3"),
+                               ("duplicate", "issue-41"), ("duplicate", None)):
             with self.assertRaises(ValueError):
                 self.verdict(action, source)
         self.assertEqual(self.verdict("duplicate", "issue-42", 0.84), (None, None))
@@ -42,12 +44,13 @@ class TriageTest(unittest.TestCase):
     def test_empty_code_terms_keep_issue_evidence_without_git(self):
         session = Mock()
         session.get.return_value.json.return_value = {"incomplete_results": False, "items": [
-            {"number": 41, "state": "open"},
+            {"number": 43, "state": "open"},
+            {"number": 44, "state": "open"},
             {"number": 42, "state": "open", "title": "Related question", "body": "",
              "html_url": self.evidence["issue-42"]["url"]},
         ]}
         with patch("triage_new_issue.subprocess.check_output") as git:
-            evidence = collect_evidence(session, {"number": 41}, {"issue_terms": "rate limit", "code_terms": []})
+            evidence = collect_evidence(session, {"number": 43}, {"issue_terms": "rate limit", "code_terms": []})
         git.assert_not_called()
         self.assertEqual(set(evidence), {"issue-42"})
 
@@ -78,7 +81,7 @@ class TriageTest(unittest.TestCase):
         })
 
     def test_duplicate_comments_then_closes_and_retry_reuses_reply(self):
-        issue = {"number": 41, "title": "Timeout", "body": "", "state": "open",
+        issue = {"number": 43, "title": "Timeout", "body": "", "state": "open",
                  "labels": [], "user": {"login": "reporter", "type": "User"}}
         search = {"incomplete_results": False, "items": [{**issue, "number": 42,
                   "html_url": self.evidence["issue-42"]["url"]}]}
@@ -86,19 +89,35 @@ class TriageTest(unittest.TestCase):
         verdict = {"action": "duplicate", "source": "issue-42", "confidence": 0.9, "comment": "Details"}
         for prior in (False, True):
             comments = [{"user": {"login": "github-actions[bot]"},
-                         "body": "Details\n\n<!-- new-issue-triage:41:not_planned -->"}] if prior else []
+                         "body": "Details\n\n<!-- new-issue-triage:43:not_planned -->"}] if prior else []
             session = MagicMock()
             session.get.side_effect = [Mock(json=Mock(return_value=value), links={})
-                                       for value in (issue, search, issue, comments)]
-            with self.subTest(prior=prior), patch.dict(os.environ, {"ISSUE_NUMBER": "41", "GH_TOKEN": "test", "DRY_RUN": ""}), \
+                                       for value in (issue, search, issue, issue, comments)]
+            with self.subTest(prior=prior), patch.dict(os.environ, {"ISSUE_NUMBER": "43", "GH_TOKEN": "test", "DRY_RUN": ""}), \
                  patch("triage_new_issue.requests.Session", return_value=session), \
                  patch("triage_new_issue.ask_ai", side_effect=[terms, verdict]):
                 main()
             writes = [entry for entry in session.mock_calls if entry[0] in ("post", "patch")]
             self.assertEqual([entry[0] for entry in writes], ["patch"] if prior else ["post", "patch"])
             if not prior:
-                self.assertIn("<!-- new-issue-triage:41:not_planned -->", writes[0].kwargs["json"]["body"])
-            session.patch.assert_called_once_with(f"{API}/issues/41", json={"state": "closed", "state_reason": "not_planned"}, timeout=30)
+                self.assertIn("<!-- new-issue-triage:43:not_planned -->", writes[0].kwargs["json"]["body"])
+            session.patch.assert_called_once_with(f"{API}/issues/43", json={"state": "closed", "state_reason": "not_planned"}, timeout=30)
+
+    def test_reopened_issue_and_closed_original_are_left_alone(self):
+        issue = {"number": 43, "title": "Timeout", "body": "", "state": "open",
+                 "labels": [], "user": {"login": "reporter", "type": "User"}}
+        search = {"incomplete_results": False, "items": [{**issue, "number": 42,
+                  "html_url": self.evidence["issue-42"]["url"]}]}
+        verdict = {"action": "duplicate", "source": "issue-42", "confidence": 0.9, "comment": "Details"}
+        for later in ([{**issue, "state_reason": "reopened"}], [issue, {**issue, "state": "closed"}]):
+            session = MagicMock()
+            session.get.side_effect = [Mock(json=Mock(return_value=value), links={}) for value in (issue, search, *later)]
+            with self.subTest(later=later), patch.dict(os.environ, {"ISSUE_NUMBER": "43", "GH_TOKEN": "test", "DRY_RUN": ""}), \
+                 patch("triage_new_issue.requests.Session", return_value=session), \
+                 patch("triage_new_issue.ask_ai", side_effect=[{"issue_terms": "timeout", "code_terms": []}, verdict]):
+                main()
+            session.post.assert_not_called()
+            session.patch.assert_not_called()
 
     def test_malformed_verdict_logs_and_exits_without_writes(self):
         issue = {"number": 41, "title": "Timeout", "body": "", "state": "open",

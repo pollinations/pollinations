@@ -631,8 +631,9 @@ Users earn Quest credit by completing **Quests**. The `tier`, `tier_balance`, an
 
 ### Lookups (read-only)
 
+Follow [Production D1 Query Safety](../AGENTS.md#production-d1-query-safety-critical). From the `enter.pollinations.ai` service directory, use this lookup only for one known account when live support or an incident requires current state.
+
 ```bash
-cd enter.pollinations.ai
 npx wrangler d1 execute DB --remote --env production \
   --command "SELECT id, github_username, email, tier_balance, pack_balance FROM user WHERE id = 'USER_ID';"
 ```

@@ -69,6 +69,14 @@ def trial(case, brief, model, seen):
     return result
 
 
+def check_preview(mode, reports):
+    cases = [case for report in reports.values() for case in report["cases"].values()]
+    if any("error" in trial for case in cases for trial in case["trials"]):
+        raise SystemExit("Invalid or unavailable trials. See the artifact.")
+    if mode in {"shortened", "hosted"} and any(case["misses"] and case["group"] != "diagnostic" for case in cases):
+        raise SystemExit("Classification disagreement requires review before activation. Compare observed rates.")
+
+
 def estimate_cost(report):
     # Rate this text-only preview at its catalog price; report the basis separately from a billed amount.
     try:
@@ -143,13 +151,11 @@ def main():
     repetitions = 10 if mode == "compare-misses" else 3
     holdout_ids = {c["id"] for c in holdout}
     summaries = []
-    invalid = 0
     with ThreadPoolExecutor(max_workers=4) as workers:
         jobs = [(case, workers.submit(measure, case, arms, repetitions)) for case in cases]
         for case, job in jobs:
             for name, trials in job.result().items():
                 errors = sum("error" in t for t in trials)
-                invalid += errors
                 misses = trial_misses(trials)
                 matches = len(trials) - len(misses)
                 group = "holdout" if case["id"] in holdout_ids else "development"
@@ -169,8 +175,7 @@ def main():
     if path := os.getenv("GITHUB_STEP_SUMMARY"):
         with open(path, "a") as stream:
             print(summary, file=stream)
-    if invalid:
-        raise SystemExit(f"{invalid} invalid or unavailable trials. See the artifact.")
+    check_preview(mode, reports)
 
 
 if __name__ == "__main__":

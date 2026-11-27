@@ -298,6 +298,20 @@ class WeaverTest(unittest.TestCase):
         self.assertFalse(evaluation.trial_misses(results["baseline"]))
         self.assertIn("2", evaluation.trial_misses(results["shortened"]))
 
+    def test_release_preview_flags_scored_misses_and_reports_borderline_cases(self):
+        from evaluate_weaver import check_preview
+
+        case = {"group": "diagnostic", "misses": {"1": {"differences": {"priority": "High"}}}, "trials": [{"differences": {"priority": "High"}}]}
+        reports = {"shortened": {"cases": {"12870": case}}}
+        check_preview("shortened", reports)
+        case["group"] = "holdout"
+        check_preview("compare-holdout", reports)
+        with self.assertRaisesRegex(SystemExit, "requires review"):
+            check_preview("hosted", reports)
+        case["trials"] = [{"error": "generation replayed"}]
+        with self.assertRaisesRegex(SystemExit, "Invalid"):
+            check_preview("compare-holdout", reports)
+
     def test_baseline_misses_survive_and_cannot_fill_required_coverage(self):
         import evaluate_weaver as evaluation
 

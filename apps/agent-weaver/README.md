@@ -31,11 +31,11 @@ For updates, use `polli --json agents update "$id" --config "$config"` on the or
 Run **Repo / Organize issues and PRs** from the source revision under review and select a Weaver preview. Each run records the model, prompt and case digests, per-field differences, timings, token usage and catalog cost estimates in the Actions artifact. Preview reads frozen item evidence and skips the writer.
 
 - **compare-misses** measures the two disputed cases with ten fresh calls per case per direct prompt. The runner alternates prompt order and checks completion IDs across both prompts. Counts this small describe observed variation and leave uncertainty about the true error rates.
-- **baseline** and **shortened** run the [development cases](classification-cases.json) three times each with the original or proposed policy. The [calibration record](calibration.json) retains all original misses. Former exclusions and the borderline dashboard priority are marked diagnostic. These items and the other examples used during editing can expose regressions.
+- **baseline** and **shortened** run the [development cases](classification-cases.json) three times each with the original or proposed policy. The workflow calls the second configuration `shortened`; it includes reviewed changes to policy wording. The [calibration record](calibration.json) retains all original misses. Former exclusions and the borderline dashboard priority are marked diagnostic. These items and the other examples used during editing can expose regressions.
 - **compare-holdout** evaluates both direct prompts three times on each [held-out issue or PR](holdout-cases.json). Freeze the candidate and expected fields before the first call. Keep all examples, including disagreements. A prompt edited using these outcomes needs new unseen cases for another generalization check.
 - **hosted** uses the ID returned by owner readback and runs the development, diagnostic and held-out cases in distinct report groups. Compare the hosted and direct candidate outcomes at the same prompt digest.
 
-A cache hit, replayed completion, invalid answer or unavailable call fails the preview. A completed run reports observed agreement. Maintainers review field-level rates against the original, particularly priority, queue errors and held-out regressions, before approving release. Keep the direct classifier active when evidence is inconclusive.
+A cache hit, replayed completion, invalid answer or unavailable call fails the preview. Comparisons report observed agreement. The shortened and hosted release previews flag any disagreement on a scored case for review. Diagnostic field misses are reported separately. Review repeated rates against the original, especially Priority, Model work and held-out errors, before approving release. Keep the direct classifier active when evidence is inconclusive.
 
 ## Activate and observe
 
@@ -46,6 +46,21 @@ A cache hit, replayed completion, invalid answer or unavailable call fails the p
 5. After those live checks succeed, remove the one-time owner-check job, its `check_weaver_owner` and `probe_model_digest` inputs and `probe_agent.py`. Keep the preview for future policy edits. For subsequent policy releases, read back the updated listing and run the hosted preview before accepting the change.
 
 The first holdout was reserved at `f4ebb023e6`. Within the most recent 100 issues and 100 PRs opened November 5–20, 2026, we excluded training sources, bot accounts and routine submissions, quests, censuses and promotions. We sorted eligible IDs by the SHA-256 of `0d56352a95:<number>` and took three issues and two PRs. The candidate was frozen at `ce9c2a852c` before the cases were labeled. The fixtures contain public source snapshots or summaries and proposed expected fields for maintainer review.
+
+## Repeated comparisons, November 27
+
+Each cell is exact matches across Area, Type, Priority and Model work. Both direct prompts ran ten times per case in each comparison. Each comparison had its own baseline sample.
+
+| Case | Original | Candidate at `0d56352a95` | Original rerun | Revised candidate |
+| --- | ---: | ---: | ---: | ---: |
+| #12870, blank dashboard model table | 10/10 | 8/10 | 9/10 | 10/10 |
+| #19013, newly registered agent briefly unavailable | 9/10 | 8/10 | 9/10 | 10/10 |
+
+The dashboard misses were High instead of Medium. The agent misses were Community models instead of Agents & agent tools. Ten trials per arm leave uncertainty about the underlying rates. [Reviewed prompt comparison](https://github.com/pollinations/pollinations/actions/runs/46032692571) · [Revised prompt comparison](https://github.com/pollinations/pollinations/actions/runs/46033143088)
+
+On five held-out items with three trials per item, the original matched 12/15 and the revised candidate matched 14/15. All differences came from #19893, a hosted-agent metadata edit that failed after its base model became unavailable. The original chose Community models on all three trials and the candidate chose it once. Both matched every field on the other four items. The expected fields are proposed references. These results cover five distinct items. [Holdout comparison](https://github.com/pollinations/pollinations/actions/runs/46033134684)
+
+The complete revised development preview matched 38/39 scored answers and 12/15 diagnostic answers. The scored miss rated CLI device login High instead of Medium despite working token login (#17867). All three diagnostic misses concerned the classification of the model-specific failure in #19529. The prompt remains frozen for review. All 164 calls across the four runs returned distinct, uncached completions. [Development preview](https://github.com/pollinations/pollinations/actions/runs/46033149799)
 
 ## Initial evaluation evidence
 

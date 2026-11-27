@@ -48,8 +48,32 @@
       "required": [
         "deploy-legacy-caches.yml:deploy (image)"
       ]
+    },
+    "20635": {
+      "merge_sha": "584672a930317e1a3dff2d6532064922f328bf25",
+      "merged_at": "2026-11-27T10:23:16Z",
+      "required": []
+    },
+    "20673": {
+      "merge_sha": "2218ca28064a71fb0819913b2ee4c3264e69991f",
+      "merged_at": "2026-11-27T04:16:12Z",
+      "required": []
+    },
+    "20681": {
+      "merge_sha": "7b9629a397532a9326d12e89bc93ac67a23e0f66",
+      "merged_at": "2026-11-27T07:14:25Z",
+      "required": []
+    },
+    "20684": {
+      "merge_sha": "9b9ecb89e7c35d35941c47b6464f302f8ac62bdb",
+      "merged_at": "2026-11-27T10:35:22Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-enter",
+        "deploy-cloudflare-production.yml:deploy-gen",
+        "deploy-cloudflare-production.yml:deploy-media"
+      ]
     }
   },
-  "production": "07ef8bfa1bf2f4b814d178e86f054209d5311db5",
+  "production": "8ab49a26cfe15fa2b279c3356e8210a2bee560e9",
   "master": "35aa9cc7145a42796f6475501dd7d92115fd8477"
 }

@@ -2,16 +2,20 @@
 
 Canonical vendor: `fal`
 
-## Verified — 2026-07-10
+## Verified — 2026-11-03
 
-- Status: pricing API and internal usage meter work; account billing is manual.
+- Documented Platform APIs provide account balances, daily usage and individual
+  billed events. Use the dashboard for original invoices and credit-lot details.
 - The unit-price estimate endpoint returns a price without triggering
   inference.
 - Use dashboard/invoice evidence for account balance and closed cash charges.
 
 Primary evidence sources:
 
-- Usage: Tinybird `economics_pollen_usage` rows where `vendor = 'fal'`.
+- Balance: `GET https://api.fal.ai/v1/account/billing?expand=credits`.
+- Usage: `GET https://api.fal.ai/v1/models/usage`.
+- Billed events: `GET https://api.fal.ai/v1/models/billing-events`.
+- Independent internal meter: Tinybird `economics_pollen_usage`, `vendor = 'fal'`.
 - Unit price: `POST https://api.fal.ai/v1/models/pricing/estimate`.
 - Closed-month/cash: fal billing dashboard, invoice, receipt, Wise, or
   `economics_bank_ledger`.
@@ -22,8 +26,17 @@ Required credential:
 
 Collection steps:
 
-1. Query bounded `economics_pollen_usage` usage for the requested period.
-2. When price evidence is needed, request an estimate without running a model:
+1. Verify the billing API username against the recorded account and signed-in
+   dashboard. Read the balance with its collection timestamp.
+2. Query usage with explicit `start` and exclusive `end`, `timezone=UTC`,
+   `timeframe=day`, `bound_to_timeframe=false`, and `expand=time_series`.
+   Follow `next_cursor` until exhausted and verify `has_more=false`.
+3. Audit billed events over the same bounds with `limit=10000`, following every
+   cursor. Check unique request IDs and timestamp bounds. Sum integer
+   `cost_estimate_nano_usd` for precise USD charges; retain quantity, unit and
+   `cost_total`. Reconcile usage estimates, billed events and the monthly
+   service invoice separately, then compare with Pollen.
+4. When price evidence is needed, request an estimate without running a model:
 
    ```bash
    curl --fail-with-body --silent --show-error \
@@ -33,7 +46,7 @@ Collection steps:
      --data '{"estimate_type":"unit_price","endpoints":{"<model-id>":{"unit_quantity":1}}}'
    ```
 
-3. Save dashboard/invoice/price evidence to `<collection-dir>/evidence/` and use
+5. Save dashboard/invoice/price evidence to `<collection-dir>/evidence/` and use
    this skill to extract or reconcile it.
 
 ## Verified — 2026-09-06
@@ -63,18 +76,24 @@ Collection steps:
   purchase's original expiry, but that table does not show how much remains in
   each lot. Do not assign the live balance to one expiry date without a
   provider-backed remaining-lot breakdown. The [fal Terms of Service](https://fal.ai/legal/terms-of-service)
-  state the purchase and promotional credit expiry rules; verify current terms
-  during each close.
+  state the purchase and promotional credit expiry rules. Retain terms recorded
+  at purchase or grant start; recheck new lots, changed terms or contradictory
+  evidence. Unknown remaining-lot expiry stays unknown.
 
 Known traps:
 
 - Auth uses `Authorization: Key`, not `Bearer`.
-- Historical spend has no confirmed public REST endpoint; use Tinybird plus
-  dashboard/invoice evidence.
+- Account billing requires `billing:usage:read`; usage and billed events also
+  require `auth:keys:read` and `account:users:read`. Use existing credentials;
+  an access failure is a reason to use the dashboard, not create another key.
+- Invoice PDFs round to cents; the detail page can retain more precision.
+  Compare gross usage before prepaid application. Zero due is not zero usage.
 - Do not run inference as a billing smoke test because it consumes real funds.
 - A prepaid top-up is funding, not usage cost.
 - Preserve dashboard/Tinybird discrepancies for review.
 
 Official reference:
 
-- https://docs.fal.ai
+- https://fal.ai/docs/platform-apis/v1/account/billing
+- https://fal.ai/docs/platform-apis/v1/models/usage
+- https://fal.ai/docs/platform-apis/v1/models/billing-events

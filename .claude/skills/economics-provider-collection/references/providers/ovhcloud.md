@@ -7,8 +7,9 @@ Canonical vendor: `ovhcloud`
 - Status: signed OVH credit API works end to end.
 - Account: `fd415008-ovh` (`Myceli.AI OÜ`), login `elliot@myceli.ai`.
 - Billing: <https://manager.eu.ovhcloud.com/#/billing/payment/credits>
+- Startup voucher operations: <https://manager.eu.ovhcloud.com/#/billing/payment/credits/STARTUP_PROGRAM>
 - Movement amounts use signed values: `USE` is negative and `VOUCHER` is
-  positive. Preserve the provider date before shifting a monthly debit.
+  positive. Preserve provider dates and use original invoice service periods.
 
 Primary evidence sources:
 
@@ -36,44 +37,34 @@ Collection endpoints:
   bill/order details. Use invoice PDFs or the authenticated dashboard for SKU
   classification; movement aggregates prove only exact voucher burn.
 
-## Verified — 2026-09-06
+## Invoice and credit evidence — verified 2026-11-03
 
-- Invoice line items without the bill-detail API permission: in the signed-in
-  manager tab (`manager.eu.ovhcloud.com`), the manager's own API proxy answers
-  with the session:
-
-  ```
-  fetch('/engine/apiv6/me/bill/<billId>/details', {credentials: 'include'})
-  fetch('/engine/apiv6/me/bill/<billId>/details/<detailId>', {credentials: 'include'})
-  ```
-
-  Each detail carries `description`, `periodStart`, `periodEnd`, `quantity`,
-  `unitPrice.value` and `totalPrice.value` (EUR). AI Endpoints lines name the
-  model (`gpt-oss-20b`, `Qwen3-Coder-30B-A3B-Instruct`, `whisper-large-v3`) and
-  are inference; `Public Cloud Snapshots` lines are infra; ignore the
-  `Use of your Voucher account` lines (they net each line to zero). Invoices
-  issued on the 1st cover the previous month's service period.
-
-## Verified — 2026-09-06 (invoice PDFs)
-
-- List and download bills from the signed-in manager tab without the
-  bill-detail API permission:
-
-  ```
-  fetch('/engine/apiv6/me/bill?date.from=2026-01-01&date.to=2026-09-06', {credentials: 'include'})
-  fetch('/engine/apiv6/me/bill/<billId>', {credentials: 'include'})
-  ```
-
-  The bill object carries `date`, `priceWithoutTax`, `priceWithTax`, and a
-  signed `pdfUrl` that `curl` downloads without cookies.
-- OVH issues one bill per Public Cloud project on the 1st (two per month
-  since March 2026), each covering the previous month. Voucher-funded bills
-  print `Invoice total ex. VAT €0.00`; the real usage is the `SUB-TOTAL` line
-  before `Use of your Voucher`. The ledger's EUR month totals equal those
-  subtotals exactly.
-- Archive: every 2026 bill (`IE1971296` … `IE2153030`) is in the accounting
-  Drive under `2026/<MM Month>/Invoices` as
-  `YYYY-MM-DD__OVHcloud__IE<id>.pdf` (invoice date).
+- When the existing API credential lacks bill permission, use the authenticated
+  manager's invoice list and original PDF downloads. Do not create credentials.
+- Invoice lines carry service periods and distinguish model inference, Public
+  Cloud snapshots, and GPU capacity. Voucher application can reduce the total
+  due to zero; use the service subtotal before `Use of your Voucher` for cost.
+- For month-to-date usage, use the project’s Billing Control → Current usage.
+  On 2026-11-16, Estimate of my next invoice omitted the AI Endpoints usage
+  visible in Current usage. Retain current usage as evidence until invoiced.
+- `GET /me` verifies the account, organization and email. Startup balance
+  `expiring[]` and `balanceDetails[].expiring[]` include remaining amount and
+  `expirationDate`; normalize the observed timezone to UTC, never invent an
+  end-of-day expiry. Do not also add the same lot as an account total.
+- Deleted projects can remain in `/cloud/project`. Confirm lifecycle from
+  detailed status or the termination notice. Termination can issue a mid-month
+  bill, so credit movement dates alone cannot establish the usage month.
+- Complete movement sums can differ from the current balance; retain the
+  discrepancy without inventing a balancing adjustment.
+- Invoice service subtotals and voucher offsets can differ from the API's
+  `USE` amount for the same order. Preserve both sources and the residual;
+  do not silently allocate the difference or call it rounding without evidence.
+- Repeated Public IPv4 descriptions can represent distinct invoice lines.
+  Retain the invoice line ordinal and project ID when individual resource IDs
+  are absent. Keep zero-charge bandwidth lines in the original source index.
+- `/cloud/project/{serviceName}/usage/history` supports `from`/`to` and detail
+  `/usage/history/{usageId}`, but the existing key returns `403`; use the
+  dashboard fallback and preserve the access limitation.
 
 ## Verified — 2026-10-02 (invoice notices)
 
@@ -99,7 +90,8 @@ Known traps:
 - OVH API requests require signed headers using the application key, application secret, consumer key, method, URL, body, and OVH server timestamp.
 - Startup credit burn appears as `USE` movements in the `STARTUP_PROGRAM` credit balance.
 - `USE` movement amounts are negative; negate them to get positive credit burn.
-- `USE` movements are dated when OVH debits the credit balance, usually on the invoice date. Attribute the usage to the previous calendar month when the movement is the monthly bill debit.
+- `USE` movements record voucher debit dates, often invoice dates. Attribute
+  usage from the original service period, including any mid-month termination bill.
 - OVH invoices are issued after the service month. Use each line's service
   period, not the invoice issue month, for `start` and `end`.
 - One invoice can mix AI Endpoints, dedicated GPU machines, gateway VMs,

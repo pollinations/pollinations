@@ -1,38 +1,38 @@
 # Refunds & Cancellations
 
-**Updated: 2026-10-10**
+**Updated: 2026-11-17**
 
-## Refunds & Cancellations (digital API services & Pollen)
+## Refunds & Cancellations (digital API services & credit)
 
-**Scope.** This policy applies to paid Pollen packs/top-ups used to call the Pollinations API.
+**Scope.** This policy applies to paid top-ups used to call the Pollinations API.
 
-## 1) Pollen Is Digital API Credit
+## 1) Your Balance Is Digital API Credit
 
-Pollen is an in-service credit used only for Pollinations API usage. It is not legal tender, e-money, cryptocurrency, a deposit, a bank account balance, or stored value outside the Service. Pollen is not transferable, withdrawable, or redeemable for cash except where required by law or expressly approved by us as a refund.
+Your balance is in-service credit, counted in US dollars, used only for Pollinations API usage. We previously called it "Pollen". It is not legal tender, e-money, cryptocurrency, a deposit, a bank account balance, or stored value outside the Service. It is not transferable, withdrawable, or redeemable for cash except where required by law or expressly approved by us as a refund.
 
 Your wallet may include:
 
-- **Quest Pollen balance:** Pollen earned from quests, contribution rewards, free grants, promotional credits, manual credits, and developer earnings from Quest Pollen usage.
-- **Paid Pollen balance:** purchased Pollen and developer earnings from Paid Pollen usage.
+- **Quest balance:** credit earned from quests, contribution rewards, free grants, promotional credits, manual credits, and developer earnings from Quest balance usage.
+- **Paid balance:** purchased credit and developer earnings from paid balance usage.
 
 ## 2) Final-Sale Policy
 
-All sales are final except where required by law or expressly approved by us. Our API is a digital service delivered immediately after purchase. Once Pollen is spent on API usage, that usage cannot be returned.
+All sales are final except where required by law or expressly approved by us. Our API is a digital service delivered immediately after purchase. Once credit is spent on API usage, that usage cannot be returned.
 
-Paid Pollen packs/top-ups are non-refundable once provisioned, including unused Paid Pollen balance. We do not guarantee refunds because you changed your mind, stopped using the Service, disliked an output, chose the wrong model, authorized an app you no longer want to use, or did not use the full balance.
+Paid top-ups are non-refundable once provisioned, including unused paid balance. We do not guarantee refunds because you changed your mind, stopped using the Service, disliked an output, chose the wrong model, authorized an app you no longer want to use, or did not use the full balance.
 
-Used Pollen cannot be refunded or clawed back. Quest Pollen, free or promotional grants, quest or other rewards, and developer earnings have no cash value and are not refundable.
+Used credit cannot be refunded or clawed back. The Quest balance, free or promotional grants, quest or other rewards, and developer earnings have no cash value and are not refundable.
 
 ## 3) Limited Refund Review
 
-We may review refund requests for unused Paid Pollen balance in these cases:
+We may review refund requests for unused paid balance in these cases:
 
 - A refund is required by law.
 - A duplicate or unauthorized charge is proven.
-- We fail to provision paid Pollen after payment.
+- We fail to provision paid credit after payment.
 - A material, documented technical fault prevents any meaningful use within a reasonable start period, and you contact us promptly before substantial use.
 
-Approval is discretionary except where required by law. On any approved refund, associated Pollen, credits, benefits, and developer earnings may be reversed or adjusted. See Terms §6 for developer-earnings reversibility.
+Approval is discretionary except where required by law. On any approved refund, associated credit, benefits, and developer earnings may be reversed or adjusted. See Terms §6 for developer-earnings reversibility.
 
 ## 4) EU/EEA Consumer Withdrawal
 
@@ -44,7 +44,7 @@ This policy does not limit any non-waivable statutory rights for non-conforming 
 
 ## 5) Chargebacks & Payment Fraud
 
-If a chargeback or payment dispute is filed, or we reasonably believe a payment was unauthorized or fraudulent, we may suspend access while it is investigated. Pollen, credits, benefits, and developer earnings tied to that payment may be manually reviewed and reversed or adjusted; where the Pollen has already been spent, reversal can leave a negative balance.
+If a chargeback or payment dispute is filed, or we reasonably believe a payment was unauthorized or fraudulent, we may suspend access while it is investigated. Credit, benefits, and developer earnings tied to that payment may be manually reviewed and reversed or adjusted; where the credit has already been spent, reversal can leave a negative balance.
 
 ## 6) B2B Purchases
 

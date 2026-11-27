@@ -87,7 +87,7 @@ describe("ElevenLabs Text to Dialogue", () => {
     });
 });
 
-workerTest.for(["GET", "JSON", "multipart"] as const)(
+workerTest.for(["GET", "HEAD", "JSON", "multipart"] as const)(
     "rejects FLAC dialogue before serving cached PCM (%s)",
     async (encoding, { paidApiKey }) => {
         const fields = {
@@ -98,7 +98,7 @@ workerTest.for(["GET", "JSON", "multipart"] as const)(
             safe: "false",
         };
         const url = new URL(
-            encoding === "GET"
+            encoding === "GET" || encoding === "HEAD"
                 ? `/audio/${encodeURIComponent(fields.input)}?model=dialogue&response_format=flac&safe=false`
                 : "/v1/audio/speech",
             "https://gen.pollinations.ai",
@@ -106,7 +106,7 @@ workerTest.for(["GET", "JSON", "multipart"] as const)(
         const cacheUrl = new URL(url);
         const headers = new Headers({ Authorization: `Bearer ${paidApiKey}` });
         let body: FormData | string | undefined;
-        if (encoding !== "GET") {
+        if (encoding !== "GET" && encoding !== "HEAD") {
             let cacheBody: string;
             if (encoding === "multipart") {
                 body = new FormData();
@@ -144,7 +144,12 @@ workerTest.for(["GET", "JSON", "multipart"] as const)(
         const ctx = createExecutionContext();
         const response = await worker.fetch(
             new Request(url, {
-                method: encoding === "GET" ? "GET" : "POST",
+                method:
+                    encoding === "HEAD"
+                        ? "HEAD"
+                        : encoding === "GET"
+                          ? "GET"
+                          : "POST",
                 headers,
                 body,
             }),
@@ -153,24 +158,34 @@ workerTest.for(["GET", "JSON", "multipart"] as const)(
         );
         expect(response.status).toBe(400);
         expect(response.headers.get("x-cache")).toBeNull();
-        await expect(response.json()).resolves.toMatchObject({
-            error: {
-                message: expect.stringContaining("flac is not supported"),
-            },
-        });
+        if (encoding === "HEAD") {
+            expect(await response.text()).toBe("");
+        } else {
+            await expect(response.json()).resolves.toMatchObject({
+                error: {
+                    message: expect.stringContaining("flac is not supported"),
+                },
+            });
+        }
         await waitOnExecutionContext(ctx);
     },
 );
 
-workerTest("advertises the simple route for every speech model", async () => {
+workerTest("advertises the supported routes for speech models", async () => {
     const response = await fetchGen("https://gen.pollinations.ai/v1/models");
     expect(response.status).toBe(200);
 
     const models = (await response.json()) as {
-        data: { supported_endpoints?: string[] }[];
+        data: { id: string; supported_endpoints?: string[] }[];
     };
-    const speechModels = models.data.filter((model) =>
-        model.supported_endpoints?.includes("/v1/audio/speech"),
+    const zonosId = "zyphra/zonos3-mini";
+    expect(
+        models.data.find((model) => model.id === zonosId)?.supported_endpoints,
+    ).toEqual(["/v1/audio/speech"]);
+    const speechModels = models.data.filter(
+        (model) =>
+            model.id !== zonosId &&
+            model.supported_endpoints?.includes("/v1/audio/speech"),
     );
     expect(speechModels.length).toBeGreaterThan(0);
     for (const model of speechModels) {

@@ -34,7 +34,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Selected-range BYOP totals from generation_usage_hourly. Apps are clean api_key_client_id values; users are authenticated end users; both count only when at least one request passed the balance check (402 rejections excluded). Paid and Quest are consumed Pollen, while developer rewards are the BYOP markup credited to app owners.",
+      "description": "Selected-range BYOP totals from generation_usage_hourly. Apps are clean api_key_client_id values; users are authenticated end users; both count only when at least one request passed the balance check (402 rejections excluded). Paid and Quest are usage spend in USD, while developer rewards are the BYOP markup credited to app owners.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -102,7 +102,7 @@
               },
               {
                 "id": "unit",
-                "value": "suffix: Pollen"
+                "value": "suffix: USD"
               },
               {
                 "id": "decimals",
@@ -122,7 +122,7 @@
               },
               {
                 "id": "unit",
-                "value": "suffix: Pollen"
+                "value": "suffix: USD"
               },
               {
                 "id": "decimals",
@@ -142,7 +142,7 @@
               },
               {
                 "id": "unit",
-                "value": "suffix: Pollen"
+                "value": "suffix: USD"
               },
               {
                 "id": "decimals",
@@ -516,7 +516,7 @@
         "type": "datasource",
         "uid": "-- Dashboard --"
       },
-      "description": "Daily successful billed Pollen consumed through BYOP, split by end-user funding. It includes app markup credited to developers and community-model spend credited to model owners, so Paid is consumed value, not Pollinations revenue; Quest is free Pollen. Reuses the shared daily BYOP query.",
+      "description": "Daily successful usage spend in USD through BYOP, split by end-user funding. It includes app markup credited to developers and community-model spend credited to model owners, so Paid is consumed value, not Pollinations revenue; Quest is subsidized usage. Reuses the shared daily BYOP query.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -535,7 +535,7 @@
           },
           "decimals": 2,
           "min": 0,
-          "unit": "suffix: Pollen"
+          "unit": "suffix: USD"
         },
         "overrides": [
           {
@@ -764,7 +764,7 @@
           },
           "decimals": 2,
           "min": 0,
-          "unit": "suffix: Pollen"
+          "unit": "suffix: USD"
         },
         "overrides": [
           {
@@ -894,7 +894,7 @@
               },
               {
                 "id": "unit",
-                "value": "suffix: Pollen"
+                "value": "suffix: USD"
               },
               {
                 "id": "decimals",
@@ -914,7 +914,7 @@
               },
               {
                 "id": "unit",
-                "value": "suffix: Pollen"
+                "value": "suffix: USD"
               },
               {
                 "id": "decimals",
@@ -934,7 +934,7 @@
               },
               {
                 "id": "unit",
-                "value": "suffix: Pollen"
+                "value": "suffix: USD"
               },
               {
                 "id": "decimals",

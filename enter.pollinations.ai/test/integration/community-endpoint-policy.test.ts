@@ -526,6 +526,19 @@ describe("community endpoint configuration policy", () => {
             baseModel: model,
         });
         expect(wrapped.status).toBe(400);
+
+        // The dashboard resends baseModel on every save, so a stored model
+        // that has since been retired must not block other edits.
+        await env.DB.prepare(
+            "UPDATE community_endpoint SET payload = json_set(payload, '$.baseModel', 'retired-model') WHERE id = ?",
+        )
+            .bind(id)
+            .run();
+        const edited = await request("PATCH", `/${id}`, {
+            title: "Edited",
+            baseModel: "retired-model",
+        });
+        expect(edited.status, await edited.clone().text()).toBe(200);
     });
 
     test("names the field when an agent update is invalid", async ({

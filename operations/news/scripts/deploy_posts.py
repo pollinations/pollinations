@@ -65,7 +65,7 @@ PAGES = {
     "My Models": "https://enter.pollinations.ai/my-models",
     "My Apps": "https://enter.pollinations.ai/my-apps",
     "API keys": "https://enter.pollinations.ai/keys",
-    "Pollen": "https://enter.pollinations.ai/pollen",
+    "Balance": "https://enter.pollinations.ai/pollen",
     "Quests": "https://enter.pollinations.ai/quests",
     "Sandboxes": "https://enter.pollinations.ai/sandboxes",
     "Activity": "https://enter.pollinations.ai/activity",

@@ -59,6 +59,8 @@ export function monthlyTrends(data: Data, scope: TrendScope, now = new Date()) {
         data.vendorLedger ?? [],
         data.privateConfig?.forecastRules,
         data.stripeSales ?? [],
+        undefined,
+        data.vendorStatements,
     );
     const currentMonth = now.toISOString().slice(0, 7);
     const invalidSales = runway.flags.some(
@@ -138,7 +140,14 @@ export function monthlyTrends(data: Data, scope: TrendScope, now = new Date()) {
                   : -recordedCost;
         const credits =
             column && paidCost != null
-                ? -costs.reduce(
+                ? -[
+                      ...costs,
+                      ...runway.rows.filter(
+                          (r) =>
+                              r.vendor === "stripe sales" &&
+                              r.category === "revenue",
+                      ),
+                  ].reduce(
                       (sum, row) => sum + (row.creditValues?.[column.id] ?? 0),
                       0,
                   )

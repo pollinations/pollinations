@@ -4,6 +4,38 @@ import { resolveModelConfig } from "../../../src/text/utils/modelResolver.js";
 
 const messages = [{ role: "user" as const, content: "Hello" }];
 
+describe("Gemini 4 Hydrogen Vertex route", () => {
+    it("uses the global Vertex model ID and keeps Gemini tool transforms", async () => {
+        const model = findModelByName("google/gemini-4-hydrogen");
+        expect(model).toBeDefined();
+        const resolved = resolveModelConfig(messages, {
+            model: "google/gemini-4-hydrogen",
+        });
+        expect(resolved.options.modelConfig).toMatchObject({
+            provider: "vertex-ai",
+            "vertex-region": "global",
+            "vertex-model-id": "gemini-4-hydrogen",
+        });
+        expect(model?.transform).toBeTypeOf("function");
+    });
+});
+
+describe("Gemini 4 Neon Vertex route", () => {
+    it("uses the global Vertex model ID and keeps Gemini tool transforms", async () => {
+        const model = findModelByName("google/gemini-4-neon");
+        expect(model).toBeDefined();
+        const resolved = resolveModelConfig(messages, {
+            model: "google/gemini-4-neon",
+        });
+        expect(resolved.options.modelConfig).toMatchObject({
+            provider: "vertex-ai",
+            "vertex-region": "global",
+            "vertex-model-id": "gemini-4-neon",
+        });
+        expect(model?.transform).toBeTypeOf("function");
+    });
+});
+
 describe("resolveModelConfig", () => {
     it("keeps Microsoft Decision-1 backup pins in the native config", () => {
         for (const [suffix, pin] of [
@@ -27,6 +59,45 @@ describe("resolveModelConfig", () => {
                 pin,
             );
         }
+    });
+
+    it("routes Hy4 Flash through Vercel with an OpenRouter fallback", () => {
+        const primary = resolveModelConfig(messages, {
+            model: "tencent/hy4-flash",
+        });
+        expect(primary.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://ai-gateway.vercel.sh/v1",
+        });
+
+        const fallback = resolveModelConfig(messages, {
+            model: "tencent/hy4-flash:openrouter",
+        });
+        expect(fallback.options.modelConfig).toMatchObject({
+            provider: "openrouter",
+            model: "tencent/hy4-flash",
+        });
+    });
+
+    it("routes Qwen 4 Max to Alibaba with a Vercel fallback", () => {
+        const primary = resolveModelConfig(messages, {
+            model: "qwen/qwen4-max",
+        });
+        expect(primary.options.model).toBe("qwen4-max");
+        expect(primary.options.modelConfig).toMatchObject({
+            provider: "openai",
+            directEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
+        });
+
+        const fallback = resolveModelConfig(messages, {
+            model: "qwen/qwen4-max:vercel",
+        });
+        expect(fallback.options.model).toBe("alibaba/qwen4-max");
+        expect(fallback.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://ai-gateway.vercel.sh/v1",
+        });
     });
 
     it("pins Liquid D1's primary and backup native configs", () => {
@@ -175,15 +246,35 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe("global.anthropic.claude-opus-5");
     });
 
-    it("routes the GPT-OSS 20B fallback to DeepInfra", () => {
+    it("routes the Classic GPT-6 Luna to its own Azure deployment on Flex", () => {
         const result = resolveModelConfig(messages, {
-            model: "openai/gpt-oss-20b:deepinfra",
+            model: "openai/gpt-6-luna:classic",
+            service_tier: "priority",
         });
 
-        expect(result.options.model).toBe("openai/gpt-oss-20b");
-        expect(result.options.modelConfig).toMatchObject({
-            provider: "openai",
+        // Azure's v1 Responses API picks the deployment from the model field
+        expect(result.options.model).toBe("gpt-6-luna-classic");
+        // The route, not the caller, picks the half-price Flex tier
+        expect(result.options.service_tier).toBe("flex");
+    });
+
+    it("routes GPT-OSS 20B to DeepInfra, then Bedrock Mantle", () => {
+        expect(
+            resolveModelConfig(messages, { model: "openai/gpt-oss-20b" })
+                .options.modelConfig,
+        ).toMatchObject({
             "custom-host": "https://api.deepinfra.com/v1/openai",
+            model: "openai/gpt-oss-20b",
+        });
+        expect(
+            resolveModelConfig(messages, {
+                model: "openai/gpt-oss-20b:aws",
+            }).options.modelConfig,
+        ).toMatchObject({
+            provider: "bedrock",
+            directEndpoint:
+                "https://bedrock-mantle.us-east-1.api.aws/v1/chat/completions",
+            model: "openai.gpt-oss-20b",
         });
     });
 
@@ -201,6 +292,59 @@ describe("resolveModelConfig", () => {
         });
         expect(result.options.provider).toBeUndefined();
     });
+
+    it("routes Microsoft-Decision-1.1 to Azure with Vercel and OpenRouter fallbacks", () => {
+        expect(
+            findModelByName("microsoft/microsoft-decision-1.1")?.config(),
+        ).toMatchObject({
+            provider: "openai",
+            directEndpoint:
+                "https://myceli-prod-eastus.cognitiveservices.azure.com/providers/microsoft/v1/systemone",
+            model: "decision-1.1",
+        });
+        expect(
+            findModelByName(
+                "microsoft/microsoft-decision-1.1:vercel",
+            )?.config(),
+        ).toMatchObject({
+            directEndpoint:
+                "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
+            model: "microsoft/decision-1.1",
+        });
+        expect(
+            findModelByName(
+                "microsoft/microsoft-decision-1.1:openrouter",
+            )?.config(),
+        ).toMatchObject({
+            provider: "openrouter",
+            directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+            model: "microsoft/microsoft-decision-1.1",
+        });
+    });
+
+    it.each(["gpt-6.2-astra", "gpt-6.2-sol"])(
+        "routes openai/%s to Azure Responses with a US Bedrock Responses fallback",
+        (model) => {
+            const canonical = `openai/${model}`;
+            const result = resolveModelConfig(messages, { model: canonical });
+
+            expect(result.options.model).toBe(model);
+            expect(result.options.modelConfig).toMatchObject({
+                provider: "azure-openai",
+                "azure-resource-name": "myceli-prod-eastus",
+                "azure-deployment-id": model,
+                responsesEndpoint:
+                    "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
+            });
+            const fallback = resolveModelConfig(messages, {
+                model: `${canonical}:aws`,
+            });
+            expect(fallback.options.model).toBe(`us.openai.${model}`);
+            expect(fallback.options.modelConfig?.responsesEndpoint).toMatch(
+                /^https:\/\/bedrock-runtime\..+\.amazonaws\.com\/openai\/v1\/responses$/,
+            );
+        },
+    );
 
     it("keeps GPT-5.3 Codex primary and OpenAI fallback routes distinct", () => {
         const primary = resolveModelConfig(messages, {
@@ -784,16 +928,20 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("pins Mercury to Inception on OpenRouter without fallback", () => {
-        const result = resolveModelConfig(messages, {
-            model: "inception/mercury-2",
-        });
-
-        expect(result.options.model).toBe("inception/mercury-2");
-        expect(result.options.provider).toEqual({
-            only: ["Inception"],
-            allow_fallbacks: false,
-        });
+    it.each([
+        ["inception/mercury-2", "mercury-2"],
+        ["mercury-2", "mercury-2"],
+        ["inception", "mercury-2"],
+        ["inception-mercury", "mercury-2"],
+        ["mercury", "mercury-2"],
+        ["inception/mercury-3", "mercury-3"],
+    ])("routes %s directly to Inception", (model, upstream) => {
+        const result = resolveModelConfig(messages, { model });
+        expect(result.options.model).toBe(upstream);
+        expect(result.options.modelConfig?.directEndpoint).toBe(
+            "https://api.inceptionlabs.ai/v1/chat/completions",
+        );
+        expect(result.options.provider).toBeUndefined();
     });
 
     it("routes Kimi K3.1 Pro Highspeed through Vercel AI Gateway without fallback", () => {
@@ -809,29 +957,12 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
-    it("pins Mercury 3 to Inception on OpenRouter without fallback", () => {
-        const result = resolveModelConfig(messages, {
-            model: "inception/mercury-3",
-        });
-
-        expect(result.options.model).toBe("inception/mercury-3");
-        expect(result.options.provider).toEqual({
-            only: ["Inception"],
-            allow_fallbacks: false,
-        });
-    });
-
-    it("pins Mercury 2.5 Preview to Inception on OpenRouter without fallback", () => {
-        const result = resolveModelConfig(messages, {
-            model: "inception/mercury-2.5-preview",
-        });
-
-        expect(result.options.model).toBe("inception/mercury-2.5-preview");
-        expect(result.options.max_tokens).toBe(64000);
-        expect(result.options.provider).toEqual({
-            only: ["Inception"],
-            allow_fallbacks: false,
-        });
+    it("rejects retired Mercury 2.5 Preview", () => {
+        expect(() =>
+            resolveModelConfig(messages, {
+                model: "inception/mercury-2.5-preview",
+            }),
+        ).toThrow("Model configuration not found");
     });
 
     it.each([
@@ -928,6 +1059,17 @@ describe("resolveModelConfig", () => {
             expect(result.options.provider).toBeUndefined();
         },
     );
+
+    it("routes Muse Ember through Vercel AI Gateway", () => {
+        const result = resolveModelConfig(messages, {
+            model: "meta/muse-ember",
+        });
+
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://ai-gateway.vercel.sh/v1",
+        });
+    });
 
     it("routes Step Flash directly to Novita", () => {
         const result = resolveModelConfig(messages, {
@@ -1188,28 +1330,25 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
-    it("routes DeepSeek V4.1 Flash 1017 directly to Fireworks with a DeepInfra fallback", () => {
+    it("routes DeepSeek V4.1 Flash 1017 to its Azure deployment with a Fireworks fallback", () => {
         const primary = resolveModelConfig(messages, {
             model: "deepseek/deepseek-v4.1-flash-1017",
         });
         const fallback = resolveModelConfig(messages, {
-            model: "deepseek/deepseek-v4.1-flash-1017:deepinfra",
+            model: "deepseek/deepseek-v4.1-flash-1017:fireworks",
         });
 
-        expect(primary.options.model).toBe(
-            "accounts/fireworks/models/deepseek-v4p1-flash-1017",
-        );
         expect(primary.options.modelConfig).toMatchObject({
-            provider: "openai",
-            "custom-host": "https://api.fireworks.ai/inference/v1",
+            provider: "azure-openai",
+            "azure-resource-name": "myceli-prod-swedencentral",
+            "azure-deployment-id": "DeepSeek-V4.1-Flash-1017",
         });
-        expect(primary.options.provider).toBeUndefined();
         expect(fallback.options.model).toBe(
-            "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+            "accounts/fireworks/models/deepseek-v4p1-flash-1017",
         );
         expect(fallback.options.modelConfig).toMatchObject({
             provider: "openai",
-            "custom-host": "https://api.deepinfra.com/v1/openai",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
         });
     });
 
@@ -1349,7 +1488,6 @@ describe("resolveModelConfig", () => {
         ["gemma", "google/gemma-4-26b-a4b-it", "deepinfra/fp8"],
         ["gemma-4-31b", "google/gemma-4-31b-it", "crusoe/bf16"],
         ["mimo-v2.5", "xiaomi/mimo-v2.5", "xiaomi/fp8"],
-        ["mimo-v2.5-pro", "xiaomi/mimo-v2.5-pro", "xiaomi/fp8"],
         ["minimax-m2.7", "minimax/minimax-m2.7", "novita/fp8"],
     ])(
         "pins %s to %s through %s without fallback",

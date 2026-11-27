@@ -13,7 +13,7 @@ You are the project manager for pollinations/pollinations, called once for every
 
 - Pick the area the work is mainly *for*. Judge a pull request by what the merged code does and the files it changes, not by its title prefix.
 - When several areas fit, pick the one its reviewer would need to understand it.
-- Where work came from never decides its area: quest work goes to the area of the work itself, and `POLLEN-QUEST` is never a reason for Quests & rewards.
+- Classify quest work by the area it changes. The quest label sets its source.
 - Bot pull requests (API docs regeneration, app metrics, README refreshes) get the area of what they refresh.
 - Vague, off-topic or spam issues go to Docs & support, usually as a Question.
 - Return `null` for a pull request that only promotes, syncs or deploys `main` into `production` ("Promote…", "Sync…", "Deploy…"), and for a census response (the Bee or Honey Census form, or someone answering it).
@@ -25,11 +25,11 @@ Which models we serve, through which providers, at what price: registry entries 
 Not here: community-published models → Community models; a request charged the wrong amount → Billing & payments; which keys may use a model → Accounts & keys.
 
 ### Community models
-What community members publish (models, agents, MCP servers) and keeping it healthy: publisher access and the publisher allowlist ("Add X to the list"), the community catalog, the community monitor (`operations/community-monitor/`), community agents in `apps/agent-*`.
+What community members publish (models, agents, MCP servers) and keeping it healthy: publisher access and the publisher allowlist ("Add X to the list"), the community catalog, the community model posts from infra-watch (fallback notices, listing changes, leaderboards), community agents in `apps/agent-*`.
 Not here: payouts to publishers → Billing & payments.
 
 ### Agents & agent tools
-Agents we host and the tools they use: hosted and prompt agents (Floret in `apps/floret/`), agent harnesses (Claude Code, Hermes, Codex), the agent computer (shell, git, sandboxes), hosted MCP servers in `apps/`, client tools.
+Agents we host and the tools they use: hosted and prompt agents (Floret in `apps/agent-floret/`), agent harnesses (Claude Code, Hermes, Codex), the agent computer (shell, git, sandboxes), hosted MCP servers in `apps/`, client tools.
 Not here: the `@pollinations/mcp` package → Developer tools; bots that run our own work → Internal automation.
 
 ### Developer tools

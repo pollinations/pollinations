@@ -9,7 +9,7 @@ import * as schema from "@shared/db/better-auth.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { expect } from "vitest";
+import { expect, vi } from "vitest";
 import type { QuestLeaderboardData } from "../../pollinations.ai/src/data/community";
 import { QuestLeaderboard } from "../../pollinations.ai/src/ui/components/QuestLeaderboard";
 import { QuestStandings } from "../frontend/src/components/quests/quest-standings.tsx";
@@ -383,6 +383,62 @@ test("monthly standings show the podium and the rows around the viewer", async (
     expect(publicView.rows.map((row) => row.rank)).toEqual([1, 2, 3]);
 });
 
+test("standings still answer when the shared cache write is rejected", async ({
+    sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const viewer = await db.query.user.findFirst();
+    if (!viewer?.githubUsername) throw new Error("Viewer has no GitHub login");
+    await db.insert(schema.user).values({
+        id: "cache-rival",
+        name: "Cache Rival",
+        email: "cache-rival@example.com",
+        githubId: 9_000_000,
+        githubUsername: "cache-rival",
+    });
+    const reward = (id: string, userId: string, pollenAmount: number) => ({
+        id,
+        idempotencyKey: id,
+        userId,
+        questId: "merged_pr",
+        title: id,
+        pollenAmount,
+        balanceBucket: "tier",
+        earnedAt: new Date(),
+    });
+    await db
+        .insert(schema.rewards)
+        .values([
+            reward("cache-rival-reward", "cache-rival", 30),
+            reward("cache-viewer-reward", viewer.id, 10),
+        ]);
+    // A second viewer rebuilding in the same second gets this from KV.
+    const put = vi
+        .spyOn(env.KV, "put")
+        .mockRejectedValueOnce(
+            new Error("KV PUT failed: 429 Too Many Requests"),
+        );
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/quests/standings",
+        { headers: { cookie: `better-auth.session_token=${sessionToken}` } },
+    );
+
+    expect(put).toHaveBeenCalledOnce();
+    expect(response.status).toBe(200);
+    const payload = (await response.json()) as QuestStandingsResponse;
+    const login = viewer.githubUsername.toLowerCase();
+    expect(payload.you).toEqual({
+        githubLogin: login,
+        rank: 2,
+        totalPollen: 10,
+    });
+    expect(payload.rows.map((row) => [row.rank, row.githubLogin])).toEqual([
+        [1, "cache-rival"],
+        [2, login],
+    ]);
+});
+
 test("rendered standings point the viewer at the quest that passes the next row", () => {
     const standings: QuestStandingsResponse = {
         month: "2026-10",
@@ -425,12 +481,13 @@ test("rendered standings point the viewer at the quest that passes the next row"
         }),
     );
 
-    expect(html).toContain("October leaderboard");
+    expect(html).toContain(">October<");
     expect(html).toContain("11 days left");
-    expect(html).toContain("Pollen supporter");
-    // A 1 Pollen gap needs more than 1 Pollen, so the 5 Pollen quest is next.
-    expect(html).toContain(
-        "1 Pollen to pass @bob. “Contribute a pull request” earns 5 Pollen.",
+    expect(html).toContain("Supporter");
+    // A gap of 1 needs a reward above 1, so the quest worth 5 is next. Amounts
+    // are the sprout and the number, so compare the text between tags.
+    expect(html.split(/<[^>]+>/).join("")).toContain(
+        "$1 more to pass @bob. “Contribute a pull request” earns $5.",
     );
 });
 
@@ -465,8 +522,8 @@ test("rendered standings show the minimum increment for a tied row", () => {
         }),
     );
 
-    expect(html).toContain(
-        "0.25 Pollen to pass @alice. “Use a text model” earns 0.25 Pollen.",
+    expect(html.split(/<[^>]+>/).join("")).toContain(
+        "$0.25 more to pass @alice. “Use a text model” earns $0.25.",
     );
 });
 

@@ -26,7 +26,7 @@ describe("shared link destinations", () => {
         "https://example.com",
         "//example.com",
         "https://enter.pollinations.ai.example.com",
-        "https://openwebui.pollinations.ai",
+        "https://openwebui.pollinations.app",
     ])("marks %s as external", (href) => {
         vi.stubGlobal("location", { origin: "https://enter.pollinations.ai" });
         const html = renderToStaticMarkup(

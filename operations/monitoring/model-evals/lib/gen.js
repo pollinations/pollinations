@@ -18,7 +18,7 @@ export async function fetchTextModels({ baseUrl, key }) {
 
 const price = (pricing, field) => Number(pricing?.[field] ?? 0);
 
-/** Pollen for one reply: the usage gen reports times the catalog's prices. */
+/** Estimated USD cost of one reply: the usage gen reports times the catalog's prices. */
 export function estimateCost(usage, pricing) {
     if (!usage) return 0;
     return Object.entries(openaiUsageToUsage(usage)).reduce(

@@ -36,7 +36,7 @@ npm install -D wrangler typescript @cloudflare/workers-types
 # Without the SOPS key it uses your .dev.vars (created from .dev.vars.example).
 npm run dev
 
-# Seed a local API key and give every local account Quest Pollen
+# Seed a local API key and give every local account a Quest balance
 npm run seed:local
 
 # Type check

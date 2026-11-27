@@ -32,6 +32,7 @@ function applyBaseModelMetadata(
     entry.info = {
         ...entry.info,
         base_model: config.baseModel,
+        mcp_servers: config.mcpServers,
         capabilities: [
             ...new Set([...entry.info.capabilities, ...agentCapabilities]),
         ],
@@ -76,7 +77,9 @@ export function applyAgentMetadata(
     for (const entry of entries) {
         const baseModel = entry.agentConfig?.baseModel;
         if (baseModel) {
-            applyBaseModelMetadata(entry, byIdOrAlias.get(baseModel));
+            const baseEntry = byIdOrAlias.get(baseModel);
+            entry.baseModelMissing = !baseEntry;
+            applyBaseModelMetadata(entry, baseEntry);
         }
     }
 }

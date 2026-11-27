@@ -1,6 +1,6 @@
 ---
 name: quest-solution-review
-description: Compare competing pull requests for a Pollinations community quest and select the smallest correct solution. Use when reviewing multiple implementations linked to a POLLEN-QUEST issue.
+description: Compare competing pull requests for a Pollinations community quest and select the smallest correct solution. Use when reviewing multiple implementations linked to a community quest.
 ---
 
 # Quest Solution Review
@@ -19,7 +19,7 @@ complexity. Do not reward being first, large, or already up to date with `main`.
 4. Verify changing external contracts against current primary documentation.
 5. Apply the gates below, then test the strongest candidates in proportion to
    risk. Prefer focused tests of real code and a practical smoke test when one is
-   feasible.
+   feasible. Run candidate code only in a sandbox without secrets.
 
 ### Correctness gate
 

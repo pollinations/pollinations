@@ -43,13 +43,15 @@ export const CHAT_PARAMETERS = {
     ],
     // Chat-to-Responses conversion does not forward top-level verbosity.
     azureResponses: [...TOOL_CHAT, "reasoning_effort", "parallel_tool_calls"],
+    // OVH rejects `stop` (reasoning runs in a separate channel) and
+    // `parallel_tool_calls: false`, so neither is listed.
     ovhGptOss: [
-        ...SAMPLED_CHAT,
+        ...TOOL_CHAT,
+        ...SAMPLING,
         ...PENALTIES,
         ...LOGPROBS,
         "seed",
         "reasoning_effort",
-        "parallel_tool_calls",
         "logit_bias",
         "n",
     ],
@@ -149,8 +151,8 @@ export const CHAT_PARAMETERS = {
     vertexGemini35: [...TOOL_CHAT, "seed", "reasoning_effort", "stop"],
     vertexGeminiSearch: [...SAMPLED_CHAT, "seed", "reasoning_effort"],
     nova: [...CHAT, ...SAMPLING, ...TOOLS, "stop"],
-    mercury: [...TOOL_CHAT, ...OPENROUTER_REASONING, "temperature", "stop"],
-    mercury25: [
+    mercury: [...TOOL_CHAT, ...OPENROUTER_REASONING, "temperature"],
+    mercury3: [
         ...TOOL_CHAT,
         ...OPENROUTER_REASONING,
         "temperature",
@@ -202,6 +204,14 @@ export const CHAT_PARAMETERS = {
         "logit_bias",
         "prediction",
     ],
+    // Azure's Fireworks deployments and GLM-5.3-Flash answer `prediction` with a 400
+    // ("prompt speculation is not supported with --session-aware-prompt-cache").
+    fireworksReasoningNoPrediction: [
+        ...EXTENDED_CHAT,
+        "reasoning_effort",
+        "parallel_tool_calls",
+        "logit_bias",
+    ],
     // InferencePort Lightning routers: /v1/models lists temperature, stop and
     // max_tokens as the sampling controls, plus tools and JSON mode.
     inferenceportLightning: [...TOOL_CHAT, "temperature", "stop"],
@@ -243,6 +253,7 @@ export const CHAT_PARAMETERS = {
         "stop",
         "logit_bias",
     ],
+    inkling2Mini: [...TOOL_CHAT, ...SAMPLING, ...OPENROUTER_REASONING],
     inklingSmall: [
         ...CHAT,
         ...SAMPLING,
@@ -382,7 +393,18 @@ export const CHAT_PARAMETERS = {
     ],
     mistralLarge: [...SAMPLED_CHAT, ...PENALTIES, "seed"],
     mistralLarge4: [...SAMPLED_CHAT, ...PENALTIES, "seed", "reasoning_effort"],
-    vercelMistralLarge4: [
+    // Vercel AI Gateway Hy4 Flash parameters (2026-11-16).
+    vercelHy4Flash: [
+        ...TOOL_CHAT,
+        "temperature",
+        "stop",
+        "structured_outputs",
+        "reasoning",
+        "include_reasoning",
+        "reasoning_effort",
+    ],
+    // Vercel AI Gateway Qwen 4 Max parameters (2026-11-16).
+    vercelQwen4Max: [
         ...TOOL_CHAT,
         "temperature",
         "stop",

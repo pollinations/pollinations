@@ -4,6 +4,7 @@ import {
     ensureUpstreamOk,
     UpstreamError,
 } from "@shared/error.ts";
+import { pcmToWav } from "@shared/pcm-to-wav.ts";
 import {
     AUDIO_SERVICES,
     AUDIO_VOICES,
@@ -54,6 +55,7 @@ import { arrayBufferToBase64, normalizeSeed } from "@/util.ts";
 import {
     apiKeyBudgetReservation,
     generationAccess,
+    requireGenerationAccess,
 } from "@/utils/generation-access.ts";
 import {
     callCommunitySpeechEndpoint,
@@ -78,6 +80,7 @@ import {
     type NormalizedWord,
     UNDIARIZED_TRANSCRIPTION_RESPONSE_FORMATS,
 } from "./transcription-response.ts";
+import { generateZonosSpeech } from "./zonos-speech.ts";
 
 export const CreateSpeechRequestSchema = z
     .object({
@@ -144,7 +147,7 @@ export const CreateSpeechRequestSchema = z
         }),
         reference_audio: z.url().optional().meta({
             description:
-                "Public HTTP(S) URL for reference-audio conditioning or audio-to-audio generation.",
+                "Public HTTP(S) audio URL for voice cloning on zyphra/zonos3-mini, music conditioning, or audio-to-audio generation.",
             example:
                 "https://media.pollinations.ai/3f9c1e2a-7b4d-4e2f-9a1c-8d6b5e4f3a2b",
         }),
@@ -167,11 +170,18 @@ export const CreateSpeechRequestSchema = z
             description:
                 "ElevenLabs composition_plan for music generation/inpainting. Cannot be combined with a plain prompt upstream.",
         }),
-        seed: z.number().int().min(0).max(4294967295).optional().meta({
-            description:
-                "Seed for deterministic output. Same seed + params = best-effort return of the same cached result. Omit for random.",
-            example: 42,
-        }),
+        seed: z
+            .number()
+            .int()
+            .min(-1)
+            .max(4294967295)
+            .optional()
+            .transform(normalizeSeed)
+            .meta({
+                description:
+                    "Seed for deterministic output. Same seed + params = best-effort return of the same cached result. -1 maps to the stable compatibility seed, as on `GET /audio`. Omit for random.",
+                example: 42,
+            }),
         instructions: z.string().optional().meta({
             description:
                 "Emotion/style instruction (Gemini TTS and qwen/qwen-audio-3.0-tts-flash). e.g. 'excited and cheerful'.",
@@ -181,6 +191,11 @@ export const CreateSpeechRequestSchema = z
             description:
                 "Speech speed, 0.25-4 (openai/tts-1 and openai/tts-1-hd only; other models accept only 1).",
             example: 1.25,
+        }),
+        stream_format: z.enum(["audio"]).optional().meta({
+            description:
+                'Only "audio" is supported. OpenAI\'s "sse" speech events are not implemented, and the response is always an audio file.',
+            example: "audio",
         }),
     })
     .meta({ $id: "CreateSpeechRequest" });
@@ -192,9 +207,10 @@ type AudioContext = Context<Env>;
 async function withAudioFallback(
     c: AudioContext,
     attempt: (candidate: FallbackCandidate) => Promise<Response>,
+    model = c.var.model,
 ): Promise<Response> {
     return withModelFallbackResponse(
-        c.var.model,
+        model,
         attempt,
         c.var.track?.attempts,
         (candidate) => requireModelAttemptAccess(c, candidate),
@@ -1886,6 +1902,7 @@ export async function generateMusic(
  */
 type SoundEffectModel =
     | "elevenlabs/eleven-text-to-sound-v2"
+    | "elevenlabs/eleven-text-to-sound-v2:fal"
     | "elevenlabs/eleven-text-to-sound-v3"
     | "elevenlabs/eleven-text-to-sound-v3:fal";
 
@@ -1950,7 +1967,13 @@ export async function generateSoundEffect(opts: {
     if (isFal) {
         const { model_id: _modelId, ...input } = body;
         const result = await runFalJobResponse(
-            { endpoint: "elevenlabs/sound-effects/v3", input },
+            {
+                endpoint:
+                    modelName === "elevenlabs/eleven-text-to-sound-v2:fal"
+                        ? "fal-ai/elevenlabs/sound-effects/v2"
+                        : "elevenlabs/sound-effects/v3",
+                input,
+            },
             falKey,
         ).catch((error) => {
             throw toUpstreamError(error);
@@ -2190,12 +2213,11 @@ function requireElevenMusicOptions(
         opts.conditioningRef !== undefined ||
         opts.storeForInpainting === true;
 
-    // stability-ai/stable-audio-3-medium and stability-ai/stable-audio-3
-    // accept reference_audio for audio-to-audio, but not the ElevenLabs
-    // composition/conditioning options.
+    // Stable Audio and ZONOS accept a reference clip on its own.
     if (
         model === "stability-ai/stable-audio-3-medium" ||
-        model === "stability-ai/stable-audio-3"
+        model === "stability-ai/stable-audio-3" ||
+        model === "zyphra/zonos3-mini"
     ) {
         if (usesElevenOnlyOptions) {
             throw new UpstreamError(400 as ContentfulStatusCode, {
@@ -2211,7 +2233,7 @@ function requireElevenMusicOptions(
 
     throw new UpstreamError(400 as ContentfulStatusCode, {
         message:
-            "reference_audio, conditioning_ref, composition_plan, and store_for_inpainting are only supported with model=elevenlabs/music-v2 or elevenlabs/music-v2.5 (stability-ai/stable-audio-3-medium and stability-ai/stable-audio-3 also accept reference_audio).",
+            "reference_audio, conditioning_ref, composition_plan, and store_for_inpainting are only supported with model=elevenlabs/music-v2 or elevenlabs/music-v2.5 (stability-ai/stable-audio-3-medium, stability-ai/stable-audio-3, and zyphra/zonos3-mini also accept reference_audio).",
     });
 }
 
@@ -2319,6 +2341,8 @@ async function parseSpeechRequest(
             input: typeof input === "string" ? input : "",
             safe: (formData.get("safe") as string | undefined) || undefined,
             voice: (formData.get("voice") as string | null) || "alloy",
+            stream_format:
+                (formData.get("stream_format") as "audio" | null) ?? undefined,
             response_format:
                 (formData.get("response_format") as
                     | "wav"
@@ -2910,33 +2934,6 @@ export async function generateGeminiSpeech(opts: {
     });
 }
 
-function pcmToWav(
-    pcm: Uint8Array,
-    sampleRate: number,
-): Uint8Array<ArrayBuffer> {
-    const wav = new Uint8Array(44 + pcm.byteLength);
-    const view = new DataView(wav.buffer);
-    const writeAscii = (offset: number, value: string) => {
-        for (let i = 0; i < value.length; i++) {
-            wav[offset + i] = value.charCodeAt(i);
-        }
-    };
-    writeAscii(0, "RIFF");
-    view.setUint32(4, 36 + pcm.byteLength, true);
-    writeAscii(8, "WAVEfmt ");
-    view.setUint32(16, 16, true);
-    view.setUint16(20, 1, true);
-    view.setUint16(22, 1, true);
-    view.setUint32(24, sampleRate, true);
-    view.setUint32(28, sampleRate * 2, true);
-    view.setUint16(32, 2, true);
-    view.setUint16(34, 16, true);
-    writeAscii(36, "data");
-    view.setUint32(40, pcm.byteLength, true);
-    wav.set(pcm, 44);
-    return wav;
-}
-
 // Speech responses carry audio only. The generation record becomes available
 // asynchronously; wait for its native tokens before returning billable audio.
 export async function readOpenRouterSpeechUsage(
@@ -2976,6 +2973,9 @@ export async function readOpenRouterSpeechUsage(
     }
     throw new UpstreamError(502, {
         message: "OpenRouter speech usage is not available",
+        requestUrl: new URL(endpoint),
+        upstreamStatus: 404,
+        upstreamHeaders: { "x-generation-id": generationId },
     });
 }
 
@@ -3727,6 +3727,7 @@ async function dispatchAudioGeneration(
 
     if (
         model === "elevenlabs/eleven-text-to-sound-v2" ||
+        model === "elevenlabs/eleven-text-to-sound-v2:fal" ||
         model === "elevenlabs/eleven-text-to-sound-v3" ||
         model === "elevenlabs/eleven-text-to-sound-v3:fal"
     ) {
@@ -3800,6 +3801,17 @@ async function dispatchAudioGeneration(
                     speed,
                     apiKey: c.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
                 }),
+            );
+        case "zyphra/zonos3-mini":
+            return withSafetyHeaders(
+                c,
+                await generateZonosSpeech(
+                    c.env.ZONOS3_VPC,
+                    text,
+                    voice,
+                    responseFormat,
+                    referenceAudio,
+                ),
             );
         case "fish-audio/s2.1-pro":
             return withSafetyHeaders(
@@ -3936,7 +3948,22 @@ async function generateAudioFromSpeechRequest(
         | undefined;
     let referenceAudio: Promise<File> | undefined;
 
-    return withAudioFallback(c, async (candidate) => {
+    const requestedDuration = request.duration ?? request.seconds;
+    const requestedModel = c.var.model;
+    // fal v2 accepts a narrower range than the direct ElevenLabs route.
+    const eligibleModel =
+        requestedDuration !== undefined &&
+        (requestedDuration < 0.5 || requestedDuration > 22)
+            ? {
+                  ...requestedModel,
+                  fallbackEntries: requestedModel.fallbackEntries?.filter(
+                      (entry) =>
+                          entry.id !== "elevenlabs/eleven-text-to-sound-v2:fal",
+                  ),
+              }
+            : requestedModel;
+
+    const attempt = async (candidate: FallbackCandidate) => {
         // Declared provider routes retain their public model's options; caller
         // alternatives use their own model's defaults and validation.
         const model = candidate.definition?.fallbackOnly
@@ -3947,7 +3974,7 @@ async function generateAudioFromSpeechRequest(
         const duration = resolveAudioDuration(
             model,
             candidate.definition ?? c.var.model.definition,
-            request.duration ?? request.seconds,
+            requestedDuration,
         );
 
         // Speed 1 is every model's normal output, so clients that always send
@@ -4038,14 +4065,19 @@ async function generateAudioFromSpeechRequest(
             stabilityApiKey: c.env.STABILITY_API_KEY,
             log,
         });
-    });
+    };
+    return withAudioFallback(c, attempt, eligibleModel);
 }
 
 export const speechAudioCache = every(
     createMiddleware<Env>(async (c, next) => {
+        if (c.var.model.resolved === "zyphra/zonos3-mini") {
+            await requireGenerationAccess(c.var, c.env);
+        }
         if (c.var.model.resolved === "elevenlabs/eleven-v3:dialogue") {
+            // The GET route also answers HEAD, so the query supplies the format.
             const responseFormat =
-                c.req.method === "GET"
+                c.req.method === "GET" || c.req.method === "HEAD"
                     ? c.req.query("response_format")
                     : (await parseSpeechRequest(c)).response_format;
             assertDialogueOutputFormat(responseFormat);
@@ -4191,15 +4223,35 @@ export async function handleSpeechWithTimestamps(
     );
 }
 
-/** Multipart body for the OVH and DeepInfra whisper-large-v3 endpoints. */
+/** Each Whisper route: whether it runs on DeepInfra (else OVH) and its upstream model ID. */
+const WHISPER_UPSTREAMS: Record<
+    string,
+    { isDeepInfra: boolean; model: string }
+> = {
+    "openai/whisper-large-v3": {
+        isDeepInfra: false,
+        model: "whisper-large-v3",
+    },
+    "openai/whisper-large-v3:deepinfra": {
+        isDeepInfra: true,
+        model: "openai/whisper-large-v3",
+    },
+    "openai/whisper-large-v3-turbo": {
+        isDeepInfra: true,
+        model: "openai/whisper-large-v3-turbo",
+    },
+};
+
+/** Multipart body for the OVH and DeepInfra Whisper endpoints. */
 export function buildWhisperForm(opts: {
     file: File;
     language?: string | null;
     prompt?: string | null;
     temperature?: number;
     isDeepInfra: boolean;
+    model: string;
 }): FormData {
-    const { file, language, prompt, temperature, isDeepInfra } = opts;
+    const { file, language, prompt, temperature, isDeepInfra, model } = opts;
     const form = new FormData();
     const filename =
         file.name && file.name !== "blob" ? file.name : "audio.mp3";
@@ -4209,10 +4261,7 @@ export function buildWhisperForm(opts: {
     if (temperature !== undefined)
         form.append("temperature", String(temperature));
     form.append("response_format", "verbose_json");
-    form.append(
-        "model",
-        isDeepInfra ? "openai/whisper-large-v3" : "whisper-large-v3",
-    );
+    form.append("model", model);
     if (isDeepInfra) {
         // DeepInfra returns segments either way, and drops words when
         // both granularities are requested.
@@ -4381,8 +4430,13 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
             });
         }
 
-        const isDeepInfra =
-            candidate.id === "openai/whisper-large-v3:deepinfra";
+        const upstream = WHISPER_UPSTREAMS[candidate.id];
+        if (!upstream) {
+            throw new UpstreamError(500 as ContentfulStatusCode, {
+                message: `No transcription route for ${candidate.id}`,
+            });
+        }
+        const { isDeepInfra } = upstream;
         const providerApiKey = isDeepInfra
             ? c.env.DEEPINFRA_API_KEY
             : c.env.OVHCLOUD_API_KEY;
@@ -4403,7 +4457,7 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
             language,
             prompt,
             temperature,
-            isDeepInfra,
+            ...upstream,
         });
 
         const whisperUrl = isDeepInfra
@@ -4610,6 +4664,8 @@ export const audioRoutes = new Hono<Env>()
                 "",
                 "Set `model` to `elevenlabs/music-v2`, `elevenlabs/music-v2.5`, `google/lyria-3-clip-preview`, `google/lyria-3.5`, `stability-ai/stable-audio-3-medium`, or `stability-ai/stable-audio-3` to generate music. Lyria Clip returns one fixed 30-second MP3 clip. For `google/lyria-3.5`, describe song structure and approximate length in the prompt; the output is MP3 and the `duration` parameter is not supported. Pass any publicly accessible audio URL as `reference_audio` to run audio-to-audio (style transfer) on `stability-ai/stable-audio-3-medium` or `stability-ai/stable-audio-3` (`strength` 0-1 sets how far the output may depart from it), or reference-audio conditioning on either ElevenLabs Music model; for ElevenLabs inpainting, pass a `composition_plan`.",
                 "",
+                `**\`zyphra/zonos3-mini\`** — ${AUDIO_SERVICES["zyphra/zonos3-mini"].description} Pass a public HTTP(S) audio URL in \`reference_audio\`. Accepted formats are WAV, MP3, FLAC, Ogg, AAC, M4A/MP4 audio, and WebM audio. References can be up to 20 MiB. Only the first 60 seconds are used. Start with 5–10 seconds of clear speech from one speaker. Output is mono 24 kHz MP3 or raw signed 16-bit little-endian PCM. Output length follows the text. Reuse the same reference URL with new text for another generation.`,
+                "",
                 "For multi-speaker audio, set `model` to `elevenlabs/eleven-v3:dialogue` and put one turn per line in `input` as `<voice>: <text>`. Voice labels may be preset names or ElevenLabs voice IDs; the top-level `voice` field is ignored for this model. Dialogue supports up to 10 unique voices and 2,000 total text characters.",
                 "",
                 `**Available voices:** ${AUDIO_VOICES.join(", ")}`,
@@ -4676,7 +4732,7 @@ export const audioRoutes = new Hono<Env>()
                                     type: "string",
                                     format: "uri",
                                     description:
-                                        "Public HTTP(S) URL for reference-audio conditioning or audio-to-audio generation.",
+                                        "Public HTTP(S) audio URL for voice cloning on zyphra/zonos3-mini, music conditioning, or audio-to-audio generation.",
                                 },
                                 strength: {
                                     type: "number",
@@ -4689,8 +4745,10 @@ export const audioRoutes = new Hono<Env>()
                                 composition_plan: { type: "object" },
                                 seed: {
                                     type: "integer",
-                                    minimum: 0,
+                                    minimum: -1,
                                     maximum: 4294967295,
+                                    description:
+                                        "Same seed + params return the same cached result. -1 maps to the stable compatibility seed.",
                                 },
                                 instructions: {
                                     type: "string",
@@ -4706,6 +4764,15 @@ export const audioRoutes = new Hono<Env>()
                             },
                         },
                         examples: {
+                            referenceVoice: {
+                                summary: "Speak new text in a reference voice",
+                                value: {
+                                    model: "zyphra/zonos3-mini",
+                                    input: "Good morning from Berlin.",
+                                    reference_audio:
+                                        "https://example.com/voice.wav",
+                                },
+                            },
                             dialogue: {
                                 summary: "Multi-speaker dialogue",
                                 value: {
@@ -4805,8 +4872,10 @@ export const audioRoutes = new Hono<Env>()
                                 },
                                 seed: {
                                     type: "integer",
-                                    minimum: 0,
+                                    minimum: -1,
                                     maximum: 4294967295,
+                                    description:
+                                        "Same seed + params return the same cached result. -1 maps to the stable compatibility seed.",
                                 },
                             },
                         },

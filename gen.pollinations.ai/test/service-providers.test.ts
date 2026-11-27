@@ -3,7 +3,12 @@ import {
     getRegistryModelDefinition,
 } from "@shared/registry/registry.ts";
 import { expect, it } from "vitest";
-import SERVICE_PROVIDERS_PAGE from "../../pollinations.ai/public/legal/SUBPROCESSORS.md?raw";
+import SERVICE_PROVIDERS_RAW from "../../pollinations.ai/public/legal/SUBPROCESSORS.md?raw";
+
+// `?raw` hands back the file as it sits on disk, so a Windows checkout with
+// core.autocrlf=true (the Git for Windows default) yields CRLF and the page's
+// line endings must not decide whether this test passes.
+const SERVICE_PROVIDERS_PAGE = SERVICE_PROVIDERS_RAW.replace(/\r\n?/g, "\n");
 
 // Registry `provider` ids as named on the public Service Providers page.
 const PROVIDER_NAMES: Record<string, string> = {

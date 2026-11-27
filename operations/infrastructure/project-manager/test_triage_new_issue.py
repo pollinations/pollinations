@@ -11,13 +11,15 @@ from triage_new_issue import API, collect_evidence, decision, eligible, main
 class TriageTest(unittest.TestCase):
     evidence = {"issue-42": {"url": "https://github.com/pollinations/pollinations/issues/42"},
                 "src/file.ts#L3": {"url": "https://github.com/pollinations/pollinations/blob/rev/src/file.ts#L3"},
-                "APIDOCS.md#L3": {"url": "https://github.com/pollinations/pollinations/blob/rev/APIDOCS.md#L3"}}
+                "APIDOCS.md#L3": {"url": "https://github.com/pollinations/pollinations/blob/rev/APIDOCS.md#L3"},
+                "gen.pollinations.ai/src/routes/docs-samples.ts#L3": {"url": "https://github.com/pollinations/pollinations/blob/rev/gen.pollinations.ai/src/routes/docs-samples.ts#L3"}}
 
     def verdict(self, action, source=None, confidence=0.9):
         return decision({"action": action, "comment": "Details", "source": source, "confidence": confidence}, self.evidence)
 
     def test_closures_need_matching_evidence_and_confidence(self):
         for action, source in (("resolved", "issue-42"), ("resolved", "APIDOCS.md#L3"),
+                               ("resolved", "gen.pollinations.ai/src/routes/docs-samples.ts#L3"),
                                ("duplicate", "issue-41"), ("duplicate", None)):
             with self.assertRaises(ValueError):
                 self.verdict(action, source)

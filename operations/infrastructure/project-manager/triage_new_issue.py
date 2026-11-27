@@ -13,6 +13,8 @@ from project_manager import ask_ai
 REPO = "pollinations/pollinations"
 API = f"https://api.github.com/repos/{REPO}"
 SKIP_LABELS = {"POLLI", "APP-SUBMISSION", "BEE-CENSUS", "HONEY-CENSUS"}
+# Markdown and the routes that serve the API reference and its static examples.
+DOCUMENTATION = re.compile(r"\.md$|/routes/[\w-]*docs[\w-]*\.ts$")
 SEARCH_PROMPT = """Choose search terms for investigating this GitHub issue.
 Return JSON with issue_terms (one short phrase for a GitHub issue search)
 and code_terms (up to three distinct literals likely to occur in code or documentation).
@@ -125,7 +127,7 @@ def decision(verdict, evidence):
     if action == "duplicate" and (not source or not source.startswith("issue-")):
         raise InvalidModelAnswer("Duplicate needs an open issue")
     # Documentation may be the very thing the reporter says is wrong.
-    if action == "resolved" and (not source or source.startswith("issue-") or source.partition("#")[0].endswith(".md")):
+    if action == "resolved" and (not source or source.startswith("issue-") or DOCUMENTATION.search(source.partition("#")[0])):
         raise InvalidModelAnswer("Resolution needs production code")
     comment = verdict.get("comment")
     if not isinstance(comment, str) or not comment.strip():

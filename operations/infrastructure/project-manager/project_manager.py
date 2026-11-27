@@ -1,6 +1,6 @@
 """GitHub project manager: puts every new issue and pull request on the Dev project.
 
-project-manager.md is the brief: the only definition of areas, types and priorities.
+Weaver’s system-prompt.md defines the project fields. The original brief is kept for rollback.
 """
 
 import sys
@@ -9,6 +9,7 @@ import json
 import re
 import requests
 import time
+from pathlib import Path
 from functools import cache
 from typing import Optional
 
@@ -53,7 +54,7 @@ GITHUB_HEADERS = {
     "Content-Type": "application/json",
 }
 
-BRIEF_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "project-manager.md")
+WEAVER_DIR = Path(__file__).resolve().parents[3] / "apps" / "agent-weaver"
 DEV_PROJECT_ID = "PVT_kwDOBS76fs4AwCAM"
 TEAM_IDS = {5099901, 36901823, 74301576, 158852059, 34513273}
 # The Discord relay ends each relayed issue with "**Author:** `name` (UID: `123`)".
@@ -86,8 +87,7 @@ def fail(msg: str):
 
 
 def read_brief() -> str:
-    with open(BRIEF_PATH, "r") as f:
-        return f.read()
+    return (WEAVER_DIR / "baseline-prompt.md").read_text()
 
 
 def area_names(brief: str) -> list:
@@ -96,50 +96,43 @@ def area_names(brief: str) -> list:
     return re.findall(r"^### (.+)$", section, re.MULTILINE)
 
 
-def ask_ai(system_prompt: str, user_prompt: str) -> Optional[dict]:
-    """Ask the model for a JSON object, retrying transport and parse errors."""
+def ask_ai(system_prompt: str, user_prompt: str, *, hosted_model=None, metrics=None) -> Optional[dict]:
+    """Return an object, or None when inference is temporarily unavailable."""
+    messages = [{"role": "user", "content": user_prompt}]
+    payload = {"model": hosted_model or AI_MODEL, "messages": messages,
+               "reasoning_effort": "low", "max_tokens": 2000}
+    if not hosted_model:
+        messages.insert(0, {"role": "system", "content": system_prompt})
+        payload["response_format"] = {"type": "json_object"}
     for attempt in range(3):
         try:
-            r = requests.post(
-                POLLINATIONS_API,
-                headers={
-                    "content-type": "application/json",
-                    "Authorization": f"Bearer {POLLINATIONS_TOKEN}",
-                },
-                json={
-                    "model": AI_MODEL,
-                    "messages": [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt},
-                    ],
-                    "response_format": {"type": "json_object"},
-                    # Reasoning tokens count toward max_tokens; keep headroom for the answer.
-                    "reasoning_effort": "low",
-                    "max_tokens": 2000,
-                },
-                timeout=120,
-            )
-            # A rejected key or request won't fix itself; only outages are retried.
-            if 400 <= r.status_code < 500 and r.status_code != 429:
-                fail(f"AI HTTP {r.status_code}: {r.text[:500]}")
-            if r.status_code != 200:
-                log_error(f"AI HTTP {r.status_code}: {r.text[:500]}")
-            else:
-                content = r.json()["choices"][0]["message"]["content"]
-                log_debug(f"AI raw response: {content}")
-                parsed = json.loads(content)
-                if isinstance(parsed, dict):
+            response = requests.post(POLLINATIONS_API, headers={"Authorization": f"Bearer {POLLINATIONS_TOKEN}"},
+                                     json=payload, timeout=120)
+        except requests.RequestException as error:
+            log_error(f"AI transport failed: {error}")
+        else:
+            if 400 <= response.status_code < 500 and response.status_code != 429:
+                fail(f"AI rejected request: HTTP {response.status_code}")
+            if response.status_code == 200:
+                try:
+                    data = response.json()
+                    if metrics is not None:
+                        metrics.append({"usage": data.get("usage"), "id": data.get("id")})
+                    content = data["choices"][0]["message"]["content"].strip()
+                    if hosted_model and (fence := re.fullmatch(r"```(?:json)?\s*(.*?)\s*```", content, re.DOTALL)):
+                        content = fence.group(1)
+                    parsed = json.loads(content)
+                    if not isinstance(parsed, dict):
+                        raise ValueError("expected one object")
                     return parsed
-                log_error(f"AI returned non-object JSON: {content[:200]}")
-        except (
-            requests.RequestException,
-            KeyError,
-            IndexError,
-            TypeError,
-            ValueError,
-        ) as e:
-            log_error(f"AI request failed: {e}")
-        time.sleep(2**attempt)
+                except (ValueError, AttributeError, KeyError, IndexError, TypeError):
+                    log_error("AI returned invalid JSON output")
+                    if hosted_model and attempt == 2:
+                        fail("Weaver returned invalid output after three attempts")
+            else:
+                log_error(f"AI HTTP {response.status_code}")
+        if attempt < 2:
+            time.sleep(2**attempt)
     return None
 
 
@@ -189,7 +182,7 @@ def dev_fields(areas: list) -> dict:
     for name, values in expected:
         missing = [v for v in values if v not in fields.get(name, {}).get("options", {})]
         if missing:
-            fail(f"Dev field {name} does not match project-manager.md; missing options: {missing}")
+            fail(f"Dev field {name} does not match the classification policy; missing options: {missing}")
     return fields
 
 
@@ -348,33 +341,44 @@ def fetch_pr_files() -> list:
         page += 1
 
 
-def classify(brief: str, areas: list) -> Optional[dict]:
-    """Area and type for work; priority only for issues. None while the classifier is down."""
-    if IS_PULL_REQUEST:
-        files = fetch_pr_files()
+def item_prompt(kind, author, author_type, title, body, files, linked):
+    facts = ""
+    if kind == "pull request":
         facts = f"Changed files ({len(files)}):\n" + "\n".join(files[:300])
         if len(files) > 300:
             facts += f"\n... and {len(files) - 300} more"
-        linked = [{"number": issue["number"], "type": (issue.get("issueType") or {}).get("name")} for issue in closing_issues()]
         facts += "\nLinked issue types (hints, verify against PR scope):\n" + json.dumps(linked)
-    else:
-        facts = ""
-    author = "a person, relayed from Discord" if is_relayed() else ITEM_DATA.get("user", {}).get("type", "User")
-    raw = ask_ai(brief, f"""This is {"a pull request" if IS_PULL_REQUEST else "an issue"}.
-Author: {ISSUE_AUTHOR} ({author})
-Title: {ISSUE_TITLE}
-Body: {ISSUE_BODY[:2000]}
-{facts}
-""")
+    item = "a pull request" if kind == "pull request" else "an issue"
+    return f"This is {item}.\nAuthor: {author} ({author_type})\nTitle: {title}\nBody: {body[:2000]}\n{facts}\n"
+
+
+def classify(brief: str, areas: list) -> Optional[dict]:
+    """Use Weaver only on opening events after an explicit release selection."""
+    linked = [{"number": i["number"], "type": (i.get("issueType") or {}).get("name")}
+              for i in closing_issues()] if IS_PULL_REQUEST else []
+    prompt = item_prompt("pull request" if IS_PULL_REQUEST else "issue", ISSUE_AUTHOR,
+                         "a person, relayed from Discord" if is_relayed() else ITEM_DATA.get("user", {}).get("type", "User"),
+                         ISSUE_TITLE, ISSUE_BODY, fetch_pr_files() if IS_PULL_REQUEST else [], linked)
+    hosted = os.getenv("WEAVER_MODEL") if GITHUB_EVENT.get("action") == "opened" else None
+    raw = ask_ai(brief, prompt, hosted_model=hosted)
     if raw is None:
         return None
     try:
-        return classification_answer(raw, areas, IS_PULL_REQUEST)
+        return classification_answer(raw, areas, IS_PULL_REQUEST, hosted=bool(hosted))
     except ValueError as error:
         fail(f"Invalid classification for #{ISSUE_NUMBER}: {error}")
 
 
-def classification_answer(raw: dict, areas: list, is_pr: bool) -> dict:
+def classification_answer(raw: dict, areas: list, is_pr: bool, *, hosted=False) -> dict:
+    if hosted:
+        if set(raw) != {"area", "type", "priority", "model_work", "reasoning"}:
+            raise ValueError("expected precisely the five Weaver response fields")
+        if not isinstance(raw["reasoning"], str) or not raw["reasoning"].strip():
+            raise ValueError("missing reasoning")
+        if is_pr and raw["priority"] is not None:
+            raise ValueError("a PR cannot have an issue priority")
+        if raw["area"] is None and any(raw[k] is not None for k in ("type", "priority", "model_work")):
+            raise ValueError("an unclassified item must have null fields")
     area = raw.get("area")
     if area is not None and area not in areas:
         raise ValueError(f"invalid area: {area!r}")
@@ -425,7 +429,7 @@ def main():
         log_debug(f"#{ISSUE_NUMBER} is a survey response; skipping")
         return
 
-    brief = read_brief()
+    brief = ((WEAVER_DIR / "system-prompt.md").read_text() if os.getenv("WEAVER_MODEL") else read_brief())
     areas = area_names(brief)
     fields = dev_fields(areas)
 
@@ -442,7 +446,12 @@ def main():
         answer = classify(brief, areas)
         if answer is None:
             # An outage is not the contributor's failure: leave the item for a workflow_dispatch run.
-            print(f"SKIP #{ISSUE_NUMBER}\tclassifier unavailable\t{ISSUE_TITLE}")
+            message = f"Classifier unavailable for #{ISSUE_NUMBER}. Skipped field writes and any eligible opening reward announcement."
+            print(f"::warning::{message}")
+            if summary := os.getenv("GITHUB_STEP_SUMMARY"):
+                run_url = f"{os.getenv('GITHUB_SERVER_URL')}/{os.getenv('GITHUB_REPOSITORY')}/actions/runs/{os.getenv('GITHUB_RUN_ID')}"
+                with open(summary, "a") as stream:
+                    print(f"{message} [Original run]({run_url})", file=stream)
             return
         if not IS_PULL_REQUEST and answer["area"] is None:
             log_debug(f"#{ISSUE_NUMBER} is not work (census response); skipping")

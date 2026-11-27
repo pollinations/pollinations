@@ -15,6 +15,14 @@ on:
       probe_model_digest:
         description: "Owner check only. Optional SHA-256 of a verified tool-free private model ID for the paired transport probe"
         required: false
+      weaver_preview:
+        description: "Evaluate three answers per frozen case, with no GitHub writes"
+        type: choice
+        default: none
+        options: [none, baseline, shortened, hosted]
+      preview_model:
+        description: "Hosted preview only. Callable ID from the verified owner readback"
+        required: false
       pr_numbers:
         description: "Space-separated PR numbers (empty with no issue numbers = all open PRs)"
         required: false
@@ -46,15 +54,10 @@ jobs:
             -H "Authorization: Bearer $POLLINATIONS_TOKEN" \
             https://gen.pollinations.ai/account/profile |
             jq -er '
-              if (has("githubUsername") | not) then error("Unexpected profile response") else
-                (if .email == null then "Account email unavailable to this key"
-                 elif .email == "polli@pollinations.ai" then "Account email matches polli@pollinations.ai"
-                 elif .email == "polly@pollinations.ai" then "Account email matches polly@pollinations.ai"
-                 else "Account email differs from both proposed owners" end),
-                (if .githubUsername == null then "No GitHub account linked"
-                 elif (.githubUsername | ascii_downcase) == "pollinations-ai" then "Linked GitHub user matches pollinations-ai"
-                 else "Linked GitHub user differs from pollinations-ai" end)
-              end' | tee -a "$GITHUB_STEP_SUMMARY"
+              if ((.githubUsername // "" | ascii_downcase) == "pollinations-ai")
+                 and (.email == null or .email == "polli@pollinations.ai")
+              then "Verified shared owner via linked GitHub user pollinations-ai"
+              else error("Caller does not match the verified shared owner") end' | tee -a "$GITHUB_STEP_SUMMARY"
       - uses: actions/checkout@v5
         if: inputs.probe_model_digest != ''
         with:
@@ -66,10 +69,35 @@ jobs:
           PROBE_MODEL_DIGEST: ${{ inputs.probe_model_digest }}
         run: python operations/infrastructure/project-manager/probe_agent.py
 
+  weaver-preview:
+    if: github.event_name == 'workflow_dispatch' && !inputs.check_weaver_owner && inputs.weaver_preview != 'none'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - run: python -m pip install requests
+      - name: Classify frozen cases
+        env:
+          CONFIGURATION: ${{ inputs.weaver_preview }}
+          PREVIEW_WEAVER_MODEL: ${{ inputs.preview_model }}
+          POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
+          WEAVER_RESULT: ${{ runner.temp }}/weaver-results.json
+        run: python operations/infrastructure/project-manager/evaluate_weaver.py "$CONFIGURATION"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: weaver-${{ inputs.weaver_preview }}
+          path: ${{ runner.temp }}/weaver-results.json
+          if-no-files-found: warn
+
   organize:
     # Reclassify after a workflow label changes the source.
     if: >-
-      !(github.event_name == 'workflow_dispatch' && inputs.check_weaver_owner) &&
+      !(github.event_name == 'workflow_dispatch' && (inputs.check_weaver_owner || inputs.weaver_preview != 'none')) &&
       (github.event.action != 'labeled' || github.event.label.name == 'APP-SUBMISSION' || github.event.label.name == 'QUEST')
     runs-on: ubuntu-latest
     permissions:
@@ -100,6 +128,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
+          WEAVER_MODEL: ${{ vars.WEAVER_MODEL }}
           PR_NUMBERS: ${{ inputs.pr_numbers }}
           ISSUE_NUMBERS: ${{ inputs.issue_numbers }}
           DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '' }}

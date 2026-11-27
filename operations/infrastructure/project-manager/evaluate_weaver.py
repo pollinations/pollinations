@@ -1,0 +1,103 @@
+"""Read-only evaluation of frozen item evidence. No GitHub client or write path."""
+
+import hashlib
+import json
+import os
+import sys
+import time
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+
+from project_manager import AI_MODEL, MODEL_WORK, PRIORITIES, WEAVER_DIR, area_names, ask_ai, classification_answer, item_prompt, read_brief
+
+
+def digest(value):
+    return hashlib.sha256(value.encode()).hexdigest()
+
+
+def coverage_gaps(cases):
+    tags = {tag for case in cases for tag in case["coverage"]}
+    missing = {"blocked", "billing", "workaround", "question", "promotion", "bot-correction",
+               "untrusted-instructions", "outside-queues"} - tags
+    queues = {case["expected"]["model_work"] for case in cases}
+    missing.update(set(MODEL_WORK) - queues)
+    for priority in PRIORITIES:
+        sources = {c["source"] for c in cases if c["evidence"]["kind"] == "issue" and c["expected"]["priority"] == priority}
+        if len(sources) < 2:
+            missing.add(f"two distinct {priority} issues")
+    return sorted(missing)
+
+
+def trial(case, brief, model):
+    started = time.monotonic()
+    calls = []
+    result = {"calls": calls}
+    try:
+        raw = ask_ai(brief, item_prompt(**case["evidence"]), hosted_model=model, metrics=calls)
+        if raw is None:
+            result["error"] = "unavailable or unparseable"
+        else:
+            classification_answer(raw, area_names(brief), case["evidence"]["kind"] == "pull request", hosted=bool(model))
+            # Score the returned fields, including nulls, before the writer drops PR priority.
+            result["actual"] = {k: raw.get(k) for k in case["expected"]}
+            missing = [k for k in case["expected"] if k not in raw]
+            if missing:
+                result["error"] = "missing fields: " + ", ".join(missing)
+            result["differences"] = {k: v for k, v in result["actual"].items() if v != case["expected"][k]}
+    except (ValueError, SystemExit) as error:
+        result["error"] = str(error)
+    result["seconds"] = round(time.monotonic() - started, 2)
+    return result
+
+
+def main():
+    mode = sys.argv[1]
+    if mode not in {"baseline", "shortened", "hosted"}:
+        raise SystemExit("Choose baseline, shortened or hosted")
+    cases_path = WEAVER_DIR / "classification-cases.json"
+    cases = json.loads(cases_path.read_text())
+    fingerprint = digest(json.dumps(cases, ensure_ascii=False, sort_keys=True))
+    original = read_brief()
+    brief = original if mode == "baseline" else (WEAVER_DIR / "system-prompt.md").read_text().strip()
+    model = os.environ["PREVIEW_WEAVER_MODEL"] if mode == "hosted" else None
+    if mode == "hosted" and not model:
+        raise SystemExit("Provide the callable ID verified by the owner readback")
+    if not os.getenv("POLLINATIONS_TOKEN"):
+        raise SystemExit("Missing Pollinations credential")
+    report = {"mode": mode, "commit": os.getenv("GITHUB_SHA"), "model": model or AI_MODEL,
+              "cases_sha256": fingerprint, "prompt_sha256": digest(brief), "cases": {}}
+    if mode != "baseline":
+        calibration = json.loads((WEAVER_DIR / "calibration.json").read_text())
+        if (calibration["cases_sha256"] != fingerprint or calibration["prompt_sha256"] != digest(original)
+                or calibration["model"] != AI_MODEL):
+            raise SystemExit("The cases, baseline prompt or base model changed. Recalibrate first.")
+        cases = [c for c in cases if calibration["cases"][c["id"]]["matches"] == 3]
+    if gaps := coverage_gaps(cases):
+        raise SystemExit("Missing calibrated coverage: " + ", ".join(gaps))
+
+    def measure(case):
+        return case, [trial(case, brief, model) for _ in range(3)]
+
+    with ThreadPoolExecutor(max_workers=4) as workers:
+        for case, attempts in workers.map(measure, cases):
+            matches = sum("error" not in t and not t["differences"] for t in attempts)
+            report["cases"][case["id"]] = {"expected": case["expected"], "matches": matches, "trials": attempts}
+            print(f'{case["id"]}: {matches}/3 expected answers', flush=True)
+
+    output = Path(os.environ["WEAVER_RESULT"])
+    output.write_text(json.dumps(report, indent=2) + "\n")
+    passed = [c for c in cases if report["cases"][c["id"]]["matches"] == 3]
+    gaps = coverage_gaps(passed)
+    summary = f"{mode}: {len(passed)} of {len(cases)} cases matched on all three runs."
+    if gaps:
+        summary += " Missing coverage: " + ", ".join(gaps) + "."
+    print(summary)
+    if path := os.getenv("GITHUB_STEP_SUMMARY"):
+        with open(path, "a") as stream:
+            print(summary, file=stream)
+    if mode != "baseline" and len(passed) != len(cases):
+        raise SystemExit(1)
+
+
+if __name__ == "__main__":
+    main()

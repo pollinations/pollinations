@@ -39,6 +39,8 @@ def main():
                 except (ValueError, TypeError):
                     is_object = False
                 print(f"response_format={'json_object' if structured else 'omitted'}: HTTP {response.status}, JSON object={is_object}")
+                if not structured and not is_object:
+                    raise SystemExit("The plain hosted request did not return a JSON object")
         except urllib.error.HTTPError as error:
             print(f"response_format={'json_object' if structured else 'omitted'}: HTTP {error.code}")
             if not structured or error.code != 400:

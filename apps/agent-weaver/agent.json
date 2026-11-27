@@ -1,0 +1,8 @@
+{
+  "name": "weaver",
+  "title": "Weaver · Project Manager",
+  "description": "Classifies Pollinations GitHub issues and pull requests for the Dev project.",
+  "visibility": "private",
+  "baseModel": "openai/gpt-6-luna",
+  "mcpServers": []
+}

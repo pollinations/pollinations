@@ -22,11 +22,23 @@ import { test } from "../fixtures.ts";
 
 const endpointUrl = "http://localhost:3000/api/account/my-models";
 
+// An approved publisher: allowlisted, with Discord connected.
 async function approveCommunityModels(): Promise<void> {
-    await drizzle(env.DB)
+    const db = drizzle(env.DB);
+    const [user] = await db
         .update(schema.user)
         .set({ githubId: 36901823 })
-        .where(eq(schema.user.githubUsername, "testuser"));
+        .where(eq(schema.user.githubUsername, "testuser"))
+        .returning({ id: schema.user.id });
+    await db
+        .insert(schema.account)
+        .values({
+            id: `discord-${user.id}`,
+            accountId: "discord-testuser",
+            providerId: "discord",
+            userId: user.id,
+        })
+        .onConflictDoNothing();
 }
 
 async function postModel(
@@ -302,6 +314,51 @@ describe("community endpoint configuration policy", () => {
             visibility: "public",
         });
         expect(publicAgent.status).toBe(403);
+    });
+
+    test("publishing a model or an agent needs a connected Discord", async ({
+        accountToken,
+    }) => {
+        // Allowlisted, but no Discord connected.
+        await drizzle(env.DB)
+            .update(schema.user)
+            .set({ githubId: 36901823 })
+            .where(eq(schema.user.githubUsername, "testuser"));
+        const post = (url: string, body: Record<string, unknown>) =>
+            SELF.fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${accountToken}`,
+                },
+                body: JSON.stringify(body),
+            });
+        const model = {
+            name: "discordless-model",
+            title: "Discordless model",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
+            bearerToken: "test-provider-token",
+        };
+        const agent = {
+            type: "prompt_agent",
+            name: "discordless-agent",
+            title: "Discordless agent",
+            systemPrompt: "Answer briefly.",
+            baseModel: "openai",
+        };
+        const agentsUrl = "http://localhost:3000/api/account/agents";
+
+        for (const refused of [
+            await post(endpointUrl, { ...model, visibility: "public" }),
+            await post(agentsUrl, { ...agent, visibility: "public" }),
+        ]) {
+            expect(refused.status).toBe(403);
+            expect(await refused.text()).toContain("Connect Discord");
+        }
+        // Private use never needs Discord.
+        expect((await post(endpointUrl, model)).status).toBe(200);
+        expect((await post(agentsUrl, agent)).status).toBe(200);
     });
 
     test("identifies invalid agent creation fields", async ({

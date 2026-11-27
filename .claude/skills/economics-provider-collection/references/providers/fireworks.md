@@ -26,7 +26,7 @@ Canonical accounts:
 - The Neoglyph key reads account usage. Model-grouped usage returned
   `PermissionDenied`; use its dashboard for model detail.
 - Browser identity (verified 2026-09-05): `elliot@neoglyph.ai`, displayed
-  organization `NGLPH OÜ`, provider Account ID `elliot-neoglyph`; the registry
+  organization `NGLPH OÜ`, provider Account ID `elliot-neoglyph`; the journal
   key remains `neoglyph`. Confirm in Account settings, not from the tab title.
   If the profile is absent from connected tabs, inspect the native Chrome
   window title and signed-in email before asking the user to reopen it.
@@ -36,6 +36,7 @@ Primary evidence sources:
 - CLI usage: `firectl billing get-usage --account-costs-only -o json`
 - CLI invoices: `firectl billing list-invoices`
 - Current account balance snapshot: `firectl account get`
+- Quantity detail: `firectl billing export-metrics` with bounded date arguments.
 - Invoice/payment: Fireworks invoice, receipt, or Wise/card transaction.
 - Dashboard: Fireworks billing and account credits.
 
@@ -101,7 +102,7 @@ Collection steps:
 - Fireworks account IDs (pass with `-a`; `firectl account list --api-key`
   prints the ID the key can reach):
 
-  | Registry id | Fireworks account ID | Display name | Key (sops `operations/economics/ingest/secrets/env.json`) |
+  | Journal id | Fireworks account ID | Display name | Key (sops `operations/dashboards/economics/ingest/secrets/env.json`) |
   |---|---|---|---|
   | `myceli` | `elliot-l6mb8f24ewds` | Myceli AI | `FIREWORKS_API_KEY_MYCELI` |
   | `pollinations` | `pollinations` | Pollinations.AI | `FIREWORKS_API_KEY` |
@@ -148,6 +149,12 @@ Collection steps:
   "Not Found" while the account chip still shows the signed-in account; use
   `/account/usage`, `/account/billing`, `/settings/account` (shows the
   Account ID).
+- `billing export-metrics` accepts `YYYY-MM-DD` boundaries. In CLI 1.7.26,
+  use a simple `--filename` and set the process working directory to the
+  private evidence folder; an absolute filename is incorrectly prefixed with
+  the working directory. Preserve the original CSV, which contains quantities
+  rather than costs. Filter analysis to the exclusive end explicitly because
+  the export can include rows exactly on that boundary.
 
 ## Verified — 2026-09-05
 

@@ -75,7 +75,7 @@ function assertRewardAmount(amount: number): void {
 }
 
 /**
- * Records earned rewards without moving pollen. The unique idempotency key
+ * Records earned rewards without crediting the balance. The unique idempotency key
  * makes scanner retries safe; only claimReward() credits the user's balance.
  */
 export async function recordRewards(
@@ -129,7 +129,7 @@ export async function recordRewards(
 /**
  * Claims one pending reward and credits the chosen balance bucket. The balance
  * update is gated on the preceding `claimed_at IS NULL` update, so retries and
- * double-clicks cannot double-pay.
+ * double-clicks cannot double-pay. Account restrictions freeze spending, not claims.
  */
 export async function claimReward(
     db: AuthDb,

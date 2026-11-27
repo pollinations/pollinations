@@ -3,6 +3,7 @@ import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthFlowScreen } from "../frontend/src/components/auth/auth-flow-screen.tsx";
 import { LoadError } from "../frontend/src/components/layout/dashboard-loading.tsx";
+import { OutageBanner } from "../frontend/src/components/layout/outage-banner.tsx";
 import { fetchModelCatalog } from "../frontend/src/components/models/model-catalog.ts";
 import {
     isOutageStatus,
@@ -39,6 +40,7 @@ function respond(status: number) {
 describe("dashboard outage state", () => {
     beforeEach(() => {
         vi.stubGlobal("window", new EventTarget());
+        vi.stubGlobal("navigator", { onLine: true });
     });
 
     afterEach(async () => {
@@ -105,6 +107,26 @@ describe("dashboard outage state", () => {
         expect(render()).toContain(OUTAGE_TEXT);
     });
 
+    it("shares session timeout matching and prefers a relevant outage over a timeout", async () => {
+        respond(504);
+        await trackedFetch("https://enter.example/api/session-token");
+        respond(401);
+        await trackedFetch("https://gen.example/account/keys");
+        expect(render()).toContain("This data took too long to load.");
+        expect(render()).not.toContain(OUTAGE_TEXT);
+        const catalogError = renderToStaticMarkup(
+            <LoadError paths={["/models"]}>Could not load models.</LoadError>,
+        );
+        expect(catalogError).toContain("Could not load models.");
+        expect(catalogError).not.toContain("This data took too long to load.");
+        expect(catalogError).not.toContain(OUTAGE_TEXT);
+
+        respond(503);
+        await trackedFetch("https://gen.example/account/keys");
+        expect(render()).toContain(OUTAGE_TEXT);
+        expect(render()).not.toContain("This data took too long to load.");
+    });
+
     it("tracks the model catalog", async () => {
         respond(503);
         await expect(fetchModelCatalog({ refresh: true })).rejects.toThrow();
@@ -138,7 +160,7 @@ describe("dashboard outage state", () => {
         expect(topUp()).not.toContain("Couldn’t load your wallet.");
     });
 
-    it("counts a request that timed out", async () => {
+    it("counts a browser request timeout as an outage", async () => {
         vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(
             new DOMException("Timed out", "TimeoutError"),
         );
@@ -150,6 +172,31 @@ describe("dashboard outage state", () => {
             }),
         ).rejects.toThrow();
         expect(render()).toContain(OUTAGE_TEXT);
+        expect(render()).not.toContain("This data took too long to load.");
+    });
+
+    it("shows the outage notice when the model catalog request times out", async () => {
+        vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(
+            new DOMException("Timed out", "TimeoutError"),
+        );
+        await expect(fetchModelCatalog({ refresh: true })).rejects.toThrow();
+        const error = renderToStaticMarkup(
+            <LoadError paths={["/models"]}>Could not load models.</LoadError>,
+        );
+        expect(error).toContain(OUTAGE_TEXT);
+        expect(error).not.toContain("This data took too long to load.");
+    });
+
+    it("keeps gateway timeouts retryable without claiming an outage", async () => {
+        respond(504);
+        await trackedFetch("https://gen.example/account/keys");
+        expect(render()).toContain("This data took too long to load.");
+        expect(render()).toContain("Retrying automatically");
+        expect(render()).toContain("Try again");
+        expect(render()).not.toContain(OUTAGE_TEXT);
+        respond(200);
+        await trackedFetch("https://gen.example/account/keys");
+        expect(render()).not.toContain("This data took too long to load.");
     });
 
     it("waits out a long offline spell, then retries on reconnect", async () => {
@@ -233,6 +280,31 @@ describe("dashboard outage state", () => {
             }),
         ).rejects.toThrow();
         expect(render()).not.toContain(OUTAGE_TEXT);
+    });
+
+    it("shows the page banner during an outage, without promising a retry", async () => {
+        respond(503);
+        await trackedFetch("https://gen.example/account/keys");
+        const banner = renderToStaticMarkup(<OutageBanner />);
+        expect(banner).toContain(OUTAGE_TEXT);
+        // A failed save is not retried; the banner can't know what will be.
+        expect(banner).not.toContain("Retrying automatically");
+
+        respond(200);
+        await trackedFetch("https://gen.example/account/keys");
+        expect(renderToStaticMarkup(<OutageBanner />)).toBe("");
+    });
+
+    it("shows no page banner when every failure is a timeout", async () => {
+        respond(504);
+        await trackedFetch("https://gen.example/account/keys");
+        expect(renderToStaticMarkup(<OutageBanner />)).toBe("");
+        // The panel still says it took too long and can be tried again.
+        expect(render()).toContain("This data took too long to load.");
+
+        respond(503);
+        await trackedFetch("https://gen.example/account/profile");
+        expect(renderToStaticMarkup(<OutageBanner />)).toContain(OUTAGE_TEXT);
     });
 
     it("treats a session read with no status or a 5xx as an outage", () => {

@@ -58,11 +58,20 @@ export function buildDirectResponsesRequestBody(
         ...target.defaults,
         ...request,
         model: target.model,
-        ...(target.serviceTier ? { service_tier: target.serviceTier } : {}),
+        // Only the route sets a processing tier; a caller's would change
+        // what the provider charges us.
+        service_tier: target.serviceTier,
         store: false,
     };
     delete body.safe;
     delete body.client_metadata;
+
+    if (target.reasoningEffortOverride !== undefined) {
+        body.reasoning = {
+            ...request.reasoning,
+            effort: target.reasoningEffortOverride,
+        };
+    }
 
     const toolChoice = body.tool_choice;
     if (

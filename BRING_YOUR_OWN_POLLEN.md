@@ -1,14 +1,14 @@
-# Connect User Wallets
+# Pollinations Pay
 
-Connect User Wallets, also called BYOP (Bring Your Own Pollen), lets your users authorize your app to spend their own Pollen on Pollinations requests. Your publishable App Key (`pk_...`) identifies the app; after approval, Pollinations returns a scoped user key (`sk_...`) for API calls.
+Pollinations Pay, also called BYOP, lets your users authorize your app to spend from their own balance on Pollinations requests. Your publishable App Key (`pk_...`) identifies the app; after approval, Pollinations returns a scoped user key (`sk_...`) for API calls.
 
 Users stay in control of their balance, budgets, and revocation; your app never has to pay for their usage.
 
 ## 🗝️ App Key
 
-An **App Key** (`pk_...`) is the publishable key your app sends users to Pollinations with. Without one, the consent screen falls back to the redirect hostname and traffic isn't attributed to your account.
+An **App Key** (`pk_...`) is the publishable key your app sends users to Pollinations with. It is optional: without one, sign-in still works in every flow, the consent screen shows your redirect hostname, and traffic isn't attributed to your account (so no developer earnings).
 
-To create one, go to [enter.pollinations.ai](https://enter.pollinations.ai/keys) → **Apps** → **Create**:
+To create one, go to [enter.pollinations.ai](https://enter.pollinations.ai/keys?tab=app) → **App** → **Create**:
 
 <p align="left"><img src="https://media.pollinations.ai/80a72314-b119-4017-a98d-17cd177802aa" alt="Create app key dialog with a name and redirect URL" width="560"></p>
 
@@ -25,12 +25,12 @@ Once signed in, they review the requested access and confirm:
 ## 🧩 Drop-in Button (No Build Step)
 
 One script tag adds a Connect button that runs the OAuth code flow below for you.
-Use one `<polli-connect>` per page; additional elements show an error instead of a sign-in button.
+Use one `<polli-connect>` per page; additional elements show an error instead of a Connect button.
 
 ```html
-<script defer src="https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.19/dist/connect.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.20/dist/connect.js"></script>
 
-<polli-connect app-key="pk_yourkey" budget="10" expiry="7"></polli-connect>
+<polli-connect budget="10" expiry="7"></polli-connect>
 
 <script>
   const connect = document.querySelector('polli-connect');
@@ -40,12 +40,12 @@ Use one `<polli-connect>` per page; additional elements show an error instead of
 </script>
 ```
 
-Add the page URL, without query or fragment, as a Redirect URI on your App Key. Call Pollinations with `connect.apiKey` as in step 3 below.
+This works without an App Key. To show your app's name and earn from usage, add `app-key="pk_yourkey"` and add the page URL, without query or fragment, as a Redirect URI on that App Key. Call Pollinations with `connect.apiKey` as in step 3 below.
 
 | Attribute | What it does |
 |-----------|-------------|
-| `app-key` | Your App Key (required) |
-| `budget` | Pollen cap, as `budget` below |
+| `app-key` | Your App Key (optional; without it the consent screen shows your hostname) |
+| `budget` | Spending cap in dollars, as `budget` below |
 | `expiry` | Key lifetime in days |
 | `models` | Comma-separated, as `models` below |
 | `permissions` | Comma-separated scopes: `profile`, `usage` |
@@ -62,7 +62,7 @@ For custom menu links, use UI `0.1.0-alpha.20` or later and single quotes around
 ></polli-connect>
 ```
 
-Invalid entries are ignored. Malformed JSON or a non-array value adds no custom links; sign-in still works.
+Invalid entries are ignored. Malformed JSON or a non-array value adds no custom links; Connect still works.
 
 The key stays in `sessionStorage`, so it lasts until the tab closes.
 
@@ -71,12 +71,12 @@ The key stays in `sessionStorage`, so it lasts until the tab closes.
 Developer earnings are opt-in per App Key. When enabled, users pay 25% over base rates. The markup credits to your balance.
 
 ```text
-Base request cost: 1.00 pollen
-User pays:         1.25 pollen
-You receive:       0.25 pollen
+Base request cost: $1.00
+User pays:         $1.25
+You receive:       $0.25
 ```
 
-Credits land in the same balance type the user paid from: Quest Pollen when the request used Quest Pollen, Paid Pollen when it used Paid Pollen.
+Credits land in the same balance type the user paid from: the 🌱 Quest balance when the request used the Quest balance, the paid balance when it used the paid balance.
 
 Pass `earningsEnabled: true` when creating an App Key via the API, or toggle it later from the dashboard:
 
@@ -86,6 +86,8 @@ curl -X POST https://gen.pollinations.ai/account/keys \
   -H 'Content-Type: application/json' \
   -d '{"name":"my-app","type":"publishable","redirectUris":["https://myapp.com/callback"],"earningsEnabled":true}'
 ```
+
+New users who sign up through your app count as your referrals. You earn $2 in 🌱 Quest balance for each one who tops up more than $2. This works whether or not earnings are enabled. Claim it from the Invite friends quest on the [Quests page](https://enter.pollinations.ai/quests).
 
 ## ⚙️ Web Apps (OAuth Code Flow)
 
@@ -119,15 +121,15 @@ https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=https://
 
 | Param | What it does | Example |
 |-------|-------------|---------|
-| `client_id` | Your publishable key. Shows the app name and author on the consent screen and tracks traffic and developer earnings | `pk_abc123` |
-| `redirect_uri` | Where users return after authorizing. Must exactly match a Redirect URI on the App Key, including the query string (loopback `http://localhost` matches any port) | `https://myapp.com/callback` |
+| `client_id` | Optional publishable key. Shows the app name and author on the consent screen and tracks traffic and developer earnings; without it the consent screen shows the redirect hostname | `pk_abc123` |
+| `redirect_uri` | Where users return after authorizing. With a `client_id`, it must exactly match a Redirect URI on the App Key, including the query string (loopback `http://localhost` matches any port) | `https://myapp.com/callback` |
 | `response_type` | Use `code` for the OAuth authorization-code flow | `code` |
 | `state` | Opaque value echoed back on the callback for CSRF protection | `any-random-string` |
 | `code_challenge` | Base64url SHA-256 of your PKCE verifier | `abc...` |
 | `code_challenge_method` | Must be `S256` | `S256` |
 | `scope` | Account access (space or comma separated). `keys` is only offered in the device flow (below) and on redirects to `http://localhost` or `http://127.0.0.1`. `machines` starts unticked on the consent screen; the user ticks it on purpose | `profile usage` |
 | `models` | Models the key can use. A category (`text`, `image`, `video`, `audio`, `3d`, `embedding`, `realtime`, `decision`) allows every model in it, including models added later; a model ID from `/models` allows only that model. The user can remove entries on the consent screen. | `image,text` or `black-forest-labs/flux.1-schnell,tongyi-mai/z-image-turbo` |
-| `budget` | Numeric Pollen cap. Defaults to `5`; a link can pre-fill at most `10`. Users can change it on the consent screen, or clear it for unlimited. | `10` |
+| `budget` | Spending cap in dollars. Defaults to `5`; a link can pre-fill at most `10`. Users can change it on the consent screen, or clear it for unlimited. | `10` |
 | `expiry` | User-authorized key lifetime in days (default: 7) | `7` |
 
 Legacy names `app_key`, `redirect_url`, and `permissions` are still accepted for backwards compatibility.
@@ -155,7 +157,7 @@ curl -X POST https://enter.pollinations.ai/api/oauth/token \
 # → { "access_token": "sk_...", "token_type": "bearer", "expires_in": 604800, "scope": "profile usage" }
 ```
 
-The authorization code is single-use and expires after 10 minutes. Token responses use RFC 6749 error objects such as `invalid_grant`, `invalid_request`, and `unsupported_grant_type`.
+Send the same `client_id` as in step 1, or leave it out if step 1 had none. The authorization code is single-use and expires after 10 minutes. Token responses use RFC 6749 error objects such as `invalid_grant`, `invalid_request`, and `unsupported_grant_type`.
 
 Scopes: `profile` (name + email), `usage` (account balance + usage). `keys` (account admin: create/list/revoke keys) is only offered in the device flow and on redirects to `http://localhost` or `http://127.0.0.1`. The response's `scope` echoes what the user actually granted, which may be narrower than requested. Generation needs no scope. The approved budget and expiry limit spending. There are no refresh tokens; re-run the flow when the key expires. Issued keys appear in the user's dashboard like any other API key and can be edited or revoked there at any time. Revocation is immediate.
 
@@ -190,8 +192,8 @@ fetch('https://gen.pollinations.ai/v1/chat/completions', {
 });
 ```
 
-Examples: [browser-only](https://github.com/pollinations/pollinations/tree/main/apps/oauth-client-demo) ·
-[existing user database](https://github.com/pollinations/pollinations/tree/main/apps/oauth-account-linking-demo)
+Examples: [browser-only](https://github.com/pollinations/pollinations/tree/main/packages/examples/oauth-client-demo) ·
+[existing user database](https://github.com/pollinations/pollinations/tree/main/packages/examples/oauth-account-linking-demo)
 
 ## ⚙️ Legacy Web Apps (Fragment Flow)
 
@@ -222,7 +224,7 @@ window.location.href = `https://enter.pollinations.ai/authorize?${params}`;
 // Grab key from URL after redirect
 const apiKey = new URLSearchParams(location.hash.slice(1)).get('api_key');
 
-// Use their pollen
+// Spend from their balance
 fetch('https://gen.pollinations.ai/v1/chat/completions', {
   method: 'POST',
   headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },

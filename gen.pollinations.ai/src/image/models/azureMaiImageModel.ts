@@ -24,6 +24,14 @@ const logCloudflare = debug("pollinations:cloudflare");
 const AZURE_MAI_ENDPOINT =
     "https://myceli-prod-eastus.services.ai.azure.com/mai/v1/images";
 const MAI_ROUTES: Record<string, { deployment: string; title: string }> = {
+    "microsoft/mai-image-2.7": {
+        deployment: "MAI-Image-2.7",
+        title: "MAI Image 2.7",
+    },
+    "microsoft/mai-image-2.7-flash": {
+        deployment: "MAI-Image-2.7-Flash",
+        title: "MAI Image 2.7 Flash",
+    },
     "microsoft/mai-image-2.6-flash": {
         deployment: "MAI-Image-2.6-Flash",
         title: "MAI Image 2.6 Flash",
@@ -68,13 +76,17 @@ function tokenCount(value: unknown): number {
         : 0;
 }
 
-async function editFormData(
+/**
+ * Checks the prompt and every reference with Azure Content Safety and returns
+ * the downloaded references. Shared with the OpenRouter fallback.
+ */
+export async function checkMaiInputs(
     prompt: string,
     safeParams: ImageParams,
     userInfo: AuthResult,
-    route: MaiRoute,
-): Promise<FormData> {
-    const images = await Promise.all(
+): Promise<Awaited<ReturnType<typeof downloadUserImage>>[]> {
+    await requireSafePrompt(prompt, safeParams, userInfo);
+    return await Promise.all(
         safeParams.image.map(async (imageUrl) => {
             const image = await downloadUserImage(imageUrl);
             const imageSafetyResult = await analyzeImageSafety(image.buffer);
@@ -94,7 +106,13 @@ async function editFormData(
             return image;
         }),
     );
+}
 
+function editFormData(
+    prompt: string,
+    images: Awaited<ReturnType<typeof downloadUserImage>>[],
+    route: MaiRoute,
+): FormData {
     // Edits take references as repeated multipart `image` fields (up to 5);
     // Azure rejects width/height here.
     const formData = new FormData();
@@ -131,13 +149,13 @@ export async function callAzureMaiImage(
         );
     }
 
-    await requireSafePrompt(prompt, safeParams, userInfo);
+    const images = await checkMaiInputs(prompt, safeParams, userInfo);
 
     const endpoint = `${AZURE_MAI_ENDPOINT}/${isEdit ? "edits" : "generations"}`;
     const headers: Record<string, string> = { "api-key": apiKey };
     let body: BodyInit;
     if (isEdit) {
-        body = await editFormData(prompt, safeParams, userInfo, route);
+        body = editFormData(prompt, images, route);
     } else {
         headers["Content-Type"] = "application/json";
         // Only these fields are accepted; seed, quality and guidance are 400s.

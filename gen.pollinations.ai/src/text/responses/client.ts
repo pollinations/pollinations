@@ -1,8 +1,11 @@
-import { Sha256 } from "@aws-crypto/sha256-js";
 import { collectUpstreamHeaders, remapUpstreamStatus } from "@shared/error.ts";
 import type { CreateResponseRequest } from "@shared/schemas/openai.ts";
-import { SignatureV4 } from "@smithy/signature-v4";
 import { createParser } from "eventsource-parser";
+import {
+    type BedrockCredentials,
+    bedrockCredentials,
+    signBedrockHeaders,
+} from "../auth/bedrock.js";
 import { findModelByName } from "../availableModels.js";
 import { imageUrlToBase64Transform } from "../transforms/imageUrlToBase64Transform.js";
 import type { ChatMessage, ServiceError, TransformOptions } from "../types.js";
@@ -20,11 +23,12 @@ export type DirectResponsesTarget = {
     disableReasoningForForcedTools?: true;
     endpoint: string;
     headers: Record<string, string>;
-    aws?: { accessKeyId: string; secretAccessKey: string; region: string };
+    aws?: BedrockCredentials;
     model: string;
     defaults: JsonObject;
     serviceTier?: string;
     imageConversionModel?: string;
+    reasoningEffortOverride?: string;
     /**
      * Ask for a stream even when the caller wants JSON. Cloudflare ends a
      * subrequest to Azure that has no response headers after ~125 s, and a
@@ -42,20 +46,7 @@ export function responsesTargetFromConfig(
     if (typeof endpoint !== "string") return null;
 
     const authKey = config.authKey;
-    const aws =
-        config.provider === "bedrock" &&
-        typeof config["aws-access-key-id"] === "string" &&
-        config["aws-access-key-id"] &&
-        typeof config["aws-secret-access-key"] === "string" &&
-        config["aws-secret-access-key"] &&
-        typeof config["aws-region"] === "string" &&
-        config["aws-region"]
-            ? {
-                  accessKeyId: config["aws-access-key-id"],
-                  secretAccessKey: config["aws-secret-access-key"],
-                  region: config["aws-region"],
-              }
-            : undefined;
+    const aws = bedrockCredentials(config);
     const authHeader: Record<string, string> =
         typeof authKey !== "string" || !authKey
             ? {}
@@ -116,16 +107,20 @@ export function resolveDirectResponsesTarget(
     const modelDef = findModelByName(modelId);
     if (!modelDef) return null;
 
+    const effort = reasoningEffort(request);
     const options: TransformOptions = {
         model: modelId,
-        reasoning_effort: reasoningEffort(request),
+        reasoning_effort: effort,
     };
     const resolved = resolveModelConfig([], options).options;
     const config = resolved.modelConfig ?? {};
     const target = responsesTargetFromConfig(String(resolved.model), config);
-    return target?.imageConversionModel
-        ? { ...target, imageConversionModel: modelId }
-        : target;
+    if (!target) return null;
+    if (target.imageConversionModel) target.imageConversionModel = modelId;
+    if (effort !== undefined && resolved.reasoning_effort !== effort) {
+        target.reasoningEffortOverride = resolved.reasoning_effort;
+    }
+    return target;
 }
 
 function parseJson(text: string): unknown {
@@ -232,21 +227,12 @@ export async function callDirectResponses(
             ...target.headers,
         };
         if (target.aws) {
-            const signer = new SignatureV4({
-                credentials: target.aws,
-                region: target.aws.region,
-                service: "bedrock",
-                sha256: Sha256,
-            });
-            const signed = await signer.sign({
-                method: "POST",
-                protocol: requestUrl.protocol,
-                hostname: requestUrl.hostname,
-                path: requestUrl.pathname,
-                headers: { ...headers, host: requestUrl.host },
+            headers = await signBedrockHeaders(
+                requestUrl,
                 body,
-            });
-            headers = signed.headers;
+                headers,
+                target.aws,
+            );
         }
         response = await fetcher(target.endpoint, {
             method: "POST",

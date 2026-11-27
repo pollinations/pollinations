@@ -112,6 +112,11 @@ export async function stageMultipartUpload(
             headers: {
                 "content-type": request.headers.get("content-type") || "",
             },
+            // Browsers and curl send filename parameters as raw UTF-8 (RFC
+            // 7578). Busboy defaults to latin1 here, which turns every
+            // non-ASCII name into mojibake that the download header then
+            // re-encodes a second time.
+            defParamCharset: "utf8",
             limits: {
                 fieldSize: 8192,
                 fields: 20,

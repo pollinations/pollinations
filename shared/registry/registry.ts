@@ -88,7 +88,7 @@ export type UsageCost = Usage & {
     totalCost: number;
 };
 
-// Pollen amounts per usage type, plus what the user is billed.
+// USD amounts per usage type, plus what the user is billed.
 export type UsagePrice = Usage & {
     totalPrice: number;
 };
@@ -96,7 +96,7 @@ export type UsagePrice = Usage & {
 // Provider cost rates in USD-equivalent per usage unit.
 export type CostDefinition = { [K in UsageType]?: number };
 
-// User-facing charge rates in Pollen per usage unit, derived from cost × multiplier.
+// User-facing charge rates in USD per usage unit, derived from cost × multiplier.
 export type PriceDefinition = CostDefinition;
 
 export type CostVariantMetadata = {
@@ -143,13 +143,16 @@ export type BillingAdjustmentRule = BillingRateDefinition & {
 export type BillingRules = {
     adjustments?: BillingAdjustmentRule[];
     /** Complete provider charge, including tools, when token details cannot reproduce it. */
-    resolveTotalCost?: (output: unknown) => number | undefined;
+    resolveTotalCost?: (
+        output: unknown,
+        input?: PricingInput,
+    ) => number | undefined;
 };
 
 // Per-rule billing breakdown, returned in parallel to the numeric usage maps.
-// The model's single priceMultiplier applies uniformly to tokens and
+// The model's effective priceMultiplier applies uniformly to tokens and
 // adjustments alike (there is no per-rule multiplier), so adjustment prices
-// are always derivable from costs: price = cost × svc.priceMultiplier.
+// are always derivable from costs: price = cost × effective multiplier.
 export type BillingAdjustment = {
     ruleId: string;
     kind: string;
@@ -170,6 +173,8 @@ export type ModelDefinition = {
     perUserRpm?: number | null;
     /** Ordered model ids to try when this model's upstream fails. */
     fallbacks?: string[];
+    /** Upstream statuses required before trying this fallback route. */
+    fallbackOnStatuses?: number[];
     /** Input safety features callers cannot disable for this model. */
     requiredSafetyFeatures?: SafetyFeature[];
     /** Human-readable model publisher, e.g. "OpenAI" or "Anthropic". */
@@ -194,9 +199,12 @@ export type ModelDefinition = {
     // undefined (or an unknown name — warned) bills at base rates. Selection
     // is code; money is data.
     selectCostVariant?: (context: CostVariantContext) => string | undefined;
-    // USD-cost to Pollen-price multiplier. Required on every model — there is
+    // Provider cost to customer price multiplier. Required on every model — there is
     // no implicit default. Typical values: 1 (sold at cost) or 1.5 (paid markup).
     priceMultiplier: number;
+    // Override the multiplier for a named cost variant when customer tiers
+    // differ from the provider's tiers (e.g. flat-cost long-context inference).
+    priceMultiplierVariants?: Record<string, number>;
     billing?: BillingRules;
     // Date the model was added to the registry (ms epoch). Set once, never updated.
     addedDate: number;
@@ -218,7 +226,7 @@ export type ModelDefinition = {
     contextLength?: number;
     voices?: string[];
     isSpecialized?: boolean;
-    // True when callers may only spend Paid Pollen; false when Quest Pollen
+    // True when callers may only spend paid balance; false when Quest balance
     // also works. Required on every model — there is no implicit default.
     paidOnly: boolean;
     alpha?: boolean; // Experimental models with potential instability
@@ -231,6 +239,8 @@ export type ModelDefinition = {
     hidden?: boolean; // Hidden from /models endpoints and dashboard, but still usable via API
     /** Internal provider route: hidden from discovery and rejected when selected by a caller. */
     fallbackOnly?: boolean;
+    /** Reserved for one account: to every other caller the model doesn't exist, as with a private community endpoint. */
+    ownerUserId?: string;
     /** Change when the same request starts producing different media, so old cached results are not served. */
     cacheVersion?: string;
     supportedEndpoints?: string[]; // Override the default endpoints for specialized models
@@ -240,6 +250,8 @@ export type ModelDefinition = {
     minDuration?: number; // Video and audio: minimum accepted duration in seconds
     maxDuration?: number; // Video and audio: maximum accepted duration in seconds
     defaultDuration?: number; // Video-only: duration when caller omits the param
+    minBilledSeconds?: number; // Video-only: seconds the provider bills at least per clip
+    billedSecondsFollowReference?: boolean; // Video-only: with a reference video, the provider bills the output length it picks
     allowedDurations?: number[]; // Video and audio: explicit set of valid durations (overrides min/max range)
     durationStep?: number; // Video-only: duration must be a multiple of this value
     maxReferenceImages?: number; // Models with image input: effective accepted reference images
@@ -255,7 +267,7 @@ export type ModelDefinition = {
     supportsStreaming?: boolean;
 };
 
-// Helper: Convert usage counts to rated USD-equivalent cost or Pollen charge.
+// Helper: Convert usage counts to rated USD cost or customer charge.
 // When a usage type is reported by upstream but the registry has no rate for it,
 // log a warning (so we know which (model, usageType) pair needs adding) and bill
 // that line as 0. Throwing here drops the whole tracking event and creates a
@@ -364,6 +376,7 @@ export function calculateBillingAdjustments(
     output: unknown,
     model: string,
     input?: PricingInput,
+    priceMultiplier = svc.priceMultiplier,
 ): BillingAdjustment[] {
     const adjustments: BillingAdjustment[] = [];
     for (const rule of svc.billing?.adjustments ?? []) {
@@ -379,7 +392,7 @@ export function calculateBillingAdjustments(
             units,
             unitCost,
             cost,
-            price: cost * svc.priceMultiplier,
+            price: cost * priceMultiplier,
         });
     }
     return adjustments;
@@ -391,7 +404,7 @@ export type UsageBilling = {
     cost: UsageCost;
     price: UsagePrice;
     adjustments: BillingAdjustment[];
-    // Effective per-unit Pollen price sheet (cost variant × multiplier), not
+    // Effective per-unit USD price sheet (cost variant × multiplier), not
     // the request-time base sheet. Provider-reported billing units can differ
     // from public usage units, so this sheet alone may not reproduce totals
     // overridden by providerBilling; those use its units and unitCost.
@@ -445,15 +458,22 @@ function rateAgainst(
     output?: unknown,
     input?: PricingInput,
 ): Omit<UsageBilling, "servedPrice"> {
-    const adjustments = calculateBillingAdjustments(svc, output, model, input);
+    const selection = selectCostVariant(model, usage, svc, input);
+    const costVariant = selection.name;
+    const priceMultiplier = getPriceMultiplier(svc, costVariant);
+    const adjustments = calculateBillingAdjustments(
+        svc,
+        output,
+        model,
+        input,
+        priceMultiplier,
+    );
     const adjustmentCost = adjustments.reduce((total, a) => total + a.cost, 0);
     const adjustmentPrice = adjustments.reduce(
         (total, a) => total + a.price,
         0,
     );
 
-    const selection = selectCostVariant(model, usage, svc, input);
-    const costVariant = selection.name;
     const effectiveCost = costVariant
         ? { ...svc.cost, ...svc.costVariants?.[costVariant] }
         : svc.cost;
@@ -471,7 +491,7 @@ function rateAgainst(
             .filter(([usageType]) => usageType !== "totalCost")
             .map(([usageType, usageTypeCost]) => [
                 usageType,
-                (usageTypeCost as number) * svc.priceMultiplier,
+                (usageTypeCost as number) * priceMultiplier,
             ]),
     ) as Usage;
     const tokenTotalPrice = Object.values(usagePrice).reduce(
@@ -484,7 +504,7 @@ function rateAgainst(
     };
 
     // Opt-in provider totals include search; adjustments remain an informational breakdown.
-    const reportedCost = svc.billing?.resolveTotalCost?.(output);
+    const reportedCost = svc.billing?.resolveTotalCost?.(output, input);
 
     return {
         cost: reportedCost === undefined ? cost : { totalCost: reportedCost },
@@ -493,11 +513,11 @@ function rateAgainst(
                 ? price
                 : {
                       totalPrice: roundPollenLedgerAmount(
-                          reportedCost * svc.priceMultiplier,
+                          reportedCost * priceMultiplier,
                       ),
                   },
         adjustments,
-        priceDefinition: derivePrice(effectiveCost, svc.priceMultiplier),
+        priceDefinition: derivePrice(effectiveCost, priceMultiplier),
         costVariant,
         costVariantStatus: selection.status,
     };
@@ -527,7 +547,7 @@ export function calculateUsageBilling({
         served.cost = { totalCost };
         served.price = {
             totalPrice: roundPollenLedgerAmount(
-                totalCost * servedBy.priceMultiplier,
+                totalCost * getPriceMultiplier(servedBy, served.costVariant),
             ),
         };
     }
@@ -636,6 +656,29 @@ export const isFlatRateModel = (definition: ModelDefinition): boolean =>
     (definition.category === "image" &&
         definition.cost.promptTextTokens === undefined);
 
+/** No request can bill: every rate sheet is zero and no billing rule adds a charge. */
+export const isFreeModel = (definition: ModelDefinition): boolean =>
+    !definition.billing &&
+    getCostSheetsForModel(definition).every((sheet) =>
+        Object.values(sheet).every((rate) => rate === 0),
+    );
+
+/** Why the registry refuses this duration for the model, or undefined when it accepts it. */
+export function durationError(
+    model: string,
+    { minDuration, maxDuration, allowedDurations }: ModelDefinition,
+    duration: number,
+): string | undefined {
+    const accepted = allowedDurations
+        ? allowedDurations.includes(duration)
+        : duration >= (minDuration ?? duration) &&
+          duration <= (maxDuration ?? duration);
+    if (accepted) return undefined;
+    const range =
+        allowedDurations?.join(", ") ?? `${minDuration}-${maxDuration}`;
+    return `Unsupported duration for ${model}: ${duration}. It accepts ${range} seconds.`;
+}
+
 export const isVisibleModelDefinition = (
     definition: ModelDefinition,
 ): boolean => definition.hidden !== true && definition.fallbackOnly !== true;
@@ -666,8 +709,19 @@ export function getRegistryModelDefinition(model: ModelName): ModelDefinition {
 
 export function getPriceDefinitionForModel(
     svc: ModelDefinition,
+    variant?: string,
 ): PriceDefinition {
-    return derivePrice(svc.cost, svc.priceMultiplier);
+    return derivePrice(
+        variant ? { ...svc.cost, ...svc.costVariants?.[variant] } : svc.cost,
+        getPriceMultiplier(svc, variant),
+    );
+}
+
+function getPriceMultiplier(svc: ModelDefinition, variant?: string): number {
+    return (
+        (variant ? svc.priceMultiplierVariants?.[variant] : undefined) ??
+        svc.priceMultiplier
+    );
 }
 
 /** Every cost sheet a model can bill at: its base cost and each variant over it. */
@@ -704,7 +758,7 @@ export function getCostDefinition(model: ModelName): CostDefinition | null {
 }
 
 /**
- * Get Pollen price definition for a public model name (cost × multiplier)
+ * Get the USD price definition for a public model name (cost × multiplier)
  */
 export function getPriceDefinition(model: ModelName): PriceDefinition | null {
     const svc = MODEL_REGISTRY[model];

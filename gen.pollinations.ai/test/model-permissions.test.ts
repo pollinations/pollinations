@@ -2,6 +2,7 @@ import { env, SELF } from "cloudflare:test";
 import { apikey, user as userTable } from "@shared/db/better-auth.ts";
 import { getAudioModelsInfo } from "@shared/registry/model-info.ts";
 import {
+    calculatePrice,
     getRegistryModelDefinition,
     getVisibleTextModels,
     resolveModelName,
@@ -18,11 +19,179 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { expect } from "vitest";
 import { type AuthEnv, authFromSnapshot } from "../src/middleware/auth.ts";
+import { resolveModelDefinition } from "../src/middleware/model.ts";
 import { TEXT_BALANCE_NOTICE_ENABLED } from "../src/middleware/text-balance-notice.ts";
 
 async function fetchWorker(path: string, init: RequestInit = {}) {
     return SELF.fetch(new Request(`https://gen.pollinations.ai${path}`, init));
 }
+
+for (const variant of ["flare", "sunburst"]) {
+    const model = `openai/gpt-image-2.6-${variant}`;
+    test(`${model} requires purchased Pollen and hides its fallback`, async ({
+        apiKey,
+        paidApiKey,
+    }) => {
+        const headers = { Authorization: `Bearer ${apiKey}` };
+        const denied = await fetchWorker(
+            `/image/paid-only-check?model=${model}`,
+            { headers },
+        );
+        expect(denied.status).toBe(402);
+        const internal = await fetchWorker(
+            `/image/hidden-route-check?model=${model}:fal`,
+            { headers },
+        );
+        expect(internal.status).toBe(400);
+        const unpaidCatalog = await fetchWorker("/image/models", { headers });
+        expect(
+            ((await unpaidCatalog.json()) as { name: string }[]).some(
+                (item) => item.name === model,
+            ),
+        ).toBe(false);
+        const catalog = await fetchWorker("/image/models", {
+            headers: { Authorization: `Bearer ${paidApiKey}` },
+        });
+        const models = (await catalog.json()) as {
+            name: string;
+            paid_only: boolean;
+            aliases: string[];
+        }[];
+        expect(models.find((item) => item.name === model)).toMatchObject({
+            paid_only: true,
+            aliases: [],
+        });
+        expect(models.some((item) => item.name === `${model}:fal`)).toBe(false);
+    });
+}
+
+test("retires MiMo V2.5 Pro and its aliases from chat and discovery", async ({
+    paidApiKey,
+}) => {
+    const headers = {
+        Authorization: `Bearer ${paidApiKey}`,
+        "Content-Type": "application/json",
+    };
+    const retired = [
+        "xiaomi/mimo-v2.5-pro",
+        "mimo-pro",
+        "mimo-2.5-pro",
+        "mimo-v2.5-pro",
+    ];
+    for (const model of retired) {
+        const response = await fetchWorker("/v1/chat/completions", {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+                model,
+                messages: [{ role: "user", content: "Hello" }],
+            }),
+        });
+        expect(response.status, model).toBe(400);
+        await expect(response.json()).resolves.toMatchObject({
+            error: {
+                message: expect.stringContaining(
+                    `Invalid model or alias: "${model}"`,
+                ),
+            },
+        });
+    }
+
+    const catalog = await fetchWorker("/text/models", { headers });
+    expect(catalog.status).toBe(200);
+    const models = (await catalog.json()) as {
+        name: string;
+        aliases: string[];
+    }[];
+    const identifiers = models.flatMap(({ name, aliases }) => [
+        name,
+        ...aliases,
+    ]);
+    for (const model of retired) expect(identifiers).not.toContain(model);
+    expect(
+        models.find(({ name }) => name === "xiaomi/mimo-v2.6-pro"),
+    ).toMatchObject({ aliases: [] });
+});
+
+test("the Classic GPT-6 Luna route exists only for its owner", async ({
+    apiKey,
+}) => {
+    const model = "openai/gpt-6-luna:classic";
+    const { ownerUserId } = getRegistryModelDefinition(model);
+    expect(ownerUserId).toBeDefined();
+    await expect(
+        resolveModelDefinition(model, "generate.text", env, ownerUserId),
+    ).resolves.toMatchObject({ resolved: model });
+    const denied = await fetchWorker(`/text/owner-check?model=${model}`, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    expect(denied.status).toBe(400);
+    expect(await denied.text()).toContain("Invalid model or alias");
+});
+
+test("HEAD and GET validate the same query model before generation", async ({
+    apiKey,
+    paidApiKey,
+}) => {
+    const cases = [
+        [
+            "/image/head-model-check?model=openai/gpt-image-2.6-flare",
+            apiKey,
+            402,
+        ],
+        ["/image/head-model-check?model=openai/gpt-5.4-nano", paidApiKey, 400],
+        [
+            "/audio/head-model-check?model=openai/gpt-image-2.6-flare",
+            paidApiKey,
+            400,
+        ],
+        [
+            "/text/head-model-check?model=unknown-head-regression-model",
+            paidApiKey,
+            400,
+        ],
+        [
+            "/image/head-model-check?model=unknown-head-regression-model",
+            paidApiKey,
+            400,
+        ],
+        [
+            "/audio/head-model-check?model=unknown-head-regression-model",
+            paidApiKey,
+            400,
+        ],
+    ] as const;
+    for (const [path, key, status] of cases) {
+        for (const method of ["GET", "HEAD"]) {
+            const response = await fetchWorker(path, {
+                method,
+                headers: { Authorization: `Bearer ${key}` },
+            });
+            expect(response.status, `${method} ${path}`).toBe(status);
+            if (method === "HEAD") expect(await response.text()).toBe("");
+        }
+    }
+});
+
+test("rejects the retired Grok Imagine Pro ID and aliases", async ({
+    paidApiKey,
+}) => {
+    for (const model of [
+        "x-ai/grok-imagine-image-quality",
+        "grok-aurora",
+        "aurora",
+        "grok-imagine-image-quality",
+        "grok-imagine-image-pro",
+        "grok-imagine-pro",
+    ]) {
+        const response = await fetchWorker(
+            `/image/retired-model-check?model=${encodeURIComponent(model)}`,
+            { headers: { Authorization: `Bearer ${paidApiKey}` } },
+        );
+        expect(response.status, model).toBe(400);
+        expect(await response.text()).toContain(`Invalid model or alias`);
+    }
+});
 
 test("banned app owners block direct keys and existing BYOP keys", async () => {
     const owner = await createTestApiKey();
@@ -295,6 +464,7 @@ test("filters non-Azure and non-Fireworks text models by paid balance", async ({
         "openai/gpt-oss-20b",
         "respan/span-01-lite",
         "vllm-sr/d3",
+        "moonshotai/kimi-k3", // Retains Quest access after the AWS move.
         // Costs $0 while Vercel offers it as a stealth model.
         "stealth/glyph-cluster",
     ];
@@ -448,6 +618,52 @@ test("requires paid balance for Recraft vector", async ({
     ).toBe(true);
 
     expect(generation.status).toBe(402);
+}, 15_000);
+
+test("refuses a media request the balance cannot cover at its own price", async () => {
+    const { key } = await createTestApiKey({ user: { packBalance: 0.05 } });
+    const headers = {
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json",
+    };
+    const usd = (price: number) => `$${price.toFixed(4)}`;
+
+    const video = await fetchWorker(
+        "/video/own-price-check?model=veo&duration=8&resolution=1080p&audio=true&seed=24072511",
+        { headers },
+    );
+    expect(video.status).toBe(402);
+    expect(await video.text()).toContain(
+        `This request costs about ${usd(
+            calculatePrice(
+                "google/veo-3.1-fast",
+                { completionVideoSeconds: 8, completionAudioSeconds: 8 },
+                undefined,
+                { resolution: "1080p" },
+            ).totalPrice,
+        )}`,
+    );
+
+    const image = await fetchWorker("/v1/images/generations", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+            model: "x-ai/grok-imagine-image-2.0",
+            prompt: "own price check 24072511",
+            resolution: "2k",
+        }),
+    });
+    expect(image.status).toBe(402);
+    expect(await image.text()).toContain(
+        `This request costs about ${usd(
+            calculatePrice(
+                "x-ai/grok-imagine-image-2.0",
+                { completionImageTokens: 1 },
+                undefined,
+                { resolution: "2k" },
+            ).totalPrice,
+        )}`,
+    );
 }, 15_000);
 
 test("Scout catalog exposes its enforced output capabilities", async () => {

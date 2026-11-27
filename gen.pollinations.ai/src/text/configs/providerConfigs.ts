@@ -120,6 +120,14 @@ export function createBedrockResponsesConfig(model: string): ProviderConfig {
     });
 }
 
+/** Keep Chat controls on the native Chat endpoint; Responses remains available. */
+export function createBedrockChatConfig(model: string): ProviderConfig {
+    const config = createBedrockResponsesConfig(model);
+    const endpoint = new URL(config.responsesEndpoint as string);
+    endpoint.pathname = "/openai/v1/chat/completions";
+    return { ...config, directEndpoint: endpoint.href };
+}
+
 export function createFireworksModelConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {
@@ -144,13 +152,23 @@ export function createDeepInfraModelConfig(
     );
 }
 
+export function createInceptionModelConfig(model: string): ProviderConfig {
+    return {
+        provider: "openai",
+        model,
+        directEndpoint: "https://api.inceptionlabs.ai/v1/chat/completions",
+        authKey: textEnvironmentValue("INCEPTION_API_KEY"),
+        supportsMaxCompletionTokens: true,
+    };
+}
+
 export function createInferencePortModelConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {
     return createOpenAICompatibleConfig(
         "https://api.inferenceport.ai/v1",
         textEnvironmentValue("INFERENCEPORT_API_KEY"),
-        overrides,
+        { supportsReasoningHistory: false, ...overrides },
     );
 }
 
@@ -160,7 +178,7 @@ export function createMistralModelConfig(
     return createOpenAICompatibleConfig(
         "https://api.mistral.ai/v1",
         textEnvironmentValue("MISTRAL_API_KEY"),
-        overrides,
+        { supportsReasoningHistory: false, ...overrides },
     );
 }
 

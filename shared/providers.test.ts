@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { availableModels } from "../gen.pollinations.ai/src/text/availableModels.ts";
-import registry from "../operations/economics/provider-registry.json";
+import registry from "../operations/dashboards/economics/provider-registry.json";
 import { createProviderResolver } from "./providers";
 import {
     getModels,
@@ -49,7 +49,7 @@ describe("API provider identities", () => {
             expect(provider).toBe(provider.trim().toLowerCase());
             expect(
                 resolveProvider(provider)?.id,
-                `${model}: register provider "${provider}" in operations/economics/provider-registry.json`,
+                `${model}: register provider "${provider}" in operations/dashboards/economics/provider-registry.json`,
             ).toBe(provider);
         },
     );
@@ -62,20 +62,25 @@ const PROTOCOL_VENDORS: Record<string, string> = {
     "azure-openai": "azure",
     bedrock: "aws",
     "vertex-ai": "google",
+    google: "google",
     openrouter: "openrouter",
     "vllm-sr": "vllm-sr",
 };
 const HOST_VENDORS: Record<string, string> = {
     "api.openai.com": "openai",
+    "generativelanguage.googleapis.com": "google",
+    "bedrock-mantle.us-east-1.api.aws": "aws",
     "bedrock-runtime.us-east-1.amazonaws.com": "aws",
     "api.fireworks.ai": "fireworks",
     "api.deepinfra.com": "deepinfra",
     "api.inferenceport.ai": "inferenceport",
+    "api.inceptionlabs.ai": "inception",
     "api.mistral.ai": "mistral",
     "api.novita.ai": "novita",
     "api.perplexity.ai": "perplexity",
     "openrouter.ai": "openrouter",
     "dashscope-intl.aliyuncs.com": "alibaba",
+    "ai-gateway.kilo.ai": "kilo",
     "ai-gateway.vercel.sh": "vercel",
     "decision.vllm-sr.ai": "vllm-sr",
     "api.x.ai": "xai",

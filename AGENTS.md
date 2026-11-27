@@ -8,7 +8,7 @@ Flow: user opens an `APP-SUBMISSION` issue → AI checks the live app and option
 
 `APP-SUBMISSION` is the persistent type label. `APP-NEEDS-INFO`, `APP-REVIEW`, and `APP-APPROVED` describe review state. Quest rewards are detected separately from the merged catalog and are not announced by the submission workflows.
 
-The optional Quest field names an open POLLEN-QUEST issue. The catalog PR then closes that quest too, and the quest check pays the submitter as the co-author of the bot's commit. Approving such a submission also accepts the quest, so check that the app completes it.
+The optional Quest field names an open community quest issue. The catalog PR then closes that quest too, and the quest check pays the submitter as the co-author of the bot's commit. Approving such a submission also accepts the quest, so check that the app completes it.
 
 New submissions must credit Pollinations with the badge (`packages/ui/src/brand/badge-made-with.svg`) in the README, or on the app page when there is no repository, and upload a 16:9 screenshot (PNG/JPEG/WebP, ≤5 MB, ≥1280×720). Publishing converts it to WebP 1280×720 on `media.pollinations.ai` and sets `screenshotUrl`.
 
@@ -29,16 +29,15 @@ Guild ID `885844321461485618` (https://discord.gg/k9F7SyTgqn) — use for Discor
 - `shared/` — auth, registry, IP queue; `shared/registry/` holds model registries
 - `apps/` — Applications maintained in this repository
 - `operations/app-management/` — Community app catalog and automation
-- `operations/` — Internal dashboards, monitoring, economics, and infrastructure
-- `operations/social/` — Discord/Reddit/GitHub automation
-- `operations/community-monitor/` — Community model monitor agent; runs with the Discord bots on the `monitoring-agents` EC2 box (see `operations/infrastructure/gpu/GPU_INSTANCES.md`)
+- `operations/` — Internal dashboards, monitoring, data sync, news, app management and infrastructure; folder map in `operations/README.md`
+- `operations/news/` — News pipeline: daily, weekly and monthly posts, per-PR Discord posts and the News page data
 
 ## API Gateway
 
 Primary: `https://gen.pollinations.ai` → routes to `enter.pollinations.ai` for auth/billing.
 
-- Auth: `pk_` (frontend), `sk_` (backend). Keys: https://enter.pollinations.ai/keys
-- Billing: Pollen credits ($1 ≈ 1 Pollen). API reference: `APIDOCS.md`; service operations: `.claude/skills/enter-services/SKILL.md`.
+- Auth: `sk_` keys authenticate requests; `pk_` App Keys only identify an app (OAuth `client_id`) and get `401` as a key. Keys: https://enter.pollinations.ai/keys
+- Billing: prepaid API credit in US dollars. API reference: `APIDOCS.md`; service operations: `.claude/skills/enter-services/SKILL.md`.
 - Pack checkout: Stripe. Polar is retired from runtime; do not add Polar SDKs,
   Worker bindings, webhooks, or automated writes. Historical Polar handling
   (pre-Stripe pack revenue, Nov 2025–Jan 2026) lives in the Economics provider
@@ -51,7 +50,7 @@ Primary: `https://gen.pollinations.ai` → routes to `enter.pollinations.ai` for
 - Successful billable text responses must contain valid provider usage. Reject
   non-stream responses without it; streamed protocols must contain terminal
   usage and fail the stream otherwise.
-- Wallet: Pollen is earned by completing Quests; balances live in the `tier_balance` (shown as Quest Pollen) and `pack_balance` (Paid) buckets. The legacy `tier` D1 column and `tier_balance` wire name are kept for compatibility; see `shared/db/better-auth.ts`.
+- Wallet: users earn Quest credit by completing Quests. Balances live in the `tier_balance` (Quest balance) and `pack_balance` (paid balance) buckets. The legacy `tier` D1 column and `tier_balance` wire name are kept for compatibility; see `shared/db/better-auth.ts`.
 - Referral links must use the canonical landing page with a short `?ref=` value; record analytics behind the page instead of exposing a tracking API as the destination URL.
 
 ### Local Development
@@ -115,6 +114,14 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - If CI credentials lack a required permission, follow the Secret Mutation Safety approval gate before updating the scoped GitHub Actions secret and rerunning the workflow. Never bypass CI with a local Cloudflare OAuth session.
 - After the workflow succeeds, verify the active Worker version and required bindings before testing production traffic.
 
+## Production D1 Query Safety (CRITICAL)
+
+- Gen and Enter share the production D1 database. A slow query can delay requests that use D1. If the queue fills, D1 returns `D1_OVERLOADED` errors.
+- This policy applies to every manual query path, including the Cloudflare dashboard D1 console, Wrangler, and the D1 REST API. Query production D1 directly only for live support or incident checks. Run one read-only `SELECT` for one known record or account using equality on an indexed column such as a primary key, `user.email` or `apikey.user_id`. Select only the columns needed. For non-unique keys, use the smallest `LIMIT` needed for the check. Never batch, loop, run production queries in parallel, or retry on overload. Writes follow the existing production approval and migration rules.
+- Before a new query shape, run `EXPLAIN QUERY PLAN` for the exact SQL on staging. Use it on production only if the plan shows `SEARCH` on the lookup key. Any `SCAN`, including `SCAN … USING COVERING INDEX`, is prohibited. Recheck the plan after changing the query. A `LIMIT` or a small result can still read many rows.
+- Never run audits, backfill dry runs, or exploratory SQL against live production D1, even if read-only. Run counts, joins, `json_extract` filters, and other multi-account analysis on staging D1 or an existing snapshot with the required tables. Tinybird snapshots (`d1_user`, `d1_apikey`, `d1_account`, `d1_session`) lag production.
+- To find a slow query, use D1 Query Insights for timing (it is sampled) and the Cloudflare account audit log to see who sent it.
+
 ## Tinybird Deployment Safety (CRITICAL)
 
 - Two workspaces: `pollinations_enter` (prod) and `pollinations_enter_staging` (staging + dev + local). Pipes and datasources must be deployed to **both** — no CI auto-deploy yet, tracked in #11127.
@@ -134,11 +141,11 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 
 ## Economics Environment Safety
 
-- `operations/economics/web` local development must read Tinybird staging
+- `operations/dashboards/economics/web` local development must read Tinybird staging
   (`pollinations_enter_staging`) through
-  `operations/economics/secrets/web.dev.json`.
+  `operations/dashboards/economics/secrets/web.dev.json`.
 - Production Economics deployments read
-  `operations/economics/secrets/web.json`. Never decrypt that production file
+  `operations/dashboards/economics/secrets/web.json`. Never decrypt that production file
   directly into the local `.dev.vars` file.
 - After switching, merging, or rebasing an Economics branch, rerun
   `npm run decrypt-vars` before trusting the local dashboard. The generated
@@ -190,6 +197,7 @@ npx vitest run test/file.test.ts
 ```
 
 - Test real code, not mocks — use direct imports. Don't create mock infrastructure or preemptive test helpers.
+- Run contributor PR code only in a sandbox without secrets (Codex `-s read-only`, an E2B sandbox or a container), never directly on a maintainer machine.
 - Read existing tests before adding; prefer extending existing files; follow existing conventions.
 - Test meaningful behavior and concrete regressions. Avoid tests that merely mirror the implementation or hardcode mutable catalog data; keep intentional contract and pricing snapshots.
 - Don't modify test files to make tests pass — fix the code.
@@ -266,7 +274,7 @@ Be concise. PRs/comments/issues: bullets, <200 words, no fluff.
 
 ## GitHub Project Manager
 
-A bot sets the Dev project Area on every new issue and PR, plus the issue type and Priority on issues, following `operations/github/project-manager.md`. That file is the one definition of areas, types and priorities; read it before classifying work by hand. Labels are only for workflows (`APP-*`, `BEE-CENSUS`, `HONEY-CENSUS`, `POLLI`, `NEWS`, `POLLEN-QUEST`/`DRAFT-QUEST`, `VOTING`, `MERGE-HOLD`) and goals (`REVENUE`); don't repurpose them or create new labels ad hoc.
+A bot sets the Dev project Area on every new issue and PR, plus the issue type and Priority on issues, following `operations/infrastructure/project-manager/project-manager.md`. That file is the one definition of areas, types and priorities; read it before classifying work by hand. Labels are only for workflows (`APP-*`, `BEE-CENSUS`, `HONEY-CENSUS`, `POLLI`, `NEWS`, the community quest label, `DRAFT-QUEST`, `VOTING`, `MERGE-HOLD`, and the reward labels `reward-1`, `reward-3`, `reward-5`, `reward-10`, `reward-15`, `reward-25`, `reward-50`, which set a PR's or a quest's reward) and goals (`REVENUE`); don't repurpose them or create new labels ad hoc.
 
 ## Contributor Attribution
 

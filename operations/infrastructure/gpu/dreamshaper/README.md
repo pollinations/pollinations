@@ -51,9 +51,10 @@ is cheaper per image ($0.0033 vs $0.0044 per 1k).
 ## Deployment
 
 Registers into the gen registry pool as type `sana` via `/register` heartbeat
-every 30s. The public model is `dreamshaper`; `sana` remains both its API alias
-and the internal pool key. There is **no fallback** — if no worker is
-registered, the model is down.
+every 30s. Requests time out after 10s and failures retry after 5s, including
+the first registration after startup. The public model is `dreamshaper`;
+`sana` remains both its API alias and the internal pool key. There is **no
+fallback** — if no worker is registered, the model is down.
 
 Each of the three Uvicorn worker processes accepts at most two generation
 requests: one running and one waiting. Additional requests receive `503 Queue

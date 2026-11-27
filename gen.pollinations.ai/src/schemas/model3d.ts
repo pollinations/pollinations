@@ -31,7 +31,11 @@ export const Generate3dRequestQueryParamsSchema = z.object({
         .string()
         .transform((value: string) => {
             if (!value) return undefined;
-            return value.includes("|") ? value.split("|") : value.split(",");
+            // Keep commas inside URLs, matching the image and video schemas.
+            const urls = value.includes("|")
+                ? value.split("|")
+                : value.split(/,(?=\s*https?:\/\/)/);
+            return urls.map((url) => url.trim()).filter(Boolean);
         })
         .optional()
         .refine(
@@ -50,7 +54,7 @@ export const Generate3dRequestQueryParamsSchema = z.object({
         )
         .meta({
             description:
-                "Reference image URL(s) for image-to-3D generation. Separate multiple URLs with `|` or `,`. Required for image-only models (e.g. `trellis`, `triposr`, `sf3d`).",
+                "Reference image URL(s) for image-to-3D generation. Separate multiple URLs with `|` or `,`. Required for image-only models (e.g. `microsoft/trellis-2`, `nvidia/asset-harvester`).",
         }),
     seed: z.coerce.number().int().optional().meta({
         description:

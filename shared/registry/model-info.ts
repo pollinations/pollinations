@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { isCommunityProviderIconUrl } from "../community-provider-icon.ts";
 import { SAFETY_FEATURES } from "../schemas/safety.ts";
+import { AGENT_MCP_SERVER_IDS } from "./mcp.ts";
 import { publicPriceInfo, toFixedPoint } from "./public-pricing";
 import {
     type BillingAdjustmentRule,
@@ -66,8 +67,10 @@ export const AGENT_FIELD_DESCRIPTIONS = {
     verified: "True for agents published by an official Pollinations account.",
     base_model:
         "Model a prompt agent runs on; `pricing` shows its rates. Absent when Gen cannot see which models an agent calls.",
+    mcp_servers:
+        "MCP servers a prompt agent can call tools on, by server id. Absent when Gen cannot see an agent's tools.",
     pricing:
-        "Pollen rates per billed unit. Paid tool calls an agent makes are billed on top. An agent without `base_model` lists only `currency`: its charges depend on the calls it makes.",
+        'Rates in US dollars per billed unit; `currency` is always `"pollen"`, the API\'s name for US dollars. Paid tool calls an agent makes are billed on top. An agent without `base_model` lists only `currency`: its charges depend on the calls it makes.',
 };
 
 export const ModelInfoSchema = z.object({
@@ -95,6 +98,10 @@ export const ModelInfoSchema = z.object({
         .string()
         .optional()
         .describe(AGENT_FIELD_DESCRIPTIONS.base_model),
+    mcp_servers: z
+        .array(z.enum(AGENT_MCP_SERVER_IDS))
+        .optional()
+        .describe(AGENT_FIELD_DESCRIPTIONS.mcp_servers),
     per_user_rpm: z.number().positive().nullable().optional(),
     pricing: z
         .record(z.string(), z.string())
@@ -225,7 +232,7 @@ export const ModelInfoSchema = z.object({
         )
         .optional()
         .describe(
-            "Billed unit for pricing fields whose name does not describe it, keyed by pricing field. Rate per unit = pricing[field] × quantity, with quantity defaulting to 1. Example: qwen/qwen-image-2.1 bills completionImageTokens in millionths of a megapixel, so pricing.completionImageTokens 0.00000002 with { unit: megapixel, quantity: 1000000 } is 0.02 Pollen per megapixel.",
+            "Billed unit for pricing fields whose name does not describe it, keyed by pricing field. Rate per unit = pricing[field] × quantity, with quantity defaulting to 1. Example: qwen/qwen-image-2.1 bills completionImageTokens in millionths of a megapixel, so pricing.completionImageTokens 0.00000002 with { unit: megapixel, quantity: 1000000 } is $0.02 per megapixel.",
         ),
     added_date: z.number().optional(),
     health: ModelHealthSchema.optional(),
@@ -288,25 +295,17 @@ export function modelInfoFromDefinition(
         pricing: pricingInfoFromDefinition(getPriceDefinitionForModel(service)),
         pricing_variants:
             service.costVariants && service.costVariantMetadata
-                ? Object.entries(service.costVariants).map(
-                      ([name, variantCost]) => {
-                          const metadata = service.costVariantMetadata?.[name];
-                          return {
-                              name,
-                              label: metadata?.label ?? name,
-                              description: metadata?.description ?? name,
-                              pricing: pricingInfoFromDefinition(
-                                  getPriceDefinitionForModel({
-                                      ...service,
-                                      cost: {
-                                          ...service.cost,
-                                          ...variantCost,
-                                      },
-                                  }),
-                              ),
-                          };
-                      },
-                  )
+                ? Object.keys(service.costVariants).map((name) => {
+                      const metadata = service.costVariantMetadata?.[name];
+                      return {
+                          name,
+                          label: metadata?.label ?? name,
+                          description: metadata?.description ?? name,
+                          pricing: pricingInfoFromDefinition(
+                              getPriceDefinitionForModel(service, name),
+                          ),
+                      };
+                  })
                 : undefined,
         pricing_default_label: service.defaultCostVariantLabel,
         pricing_dimensions: service.pricingDimensions,

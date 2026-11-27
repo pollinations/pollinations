@@ -5,6 +5,19 @@ import { FileUpload } from "./FileUpload.tsx";
 const file = new File(["audio"], "recording.mp3", { type: "audio/mpeg" });
 
 describe("FileUpload", () => {
+    it("recognizes a video reference when the browser omits its MIME type", () => {
+        const html = renderToStaticMarkup(
+            <FileUpload
+                value={[new File([], "reference.MKV")]}
+                onChange={() => {}}
+                tileModality="mixed"
+            />,
+        );
+        expect(html).toContain("<video");
+        expect(html).toContain('aria-label="Play reference.MKV"');
+        expect(html).toContain('aria-description="video"');
+    });
+
     it("offers another upload until the file limit is reached", () => {
         const html = renderToStaticMarkup(
             <FileUpload
@@ -12,9 +25,10 @@ describe("FileUpload", () => {
                 onChange={() => {}}
                 maxFiles={2}
                 accept="audio/*"
+                label="Import audio"
             />,
         );
-        expect(html).toContain("Add files");
+        expect(html).toContain("Import audio");
         expect(html).toContain('accept="audio/*"');
         expect(html).toContain("multiple");
         expect(html).toContain("Remove recording.mp3");

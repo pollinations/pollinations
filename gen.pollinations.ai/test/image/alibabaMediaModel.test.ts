@@ -74,6 +74,8 @@ describe("Alibaba media adapters", () => {
                     },
                 ],
             },
+            // No requested shape: the edit keeps the input clip's shape.
+            parameters: { ratio: "adaptive" },
         });
         expect(result.trackingData?.usage).toEqual({
             promptVideoSeconds: 3,
@@ -95,7 +97,7 @@ describe("Alibaba media adapters", () => {
             tokenPricePromptVideoSeconds: 0.068,
         });
     });
-    it("preserves Wan 2.6 portrait selection and duration rounding", async () => {
+    it("preserves Wan 2.6 portrait selection and duration", async () => {
         const fetch = vi
             .spyOn(globalThis, "fetch")
             .mockResolvedValueOnce(
@@ -118,7 +120,7 @@ describe("Alibaba media adapters", () => {
                 ...params,
                 model: "alibaba/wan-2.6",
                 aspectRatio: "9:16",
-                duration: 8,
+                duration: 10,
             },
             "2.6",
         );
@@ -128,6 +130,43 @@ describe("Alibaba media adapters", () => {
             model: "wan2.6-t2v",
             parameters: { size: "720*1280", duration: 10 },
         });
+    });
+    it.each<[Partial<ImageParams>, string]>([
+        [{ aspectRatio: "16:9" }, "16:9"],
+        [
+            { aspectRatio: "16:9", reference_videos: ["https://e.com/a.mp4"] },
+            "16:9",
+        ],
+        [
+            {
+                width: 720,
+                height: 1280,
+                dimensionsExplicit: true,
+                reference_videos: ["https://e.com/a.mp4"],
+            },
+            "9:16",
+        ],
+    ])("sends Wan 3.0 the requested shape %o", async (shape, ratio) => {
+        const fetch = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValueOnce(
+                Response.json({
+                    output: {
+                        task_id: "job",
+                        task_status: "SUCCEEDED",
+                        video_url: outputUrl,
+                    },
+                    usage: {
+                        input_video_duration: 0,
+                        output_video_duration: 5,
+                    },
+                }),
+            )
+            .mockResolvedValueOnce(new Response("video"));
+        await callAlibabaVideo("Animate", { ...params, ...shape }, "3.0");
+        expect(
+            JSON.parse(fetch.mock.calls[0][1]?.body as string).parameters.ratio,
+        ).toBe(ratio);
     });
     it("keeps polling one accepted job beyond five minutes", async () => {
         vi.useFakeTimers();

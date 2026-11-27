@@ -9,10 +9,9 @@ Canonical accounts:
 
 ## Verified — 2026-08-22
 
-- Status: the deprecated billing-history API still works for both configured
-  account contexts.
-- Credit consumption still requires dashboard evidence; history rows are
-  invoice/payment evidence and are not a complete usage ledger.
+- Status: the account billing-history and credits APIs work with the existing
+  Myceli billing credential (verified November 3, 2026). History is invoice and
+  payment evidence, not a complete usage ledger.
 - Dashboard logins are account-specific: `elliot@pollinations.ai` for the
   legacy Pollinations account and `elliot@myceli.ai` for Myceli. The account
   title shown by Cloudflare is not the login-email source of truth.
@@ -29,14 +28,16 @@ Primary evidence sources:
 - Dashboard/usage: Cloudflare dashboard billing and credits pages.
 - Legacy Pollinations invoices:
   `https://dash.cloudflare.com/efdcb0933eaac64f27c0b295039b28f2/billing/invoices`.
-- API: `GET https://api.cloudflare.com/client/v4/user/billing/history?per_page=50`
-  - Cloudflare currently documents `/user/billing/history` as deprecated. Use it only for billing-history evidence until a replacement source is chosen.
+- API: `GET https://api.cloudflare.com/client/v4/accounts/{account_id}/billing/history?per_page=50`.
+  Follow `result_info.next_page`; inspect status and remaining amount. Use the
+  deprecated `/user/billing/history` only when the account route is unavailable.
 - Transaction context: `economics_bank_ledger` vendor `cloudflare`.
 
 ## Daily usage export — verified 2026-09-05
 
 - API: `GET https://api.cloudflare.com/client/v4/accounts/{account_id}/billable-usage?from=YYYY-MM-DD&to=YYYY-MM-DD`.
-- Myceli credential: existing `CLOUDFLARE_MYCELI_API_TOKEN`; account ID from registry.
+- Myceli credential: existing `CLOUDFLARE_MYCELI_API_TOKEN`; account ID from
+  the vendor journal.
 - Query each intersecting billing cycle, including its anchor day. A calendar
   query can silently omit the preceding cycle's days. Myceli anchor: day 22.
   For August, query `2026-07-22`–`2026-08-22` and `2026-08-22`–`2026-09-01`,
@@ -76,14 +77,19 @@ Collection steps:
    test -n "$token_value" || { echo "$token_name missing"; exit 1; }
 
    curl --fail-with-body --silent --show-error \
-     "https://api.cloudflare.com/client/v4/user/billing/history?per_page=50" \
+     "https://api.cloudflare.com/client/v4/accounts/$account_id/billing/history?per_page=50" \
      -H "Authorization: Bearer $token_value"
    ```
 
    Save raw JSON to `<collection-dir>/evidence/cloudflare-<account>-<period>-billing-history.json`.
 
-3. The billing history endpoint is not period-scoped. Save the raw response, then filter locally to the requested provider period. If the target period is absent from the first page, stop and ask before paginating broadly.
-4. For startup credit consumption, use dashboard screenshots/exports from the relevant account billing credits page and save to `<collection-dir>/evidence/`.
+3. Billing history is not period-scoped. Save all pages needed to establish the
+   requested period and invoice-list completeness, then filter locally.
+4. `GET /accounts/{account_id}/billing/credits` returns
+   `confirmed_balance_cents`, `original_amount_cents`, `valid_from`, and
+   `valid_to`. Divide cents by 100 and preserve exact expiry timestamps. This
+   invoice-confirmed balance differs from the current estimated dashboard
+   balance; collect and label the latter for current runway.
 5. For a completed billing period whose invoice is not yet available, archive
    the Billable usage view and record its exact total as dashboard evidence.
    Replace or confirm it with the consolidated invoice when issued.
@@ -97,6 +103,18 @@ Known traps:
 
 - Cloudflare is treated as infrastructure, not model inference.
 - Myceli account startup credits can zero invoices before they appear as card billing.
-- Startup credit burn may be visible only in the dashboard, not the billing history API.
+- `/billable-usage/info` verifies the cycle anchor; `/subscriptions` exposes
+  fixed list prices and dates. Reconcile actual fixed charges and discounts
+  with the invoice before booking them.
+- The documented receipts PDF endpoint returned `404` for both receipt and
+  invoice IDs. Use dashboard Row actions → Download; a failed route is not
+  proof that the invoice is absent.
+- Dashboard downloads use a billing-history UUID as the filename. Validate
+  the original PDF's account, printed invoice number and service periods
+  before renaming it. Cloudflare supplies consolidated invoices rather than
+  individual payment receipts.
+- A separate startup discount can cancel the full fixed subscription charge.
+  Record the net fixed charge separately from metered usage and grant drawdown;
+  a fully discounted subscription does not consume the grant.
 - A mistaken June 2026 card charge was refunded; do not double count charge and refund as cost.
 - The `/user/billing/history` endpoint scopes to the token/account context.

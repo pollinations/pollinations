@@ -80,10 +80,18 @@ async function generateText(params, context) {
         const choice = result.choices?.[0];
         const assistantMessage = choice?.message;
 
+        // The gateway returns 200 with finish_reason "error" when generation
+        // fails part way; don't hand the partial text back as a success.
+        if (result.choices?.some((c) => c?.finish_reason === "error")) {
+            throw new Error("Chat completion failed");
+        }
+
         const responseContent = [];
 
         if (assistantMessage?.content) {
             responseContent.push(createTextContent(assistantMessage.content));
+        } else if (assistantMessage?.refusal) {
+            responseContent.push(createTextContent(assistantMessage.refusal));
         }
 
         if (assistantMessage?.reasoning_content) {
@@ -184,6 +192,12 @@ const messageSchema = z.object({
         .string()
         .optional()
         .describe("Participant name for multi-user conversations"),
+    function_call: z
+        .object({ name: z.string(), arguments: z.string() })
+        .optional()
+        .describe(
+            "Legacy function call from assistant (for continuing function use)",
+        ),
     tool_call_id: z
         .string()
         .optional()

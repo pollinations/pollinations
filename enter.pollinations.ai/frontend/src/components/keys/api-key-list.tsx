@@ -2,6 +2,8 @@ import {
     AppIcon,
     Button,
     Chip,
+    CodeIcon,
+    CopyField,
     GlobeIcon,
     IconButton,
     InlineLink,
@@ -10,6 +12,7 @@ import {
     PencilIcon,
     Section,
     Surface,
+    TabButton,
     TerminalIcon,
     TokensIcon,
     Tooltip,
@@ -19,11 +22,12 @@ import { formatDistanceToNowStrict } from "date-fns";
 import type { FC } from "react";
 import { useState } from "react";
 import { resourceActionError } from "../../lib/resource-action-error.ts";
+import { CopyDocs } from "../copy-docs.tsx";
 import { ResourceCardHeader } from "../resource-card-header.tsx";
 import { ApiKeyDialog } from "./api-key-dialog.tsx";
 import { EditApiKeyDialog } from "./edit-api-key-dialog.tsx";
 import { DeleteConfirmation } from "./key-delete-confirmation.tsx";
-import { isAppKey, isPublishableKey, readRedirectUris } from "./key-type.ts";
+import { isAppKey, readRedirectUris } from "./key-type.ts";
 import { LimitsBadge, shortLocale } from "./limits-badge.tsx";
 import { ModelsBadge } from "./models-badge.tsx";
 import type { ApiKey, ApiKeyManagerProps } from "./types.ts";
@@ -35,8 +39,23 @@ const accountPermissionLabels: Record<string, string> = {
     machines: "Machines",
 };
 
-export const ApiKeyList: FC<ApiKeyManagerProps> = ({
+const KEY_TABS = [
+    { value: "secret", label: "Secret" },
+    { value: "app", label: "App" },
+] as const;
+
+type KeyTab = (typeof KEY_TABS)[number]["value"];
+
+export const ApiKeyList: FC<
+    ApiKeyManagerProps & {
+        /** The open tab; the keys page keeps it in the address. */
+        tab: KeyTab;
+        onTabChange: (tab: KeyTab) => void;
+    }
+> = ({
     apiKeys,
+    tab: keyTab,
+    onTabChange,
     onCreate,
     onUpdate,
     onDelete,
@@ -87,9 +106,10 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     const sortedAppKeys = sortedKeys.filter(isAppKey);
 
     function renderKeyCard(apiKey: ApiKey) {
-        const isPublishable = isPublishableKey(apiKey);
         const isApp = isAppKey(apiKey);
         const keyLabel = isApp ? "app key" : "secret key";
+        // An app key's settings are the app's settings.
+        const editLabel = isApp ? "Edit app" : "Edit secret key";
         const plaintextKey = apiKey.metadata?.plaintextKey as
             | string
             | undefined;
@@ -109,17 +129,11 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         <>
                             {isApp ? (
                                 <AppIcon className="h-4 w-4" />
-                            ) : isPublishable ? (
-                                <GlobeIcon className="h-4 w-4" />
                             ) : (
                                 <KeyIcon className="h-4 w-4" />
                             )}
                             <span className="sr-only">
-                                {isApp
-                                    ? "App key"
-                                    : isPublishable
-                                      ? "Publishable key"
-                                      : "Secret key"}
+                                {isApp ? "App key" : "Secret key"}
                             </span>
                         </>
                     }
@@ -128,8 +142,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         <>
                             <IconButton
                                 intent="info"
-                                title={`Edit ${keyLabel}`}
-                                tooltip={`Edit ${keyLabel}`}
+                                title={editLabel}
+                                tooltip={editLabel}
                                 tooltipAlign="center"
                                 tooltipClampToViewport={false}
                                 aria-haspopup="dialog"
@@ -157,8 +171,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 <div className="mt-1 min-w-0">
                     <KeyChip
                         prefix={apiKey.start ?? ""}
-                        value={isPublishable ? plaintextKey : undefined}
-                        label={isApp ? "Copy app key" : "Copy publishable key"}
+                        value={isApp ? plaintextKey : undefined}
+                        label="Copy app key"
                     />
                 </div>
                 <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
@@ -185,7 +199,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 : "never"}
                         </span>
                     </span>
-                    {isPublishable && primaryRedirectUri && (
+                    {isApp && primaryRedirectUri && (
                         <span className="inline-flex min-w-0 items-center gap-1">
                             <span className="text-theme-text-muted">
                                 Redirect:{" "}
@@ -229,11 +243,11 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     )}
                     {isApp && (
                         <Chip
-                            intent="neutral"
+                            intent={earningsEnabled ? "success" : "neutral"}
                             size="sm"
                             className={
                                 earningsEnabled
-                                    ? "text-intent-success-text"
+                                    ? undefined
                                     : "bg-ink-100 text-theme-text-muted"
                             }
                         >
@@ -252,7 +266,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             />
                             {apiKey.questPollenOnly && (
                                 <span className="text-theme-text-muted">
-                                    Quest pollen only
+                                    Quest balance only
                                 </span>
                             )}
                             <span className="flex items-center gap-1">
@@ -301,6 +315,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
 
     const keyAction = (
         <Button
+            intent="commit"
             type="button"
             icon={<KeyIcon />}
             aria-haspopup="dialog"
@@ -311,6 +326,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     );
     const appAction = (
         <Button
+            intent="commit"
             type="button"
             icon={<AppIcon />}
             aria-haspopup="dialog"
@@ -320,67 +336,97 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
         </Button>
     );
 
+    // The open tab's keys and Create; the two tabs differ only in these.
+    const secret = keyTab === "secret";
+    const tabKeys = secret ? sortedApiKeys : sortedAppKeys;
+    const tabAction = secret ? keyAction : appAction;
+
     return (
         <>
+            {/* Secret and app keys share one card: tab buttons switch
+                between them, with the open tab's Create on the same row. */}
             <Section
-                title="Secrets"
+                title="Keys"
                 id="api-keys"
-                action={sortedApiKeys.length > 0 && keyAction}
+                action={<CopyDocs section={secret ? "api" : "byop"} />}
             >
-                <div className="flex flex-col gap-3">
-                    {!sortedApiKeys.length && (
-                        <Surface className="p-6 text-center">
-                            <div className="mb-2">{keyAction}</div>
-                            <p className="text-sm text-theme-text-muted">
-                                Use secret keys for your own private server-side
-                                integrations.
-                            </p>
-                        </Surface>
-                    )}
-                    {sortedApiKeys.map(renderKeyCard)}
+                <div className="flex flex-wrap items-center justify-between gap-1.5">
+                    <div className="flex flex-wrap gap-1.5">
+                        {KEY_TABS.map(({ value, label }) => (
+                            <TabButton
+                                key={value}
+                                active={keyTab === value}
+                                onClick={() => onTabChange(value)}
+                                ariaLabel={label}
+                            >
+                                {label}
+                            </TabButton>
+                        ))}
+                    </div>
+                    {tabKeys.length > 0 && tabAction}
                 </div>
-                <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
-                    <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>
-                        Your backends, scripts, CLIs, connected apps, and
-                        devices use these keys and spend from your Pollinations
-                        account. Keep them private.
-                    </span>
-                </p>
-            </Section>
-            <Section
-                title="Apps"
-                id="app-keys"
-                action={sortedAppKeys.length > 0 && appAction}
-            >
                 <div className="flex flex-col gap-3">
-                    {!sortedAppKeys.length && (
+                    {!tabKeys.length && (
                         <Surface className="p-6 text-center">
-                            <div className="mb-2">{appAction}</div>
+                            <div className="mb-2">{tabAction}</div>
                             <p className="text-sm text-theme-text-muted">
-                                Use app keys when your users bring their own
-                                Pollinations account.
+                                {secret
+                                    ? "Use secret keys for your own private server-side integrations."
+                                    : "Use app keys when your users bring their own Pollinations account."}
                             </p>
                         </Surface>
                     )}
-                    {sortedAppKeys.map(renderKeyCard)}
+                    {tabKeys.map(renderKeyCard)}
                 </div>
                 <div className="space-y-2 px-1 text-[13px] leading-snug text-theme-text-muted">
-                    <p className="flex items-start gap-1.5">
-                        <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>
-                            For apps where users sign in with their own
-                            Pollinations account and spend their own pollen.
-                            Connect your app with the Pollinations SDK.
-                        </span>
-                    </p>
-                    <p className="flex items-start gap-1.5">
-                        <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>
-                            Turn on earnings to receive 20% of the pollen users
-                            spend in your app.
-                        </span>
-                    </p>
+                    {secret ? (
+                        <p className="flex items-start gap-1.5">
+                            <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                Your backends, scripts, CLIs, connected apps,
+                                and devices use these keys and spend from your
+                                Pollinations account. Keep them private.
+                            </span>
+                        </p>
+                    ) : (
+                        <>
+                            <p className="flex items-start gap-1.5">
+                                <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                <span>
+                                    For apps where users sign in with their own
+                                    Pollinations account and spend their own
+                                    balance. Connect your app with the
+                                    Pollinations SDK.
+                                </span>
+                            </p>
+                            <p className="flex items-start gap-1.5">
+                                <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                <span>
+                                    Turn on earnings to receive 20% of what
+                                    users spend in your app.
+                                </span>
+                            </p>
+                        </>
+                    )}
+                    {/* The same Create from a terminal, in the catalog's small
+                        copy pill. */}
+                    <div className="flex items-start gap-1.5">
+                        <CodeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                            <span>From your terminal:</span>
+                            <div className="w-fit min-w-0 max-w-full">
+                                <CopyField
+                                    label="Copy CLI command"
+                                    value={
+                                        secret
+                                            ? "polli keys create --name my-bot"
+                                            : "polli keys create --name my-app --type publishable"
+                                    }
+                                    size="sm"
+                                />
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </Section>
             <DeleteConfirmation
@@ -414,5 +460,29 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 simplified
             />
         </>
+    );
+};
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Secret keys used in the last 24 hours, on the drawer's Keys row; nothing at zero. */
+export const SidebarKeys: FC<{ apiKeys: ApiKey[] }> = ({ apiKeys }) => {
+    const since = Date.now() - DAY_MS;
+    const used = apiKeys.filter(
+        (k) =>
+            !isAppKey(k) &&
+            k.lastRequest &&
+            new Date(k.lastRequest).getTime() > since,
+    ).length;
+    if (used === 0) return null;
+    return (
+        <Chip
+            intent="neutral"
+            size="sm"
+            title="Secret keys used in the last 24 hours"
+            className="ml-auto bg-transparent text-theme-text-soft"
+        >
+            {used} used in 24h
+        </Chip>
     );
 };

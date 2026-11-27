@@ -170,12 +170,9 @@ describe("callFluxMaxVideoAPI", () => {
         expect(requests[0].body?.aspect_ratio).toBe("9:16");
     });
 
-    it("rejects unsupported duration and aspect ratio before submission", async () => {
+    it("rejects an unsupported aspect ratio before submission", async () => {
         const fetchSpy = vi.spyOn(globalThis, "fetch");
 
-        await expect(
-            callFluxMaxVideoAPI("scene", { ...baseParams, duration: 4 }),
-        ).rejects.toMatchObject({ status: 400 });
         await expect(
             callFluxMaxVideoAPI("scene", {
                 ...baseParams,

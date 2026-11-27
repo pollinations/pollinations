@@ -14,7 +14,7 @@ describe("questNavLabel", () => {
                 [available("new-quest")],
                 [reward("done", null), reward("other", null)],
             ),
-        ).toBe("2 claimable!");
+        ).toBe("2 claimable");
     });
 
     it("counts available quests the account has not completed", () => {
@@ -29,6 +29,13 @@ describe("questNavLabel", () => {
                 [reward("done", "2026-09-09T00:00:00Z")],
             ),
         ).toBe("2 new!");
+    });
+
+    it("counts Setup rewards as claimable", () => {
+        const setup = { ...available("done"), category: "setup" };
+        expect(questNavLabel([setup], [reward("done", null)])).toBe(
+            "1 claimable",
+        );
     });
 
     it("hides the badge when nothing needs attention", () => {

@@ -2,6 +2,79 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.37] - 2026-11-26
+
+### Added
+- `connectRealtime()` opens a realtime voice or transcription session on
+  `wss://gen.pollinations.ai/v1/realtime` and passes OpenAI Realtime events
+  through. `pcm16ToBase64()` and `base64ToPcm16()` convert the 24 kHz mono
+  PCM16 the models use. The key comes from `POLLINATIONS_API_KEY` when it is
+  not passed.
+- `useRealtime()` opens the same session on the signed-in user's key.
+- `examples/realtime-voice.html`, a voice chat page that signs in with
+  Pollinations and talks with `openai/gpt-realtime-2.1`.
+
+## [5.1.0-alpha.36] - 2026-11-24
+
+### Changed
+
+- Reverts alpha.35's cross-tab key handling. The provider reads the saved key once on page load again; after a 401 it signs out as in alpha.34.
+
+## [5.1.0-alpha.34] - 2026-11-19
+
+### Added
+
+- Image requests accept `outputFormat`, `frameCount`, and `frameDurationMs` for models with selectable GIF output.
+- `ModelInfo.health` types the existing model catalog health status, success rate, and request count.
+- `separateStems()` submits an audio file for stem separation and returns the ZIP archive.
+
+## [5.1.0-alpha.33] - 2026-11-18
+
+### Changed
+- `PolliProvider`'s `appKey` is optional. Without an App Key, sign-in still
+  works: the consent screen names the app by its hostname. Dev warnings now
+  appear only for an `appKey` that isn't a `pk_` key.
+
+## [5.1.0-alpha.32] - 2026-11-18
+
+### Changed
+
+- Use Pollinations Pay terminology in the README.
+
+## [5.1.0-alpha.31] - 2026-11-17
+
+### Changed
+- Docs and type comments describe amounts as US dollars and the two balances as the paid balance and the Quest balance, instead of Pollen.
+
+## [5.1.0-alpha.30] - 2026-11-17
+
+### Added
+- `audioSpeech()` accepts `referenceVideo`, the video that `sonilo/sonilo-1.1-sfx` adds sound effects to.
+
+## [5.1.0-alpha.29] - 2026-11-14
+
+### Added
+- `ModelInfo.required_safety` exposes the mandatory safety checks applied to a model.
+
+## [5.1.0-alpha.28] - 2026-11-11
+
+### Fixed
+- `useAccountKeyUsage` forwards `before_event_id`, so paging with the
+  previous page's cursor no longer skips rows that share its timestamp.
+
+## [5.1.0-alpha.27] - 2026-11-06
+
+### Fixed
+- `chat()` and `text()` reject buffered completions ending with
+  `finish_reason: "error"` instead of returning a partial answer as a success.
+
+## [5.1.0-alpha.26] - 2026-10-31
+
+### Removed
+- `KeyInfo.rateLimitEnabled`. `GET /account/key` no longer returns it: from
+  2026-11-01 publishable (`pk_`) App Keys only identify an app and can't
+  authenticate requests, so no key is rate limited per IP.
+
 ## [5.1.0-alpha.25] - 2026-10-29
 
 ### Added

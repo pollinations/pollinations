@@ -4,8 +4,8 @@ import * as appGrowth from "./groups/app-growth.ts";
 import * as discordCommunity from "./groups/discord-community.ts";
 import * as githubContributions from "./groups/github-contributions.ts";
 import * as githubProfile from "./groups/github-profile.ts";
-import * as identity from "./groups/identity.ts";
 import * as modelUsage from "./groups/model-usage.ts";
+import * as referrals from "./groups/referrals.ts";
 import type { QuestCard, QuestEvaluationContext, QuestGroup } from "./types.ts";
 
 export const ACCOUNT_SETUP_QUEST_GROUP: QuestGroup = {
@@ -21,7 +21,7 @@ export const QUEST_GROUPS: QuestGroup[] = [
     { id: "model-usage", ...modelUsage },
     { id: "github-profile", ...githubProfile },
     { id: "github-contributions", ...githubContributions },
-    { id: "identity", ...identity },
+    { id: "referrals", ...referrals },
 ];
 
 export async function listQuestCards(

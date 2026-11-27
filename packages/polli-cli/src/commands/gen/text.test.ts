@@ -208,4 +208,38 @@ describe("gen text truncation warning", () => {
         for (const { output } of [buffered, streamed])
             expect(JSON.parse(output).content).toBe(refusal);
     });
+
+    it("fails when a completion finishes in error", async () => {
+        const failed = {
+            finish_reason: "error",
+            error: { message: "Provider failed" },
+        };
+        for (const [args, fixtures] of [
+            [
+                [],
+                {
+                    completion: {
+                        ...completion,
+                        choices: [
+                            { message: { content: "partial" }, ...failed },
+                        ],
+                    },
+                },
+            ],
+            [
+                ["--stream"],
+                {
+                    stream: sse([
+                        { choices: [{ delta: { content: "partial" } }] },
+                        { choices: [{ delta: {}, ...failed }] },
+                    ]),
+                },
+            ],
+        ] as const) {
+            await expect(
+                run([...args], false, true, fixtures),
+            ).rejects.toThrow();
+            vi.restoreAllMocks();
+        }
+    });
 });

@@ -610,6 +610,73 @@ describe("Messages response translation", () => {
             tool_calls: [call("call_a", "AY8/+="), call("call_b")],
         });
     });
+
+    it("drops a tool call the token limit cut off instead of failing", () => {
+        const message = chatToMessagesResponse(
+            {
+                id: "chatcmpl_4",
+                object: "chat.completion",
+                created: 1,
+                choices: [
+                    {
+                        finish_reason: "length",
+                        message: {
+                            role: "assistant",
+                            content: "Writing.",
+                            tool_calls: [
+                                {
+                                    id: "call_cut",
+                                    type: "function",
+                                    function: {
+                                        name: "Write",
+                                        // Cut off by max_tokens: no closing brace.
+                                        arguments: '{"path":"poem.txt","con',
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                ],
+                usage,
+            },
+            model,
+        );
+        expect(message.content).toEqual([{ type: "text", text: "Writing." }]);
+        expect(message.stop_reason).toBe("max_tokens");
+    });
+
+    it("still rejects unparseable tool arguments that were not cut off", () => {
+        expect(() =>
+            chatToMessagesResponse(
+                {
+                    id: "chatcmpl_5",
+                    object: "chat.completion",
+                    created: 1,
+                    choices: [
+                        {
+                            finish_reason: "tool_calls",
+                            message: {
+                                role: "assistant",
+                                content: null,
+                                tool_calls: [
+                                    {
+                                        id: "call_bad",
+                                        type: "function",
+                                        function: {
+                                            name: "Write",
+                                            arguments: '{"broken":',
+                                        },
+                                    },
+                                ],
+                            },
+                        },
+                    ],
+                    usage,
+                },
+                model,
+            ),
+        ).toThrow();
+    });
 });
 
 describe("Messages stream translation", () => {
@@ -641,6 +708,45 @@ describe("Messages stream translation", () => {
         expect(events.some((event) => event.type === "message_stop")).toBe(
             false,
         );
+    });
+
+    it("drops a tool call the token limit cut off and stops with max_tokens", async () => {
+        const events = await translateStream([
+            {
+                choices: [
+                    {
+                        delta: {
+                            tool_calls: [
+                                {
+                                    index: 0,
+                                    id: "t",
+                                    function: {
+                                        name: "Write",
+                                        arguments: '{"path":"poem.txt","con',
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                ],
+            },
+            { choices: [{ delta: {}, finish_reason: "length" }], usage },
+            "[DONE]",
+        ]);
+        expect(events.some((event) => event.type === "error")).toBe(false);
+        expect(events.some((event) => event.type === "message_stop")).toBe(
+            true,
+        );
+        expect(
+            events.some(
+                (event) =>
+                    event.type === "content_block_start" &&
+                    (event.content_block as { type: string }).type ===
+                        "tool_use",
+            ),
+        ).toBe(false);
+        const delta = events.find((event) => event.type === "message_delta");
+        expect(delta).toMatchObject({ delta: { stop_reason: "max_tokens" } });
     });
 
     it("streams thinking and text blocks, then tool use and usage", async () => {
@@ -945,8 +1051,26 @@ describe("POST /v1/messages", () => {
                 }
                 const body = (await upstream.json().catch(() => null)) as {
                     messages?: unknown;
+                    input?: unknown;
                     stream?: boolean;
                 } | null;
+                if (body?.input) {
+                    providerBodies.push(body);
+                    return Response.json({
+                        id: "resp_test",
+                        object: "response",
+                        model,
+                        status: "completed",
+                        output: [],
+                        ...(options.withUsage !== false && {
+                            usage: {
+                                input_tokens: 120,
+                                output_tokens: 30,
+                                total_tokens: 150,
+                            },
+                        }),
+                    });
+                }
                 if (!body?.messages) return Response.json({ data: [] });
                 providerBodies.push(body);
                 if (body.stream) {
@@ -994,7 +1118,7 @@ describe("POST /v1/messages", () => {
     }
 
     async function call(
-        path: "/v1/messages" | "/v1/chat/completions",
+        path: "/v1/messages" | "/v1/chat/completions" | "/v1/responses",
         body: Record<string, unknown> | string,
         key?: string,
     ) {
@@ -1168,6 +1292,13 @@ describe("POST /v1/messages", () => {
             type: "invalid_request_error",
         },
         {
+            name: "a list of image models",
+            body: { model: "flux,zimage" },
+            auth: true,
+            status: 400,
+            type: "invalid_request_error",
+        },
+        {
             name: "a missing max_tokens",
             body: { model, max_tokens: undefined },
             auth: true,
@@ -1237,6 +1368,26 @@ describe("POST /v1/messages", () => {
             expect(message.startsWith(prefix), message).toBe(true);
         },
     );
+
+    it("rejects more than four stop sequences with the field path", async () => {
+        const caller = await createTestApiKey({
+            user: { tierBalance: 100 },
+        });
+        const { response, text } = await call(
+            "/v1/messages",
+            {
+                model,
+                max_tokens: 256,
+                stop_sequences: ["a", "b", "c", "d", "e"],
+                messages: [{ role: "user", content: "hi" }],
+            },
+            caller.key,
+        );
+        expect(response.status, text).toBe(400);
+        const { error } = JSON.parse(text);
+        expect(error.type).toBe("invalid_request_error");
+        expect(error.message).toContain("stop_sequences");
+    });
 
     it.each([
         { name: "malformed JSON", body: "{", status: 400 },
@@ -1509,4 +1660,140 @@ describe("POST /v1/messages", () => {
             "/v1/messages",
         );
     });
+
+    it.each([
+        [
+            "/v1/messages",
+            { max_tokens: 256, messages: [{ role: "user", content: "hi" }] },
+        ],
+        [
+            "/v1/chat/completions",
+            { messages: [{ role: "user", content: "hi" }] },
+        ],
+        ["/v1/responses", { input: "hi" }],
+    ] as const)(
+        "rejects an empty model on %s before any charge",
+        async (path, body) => {
+            const caller = await createTestApiKey({
+                user: { tierBalance: 100 },
+            });
+            const { events, providerBodies } = mockUpstream();
+            const { response, text } = await call(
+                path,
+                { ...body, model: "" },
+                caller.key,
+            );
+            expect(response.status, text).toBe(400);
+            expect(providerBodies).toEqual([]);
+            expect(events).toEqual([]);
+            const balance = await getUserBalance(
+                drizzle(env.DB),
+                caller.userId,
+            );
+            expect(balance.tierBalance).toBe(100);
+        },
+    );
+});
+
+it.each([false, true])(
+    "preserves max_tokens with a complete and a truncated call (stream=%s)",
+    async (stream) => {
+        const calls = [
+            {
+                id: "complete",
+                type: "function" as const,
+                function: { name: "Write", arguments: '{"path":"a"}' },
+            },
+            {
+                id: "cut",
+                type: "function" as const,
+                function: { name: "Write", arguments: '{"path":' },
+            },
+        ];
+        if (!stream) {
+            const result = chatToMessagesResponse(
+                {
+                    id: "mixed",
+                    object: "chat.completion",
+                    created: 1,
+                    choices: [
+                        {
+                            finish_reason: "length",
+                            message: {
+                                role: "assistant",
+                                content: null,
+                                tool_calls: calls,
+                            },
+                        },
+                    ],
+                    usage,
+                },
+                model,
+            );
+            expect(result.content).toEqual([
+                {
+                    type: "tool_use",
+                    id: "complete",
+                    name: "Write",
+                    input: { path: "a" },
+                },
+            ]);
+            expect(result.stop_reason).toBe("max_tokens");
+        } else {
+            const events = await translateStream([
+                {
+                    choices: [
+                        {
+                            delta: {
+                                tool_calls: calls.map((call, index) => ({
+                                    ...call,
+                                    index,
+                                })),
+                            },
+                        },
+                    ],
+                },
+                { choices: [{ delta: {}, finish_reason: "length" }], usage },
+                "[DONE]",
+            ]);
+            expect(
+                events.filter((event) => event.type === "content_block_start"),
+            ).toMatchObject([
+                { content_block: { type: "tool_use", id: "complete" } },
+            ]);
+            expect(
+                events.find((event) => event.type === "message_delta"),
+            ).toMatchObject({ delta: { stop_reason: "max_tokens" } });
+        }
+    },
+);
+
+it("does not invent empty arguments when length stops before tool input", () => {
+    const result = chatToMessagesResponse(
+        {
+            id: "empty",
+            object: "chat.completion",
+            created: 1,
+            choices: [
+                {
+                    finish_reason: "length",
+                    message: {
+                        role: "assistant",
+                        content: null,
+                        tool_calls: [
+                            {
+                                id: "cut",
+                                type: "function",
+                                function: { name: "Write", arguments: "" },
+                            },
+                        ],
+                    },
+                },
+            ],
+            usage,
+        },
+        model,
+    );
+    expect(result.content).toEqual([]);
+    expect(result.stop_reason).toBe("max_tokens");
 });

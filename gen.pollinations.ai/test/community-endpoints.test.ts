@@ -1,5 +1,6 @@
 import {
     createExecutionContext,
+    createScheduledController,
     env,
     SELF,
     waitOnExecutionContext,
@@ -7,7 +8,11 @@ import {
 import { Buffer } from "node:buffer";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import type { Logger } from "@logtape/logtape";
-import { verifyAgentRunToken } from "@shared/auth/agent-run-token.ts";
+import {
+    AGENT_RUN_TOKEN_TTL_SECONDS,
+    signAgentRunToken,
+    verifyAgentRunToken,
+} from "@shared/auth/agent-run-token.ts";
 import { COMMUNITY_MODEL_ALLOWED_GITHUB_IDS } from "@shared/auth/github-id-list.ts";
 import { signSessionToken } from "@shared/auth/session-token.ts";
 import { getUserBalance } from "@shared/billing/balance.ts";
@@ -113,7 +118,10 @@ import {
     getGenerationModelRegistry,
     resetGenerationModelRegistryCache,
 } from "../src/model-registry.ts";
-import { communityEndpointGatewayContext } from "../src/text/communityEndpoint.ts";
+import {
+    communityEndpointFetch,
+    communityEndpointGatewayContext,
+} from "../src/text/communityEndpoint.ts";
 import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
 const db = drizzle(env.DB);
@@ -248,7 +256,13 @@ fixtureTest(
             .update(userTable)
             .set({ banned: true })
             .where(eq(userTable.id, ownerUserId));
-        await resetGenerationModelRegistryCache(env);
+        const context = createExecutionContext();
+        await worker.scheduled(
+            createScheduledController({ cron: "* * * * *" }),
+            env,
+            context,
+        );
+        await waitOnExecutionContext(context);
         expect(
             (await getCommunityModelRegistryEntries(env)).filter(
                 (row) => row.communityEndpoint.ownerUserId === ownerUserId,
@@ -577,6 +591,7 @@ async function createCommunityFallbackPair({
     fallbackName = "cheap",
     primaryPerUserRpm,
     fallbackPerUserRpm,
+    privateFallback = false,
 }: {
     prefix: string;
     modality?: CommunityEndpointModality;
@@ -584,20 +599,26 @@ async function createCommunityFallbackPair({
     fallbackName?: string;
     primaryPerUserRpm?: number;
     fallbackPerUserRpm?: number;
+    // The primary owner's own private model, the only private fallback allowed.
+    privateFallback?: boolean;
 }) {
     const primaryToken = "sk_primary_token";
     const fallbackToken = "sk_fallback_token";
     const suffix = crypto.randomUUID().slice(0, 8);
     const primaryOwner = `${prefix}-primary-${suffix}`;
-    const fallbackOwner = `${prefix}-fallback-${suffix}`;
     const primaryUserId = await createTestUser({
         githubId: nextAllowedGithubId(),
         githubUsername: primaryOwner,
     });
-    const fallbackUserId = await createTestUser({
-        githubId: nextAllowedGithubId(),
-        githubUsername: fallbackOwner,
-    });
+    const fallbackOwner = privateFallback
+        ? primaryOwner
+        : `${prefix}-fallback-${suffix}`;
+    const fallbackUserId = privateFallback
+        ? primaryUserId
+        : await createTestUser({
+              githubId: nextAllowedGithubId(),
+              githubUsername: fallbackOwner,
+          });
     const primaryModelId = communityModelId(primaryOwner, primaryName);
     const fallbackModelId = communityModelId(fallbackOwner, fallbackName);
     const primaryHostname = `${prefix}-primary.example.com`;
@@ -641,7 +662,7 @@ async function createCommunityFallbackPair({
         {
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId: fallbackUserId,
-            visibility: "public",
+            visibility: privateFallback ? "private" : "public",
             perUserRpm: fallbackPerUserRpm,
             name: fallbackName,
             modality,
@@ -670,6 +691,57 @@ async function createCommunityFallbackPair({
         fallbackToken,
     };
 }
+
+describe("community text header deadline", () => {
+    beforeEach(() => {
+        vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    });
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    it("aborts a request still awaiting headers at 300 seconds", async () => {
+        const caller = new AbortController();
+        const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(
+            (_input, init) =>
+                new Promise<Response>((_resolve, reject) => {
+                    const signal = init?.signal;
+                    signal?.addEventListener("abort", () =>
+                        reject(signal.reason),
+                    );
+                }),
+        );
+        const result = communityEndpointFetch("https://provider.test", {
+            signal: caller.signal,
+        }).catch((error) => error);
+        const signal = fetchMock.mock.calls[0]?.[1]?.signal;
+        vi.advanceTimersByTime(299_999);
+        expect(signal?.aborted).toBe(false);
+        vi.advanceTimersByTime(1);
+        expect(signal?.aborted).toBe(true);
+        await expect(result).resolves.toMatchObject({ name: "TimeoutError" });
+        expect(caller.signal.aborted).toBe(false);
+    });
+
+    it("clears the deadline after headers and keeps caller cancellation", async () => {
+        const caller = new AbortController();
+        const upstream = new Response("data: token\n\n", {
+            headers: { "Content-Type": "text/event-stream" },
+        });
+        const fetchMock = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValue(upstream);
+        const response = await communityEndpointFetch("https://provider.test", {
+            signal: caller.signal,
+        });
+        const signal = fetchMock.mock.calls[0]?.[1]?.signal;
+        vi.advanceTimersByTime(300_000);
+        expect(signal?.aborted).toBe(false);
+        await expect(response.text()).resolves.toBe("data: token\n\n");
+        caller.abort();
+        expect(signal?.aborted).toBe(true);
+    });
+});
 
 describe("community endpoint helpers", () => {
     it("resolves pending visibility and pricing as one effective listing", () => {
@@ -2776,6 +2848,50 @@ describe("community endpoint helpers", () => {
             );
         });
 
+        it("expires a run token minted inside a run when that run does", async () => {
+            const endpoint = endpointAgent();
+            // Time left; just past expiry, which verification still accepts
+            // within its clock-skew tolerance; and a run token minted on a
+            // clock running a second ahead.
+            for (const secondsLeft of [
+                60,
+                -2,
+                AGENT_RUN_TOKEN_TTL_SECONDS + 1,
+            ]) {
+                const parentRunExpiresAt =
+                    Math.floor(Date.now() / 1000) + secondsLeft;
+                const nested = await communityEndpointGatewayContext({
+                    endpoint,
+                    modelDefinition: communityModelDefinition(endpoint),
+                    requestData: {
+                        messages: [{ role: "user", content: "hi" }],
+                    },
+                    secret,
+                    portkeyGatewayUrl: "https://portkey.test",
+                    userApiKey: "sk_user_key",
+                    parentRequestId: "parent-request-id",
+                    parentApiKeyId: "parent-key-id",
+                    parentRunExpiresAt,
+                });
+                const nestedClaims = await verifyAgentRunToken(
+                    String(nested.modelConfig?.authKey),
+                    secret,
+                );
+                expect(nestedClaims.expiresAt).toBe(parentRunExpiresAt);
+            }
+
+            const topLevelClaims = await verifyAgentRunToken(
+                String(
+                    (await contextFor(endpoint, "parent-key-id")).modelConfig
+                        ?.authKey,
+                ),
+                secret,
+            );
+            expect(topLevelClaims.expiresAt - topLevelClaims.issuedAt).toBe(
+                AGENT_RUN_TOKEN_TTL_SECONDS,
+            );
+        });
+
         // The complement of the test above, and the reason an agent listing
         // has nowhere to store a credential: only a proxy sends one.
         it("sends a proxy listing's saved bearer, never a run token", async () => {
@@ -3080,6 +3196,147 @@ for (const protocol of ["chat_completions", "responses", "text"] as const) {
     );
 }
 
+for (const api of ["chat_completions", "responses"] as const) {
+    fixtureTest(
+        `an agent run calling an agent over ${api} hands on only its remaining time`,
+        async () => {
+            const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+            const modelName = `agent-${crypto.randomUUID().slice(0, 8)}`;
+            const route =
+                api === "responses" ? "responses" : "chat/completions";
+            const agentUrl = `https://agent.example.com/v1/${route}`;
+            const ownerUserId = await createTestUser({
+                githubId: nextAllowedGithubId(),
+                githubUsername: ownerGithubUsername,
+            });
+            await insertCommunityEndpoints({
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId,
+                type: "endpoint_agent",
+                visibility: "public",
+                name: modelName,
+                api,
+                baseUrl: agentUrl,
+                upstreamModel: "polli",
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+            const caller = await createTestApiKey({
+                user: { tierBalance: 100 },
+            });
+            const runToken = await signAgentRunToken({
+                secret: env.BETTER_AUTH_SECRET,
+                parentApiKeyId: caller.id,
+                parentRequestId: crypto.randomUUID(),
+                expiresIn: 60,
+            });
+            const run = await verifyAgentRunToken(
+                runToken,
+                env.BETTER_AUTH_SECRET,
+            );
+
+            const upstreamTokens: string[] = [];
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async (input, init) => {
+                    const request = new Request(input, init);
+                    if (request.url === agentUrl) {
+                        upstreamTokens.push(
+                            request.headers
+                                .get("authorization")
+                                ?.replace(/^Bearer\s+/i, "") ?? "",
+                        );
+                        return Response.json(
+                            api === "responses"
+                                ? {
+                                      id: "resp_agent",
+                                      object: "response",
+                                      created_at: 1,
+                                      status: "completed",
+                                      model: "polli",
+                                      output: [
+                                          {
+                                              id: "msg_agent",
+                                              type: "message",
+                                              role: "assistant",
+                                              status: "completed",
+                                              content: [
+                                                  {
+                                                      type: "output_text",
+                                                      text: "ok",
+                                                      annotations: [],
+                                                  },
+                                              ],
+                                          },
+                                      ],
+                                      usage: {
+                                          input_tokens: 2,
+                                          output_tokens: 3,
+                                          total_tokens: 5,
+                                      },
+                                  }
+                                : {
+                                      id: "agent",
+                                      object: "chat.completion",
+                                      model: "polli",
+                                      choices: [
+                                          {
+                                              index: 0,
+                                              message: {
+                                                  role: "assistant",
+                                                  content: "ok",
+                                              },
+                                              finish_reason: "stop",
+                                          },
+                                      ],
+                                      usage: {
+                                          prompt_tokens: 2,
+                                          completion_tokens: 3,
+                                          total_tokens: 5,
+                                      },
+                                  },
+                        );
+                    }
+                    if (isBillingFetch(request))
+                        return Response.json({ data: [] });
+                    throw new Error(`Unexpected fetch: ${request.url}`);
+                }),
+            );
+
+            const response = await fetchGen(
+                `https://gen.pollinations.ai/v1/${route}`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${runToken}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: communityModelId(ownerGithubUsername, modelName),
+                        ...(api === "responses"
+                            ? { input: "hello" }
+                            : {
+                                  messages: [
+                                      { role: "user", content: "hello" },
+                                  ],
+                              }),
+                    }),
+                },
+            );
+            expect(response.status, await response.text()).toBe(200);
+            expect(upstreamTokens).toHaveLength(1);
+            const nested = await verifyAgentRunToken(
+                upstreamTokens[0],
+                env.BETTER_AUTH_SECRET,
+            );
+            expect(nested.parentApiKeyId).toBe(caller.id);
+            expect(nested.expiresAt).toBe(run.expiresAt);
+        },
+    );
+}
+
 fixtureTest(
     "routes Chat and adapted Responses through an exact community Chat URL with its saved token",
     async ({ apiKey }) => {
@@ -3115,6 +3372,7 @@ fixtureTest(
             const request = new Request(input, init);
 
             if (request.url === chatUrl) {
+                expect(init?.signal).toBeInstanceOf(AbortSignal);
                 expect(request.headers.get("authorization")).toBe(
                     "Bearer sk_saved_token",
                 );
@@ -3539,7 +3797,7 @@ fixtureTest.each([{ api: "chat_completions" }, { api: "responses" }] as const)(
 );
 
 fixtureTest(
-    "a private model is owner-only and a zero-priced public model is free for funded callers",
+    "a private model is owner-only and a zero-priced public model is free for funded callers, even with no key budget left",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `private-${crypto.randomUUID().slice(0, 8)}`;
@@ -3576,6 +3834,11 @@ fixtureTest(
             updatedAt: new Date(),
         });
 
+        const tinybirdEvents: Record<string, unknown>[] = [];
+        const privateModelFlags = () =>
+            tinybirdEvents
+                .filter((event) => event.resolvedModelRequested === modelId)
+                .map((event) => event.privateModel);
         const fetchMock = vi.fn(async (input, init) => {
             const request = new Request(input, init);
             if (isChatCompletionsRequest(request)) {
@@ -3597,7 +3860,14 @@ fixtureTest(
                     },
                 });
             }
-            if (isBillingFetch(request)) return Response.json({ data: [] });
+            if (isBillingFetch(request)) {
+                if (new URL(request.url).pathname === "/v0/events") {
+                    tinybirdEvents.push(
+                        ...parseIngestedEvents(await request.text()),
+                    );
+                }
+                return Response.json({ data: [] });
+            }
             throw new Error(`Unexpected fetch: ${request.url}`);
         });
         vi.stubGlobal("fetch", fetchMock);
@@ -3637,6 +3907,8 @@ fixtureTest(
         await expect(ownerResponse.json()).resolves.toMatchObject({
             choices: [{ message: { content: "ok" } }],
         });
+        // Public health and stats pipes skip rows flagged as private.
+        expect(privateModelFlags()).toEqual([true]);
 
         const catalogIncludesModel = async (authorization?: string) => {
             const modelsResponse = await fetchGen(
@@ -3665,7 +3937,10 @@ fixtureTest(
             .set({ visibility: "public" })
             .where(eq(communityEndpointTable.id, endpointId));
         await resetGenerationModelRegistryCache(env);
-        const callFreePublicModel = async (callerKey: string) =>
+        const callFreePublicModel = async (
+            callerKey: string,
+            prompt = "free public",
+        ) =>
             fetchGen(
                 new Request("https://gen.pollinations.ai/v1/chat/completions", {
                     method: "POST",
@@ -3675,7 +3950,7 @@ fixtureTest(
                     },
                     body: JSON.stringify({
                         model: modelId,
-                        messages: [{ role: "user", content: "free public" }],
+                        messages: [{ role: "user", content: prompt }],
                     }),
                 }),
             );
@@ -3711,6 +3986,109 @@ fixtureTest(
         expect(freePublicResponse.status).toBe(200);
         await expect(freePublicResponse.json()).resolves.toMatchObject({
             choices: [{ message: { content: "ok" } }],
+        });
+        expect(privateModelFlags().at(-1)).toBe(false);
+        // Its charge is known to be 0, so a key with no budget left may call
+        // it; a new prompt keeps the text cache out of it.
+        const { key: noBudgetKey } = await createTestApiKey({
+            user: { tierBalance: 1, packBalance: 0 },
+            pollenBudget: 0,
+        });
+        const noBudgetResponse = await callFreePublicModel(
+            noBudgetKey,
+            "free public, no key budget",
+        );
+        expect(noBudgetResponse.status).toBe(200);
+        await expect(noBudgetResponse.json()).resolves.toMatchObject({
+            choices: [{ message: { content: "ok" } }],
+        });
+    },
+);
+
+fixtureTest(
+    "public model status and stats leave private community models out",
+    async () => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: ownerGithubUsername,
+        });
+        const privateId = communityModelId(ownerGithubUsername, "hidden");
+        const publicId = communityModelId(ownerGithubUsername, "listed");
+        const deletedId = communityModelId(ownerGithubUsername, "deleted");
+        const endpoint = {
+            ownerUserId,
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "gpt-4.1-mini",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        };
+        await insertCommunityEndpoints([
+            {
+                ...endpoint,
+                id: `endpoint-${crypto.randomUUID()}`,
+                name: "hidden",
+                visibility: "private",
+            },
+            {
+                ...endpoint,
+                id: `endpoint-${crypto.randomUUID()}`,
+                name: "listed",
+                visibility: "public",
+            },
+        ]);
+        await env.KV.delete("model-stats-v3");
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input) => {
+                const { pathname } = new URL(String(input));
+                if (pathname === "/v0/pipes/model_route_health.json") {
+                    return Response.json({
+                        data: [
+                            { model: privateId, model_used: "" },
+                            // A public model that fell back to a private one:
+                            // an older row naming it, and the unnamed route
+                            // Tinybird returns now.
+                            { model: publicId, model_used: privateId },
+                            { model: publicId, model_used: "private" },
+                            { model: publicId, model_used: publicId },
+                            { model: deletedId, model_used: "" },
+                            { model: "openai", model_used: "" },
+                        ],
+                    });
+                }
+                if (pathname === "/v0/pipes/public_model_stats.json") {
+                    return Response.json({
+                        data: [privateId, publicId, deletedId, "openai"].map(
+                            (model) => ({ model, avg_cost_usd: 0 }),
+                        ),
+                    });
+                }
+                throw new Error(`Unexpected fetch: ${pathname}`);
+            }),
+        );
+
+        const status = await fetchGen(
+            "https://gen.pollinations.ai/models/status",
+        );
+        expect(status.status).toBe(200);
+        await expect(status.json()).resolves.toEqual({
+            data: [
+                { model: publicId, model_used: "private" },
+                { model: publicId, model_used: publicId },
+                { model: "openai", model_used: "" },
+            ],
+        });
+
+        const stats = await fetchGen(
+            "https://gen.pollinations.ai/models/stats",
+        );
+        expect(stats.status).toBe(200);
+        await expect(stats.json()).resolves.toEqual({
+            data: [
+                { model: publicId, avg_cost_usd: 0 },
+                { model: "openai", avg_cost_usd: 0 },
+            ],
         });
     },
 );
@@ -3751,6 +4129,7 @@ fixtureTest(
             vi.fn(async (input, init) => {
                 const request = new Request(input, init);
                 if (request.url === responsesUrl) {
+                    expect(init?.signal).toBeInstanceOf(AbortSignal);
                     expect(request.headers.get("authorization")).toBe(
                         "Bearer exact-responses-token",
                     );
@@ -6776,6 +7155,9 @@ fixtureTest(
             }),
         );
         expect(urlImageResponse.status).toBe(200);
+        // The earlier b64_json request has the same prompt, model, size and
+        // quality; response_format is not part of the media identity.
+        expect(urlImageResponse.headers.get("x-cache")).toBe("HIT");
         await expect(urlImageResponse.json()).resolves.toMatchObject({
             data: [
                 {
@@ -6877,7 +7259,7 @@ fixtureTest(
             fetchMock.mock.calls.filter(([input, init]) =>
                 isCommunityImageGenerationsRequest(new Request(input, init)),
             ),
-        ).toHaveLength(5);
+        ).toHaveLength(4);
         expect(
             fetchMock.mock.calls.filter(([input, init]) =>
                 isCommunityImageEditsRequest(new Request(input, init)),
@@ -6888,7 +7270,7 @@ fixtureTest(
                 ([input, init]) =>
                     new Request(input, init).url === TEST_COMMUNITY_IMAGE_URL,
             ),
-        ).toHaveLength(4);
+        ).toHaveLength(3);
 
         const maximumImagePriceResponse = await fetchEnterApi(
             enterApi,
@@ -7730,7 +8112,6 @@ fixtureTest(
     async () => {
         const ownerGithubUsername = `pk-${crypto.randomUUID().slice(0, 8)}`;
         const { key, userId } = await createTestApiKey({
-            type: "publishable",
             accountPermissions: ["keys"],
             user: {
                 githubId: nextAllowedGithubId(),
@@ -8414,7 +8795,7 @@ fixtureTest(
         );
         expect(aboveMaximumResponse.status).toBe(400);
         expect(await aboveMaximumResponse.text()).toContain(
-            `${MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS} Pollen per 1M tokens`,
+            `$${MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M tokens`,
         );
 
         const belowMinimumResponse = await updatePrice(
@@ -9093,6 +9474,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         community?: boolean;
         agent?: boolean;
         base_model?: string;
+        mcp_servers?: string[];
         pricing?: Record<string, string>;
         capabilities?: string[];
         input_modalities?: string[];
@@ -9104,6 +9486,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
             id: string;
             agent?: boolean;
             base_model?: string;
+            mcp_servers?: string[];
             pricing?: Record<string, string>;
             capabilities?: string[];
             input_modalities?: string[];
@@ -9132,6 +9515,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         community: true,
         agent: true,
         base_model: promptAgent.baseModel,
+        mcp_servers: promptAgent.mcpServers,
         pricing: baseModelInfo?.pricing,
         capabilities: agentCapabilities,
         input_modalities: baseModelInfo?.input_modalities,
@@ -9149,6 +9533,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         agent: true,
         tags: [{ name: "text" }, { name: "community" }, { name: "agent" }],
         base_model: promptAgent.baseModel,
+        mcp_servers: promptAgent.mcpServers,
         pricing: baseModelInfo?.pricing,
         capabilities: agentCapabilities,
         input_modalities: openaiBaseModel?.input_modalities,
@@ -10286,6 +10671,91 @@ fixtureTest(
         expect(gatewayCalls).toHaveLength(3);
         expect(gatewayCalls[2]?.url).toBe(
             communityChatCompletionsUrl(primaryHost),
+        );
+    },
+);
+
+fixtureTest(
+    "a public model rescued by its owner's private fallback keeps the rescue in public stats, unnamed",
+    async ({ apiKey }) => {
+        const { primaryModelId, fallbackModelId, primaryHost } =
+            await createCommunityFallbackPair({
+                prefix: "private-rescue",
+                privateFallback: true,
+            });
+        const ingestedEvents: Record<string, unknown>[] = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                if (isChatCompletionsRequest(request)) {
+                    if (
+                        request.url === communityChatCompletionsUrl(primaryHost)
+                    ) {
+                        return Response.json(
+                            { error: { message: "rate limited" } },
+                            { status: 429 },
+                        );
+                    }
+                    return Response.json({
+                        id: "chatcmpl_private_fallback",
+                        object: "chat.completion",
+                        choices: [
+                            {
+                                index: 0,
+                                message: { role: "assistant", content: "ok" },
+                                finish_reason: "stop",
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 2,
+                            completion_tokens: 3,
+                            total_tokens: 5,
+                        },
+                    });
+                }
+                if (isBillingFetch(request)) {
+                    if (new URL(request.url).pathname === "/v0/events") {
+                        ingestedEvents.push(
+                            ...parseIngestedEvents(await request.text()),
+                        );
+                    }
+                    return Response.json({ data: [] });
+                }
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
+
+        const response = await fetchGen(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: primaryModelId,
+                    messages: [{ role: "user", content: "hello" }],
+                }),
+            }),
+        );
+        expect(response.status).toBe(200);
+        expect(response.headers.get("x-model-used")).toBe(fallbackModelId);
+
+        // Neither row is dropped from the public model's totals; only the
+        // private route is marked, so public pipes count it without its name.
+        await vi.waitFor(() => expect(ingestedEvents).toHaveLength(2));
+        expect(
+            ingestedEvents.map((event) => [
+                event.modelUsed,
+                event.privateModel,
+                event.privateRoute,
+            ]),
+        ).toEqual(
+            expect.arrayContaining([
+                [primaryModelId, false, false],
+                [fallbackModelId, false, true],
+            ]),
         );
     },
 );

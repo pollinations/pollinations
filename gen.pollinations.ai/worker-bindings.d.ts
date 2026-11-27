@@ -8,8 +8,14 @@ interface CloudflareBindings {
     COMPOSIO_MCP: Fetcher;
     COMPUTER_MCP: Fetcher;
     MACHINES_MCP: Fetcher;
+    CALCULATORS_MCP: Fetcher;
+    NETWORK_MCP: Fetcher;
+    PACKAGES_MCP: Fetcher;
+    NEWS_MCP: Fetcher;
+    RESEARCH_MCP: Fetcher;
     PORTKEY?: Fetcher;
     KLEIN_VPC?: Fetcher;
+    ZONOS3_VPC?: Fetcher;
     BETTER_AUTH_SECRET: string;
     TINYBIRD_INGEST_TOKEN: string;
     ELEVENLABS_API_KEY: string;
@@ -21,6 +27,7 @@ interface CloudflareBindings {
     DASHSCOPE_API_KEY: string;
     DEEPINFRA_API_KEY: string;
     FAL_KEY: string;
+    QUIVER_API_KEY?: string;
     INFERENCEPORT_API_KEY?: string;
     STABILITY_API_KEY?: string;
     E2B_API_KEY?: string;
@@ -35,6 +42,9 @@ interface CloudflareBindings {
     KV: KVNamespace;
     MEDIA: Service<import("../media.pollinations.ai/src/media-upload.ts").MediaUpload>;
     TEXT_BUCKET: R2Bucket;
+    AZURE_PORT_WAKE: DurableObjectNamespace<
+        import("./src/durable-objects/AzurePortWake.ts").AzurePortWake
+    >;
     GENERATION_COORDINATOR: DurableObjectNamespace<
         import("./src/durable-objects/GenerationCoordinator.ts").GenerationCoordinator
     >;
@@ -56,6 +66,7 @@ interface CloudflareBindings {
     IMAGES?: ImagesBinding;
     PORTKEY_GATEWAY_URL: string;
     AI_GATEWAY_API_KEY?: string;
+    KILO_API_KEY?: string;
     ANTHROPIC_API_KEY?: string;
     AWS_ACCESS_KEY_ID: string;
     AWS_SECRET_ACCESS_KEY: string;
@@ -65,6 +76,9 @@ interface CloudflareBindings {
     AWS_BEDROCK_REGION?: string;
     BEDROCK_GUARDRAIL_ID?: string;
     BEDROCK_GUARDRAIL_VERSION?: string;
+    BEDROCK_SENSITIVE_GUARDRAIL_ID?: string;
+    BEDROCK_SENSITIVE_GUARDRAIL_VERSION?: string;
+    BEDROCK_SHIELD_INLINE?: "on";
     AZURE_MYCELI_PROD_API_KEY: string;
     AZURE_MYCELI_PROD_EASTUS2_API_KEY: string;
     AZURE_MYCELI_PROD_IMG_15_SWEDEN_API_KEY: string;
@@ -90,6 +104,7 @@ interface CloudflareBindings {
     GOOGLE_PROJECT_ID: string;
     KLEIN_URL: string;
     MISTRAL_API_KEY: string;
+    INCEPTION_API_KEY?: string;
     NOVITA_API_KEY?: string;
     NOVA_REEL_S3_BUCKET: string;
     OPENAI_API_KEY: string;
@@ -97,8 +112,6 @@ interface CloudflareBindings {
     PERPLEXITY_API_KEY: string;
     REPLICATE_API_TOKEN: string;
     XAI_API_KEY: string;
-    POLLEN_REFILL_PER_HOUR?: number;
-    POLLEN_RATE_LIMITER?: DurableObjectNamespace;
     COMMUNITY_MODEL_RATE_LIMITER: DurableObjectNamespace;
     EDGE_RATE_LIMITER?: RateLimit;
     EDGE_IP_RATE_LIMITER?: RateLimit;

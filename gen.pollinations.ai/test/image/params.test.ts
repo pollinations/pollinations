@@ -1,4 +1,4 @@
-import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { getVideoModelIds, IMAGE_SERVICES } from "@shared/registry/image.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { CreateImageRequestSchema } from "@shared/schemas/openai.ts";
 import { describe, expect, it } from "vitest";
@@ -6,6 +6,21 @@ import { ImageParamsSchema } from "../../src/image/params.ts";
 import { SENTINEL_SEED } from "../../src/util.ts";
 
 describe("ImageParamsSchema", () => {
+    it("uses Hotshot-XL's fixed GIF dimensions when size is omitted", () => {
+        const model = "hotshotco/hotshot-xl";
+        expect(ImageParamsSchema.parse({ model })).toMatchObject({
+            width: 512,
+            height: 512,
+        });
+        expect(
+            ImageParamsSchema.safeParse({ model, width: 1024 }).success,
+        ).toBe(false);
+        expect(
+            ImageParamsSchema.safeParse({ model, output_format: "png" })
+                .success,
+        ).toBe(false);
+    });
+
     it("normalizes seed -1 to the sentinel seed", () => {
         const result = ImageParamsSchema.parse({
             model: "black-forest-labs/flux.1-schnell",
@@ -103,6 +118,15 @@ describe("ImageParamsSchema", () => {
         }
     });
 
+    it("treats background=transparent as a transparent request", () => {
+        expect(
+            ImageParamsSchema.parse({
+                model: "openai/gpt-image-1.5",
+                background: "transparent",
+            }).transparent,
+        ).toBe(true);
+    });
+
     it("accepts 768p on the OpenAI-compatible image route", () => {
         expect(
             CreateImageRequestSchema.safeParse({
@@ -196,6 +220,42 @@ describe("ImageParamsSchema", () => {
             ).toBe(false);
         }
     });
+
+    it.each(getVideoModelIds())(
+        "accepts only the registry durations for %s",
+        (model) => {
+            // Avatar 6 Turbo derives length from supplied speech audio.
+            if (
+                model === "heygen/heygen-avatar-6" ||
+                model === "heygen/heygen-avatar-6:openrouter" ||
+                model === "heygen/heygen-avatar-6-turbo" ||
+                model === "heygen/heygen-avatar-6-turbo:openrouter"
+            )
+                return;
+            const {
+                minDuration,
+                maxDuration,
+                defaultDuration,
+                allowedDurations,
+            } = IMAGE_SERVICES[
+                model as keyof typeof IMAGE_SERVICES
+            ] as ModelDefinition;
+            const parses = (duration: number) =>
+                ImageParamsSchema.safeParse({ model, duration }).success;
+            expect(parses(defaultDuration as number)).toBe(true);
+            expect(parses((minDuration as number) - 1)).toBe(false);
+            expect(parses((maxDuration as number) + 1)).toBe(false);
+            for (
+                let d = minDuration as number;
+                d <= (maxDuration as number);
+                d++
+            ) {
+                expect(parses(d), String(d)).toBe(
+                    allowedDurations?.includes(d) ?? true,
+                );
+            }
+        },
+    );
 
     it("enforces the public Gemini Omni 1.1 Flash contract", () => {
         for (const resolution of ["360p", "720p", "1080p", "4k"] as const) {
@@ -507,5 +567,95 @@ describe("image dimensions", () => {
                 height: 768,
             }).success,
         ).toBe(true);
+    });
+});
+
+describe("GPT Image 2.6 output format validation", () => {
+    const model = "openai/gpt-image-2.6-flare";
+    const gif = {
+        model,
+        output_format: "gif",
+        frame_count: 9,
+        frame_duration_ms: 150,
+    };
+
+    it("accepts PNG default, WebP, and a bounded animated GIF", () => {
+        expect(
+            ImageParamsSchema.parse({ model }).output_format,
+        ).toBeUndefined();
+        expect(
+            ImageParamsSchema.parse({ model, output_format: "webp" })
+                .output_format,
+        ).toBe("webp");
+        expect(ImageParamsSchema.parse(gif)).toMatchObject(gif);
+        expect(
+            ImageParamsSchema.safeParse({ ...gif, model: `${model}:fal` })
+                .success,
+        ).toBe(true);
+        expect(
+            ImageParamsSchema.safeParse({
+                ...gif,
+                background: "auto",
+                quality: "auto",
+            }).success,
+        ).toBe(true);
+    });
+
+    it("requires both animation settings for GIF and rejects them for stills", () => {
+        for (const value of [
+            { ...gif, frame_count: undefined },
+            { ...gif, frame_duration_ms: undefined },
+            { ...gif, output_format: "png" },
+            { ...gif, output_format: "webp" },
+        ]) {
+            expect(ImageParamsSchema.safeParse(value).success).toBe(false);
+        }
+    });
+
+    it.each([
+        "openai/gpt-image-2.6-sunburst",
+        "openai/gpt-image-2.6-sunburst:fal",
+    ])("accepts GIF and rejects WebP for %s", (model) => {
+        expect(ImageParamsSchema.parse({ ...gif, model })).toMatchObject({
+            ...gif,
+            model,
+        });
+        expect(
+            ImageParamsSchema.safeParse({ model, output_format: "webp" })
+                .success,
+        ).toBe(false);
+    });
+
+    it("bounds frame count, frame timing, and total duration", () => {
+        for (const value of [
+            { ...gif, frame_count: 1 },
+            { ...gif, frame_count: 17 },
+            { ...gif, frame_count: 2.5 },
+            { ...gif, frame_duration_ms: 19 },
+            { ...gif, frame_duration_ms: 2001 },
+            { ...gif, frame_duration_ms: 1.5 },
+            { ...gif, frame_count: 16, frame_duration_ms: 1000 },
+        ]) {
+            expect(ImageParamsSchema.safeParse(value).success).toBe(false);
+        }
+        expect(
+            ImageParamsSchema.safeParse({
+                ...gif,
+                frame_count: 10,
+                frame_duration_ms: 1000,
+            }).success,
+        ).toBe(true);
+    });
+
+    it("rejects transparent GIFs, GIF editing, and unsupported model formats", () => {
+        for (const value of [
+            { ...gif, transparent: true },
+            { ...gif, background: "transparent" },
+            { ...gif, image: ["https://example.com/edit.png"] },
+            { ...gif, model: "openai/gpt-image-2" },
+            { model: "openai/gpt-image-2", output_format: "webp" },
+        ]) {
+            expect(ImageParamsSchema.safeParse(value).success).toBe(false);
+        }
     });
 });

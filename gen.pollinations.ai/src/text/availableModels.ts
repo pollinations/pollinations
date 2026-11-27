@@ -7,9 +7,13 @@ import { createGeminiThinkingTransform } from "./transforms/createGeminiThinking
 import {
     adaptGoogleSearchToolForOpenRouter,
     adaptGoogleSearchToolForVertex,
+    createOpenRouterGoogleSearchTransform,
 } from "./transforms/createGeminiToolsTransform.ts";
 import { createMessageTransform } from "./transforms/createMessageTransform.js";
-import { createReasoningEffortTransform } from "./transforms/createReasoningEffortTransform.ts";
+import {
+    createReasoningEffortTransform,
+    remapReasoningEffort,
+} from "./transforms/createReasoningEffortTransform.ts";
 import { createSystemPromptTransform } from "./transforms/createSystemPromptTransform.js";
 import { inputAudioToFireworks } from "./transforms/inputAudioToFireworks.js";
 import { mediaToBedrock } from "./transforms/mediaToBedrock.ts";
@@ -24,6 +28,47 @@ import type { TransformFn, TransformOptions } from "./types.js";
 
 // Fireworks reasoning models: disable thinking via reasoning_effort:"none".
 const fireworksThinking = createReasoningEffortTransform("toggle");
+// reasoning_effort values these providers 400 on, mapped to the nearest level
+// they accept (probed 2026-11-15, #19784).
+const maxToXhigh = { max: "xhigh" };
+const maxToHigh = { max: "high" };
+const noneToLow = { none: "low" };
+const minimalToLow = { minimal: "low" };
+const maxToXhighAndMinimalToLow = { ...maxToXhigh, ...minimalToLow };
+const noneAndMinimalToLow = { ...noneToLow, ...minimalToLow };
+const effortMaxToXhigh = remapReasoningEffort(maxToXhigh);
+const gptOssEffort = remapReasoningEffort({
+    none: "low",
+    xhigh: "high",
+    max: "high",
+});
+const grok46Effort = remapReasoningEffort({ none: "low", max: "xhigh" });
+const kimiK26Effort = remapReasoningEffort({ xhigh: "max" });
+const inceptionEffort = remapReasoningEffort({
+    none: "instant",
+    minimal: "instant",
+    xhigh: "high",
+    max: "high",
+});
+const inceptionReasoning: TransformFn = (messages, options) => {
+    const reasoning = options.reasoning as
+        | { enabled?: boolean; effort?: string }
+        | undefined;
+    return inceptionEffort(messages, {
+        ...options,
+        reasoning_effort:
+            options.reasoning_effort ??
+            (reasoning?.enabled === false ? "instant" : reasoning?.effort),
+    });
+};
+// Azure DeepSeek V4 accepts only none, high and max.
+const azureDeepSeekEffort = remapReasoningEffort({
+    none: "none", // Preserve case-insensitive requests to disable reasoning.
+    minimal: "none",
+    low: "high",
+    medium: "high",
+    xhigh: "max",
+});
 // MiniMax M2: reasoning is mandatory (rejects "none"/"minimal").
 const mandatoryReasoning = createReasoningEffortTransform("mandatory");
 // Fireworks caches matching prefixes automatically and rejects Anthropic markers.
@@ -54,11 +99,26 @@ const mandatoryReasoningWithoutCacheControl = pipe(
 );
 // Models that 400/500 when reasoning_effort is forwarded (no reasoning mode).
 const stripReasoning = createReasoningEffortTransform("strip");
+// Azure Mistral rejects OpenAI's developer role; it means the same as system.
+const developerToSystem: TransformFn = (messages, options) => ({
+    messages: messages.map((message) =>
+        message.role === "developer"
+            ? { ...message, role: "system" as const }
+            : message,
+    ),
+    options,
+});
 // Claude families differ: Haiku 4.5 uses manual budget thinking; Sonnet/Opus
 // 4.6+ use adaptive + output_config.effort.
 const claudeManualThinking = createClaudeThinkingTransform("budget");
 const claudeAdaptiveThinking = createClaudeThinkingTransform("adaptive");
 const claudeOpus5Thinking = createClaudeThinkingTransform("adaptive", true);
+// Sonnet 4.6 on Bedrock accepts effort "max" (probed live 2026-11-24).
+const claudeSonnet46BedrockThinking = createClaudeThinkingTransform(
+    "adaptive",
+    false,
+    { max: "max" },
+);
 
 const omitOpenAISampling = omitParameters(
     "temperature",
@@ -71,10 +131,32 @@ const omitOpenAISampling = omitParameters(
 );
 const omitClaudeSampling = omitParameters("temperature", "top_p", "top_k");
 
+const glyphReasoning: TransformFn = (messages, options) => {
+    const { reasoning_effort, ...rest } = options;
+    return {
+        messages,
+        options: {
+            ...rest,
+            ...(reasoning_effort === undefined
+                ? {}
+                : {
+                      reasoning: {
+                          ...(rest.reasoning as
+                              | Record<string, unknown>
+                              | undefined),
+                          effort: reasoning_effort,
+                      },
+                  }),
+        },
+    };
+};
+
 interface ModelDefinition {
     name: string;
     config: (options?: TransformOptions) => Record<string, unknown>;
     transform?: TransformFn;
+    /** Effort substitutions shared by Chat and native Responses. */
+    reasoningEffortMap?: Readonly<Record<string, string>>;
     /** Route Chat requests through the model's declared Responses endpoint. */
     useResponsesApi?: boolean;
     /** Route typed decisions directly through TypeSafe System One. */
@@ -214,16 +296,19 @@ const models: ModelDefinition[] = [
         name: "openai/gpt-5.4-nano",
         config: portkeyConfig["gpt-5.4-nano"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: maxToXhigh,
     },
     {
         name: "openai/gpt-5-nano",
         config: portkeyConfig["gpt-5-nano-2025-08-07"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: maxToHigh,
     },
     {
         name: "openai/gpt-5-nano:openai",
         config: portkeyConfig["gpt-5-nano-openai"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: maxToHigh,
     },
     {
         name: "openai/gpt-4o-mini",
@@ -237,136 +322,184 @@ const models: ModelDefinition[] = [
         name: "openai/gpt-5.3-codex",
         config: portkeyConfig["gpt-5.3-codex"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: maxToXhighAndMinimalToLow,
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-5.3-codex:openai",
         config: portkeyConfig["gpt-5.3-codex-openai"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: minimalToLow,
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-oss-20b",
         config: portkeyConfig["gpt-oss-20b"],
+        transform: gptOssEffort,
     },
     {
-        name: "openai/gpt-5.4:openai",
-        config: portkeyConfig["gpt-5.4-openai"],
+        name: "openai/gpt-oss-20b:aws",
+        config: portkeyConfig["openai/gpt-oss-20b:aws"],
+        transform: gptOssEffort,
+    },
+    {
+        name: "openai/gpt-5.4:aws",
+        config: portkeyConfig["gpt-5.4-bedrock"],
         transform: omitOpenAISampling,
-        useResponsesApi: true,
-    },
-    {
-        name: "openai/gpt-oss-20b:deepinfra",
-        config: portkeyConfig["openai/gpt-oss-20b:deepinfra"],
     },
     {
         name: "openai/gpt-5.4",
         config: portkeyConfig["gpt-5.4"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: maxToXhigh,
     },
     {
         name: "openai/gpt-5.4-mini:openai",
         config: portkeyConfig["gpt-5.4-mini-openai"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: maxToXhigh,
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-5.4-mini",
         config: portkeyConfig["gpt-5.4-mini"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: maxToXhigh,
     },
     {
         name: "openai/gpt-5.5",
         config: portkeyConfig["gpt-5.5"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: maxToXhighAndMinimalToLow,
     },
     {
         name: "openai/gpt-5.5:aws",
         config: portkeyConfig["gpt-5.5-bedrock"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: maxToXhighAndMinimalToLow,
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-5.6-sol:aws",
         config: portkeyConfig["gpt-5.6-sol-bedrock"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: minimalToLow,
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-5.6-sol",
         config: portkeyConfig["gpt-5.6-sol"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: minimalToLow,
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-5.6-terra:aws",
         config: portkeyConfig["gpt-5.6-terra-bedrock"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: minimalToLow,
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-6.1-terra",
         config: portkeyConfig["gpt-6.1-terra"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: minimalToLow,
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-6.1-terra:aws",
         config: portkeyConfig["gpt-6.1-terra-bedrock"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: minimalToLow,
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-5.6-terra",
         config: portkeyConfig["gpt-5.6-terra"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: minimalToLow,
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-5.6-luna:aws",
         config: portkeyConfig["gpt-5.6-luna-bedrock"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: minimalToLow,
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-5.6-luna",
         config: portkeyConfig["gpt-5.6-luna"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: minimalToLow,
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-6-astra:aws",
         config: portkeyConfig["gpt-6-astra-bedrock"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: minimalToLow,
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-6-astra",
         config: portkeyConfig["gpt-6-astra"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: noneAndMinimalToLow,
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-6-sol",
         config: portkeyConfig["gpt-6-sol"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: minimalToLow,
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-6-sol:aws",
         config: portkeyConfig["gpt-6-sol-bedrock"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: minimalToLow,
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-6.1-sol",
         config: portkeyConfig["gpt-6.1-sol"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: noneAndMinimalToLow,
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-6.1-sol:aws",
         config: portkeyConfig["gpt-6.1-sol-bedrock"],
+        transform: omitOpenAISampling,
+        reasoningEffortMap: minimalToLow,
+        useResponsesApi: true,
+    },
+    {
+        name: "openai/gpt-6.2-astra",
+        config: portkeyConfig["gpt-6.2-astra"],
+        transform: omitOpenAISampling,
+        reasoningEffortMap: noneToLow,
+        useResponsesApi: true,
+    },
+    {
+        name: "openai/gpt-6.2-astra:aws",
+        config: portkeyConfig["gpt-6.2-astra-bedrock"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
+        name: "openai/gpt-6.2-sol",
+        config: portkeyConfig["gpt-6.2-sol"],
+        transform: omitOpenAISampling,
+        reasoningEffortMap: noneToLow,
+        useResponsesApi: true,
+    },
+    {
+        name: "openai/gpt-6.2-sol:aws",
+        config: portkeyConfig["gpt-6.2-sol-bedrock"],
         transform: omitOpenAISampling,
         useResponsesApi: true,
     },
@@ -374,28 +507,32 @@ const models: ModelDefinition[] = [
         name: "openai/gpt-6-luna",
         config: portkeyConfig["gpt-6-luna"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: minimalToLow,
+        useResponsesApi: true,
+    },
+    {
+        name: "openai/gpt-6-luna:classic",
+        config: portkeyConfig["gpt-6-luna-classic"],
+        transform: omitOpenAISampling,
+        reasoningEffortMap: minimalToLow,
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-6-luna:aws",
         config: portkeyConfig["gpt-6-luna-bedrock"],
         transform: omitOpenAISampling,
+        reasoningEffortMap: minimalToLow,
         useResponsesApi: true,
     },
     {
         name: "inception/mercury-2",
-        config: portkeyConfig["mercury-2"],
-        transform: stripReasoning,
-    },
-    {
-        name: "inception/mercury-2.5-preview",
-        config: portkeyConfig["inception/mercury-2.5-preview"],
-        transform: createReasoningEffortTransform("toggle"),
+        config: portkeyConfig["inception/mercury-2"],
+        transform: pipe(omitParameters("stop"), inceptionReasoning),
     },
     {
         name: "inception/mercury-3",
         config: portkeyConfig["inception/mercury-3"],
-        transform: createReasoningEffortTransform("toggle"),
+        transform: inceptionReasoning,
     },
     {
         name: "cohere/command-a-plus",
@@ -440,18 +577,30 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen/qwen3.8-2.4t-a95b",
-        config: portkeyConfig["accounts/fireworks/models/qwen3p8-2p4t-a95b"],
-        transform: fireworksThinkingWithoutCacheControl,
+        config: portkeyConfig["qwen/qwen3.8-2.4t-a95b"],
+        transform: mandatoryReasoningWithoutCacheControl,
     },
     {
-        name: "qwen/qwen3.8-2.4t-a95b:deepinfra",
-        config: portkeyConfig["Qwen/Qwen3.8-2.4T-A95B"],
-        transform: fireworksThinking,
+        name: "qwen/qwen3.8-2.4t-a95b:openrouter:siliconflow-fp8",
+        config: portkeyConfig[
+            "qwen/qwen3.8-2.4t-a95b:openrouter:siliconflow-fp8"
+        ],
+        transform: mandatoryReasoningWithoutCacheControl,
     },
     {
         name: "qwen/qwen3.8-27b",
         config: portkeyConfig["qwen/qwen3.8-27b"],
         transform: createReasoningEffortTransform("toggle"),
+    },
+    {
+        name: "qwen/qwen4-max",
+        config: portkeyConfig["qwen4-max-alibaba"],
+        transform: forcedToolWithoutReasoning,
+    },
+    {
+        name: "qwen/qwen4-max:vercel",
+        config: portkeyConfig["qwen4-max-vercel"],
+        transform: forcedToolWithoutReasoning,
     },
     {
         name: "qwen/qwen3.8-max",
@@ -556,12 +705,12 @@ const models: ModelDefinition[] = [
     {
         name: "deepseek/deepseek-v4-flash",
         config: portkeyConfig["DeepSeek-V4-Flash-0731"],
-        transform: fireworksThinking,
+        transform: azureDeepSeekEffort,
     },
     {
         name: "deepseek/deepseek-v4.1-flash",
         config: portkeyConfig["DeepSeek-V4.1-Flash"],
-        transform: fireworksThinking,
+        transform: azureDeepSeekEffort,
     },
     {
         name: "deepseek/deepseek-v4.1-flash:fireworks",
@@ -570,15 +719,15 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek/deepseek-v4.1-flash-1017",
+        config: portkeyConfig["DeepSeek-V4.1-Flash-1017"],
+        transform: azureDeepSeekEffort,
+    },
+    {
+        name: "deepseek/deepseek-v4.1-flash-1017:fireworks",
         config: portkeyConfig[
             "accounts/fireworks/models/deepseek-v4p1-flash-1017"
         ],
         transform: fireworksThinkingWithoutCacheControl,
-    },
-    {
-        name: "deepseek/deepseek-v4.1-flash-1017:deepinfra",
-        config: portkeyConfig["deepseek-ai/DeepSeek-V4.1-Flash-1017"],
-        transform: fireworksThinking,
     },
     {
         name: "deepseek/deepseek-v4-flash:deepinfra",
@@ -622,7 +771,7 @@ const models: ModelDefinition[] = [
             (usesGrokReasoning(options)
                 ? portkeyConfig["grok-4-20-reasoning"]
                 : portkeyConfig["grok-4-20-non-reasoning"])(),
-        transform: grokTransform,
+        transform: pipe(effortMaxToXhigh, grokTransform),
     },
     {
         name: "x-ai/grok-4.20:openrouter:xai-zdr",
@@ -632,6 +781,7 @@ const models: ModelDefinition[] = [
     {
         name: "x-ai/grok-4.3",
         config: portkeyConfig["grok-4.3"],
+        transform: effortMaxToXhigh,
     },
     {
         name: "x-ai/grok-4.3:openrouter:xai-zdr",
@@ -640,18 +790,19 @@ const models: ModelDefinition[] = [
     {
         name: "x-ai/grok-4.6",
         config: portkeyConfig["grok-4.6"],
+        transform: grok46Effort,
     },
     {
         name: "x-ai/grok-4.7",
+        config: portkeyConfig["grok-4.7-bedrock"],
+    },
+    {
+        name: "x-ai/grok-4.7:xai",
         config: portkeyConfig["grok-4.7-xai"],
     },
     {
-        name: "x-ai/grok-4.7:openrouter",
-        config: portkeyConfig["grok-4.7-openrouter"],
-    },
-    {
-        name: "x-ai/grok-4.6:xai",
-        config: portkeyConfig["grok-4.6-xai"],
+        name: "x-ai/grok-4.6:aws",
+        config: portkeyConfig["grok-4.6-bedrock"],
     },
     {
         name: "openai/gpt-audio-mini",
@@ -698,7 +849,7 @@ const models: ModelDefinition[] = [
     {
         name: "anthropic/claude-sonnet-4.6",
         config: portkeyConfig["claude-sonnet-4-6"],
-        transform: pipe(claudeAdaptiveThinking, preferTemperature),
+        transform: pipe(claudeSonnet46BedrockThinking, preferTemperature),
     },
     {
         name: "anthropic/claude-sonnet-4.6:anthropic",
@@ -713,6 +864,16 @@ const models: ModelDefinition[] = [
     {
         name: "anthropic/claude-sonnet-5:anthropic",
         config: portkeyConfig["anthropic/claude-sonnet-5:anthropic"],
+        transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
+    },
+    {
+        name: "anthropic/claude-fable-5.2",
+        config: portkeyConfig["anthropic/claude-fable-5.2"],
+        transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
+    },
+    {
+        name: "anthropic/claude-fable-5.2:anthropic",
+        config: portkeyConfig["anthropic/claude-fable-5.2:anthropic"],
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
@@ -850,6 +1011,63 @@ const models: ModelDefinition[] = [
         ),
     },
     {
+        name: "google/gemini-4-carbon",
+        config: portkeyConfig["google/gemini-4-carbon"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForVertex,
+            // Gemini 4 Carbon requires reasoning; map `none` to its lowest level.
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
+        name: "google/gemini-4-carbon:openrouter:ai-studio",
+        config: portkeyConfig["google/gemini-4-carbon:openrouter:ai-studio"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            createOpenRouterGoogleSearchTransform("exa"),
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
+        name: "google/gemini-4-hydrogen",
+        config: portkeyConfig["google/gemini-4-hydrogen"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForVertex,
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
+        name: "google/gemini-4-hydrogen:openrouter:vertex-global",
+        config: portkeyConfig[
+            "google/gemini-4-hydrogen:openrouter:vertex-global"
+        ],
+        transform: pipe(
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForOpenRouter,
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
+        name: "google/gemini-4-neon",
+        config: portkeyConfig["google/gemini-4-neon"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForVertex,
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
+        name: "google/gemini-4-neon:openrouter:vertex-global",
+        config: portkeyConfig["google/gemini-4-neon:openrouter:vertex-global"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForOpenRouter,
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
         name: "google/gemini-4-argon",
         config: portkeyConfig["google/gemini-4-argon"],
         transform: pipe(
@@ -958,13 +1176,23 @@ const models: ModelDefinition[] = [
         useSystemOneApi: true,
     },
     {
-        name: "typesafe/jev-1.13",
-        config: portkeyConfig["jev-1.13"],
+        name: "typesafe/jev-1.14",
+        config: portkeyConfig["jev-1.14"],
         useSystemOneApi: true,
     },
     {
-        name: "typesafe/jev-1.13:openrouter:typesafe",
-        config: portkeyConfig["typesafe/jev-1.13:openrouter:typesafe"],
+        name: "typesafe/jev-1.14:openrouter:typesafe",
+        config: portkeyConfig["typesafe/jev-1.14:openrouter:typesafe"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "baseten/bison-1",
+        config: portkeyConfig["baseten/bison-1"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "baseten/bison-1:openrouter:baseten",
+        config: portkeyConfig["baseten/bison-1:openrouter:baseten"],
         useSystemOneApi: true,
     },
     {
@@ -985,29 +1213,21 @@ const models: ModelDefinition[] = [
     {
         name: "stealth/glyph-cluster",
         config: portkeyConfig["stealth/glyph-cluster"],
-        transform: (messages, options) => {
-            const { reasoning_effort, ...rest } = options;
-            return {
-                messages,
-                options: {
-                    ...rest,
-                    ...(reasoning_effort === undefined
-                        ? {}
-                        : {
-                              reasoning: {
-                                  ...(rest.reasoning as
-                                      | Record<string, unknown>
-                                      | undefined),
-                                  effort: reasoning_effort,
-                              },
-                          }),
-                },
-            };
-        },
+        transform: glyphReasoning,
+    },
+    {
+        name: "stealth/glyph-cluster:kilo",
+        config: portkeyConfig["stealth/glyph-cluster:kilo"],
+        transform: glyphReasoning,
     },
     {
         name: "liquid/d1",
         config: portkeyConfig["liquid-d1"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "liquid/d1.2",
+        config: portkeyConfig["liquid/d1.2"],
         useSystemOneApi: true,
     },
     {
@@ -1038,6 +1258,26 @@ const models: ModelDefinition[] = [
         useSystemOneApi: true,
     },
     {
+        name: "microsoft/microsoft-decision-1.1",
+        config: portkeyConfig["microsoft-decision-1.1-azure"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "microsoft/microsoft-decision-1.1:vercel",
+        config: portkeyConfig["microsoft/microsoft-decision-1.1:vercel"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "microsoft/microsoft-decision-1.1:openrouter",
+        config: portkeyConfig["microsoft/microsoft-decision-1.1:openrouter"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "heygen/heygen-decision-1",
+        config: portkeyConfig["heygen/heygen-decision-1"],
+        useSystemOneApi: true,
+    },
+    {
         name: "microsoft/microsoft-decision-1",
         config: portkeyConfig["microsoft-decision-1-azure"],
         useSystemOneApi: true,
@@ -1053,12 +1293,23 @@ const models: ModelDefinition[] = [
         useSystemOneApi: true,
     },
     {
+        name: "google/gemini-decision-1",
+        config: portkeyConfig["google/gemini-decision-1"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "google/gemini-decision-1:openrouter:ai-studio",
+        config: portkeyConfig["google/gemini-decision-1:openrouter:ai-studio"],
+        useSystemOneApi: true,
+    },
+    {
         name: "pollinations/midijourney",
         config: portkeyConfig["gpt-5.4-mini-chat"],
         transform: pipe(
             createMessageTransform(midijourneyPrompt),
             omitOpenAISampling,
         ),
+        reasoningEffortMap: maxToXhigh,
     },
     {
         name: "pollinations/midijourney-large",
@@ -1067,6 +1318,7 @@ const models: ModelDefinition[] = [
             createMessageTransform(midijourneyPrompt),
             omitOpenAISampling,
         ),
+        reasoningEffortMap: maxToXhighAndMinimalToLow,
     },
     {
         name: "perplexity/sonar",
@@ -1077,7 +1329,7 @@ const models: ModelDefinition[] = [
     {
         name: "moonshotai/kimi-k2.6",
         config: portkeyConfig["Kimi-K2.6"],
-        transform: fireworksThinking,
+        transform: pipe(fireworksThinking, kimiK26Effort),
     },
     {
         name: "moonshotai/kimi-k2.6:deepinfra",
@@ -1096,6 +1348,11 @@ const models: ModelDefinition[] = [
     },
     {
         name: "moonshotai/kimi-k3",
+        config: portkeyConfig["kimi-k3-bedrock"],
+        transform: fireworksThinkingWithoutCacheControl,
+    },
+    {
+        name: "moonshotai/kimi-k3:fireworks",
         config: portkeyConfig["accounts/fireworks/models/kimi-k3"],
         transform: fireworksThinkingWithoutCacheControl,
     },
@@ -1103,6 +1360,10 @@ const models: ModelDefinition[] = [
         name: "moonshotai/kimi-k3:deepinfra",
         config: portkeyConfig["moonshotai/Kimi-K3"],
         transform: fireworksThinkingWithoutCacheControl,
+    },
+    {
+        name: "moonshotai/kimi-k3.1-pro-highspeed",
+        config: portkeyConfig["moonshotai/kimi-k3.1-pro-highspeed"],
     },
     {
         name: "poolside/laguna-s-2.1",
@@ -1115,8 +1376,20 @@ const models: ModelDefinition[] = [
         transform: createReasoningEffortTransform("toggle"),
     },
     {
+        name: "tencent/hy4-flash",
+        config: portkeyConfig["tencent/hy4-flash"],
+    },
+    {
+        name: "tencent/hy4-flash:openrouter",
+        config: portkeyConfig["tencent/hy4-flash:openrouter"],
+    },
+    {
         name: "tencent/hy4-preview",
         config: portkeyConfig["tencent/hy4-preview"],
+    },
+    {
+        name: "thinkingmachines/inkling-2-mini",
+        config: portkeyConfig["thinkingmachines/inkling-2-mini"],
     },
     {
         name: "thinkingmachines/inkling-small",
@@ -1133,27 +1406,23 @@ const models: ModelDefinition[] = [
     },
     {
         name: "nvidia/nemotron-3-ultra",
-        config: portkeyConfig[
-            "accounts/fireworks/models/nemotron-3-ultra-nvfp4"
-        ],
+        config: portkeyConfig["azure/Nemotron-3-Ultra"],
         transform: fireworksThinkingWithoutCacheControl,
     },
     {
         name: "nvidia/nemotron-3-ultra:deepinfra",
         config: portkeyConfig["nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B"],
-        transform: createReasoningEffortTransform("toggle"),
-    },
-    {
-        name: "nvidia/nemotron-3.5-lightning",
-        config: portkeyConfig[
-            "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b"
-        ],
         transform: fireworksThinkingWithoutCacheControl,
     },
     {
-        name: "nvidia/nemotron-3.5-lightning:openrouter:coreweave-bf16",
-        config: portkeyConfig["nemotron-3.5-lightning-openrouter-coreweave"],
-        transform: fireworksThinking,
+        name: "nvidia/nemotron-3.5-lightning",
+        config: portkeyConfig["azure/Nemotron-3.5-Lightning"],
+        transform: fireworksThinkingWithoutCacheControl,
+    },
+    {
+        name: "nvidia/nemotron-3.5-lightning:deepinfra",
+        config: portkeyConfig["nvidia/NVIDIA-Nemotron-3.5-Lightning"],
+        transform: fireworksThinkingWithoutCacheControl,
     },
     {
         name: "nvidia/nemotron-3.5-super-vl",
@@ -1168,10 +1437,6 @@ const models: ModelDefinition[] = [
     {
         name: "xiaomi/mimo-v2.5",
         config: portkeyConfig["xiaomi/mimo-v2.5"],
-    },
-    {
-        name: "xiaomi/mimo-v2.5-pro",
-        config: portkeyConfig["xiaomi/mimo-v2.5-pro"],
     },
     {
         name: "xiaomi/mimo-v2.6-flash",
@@ -1307,6 +1572,11 @@ const models: ModelDefinition[] = [
         transform: fireworksThinkingWithoutCacheControl,
     },
     {
+        name: "minimax/minimax-m3.1-flash",
+        config: portkeyConfig["accounts/fireworks/models/minimax-m3p1-flash"],
+        transform: fireworksThinkingWithoutCacheControl,
+    },
+    {
         name: "meta/muse-glimmer-30b",
         config: portkeyConfig["meta-models/Muse-Glimmer-30B"],
         transform: fireworksThinking,
@@ -1317,12 +1587,38 @@ const models: ModelDefinition[] = [
         transform: mandatoryReasoning,
     },
     {
+        name: "meta/muse-ember",
+        config: portkeyConfig["meta/muse-ember"],
+    },
+    {
+        name: "meta/muse-ember:openrouter",
+        config: portkeyConfig["meta/muse-ember:openrouter"],
+    },
+    {
         name: "meta/muse-spark-1.2",
         config: portkeyConfig["meta/muse-spark-1.2"],
     },
     {
+        name: "moonshotai/kimi-k3.1-pro",
+        config: portkeyConfig["moonshotai/kimi-k3.1-pro"],
+    },
+    {
+        name: "moonshotai/kimi-k3.1-pro:vercel",
+        config: portkeyConfig["moonshotai/kimi-k3.1-pro:vercel"],
+    },
+    {
         name: "meta/muse-spark-1.3",
         config: portkeyConfig["meta/muse-spark-1.3"],
+    },
+    {
+        name: "meta/muse-spark-open",
+        config: portkeyConfig["accounts/fireworks/models/muse-spark-open"],
+        transform: mandatoryReasoningWithoutCacheControl,
+    },
+    {
+        name: "meta/muse-spark-open:vercel:baseten",
+        config: portkeyConfig["meta/muse-spark-open:vercel:baseten"],
+        transform: mandatoryReasoning,
     },
     {
         name: "meta/muse-wonder-1.0",
@@ -1372,22 +1668,13 @@ const models: ModelDefinition[] = [
     {
         name: "mistralai/mistral-large-3",
         config: portkeyConfig["Mistral-Large-3"],
-        // Azure deployment 500s on reasoning_effort.
-        transform: stripReasoning,
+        // Azure deployment 500s on reasoning_effort and rejects developer.
+        transform: pipe(stripReasoning, developerToSystem),
     },
     {
-        name: "mistralai/mistral-large-3:mistral",
-        config: portkeyConfig["mistral-large-direct"],
-        transform: pipe(stripReasoning, (messages, options) => {
-            const { seed, ...rest } = options;
-            return {
-                messages,
-                options: {
-                    ...rest,
-                    ...(seed === undefined ? {} : { random_seed: seed }),
-                },
-            };
-        }),
+        name: "mistralai/mistral-large-3:aws",
+        config: portkeyConfig["mistral-large-3-bedrock"],
+        transform: stripReasoning,
     },
     {
         name: "qwen/qwen3guard-gen-8b",

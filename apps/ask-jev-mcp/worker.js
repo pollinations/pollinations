@@ -5,7 +5,10 @@ import {
     createTextContent,
     fetchJsonWithAuth,
 } from "../../packages/mcp/src/utils/coreUtils.js";
-import { CreateDecisionRequestSchema } from "../../shared/schemas/decisions.ts";
+import {
+    CreateDecisionRequestSchema,
+    DEFAULT_DECISION_MODEL,
+} from "../../shared/schemas/decisions.ts";
 
 function buildServer() {
     const server = new McpServer(
@@ -20,17 +23,18 @@ function buildServer() {
                 "Supply relevant facts in state; confidence can remain high when facts are missing. " +
                 "Choice criteria map options to descriptions; optional noul criteria.true/false define yes/no. " +
                 "Read score legends; handle counting, arithmetic, and date comparisons in code. " +
-                "Question and answer shapes: https://docs.typesafe.ai/api",
-            inputSchema: CreateDecisionRequestSchema.omit({ model: true }),
+                "Question and answer shapes: https://docs.typesafe.ai/api. " +
+                "Optional model picks another decision model, any /v1/models entry whose supported_endpoints include /alpha/decisions; defaults to Jev.",
+            inputSchema: CreateDecisionRequestSchema,
         },
-        async ({ state, questions }, context) => {
+        async ({ model, state, questions }, context) => {
             const { answers } = await fetchJsonWithAuth(
                 buildUrl("/alpha/decisions"),
                 {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        model: "typesafe/jev-1.13",
+                        model: model ?? DEFAULT_DECISION_MODEL,
                         state,
                         questions,
                     }),

@@ -264,6 +264,7 @@ new_sqlite_classes = ["AzurePortWake"]
 
 [env.production.vars]
 ENVIRONMENT = "production"
+BEDROCK_SENSITIVE_MESSAGE_CACHE = "on"
 BEDROCK_SHIELD_INLINE = "on"
 D1_CALL_TELEMETRY = "on"
 SITES_HOST_SUFFIX = ".pollinations.app"

@@ -186,6 +186,125 @@ describe("applySafetyToInput text", { timeout: 30000 }, () => {
         vi.unstubAllGlobals();
     });
 
+    describe("sensitive message reuse", () => {
+        const bindings = {
+            ...configuredEnv,
+            BETTER_AUTH_SECRET: "local-safety-cache-test-key",
+            BEDROCK_SENSITIVE_MESSAGE_CACHE: "on",
+        } as CloudflareBindings;
+
+        async function scan(
+            app: ReturnType<typeof safetyApp>,
+            texts: string[],
+        ) {
+            const context = createExecutionContext();
+            const result = await app.request(
+                "https://gen.pollinations.ai/texts?safe=privacy,secrets",
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ texts }),
+                },
+                bindings,
+                context,
+            );
+            await waitOnExecutionContext(context);
+            return result;
+        }
+
+        async function sentTexts() {
+            const request = fetchMock.mock.lastCall?.[0] as Request;
+            const body = await request.clone().json<{
+                content: { text: { text: string } }[];
+            }>();
+            return body.content.map((item) => item.text.text);
+        }
+
+        it("reapplies a cached redaction across the cutoff and blocks newly added secrets", async () => {
+            const app = safetyApp([], "cache-cutoff-account");
+            const system = "Reply with the same format.";
+            const long = `${"x".repeat(49_000)} Contact synthetic@example.org.`;
+            const safeLong = long.replace("synthetic@example.org", "{EMAIL}");
+            const recent = "This is the previous conversation turn.";
+            const appended = "y".repeat(1700);
+            guardrailResponse = intervened(
+                {
+                    sensitiveInformationPolicy: {
+                        piiEntities: [{ action: "ANONYMIZED", type: "EMAIL" }],
+                    },
+                },
+                [system, safeLong, recent].map((text) => ({ text })),
+            );
+            expect(
+                await (await scan(app, [system, long, recent])).json(),
+            ).toEqual([system, safeLong, recent]);
+
+            guardrailResponse = {
+                action: "NONE",
+                usage: { sensitiveInformationPolicyUnits: 2 },
+            };
+            const conversation = [system, long, recent, appended];
+            const warm = await scan(app, conversation);
+            expect(await warm.json()).toEqual([
+                system,
+                safeLong,
+                recent,
+                appended,
+            ]);
+            expect(warm.headers.get("X-Safety-Redacted")).toBe("EMAIL");
+            expect(await sentTexts()).toEqual([recent, appended]);
+
+            const beforeRetry = fetchMock.mock.calls.length;
+            expect(await (await scan(app, conversation)).json()).toEqual([
+                system,
+                safeLong,
+                recent,
+                appended,
+            ]);
+            expect(fetchMock).toHaveBeenCalledTimes(beforeRetry);
+
+            guardrailResponse = intervened({
+                sensitiveInformationPolicy: {
+                    piiEntities: [{ action: "ANONYMIZED", type: "PASSWORD" }],
+                },
+            });
+            expect(
+                (
+                    await scan(app, [
+                        ...conversation,
+                        "A fictional password for this example.",
+                    ])
+                ).status,
+            ).toBe(400);
+            expect(await sentTexts()).toEqual([
+                appended,
+                "A fictional password for this example.",
+            ]);
+        });
+
+        it("rescans an edited history and keeps cached checks within an account", async () => {
+            const app = safetyApp([], "cache-edit-account");
+            const original = [
+                "Ordinary system text.",
+                "First example.",
+                "Previous question.",
+            ];
+            await scan(app, original);
+            const edited = [
+                ...original.slice(0, 2),
+                "Edited question.",
+                "New question.",
+            ];
+            await scan(app, edited);
+            expect(await sentTexts()).toEqual(edited);
+
+            const other = safetyApp([], "cache-other-account");
+            await scan(other, edited);
+            expect(await sentTexts()).toEqual(edited);
+            expect(fetchMock).toHaveBeenCalledTimes(3);
+        });
+    });
+
     it("does not call Bedrock when safe is omitted", async () => {
         const response = await safetyApp().request(
             "/scan/hello",

@@ -1,5 +1,10 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import type { FinishReason, ToolSet } from "ai";
+import {
+    type FinishReason,
+    type LanguageModelMiddleware,
+    type ToolSet,
+    wrapLanguageModel,
+} from "ai";
 import {
     type CompletionUsage,
     CompletionUsageSchema,
@@ -9,6 +14,8 @@ import type { AgentUsage } from "./types.ts";
 type AgentStep = {
     providerMetadata?: Record<string, Record<string, unknown>>;
 };
+
+const MODEL_FAILURE = "Agent model failed to complete the response";
 
 function choiceFinishError(body: unknown): string | null {
     if (!body || typeof body !== "object") return null;
@@ -20,10 +27,7 @@ function choiceFinishError(body: unknown): string | null {
     if (topError) return topError;
     for (const choice of record.choices ?? []) {
         if (choice?.finish_reason !== "error" && !choice?.error) continue;
-        return (
-            extractErrorMessage(choice.error) ??
-            "Agent model failed to complete the response"
-        );
+        return extractErrorMessage(choice.error) ?? MODEL_FAILURE;
     }
     return null;
 }
@@ -43,6 +47,64 @@ function extractErrorMessage(error: unknown): string | null {
     return null;
 }
 
+function agentModelError({
+    finishReason,
+    providerMetadata,
+}: AgentStep & { finishReason: { raw?: string; unified: FinishReason } }):
+    | Error
+    | undefined {
+    const message = providerMetadata?.pollinations?.finishError;
+    if (typeof message === "string") return new Error(message);
+    if (finishReason.raw === "error" || finishReason.unified === "error") {
+        return new Error(MODEL_FAILURE);
+    }
+}
+
+const rejectFailedStep: LanguageModelMiddleware = {
+    async wrapGenerate({ doGenerate }) {
+        const result = await doGenerate();
+        const error = agentModelError(result);
+        if (error) throw error;
+        return result;
+    },
+    async wrapStream({ doStream }) {
+        const { stream, ...result } = await doStream();
+        type Part =
+            typeof stream extends ReadableStream<infer Value> ? Value : never;
+        // The SDK can invoke tools as soon as it sees the tool parts. Hold
+        // them until the provider has finished the step successfully.
+        const toolParts: Part[] = [];
+        let failed = false;
+        return {
+            ...result,
+            stream: stream.pipeThrough(
+                new TransformStream<Part, Part>({
+                    transform(part, controller) {
+                        if (part.type.startsWith("tool-")) {
+                            if (!failed) toolParts.push(part);
+                            return;
+                        }
+                        if (part.type === "error") {
+                            failed = true;
+                            toolParts.length = 0;
+                        }
+                        if (part.type === "finish" && !failed) {
+                            const error = agentModelError(part);
+                            if (error) {
+                                controller.enqueue({ type: "error", error });
+                                return;
+                            }
+                            for (const toolPart of toolParts)
+                                controller.enqueue(toolPart);
+                        }
+                        controller.enqueue(part);
+                    },
+                }),
+            ),
+        };
+    },
+};
+
 export function createAgentModelProvider({
     baseURL,
     fetch: fetcher,
@@ -52,7 +114,7 @@ export function createAgentModelProvider({
     fetch: typeof fetch;
     apiKey?: string;
 }) {
-    return createOpenAICompatible({
+    const provider = createOpenAICompatible({
         name: "pollinations",
         ...(apiKey ? { apiKey } : {}),
         baseURL,
@@ -97,6 +159,15 @@ export function createAgentModelProvider({
             },
         },
     });
+    const languageModel: typeof provider.languageModel = (modelId, config) =>
+        wrapLanguageModel({
+            model: provider.languageModel(modelId, config),
+            middleware: rejectFailedStep,
+        });
+    return Object.assign(languageModel, provider, {
+        languageModel,
+        chatModel: languageModel,
+    });
 }
 
 /** Whether the run stopped on calls only the caller can answer (no execute). */
@@ -118,7 +189,7 @@ export function awaitsCaller(
 
 export function openAIFinishReason(reason: FinishReason): string {
     if (reason === "error") {
-        throw new Error("Agent model failed to complete the response");
+        throw new Error(MODEL_FAILURE);
     }
     if (reason === "tool-calls") return "tool_calls";
     if (reason === "content-filter") return "content_filter";
@@ -156,14 +227,6 @@ function sumUsageField(
 }
 
 export function strictAgentUsage(steps: AgentStep[]): AgentUsage {
-    const finishError = steps
-        .map((step) => step.providerMetadata?.pollinations?.finishError)
-        .find(
-            (message): message is string =>
-                typeof message === "string" && message.length > 0,
-        );
-    if (finishError) throw new Error(finishError);
-
     const usages = steps.map((step) => {
         const usage = completionUsage(
             step.providerMetadata?.pollinations?.completionUsage,

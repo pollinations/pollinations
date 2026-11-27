@@ -226,12 +226,11 @@ export async function runPromptAgent(
         if (limited) {
             onPart({ type: "text-delta", text: `\n\n${STEP_LIMIT_MESSAGE}` });
         }
-        const usage = strictAgentUsage(result.steps);
         return {
             finishReason: limited
                 ? "length"
                 : openAIFinishReason(result.finishReason),
-            usage,
+            usage: strictAgentUsage(result.steps),
             toolCallCounts,
         };
     } finally {
@@ -264,10 +263,9 @@ export async function streamPromptAgent(
         if (limited) {
             onPart({ type: "text-delta", text: `\n\n${STEP_LIMIT_MESSAGE}` });
         }
-        const usage = strictAgentUsage(steps);
         return {
             finishReason: limited ? "length" : openAIFinishReason(reason),
-            usage,
+            usage: strictAgentUsage(steps),
             toolCallCounts,
         };
     } finally {

@@ -1,10 +1,10 @@
 import {
     createAgentModelProvider,
-    openAIFinishReason,
     strictAgentUsage,
 } from "@shared/agents/model.ts";
 import { collectOutput } from "@shared/agents/output.ts";
 import { handleAgentResponsesRequest } from "@shared/agents/responses.ts";
+import { runSdkAgent } from "@shared/agents/sdk-runner.ts";
 import type { AgentRunner } from "@shared/agents/types.ts";
 import { ToolLoopAgent } from "ai";
 import OpenAI from "openai";
@@ -1632,7 +1632,7 @@ describe("managed agent Responses runtime", () => {
     });
 
     it.each([false, true])(
-        "rejects finish_reason error in strictAgentUsage and openAIFinishReason (stream:%s)",
+        "rejects finish_reason error with the provider message (stream:%s)",
         async (stream) => {
             const validUsage = {
                 prompt_tokens: 10,
@@ -1682,12 +1682,14 @@ describe("managed agent Responses runtime", () => {
                 model: provider("test"),
                 maxRetries: 0,
             });
-            const result = stream
-                ? await agent.stream({ prompt: "hello" })
-                : await agent.generate({ prompt: "hello" });
-            const [, steps] = await Promise.all([result.text, result.steps]);
-            expect(() => strictAgentUsage(steps)).toThrow("Upstream aborted");
-            expect(() => openAIFinishReason("error")).toThrow();
+            await expect(
+                runSdkAgent(agent, {
+                    messages: [{ role: "user", content: "hello" }],
+                    signal: new AbortController().signal,
+                    stream,
+                    onPart: () => {},
+                }),
+            ).rejects.toThrow("Upstream aborted");
         },
     );
 });

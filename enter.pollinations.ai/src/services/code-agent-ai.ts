@@ -156,12 +156,11 @@ export function createCodeAgentAI(
                     text: "\n\nThe agent reached its stopping condition without a final answer.",
                 });
             }
-            const usage = strictAgentUsage(steps);
             return {
                 finishReason: stoppedWithoutAnswer
                     ? "length"
                     : openAIFinishReason(reason),
-                usage,
+                usage: strictAgentUsage(steps),
                 toolCallCounts,
             };
         };

@@ -3904,16 +3904,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "openai/gpt-6-luna:classic": {
     "cost": {
-      "completionTextTokens": 0.0000005,
-      "promptCacheWriteTokens": 0.000000125,
-      "promptCachedTokens": 0.00000001,
-      "promptTextTokens": 0.0000001,
+      "completionTextTokens": 0.00000025,
+      "promptCacheWriteTokens": 0.0000000625,
+      "promptCachedTokens": 0.000000005,
+      "promptTextTokens": 0.00000005,
     },
     "price": {
-      "completionTextTokens": 0.0000005,
-      "promptCacheWriteTokens": 0.000000125,
-      "promptCachedTokens": 0.00000001,
-      "promptTextTokens": 0.0000001,
+      "completionTextTokens": 0.00000025,
+      "promptCacheWriteTokens": 0.0000000625,
+      "promptCachedTokens": 0.000000005,
+      "promptTextTokens": 0.00000005,
     },
   },
   "openai/gpt-6-sol": {

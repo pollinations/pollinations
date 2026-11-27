@@ -313,8 +313,8 @@ type CheckoutUiMode = "hosted" | "elements";
  * link selects only crypto and keeps USD pricing. Returns an error response
  * or a session with a url (hosted) or client_secret (in the wallet).
  *
- * Path parameter is the pack key ("p2".."p100"). Pollen is the canonical
- * unit: 1 pollen ≈ $1. Checkout sends USD price_data; Stripe Adaptive
+ * Path parameter is the pack key ("p2".."p100"). Pack amounts are in USD.
+ * Checkout sends USD price_data; Stripe Adaptive
  * Pricing may localize the regular checkout. CF-IPCountry → CohortId for analytics.
  */
 async function createPackCheckoutSession(
@@ -512,7 +512,7 @@ async function createPackCheckoutSession(
 
 /**
  * Where Stripe sends the buyer back: the standalone top-up page when they
- * started there, else the Pollen dashboard. Both paths are fixed here, so the
+ * started there, else the Credits page. Both paths are fixed here, so the
  * return URL is always on this origin.
  */
 function walletReturnUrl(c: Context<Env>): URL {

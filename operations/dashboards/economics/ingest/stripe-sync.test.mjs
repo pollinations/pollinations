@@ -16,6 +16,7 @@ const transaction = (id, category, amount, fee = 0) => ({
     created: start + 1,
     available_on: start + 86400,
     currency: "usd",
+    balance_type: "payments",
     reporting_category: category,
     amount,
     fee,
@@ -23,6 +24,7 @@ const transaction = (id, category, amount, fee = 0) => ({
 });
 const exported = (rows, stream = "pollen") => ({
     account_id: ACCOUNTS[stream].id,
+    default_currency: "USD",
     start,
     end,
     rows,
@@ -51,6 +53,8 @@ test("financial categories conserve sales, fees and reversals without counting c
             refunds: 1500,
             reversals: 0,
             stripe_fees: 385,
+            stripe_fees_credit: 0,
+            fee_credit_funding: 0,
             payments: 1,
             refund_count: 1,
             net_after_fees: 8115,
@@ -95,9 +99,92 @@ test("rejects duplicate, out-of-range, inconsistent, unreviewed and wrong-accoun
         [{ ...row, net: 124 }],
         [{ ...row, reporting_category: "unknown" }],
         [{ ...row, currency: "jpy" }],
+        [{ ...row, balance_type: undefined }],
+        [{ ...row, balance_type: "unknown" }],
+        [{ ...row, balance_type: "fee_credits" }],
+        [{ ...row, reporting_category: "fee_credit_funding" }],
     ])
         assert.throws(() => normalize(exported(rows), "pollen"));
     assert.throws(() => normalize(exported([row], "kofi"), "pollen"));
+});
+
+test("keeps promotional funding and consumed fee credits separate from cash and customer revenue", () => {
+    const source = exported([
+        transaction("sale", "charge", 10000, 300),
+        transaction("cashFee", "fee", -50),
+        {
+            ...transaction("creditFee", "fee", -125),
+            balance_type: "fee_credits",
+        },
+        {
+            ...transaction("creditFeeReturn", "fee", 25),
+            balance_type: "fee_credits",
+        },
+        {
+            ...transaction("grant", "fee_credit_funding", 2000000),
+            balance_type: "fee_credits",
+        },
+    ]);
+    const rows = normalize(source, "pollen");
+    assert.equal(rows.length, 5);
+    assert.equal(
+        rows.filter((r) => r.balance_type === "fee_credits").length,
+        3,
+    );
+    assert.deepEqual(totals(rows), [
+        {
+            key: "2026-09:pollen:USD",
+            gross_sales: 10000,
+            refunds: 0,
+            reversals: 0,
+            stripe_fees: 350,
+            stripe_fees_credit: 100,
+            fee_credit_funding: 2000000,
+            payments: 1,
+            refund_count: 0,
+            net_after_fees: 9650,
+        },
+    ]);
+    const grant = totals(
+        rows.filter((r) => r.reporting_category === "fee_credit_funding"),
+    )[0];
+    assert.equal(grant.gross_sales, 0);
+    assert.equal(grant.payments, 0);
+    assert.equal(grant.net_after_fees, 0);
+    assert.deepEqual(
+        mergeTransactions(rows, [{ exported: source, stream: "pollen" }])
+            .map((r) => r.transaction_id)
+            .sort(),
+        rows.map((r) => r.transaction_id).sort(),
+    );
+});
+
+test("refreshing credited fees preserves older facts and reviewed evidence", () => {
+    const current = exported([
+        { ...transaction("credit", "fee", -125), balance_type: "fee_credits" },
+    ]);
+    const older = {
+        ...normalize(
+            exported([transaction("old", "charge", 200)]),
+            "pollen",
+        )[0],
+        created: "2026-08-31 23:59:59.000",
+    };
+    const previous = mergeTransactions(
+        [older],
+        [{ exported: current, stream: "pollen" }],
+    );
+    const reviewed = previous.find((r) => r.transaction_id === "txn_credit");
+    reviewed.classification = "reviewed_fee";
+    reviewed.evidence = ["https://drive.google.com/file/d/fee/view"];
+    const refreshed = mergeTransactions(previous, [
+        { exported: current, stream: "pollen" },
+    ]);
+    assert.deepEqual(refreshed, previous);
+    assert.deepEqual(
+        refreshed.find((r) => r.transaction_id === "txn_old"),
+        older,
+    );
 });
 
 test("separates settlement currencies and calendar months", () => {

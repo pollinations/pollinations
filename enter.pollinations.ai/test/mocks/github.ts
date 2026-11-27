@@ -26,6 +26,7 @@ export type MockGithubState = {
         state: "open" | "closed";
         html_url: string;
         body: string | null;
+        authorAssociation?: string;
         created_at: string;
         updated_at: string;
         closed_at: string | null;
@@ -215,7 +216,10 @@ export function createMockGithub(): MockAPI<MockGithubState> {
             }
 
             const author = search.match(/\bauthor:([^\s]+)/)?.[1];
-            const label = search.match(/\blabel:([^\s]+)/)?.[1];
+            const labelName = body.query?.match(
+                /\blabel\(name:"([^"]+)"\)/,
+            )?.[1];
+            const label = labelName ?? search.match(/\blabel:([^\s]+)/)?.[1];
             const issues = state.questIssues.filter(
                 (issue) =>
                     (!author || issue.user?.login === author) &&
@@ -230,6 +234,7 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                 url: issue.html_url,
                 createdAt: issue.created_at,
                 body: issue.body,
+                authorAssociation: issue.authorAssociation ?? "MEMBER",
                 author: issue.user
                     ? { databaseId: issue.user.databaseId ?? null }
                     : null,
@@ -244,6 +249,8 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                     nodes: (issue.closedByPullRequestsReferences ?? []).map(
                         (pr) => ({
                             ...pr,
+                            title: `PR ${pr.number}`,
+                            url: `https://github.com/${REPO}/pull/${pr.number}`,
                             baseRefName: pr.baseRefName ?? "main",
                             repository: {
                                 nameWithOwner: pr.repository ?? REPO,
@@ -253,17 +260,17 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                 },
             }));
             const next = start + nodes.length;
-            return c.json({
-                data: {
-                    search: {
-                        nodes,
-                        pageInfo: {
-                            hasNextPage: next < issues.length,
-                            endCursor:
-                                next < issues.length ? String(next) : null,
-                        },
-                    },
+            const page = {
+                nodes,
+                pageInfo: {
+                    hasNextPage: next < issues.length,
+                    endCursor: next < issues.length ? String(next) : null,
                 },
+            };
+            return c.json({
+                data: labelName
+                    ? { repository: { label: { issues: page } } }
+                    : { search: page },
             });
         })
         .get("/user/emails", (c) => {

@@ -7,7 +7,8 @@ const limits = {
         label: "Budget",
         icon: <CardIcon />,
         name: "pollen-budget",
-        unit: "pollen",
+        unit: "USD",
+        spoken: "dollars",
         min: 0,
         step: "any",
         empty: "Unlimited",
@@ -20,6 +21,7 @@ const limits = {
         icon: <ClockIcon />,
         name: "expiry-days",
         unit: "days",
+        spoken: "days",
         min: 1 / 86400,
         step: "any",
         empty: "Never",
@@ -64,7 +66,9 @@ export function KeyLimitInput({
             rowClassName="grid max-w-xs grid-cols-[1.25rem_4.5rem_minmax(0,1fr)]"
             control={
                 <label htmlFor={inputId} className="flex items-center gap-2">
-                    <span className="sr-only">{limit.label} value</span>
+                    <span className="sr-only">
+                        {limit.label} in {limit.spoken}
+                    </span>
                     <Input
                         id={inputId}
                         name={limit.name}

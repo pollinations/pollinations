@@ -471,7 +471,7 @@ function createUpstreamErrorResponse(
 
 /**
  * Remap upstream statuses that are our operational concern (auth, routing,
- * quota, conflicts, proxy timeouts) to 502 Bad Gateway. Leaves input-content
+ * quota, conflicts, deleted upstreams, proxy timeouts) to 502 Bad Gateway. Leaves input-content
  * errors (400/413/415/422) as-is since those can reflect user input we failed to
  * validate.
  */
@@ -479,7 +479,7 @@ export function remapUpstreamStatus(status: number): ContentfulStatusCode {
     // A timeout waiting on our provider is a gateway failure, not a caller's
     // incomplete request. Keep upstreamStatus separately for retry decisions.
     if (status === 408) return 504;
-    const remapTo502 = new Set([401, 402, 403, 404, 409, 429, 524]);
+    const remapTo502 = new Set([401, 402, 403, 404, 409, 410, 429, 524]);
     if (remapTo502.has(status)) return 502;
     return status as ContentfulStatusCode;
 }
@@ -519,7 +519,7 @@ export function getDefaultErrorMessage(status: number): string {
     const messages: Record<number, string> = {
         400: "Something was wrong with the input data, check the details for more info.",
         401: "Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.",
-        402: "Insufficient pollen balance or API key budget exhausted.",
+        402: "Balance too low or API key budget exhausted.",
         403: "Access denied! You don't have the required permissions for this resource or model.",
         404: "Oh no, there's nothing here.",
         405: "That HTTP method isn't supported here. Please check the API docs.",

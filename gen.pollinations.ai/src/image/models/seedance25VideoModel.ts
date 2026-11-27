@@ -1,3 +1,4 @@
+import { UpstreamError } from "@shared/error.ts";
 import debug from "debug";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import type { ImageParams } from "../params.ts";
@@ -13,11 +14,14 @@ const logOps = debug("pollinations:seedance-2.5:ops");
 const logError = debug("pollinations:seedance-2.5:error");
 const MODEL = "bytedance/seedance-2.5";
 const DURATION = 4;
+// Edits and extensions can take longer than the default 6 minutes. Stay
+// under the 15-minute Durable Object alarm limit so the result gets cached.
+const PREDICTION_DEADLINE_MINUTES = 14;
 const ASPECT_RATIOS = ["16:9", "4:3", "1:1", "3:4", "9:16", "21:9"] as const;
 
 interface Seedance25Input {
     prompt: string;
-    duration: 4;
+    duration: 4 | -1;
     resolution: "480p" | "720p";
     aspect_ratio: string;
     generate_audio: boolean;
@@ -31,6 +35,8 @@ interface Seedance25Input {
 
 function resolveAspectRatio(safeParams: ImageParams): string {
     if (safeParams.aspectRatio) return safeParams.aspectRatio;
+    // Unless the caller chose a ratio, a reference video means an edit.
+    if (safeParams.reference_videos?.length) return "adaptive";
     if (!safeParams.dimensionsExplicit) return "16:9";
     return closestRatioLogSpace(
         safeParams.width,
@@ -48,12 +54,18 @@ export async function callSeedance25API(
         "480p") as Seedance25Input["resolution"];
 
     const images = safeParams.image ?? [];
+    const aspectRatio = resolveAspectRatio(safeParams);
+    // Replicate's video edit mode needs "adaptive" and duration -1. Edit,
+    // extension and motion transfer all look alike here, so with a reference
+    // video "adaptive" lets the model pick the length for all three.
+    const autoDuration =
+        aspectRatio === "adaptive" && !!safeParams.reference_videos?.length;
 
     const input: Seedance25Input = {
         prompt,
-        duration: DURATION,
+        duration: autoDuration ? -1 : DURATION,
         resolution,
-        aspect_ratio: resolveAspectRatio(safeParams),
+        aspect_ratio: aspectRatio,
         generate_audio: safeParams.audio ?? true,
     };
     if (safeParams.seed !== undefined && safeParams.seed !== -1) {
@@ -77,9 +89,18 @@ export async function callSeedance25API(
         const result = await runReplicatePrediction<Seedance25Input, string>({
             model: MODEL,
             input,
+            predictionDeadlineMinutes: PREDICTION_DEADLINE_MINUTES,
         });
         videoUrl = result.output;
         actualDurationSeconds = result.videoOutputDurationSeconds;
+        if (autoDuration && actualDurationSeconds === undefined) {
+            // The model picked the length, so there is no requested
+            // duration to bill instead.
+            throw UpstreamError.fromProvider(502, {
+                message:
+                    "Replicate Seedance 2.5 response is missing output video duration",
+            });
+        }
         logOps("prediction succeeded", {
             id: result.id,
             predictTimeSeconds: result.predictTimeSeconds,

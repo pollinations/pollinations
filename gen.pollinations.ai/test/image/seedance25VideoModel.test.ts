@@ -41,6 +41,8 @@ describe("Seedance 2.5 via Replicate", () => {
     it.each([
         [undefined, "480p", undefined, "16:9"],
         ["720p", "720p", "4:3", "4:3"],
+        // Without a reference video, adaptive keeps the fixed duration.
+        [undefined, "480p", "adaptive", "adaptive"],
     ] as const)(
         "routes resolution %s as %s with aspect ratio %s",
         async (resolution, expected, aspectRatio, expectedAspectRatio) => {
@@ -160,4 +162,71 @@ describe("Seedance 2.5 via Replicate", () => {
 
         expect(inputs[0]).toMatchObject(REFERENCE_MEDIA);
     });
+
+    it.each([
+        ["adaptive", { video_output_duration_seconds: 9 }, 9, -1, "adaptive"],
+        ["adaptive", {}, undefined, -1, "adaptive"],
+        // Unset ratio defaults to an edit; an explicit ratio stays fixed.
+        [undefined, { video_output_duration_seconds: 9 }, 9, -1, "adaptive"],
+        ["16:9", { video_output_duration_seconds: 4 }, 4, 4, "16:9"],
+    ] as const)(
+        "with reference video and aspect ratio %s bills reported duration (metrics %j)",
+        async (aspectRatio, metrics, billedSeconds, expectedDuration, expectedAspectRatio) => {
+            syncImageEnv(
+                {
+                    REPLICATE_API_TOKEN: "replicate-test-key",
+                } as CloudflareBindings,
+                ["REPLICATE_API_TOKEN"],
+            );
+            const inputs: Record<string, unknown>[] = [];
+            vi.spyOn(globalThis, "fetch").mockImplementation(
+                async (url, init) => {
+                    const href = typeof url === "string" ? url : url.toString();
+                    if (href === PREDICTIONS_URL) {
+                        inputs.push(
+                            (
+                                JSON.parse(init?.body as string) as {
+                                    input: Record<string, unknown>;
+                                }
+                            ).input,
+                        );
+                        return new Response(
+                            JSON.stringify({
+                                id: "pred-edit",
+                                status: "succeeded",
+                                output: VIDEO_URL,
+                                metrics,
+                            }),
+                            { status: 201 },
+                        );
+                    }
+                    return new Response(new Uint8Array([0, 0, 0, 24]), {
+                        headers: { "Content-Type": "video/mp4" },
+                    });
+                },
+            );
+
+            const result = callSeedance25API("replace the background", {
+                ...baseParams,
+                image: [],
+                aspectRatio,
+                reference_videos: REFERENCE_MEDIA.reference_videos,
+            });
+
+            if (billedSeconds === undefined) {
+                await expect(result).rejects.toMatchObject({ status: 502 });
+            } else {
+                await expect(result).resolves.toMatchObject({
+                    durationSeconds: billedSeconds,
+                    trackingData: {
+                        usage: { completionVideoSeconds: billedSeconds },
+                    },
+                });
+            }
+            expect(inputs[0]).toMatchObject({
+                duration: expectedDuration,
+                aspect_ratio: expectedAspectRatio,
+            });
+        },
+    );
 });

@@ -9,7 +9,7 @@ import type { AutoTopUpAttemptRow } from "./types.ts";
 
 /**
  * Verifies an auto top-up invoice actually carries the amount this attempt was
- * created for before crediting Pollen. Checks run top-to-bottom and the first
+ * created for before crediting the balance. Checks run top-to-bottom and the first
  * failure reason is returned verbatim, so ordering is load-bearing.
  */
 export async function verifyAutoTopUpInvoicePayment(

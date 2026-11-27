@@ -3,6 +3,7 @@ import {
     env,
     waitOnExecutionContext,
 } from "cloudflare:test";
+import { PROMPT_AGENT_BASE_URL_PLACEHOLDER } from "@shared/community-endpoints.ts";
 import { communityEndpoint } from "@shared/db/better-auth.ts";
 import type { ModelHealthRow } from "@shared/model-health.ts";
 import type { ModelInfo } from "@shared/registry/model-info.ts";
@@ -234,6 +235,80 @@ test("every catalog entry states paid_only as a boolean", async () => {
     }
 });
 
+test("OpenAI-compatible model listings expose required safety checks from primary and fallback models", async () => {
+    const owner = `safety-${crypto.randomUUID().slice(0, 8)}`;
+    const ownerUserId = await createTestUser({ githubUsername: owner });
+    const id = `community/${owner}/safe`;
+    const fallbackId = `community/${owner}/safe-fallback`;
+    const payload = (fallbacks: string[]) =>
+        JSON.stringify({
+            paidOnly: false,
+            bearerTokenCiphertext: "test-placeholder-not-used-for-generation",
+            api: "chat_completions",
+            modality: "text",
+            imagePricing: "request",
+            inputModalities: ["text"],
+            perUserRpm: null,
+            fallbacks,
+            prices: {},
+        });
+    await drizzle(env.DB)
+        .insert(communityEndpoint)
+        .values([
+            {
+                id: crypto.randomUUID(),
+                ownerUserId,
+                name: "safe",
+                title: "safe",
+                type: "proxy" as const,
+                baseUrl: "https://provider.example/v1/chat/completions",
+                upstreamModel: "test",
+                requiredSafetyFeatures: ["privacy"],
+                visibility: "public" as const,
+                payload: payload([fallbackId]),
+            },
+            {
+                id: crypto.randomUUID(),
+                ownerUserId,
+                name: "safe-fallback",
+                title: "safe-fallback",
+                type: "proxy" as const,
+                baseUrl: "https://provider.example/v1/chat/completions",
+                upstreamModel: "test",
+                requiredSafetyFeatures: ["secrets"],
+                visibility: "public" as const,
+                payload: payload([]),
+            },
+        ]);
+    await resetGenerationModelRegistryCache(env);
+
+    const registry = await getGenerationModelRegistry(env);
+    expect(registry.resolve(id)?.info.required_safety).toEqual(["privacy"]);
+    expect(
+        registry
+            .resolve(id)
+            ?.fallbackEntries?.map((fallback) => fallback.info.required_safety),
+    ).toEqual([["secrets"]]);
+
+    const listResponse = await fetchWorker("/v1/models?reliability=all");
+    expect(listResponse.status).toBe(200);
+    const list = (await listResponse.json()) as {
+        data: { id: string; required_safety?: string[] }[];
+    };
+    expect(list.data.find((model) => model.id === id)?.required_safety).toEqual(
+        ["privacy", "secrets"],
+    );
+
+    const detailResponse = await fetchWorker(
+        `/v1/models/${encodeURIComponent(id)}`,
+    );
+    expect(detailResponse.status).toBe(200);
+    const detail = (await detailResponse.json()) as {
+        required_safety?: string[];
+    };
+    expect(detail.required_safety).toEqual(["privacy", "secrets"]);
+});
+
 test("community reliability is discovery-only and legacy hide metadata no longer filters public models", async () => {
     const owner = `catalog-${crypto.randomUUID().slice(0, 8)}`;
     const ownerUserId = await createTestUser({ githubUsername: owner });
@@ -326,6 +401,68 @@ test("community reliability is discovery-only and legacy hide metadata no longer
     ).toBe(200);
     const registry = await getGenerationModelRegistry(env);
     expect(registry.resolve(id)?.visible).toBe(true);
+});
+
+test("agents follow the community reliability rule and a missing base model counts as down", async () => {
+    const owner = `agents-${crypto.randomUUID().slice(0, 8)}`;
+    const ownerUserId = await createTestUser({ githubUsername: owner });
+    const bases = {
+        flaky: "openai/gpt-5.4-nano",
+        orphan: "community/deleted/base-model",
+        fresh: "openai/gpt-5.4-nano",
+    };
+    await drizzle(env.DB)
+        .insert(communityEndpoint)
+        .values(
+            Object.entries(bases).map(([name, baseModel]) => {
+                const id = crypto.randomUUID();
+                return {
+                    id,
+                    ownerUserId,
+                    name,
+                    title: name,
+                    type: "prompt_agent" as const,
+                    baseUrl: PROMPT_AGENT_BASE_URL_PLACEHOLDER,
+                    upstreamModel: id,
+                    visibility: "public" as const,
+                    payload: JSON.stringify({
+                        systemPrompt: "Test",
+                        baseModel,
+                        mcpServers: [],
+                    }),
+                };
+            }),
+        );
+    await resetGenerationModelRegistryCache(env);
+    const id = (name: string) => `community/${owner}/${name}`;
+    mockCatalogHealth([
+        {
+            model: id("flaky"),
+            event_type: "generate.text",
+            is_rollup: 1,
+            status_2xx: 25,
+            errors_5xx: 25,
+        },
+    ]);
+    const names = async (query: string) =>
+        (
+            (await (
+                await fetchWorker(`/models?agent=true${query}`)
+            ).json()) as {
+                name: string;
+            }[]
+        )
+            .map((model) => model.name)
+            .filter((name) => name.startsWith(`community/${owner}/`))
+            .sort();
+    expect(await names("")).toEqual([id("fresh")]);
+    expect(await names("&reliability=all")).toEqual(
+        [id("flaky"), id("fresh"), id("orphan")].sort(),
+    );
+    const orphan = (await (
+        await fetchWorker(`/v1/models/${encodeURIComponent(id("orphan"))}`)
+    ).json()) as { health: { status: string } };
+    expect(orphan.health.status).toBe("down");
 });
 
 test("FLUX.3 launch pricing refreshes within the warm catalog cache TTL", async () => {
@@ -835,4 +972,79 @@ test("media models advertise the resolutions they accept", async () => {
         const retrieved = (await response.json()) as ListedModel;
         expect(retrieved.resolutions, model.id).toEqual(model.resolutions);
     }
+});
+
+test("model listings expose pricing adjustments so agents can see Gemini surcharges", async () => {
+    type Adjustment = {
+        name: string;
+        price: string;
+        quantity: number;
+        unit: string;
+    };
+    type ListedModel = { id: string; pricing_adjustments?: Adjustment[] };
+    const list = (await (await fetchWorker("/v1/models")).json()) as {
+        data: ListedModel[];
+    };
+    const registry = await getGenerationModelRegistry(env);
+    expect(list.data.length).toBeGreaterThan(0);
+    for (const model of list.data) {
+        expect(model.pricing_adjustments, model.id).toEqual(
+            registry.resolve(model.id)?.info.pricing_adjustments,
+        );
+    }
+    const withAdjustments = list.data.filter(
+        (model) => model.pricing_adjustments,
+    );
+    expect(withAdjustments.length).toBeGreaterThan(0);
+    // Gemini search grounding carries a per-query surcharge on top of the
+    // token price; an agent must see it before choosing the model.
+    const search = withAdjustments.find((model) =>
+        model.pricing_adjustments?.some(
+            (adjustment) =>
+                adjustment.name === "google.gemini_3.search_query.v1",
+        ),
+    );
+    expect(
+        search,
+        "a listed model carries the Gemini search surcharge",
+    ).toBeDefined();
+    const searchCharge = search?.pricing_adjustments?.find(
+        (adjustment) => adjustment.name === "google.gemini_3.search_query.v1",
+    );
+    expect(searchCharge?.price).toBe("14");
+    expect(searchCharge?.quantity).toBe(1000);
+    expect(searchCharge?.unit).toBe("search queries");
+    for (const model of withAdjustments) {
+        const response = await fetchWorker(
+            `/v1/models/${encodeURIComponent(model.id)}`,
+        );
+        expect(response.status, model.id).toBe(200);
+        const retrieved = (await response.json()) as ListedModel;
+        expect(retrieved.pricing_adjustments, model.id).toEqual(
+            model.pricing_adjustments,
+        );
+    }
+});
+
+test("experimental models advertise that they are alpha", async () => {
+    type ListedModel = { id: string; alpha?: boolean };
+    const list = (await (await fetchWorker("/v1/models")).json()) as {
+        data: ListedModel[];
+    };
+    const registry = await getGenerationModelRegistry(env);
+    expect(list.data.length).toBeGreaterThan(0);
+    for (const model of list.data) {
+        expect(model.alpha, model.id).toEqual(
+            registry.resolve(model.id)?.info.alpha || undefined,
+        );
+    }
+    const alphaModels = list.data.filter((model) => model.alpha);
+    expect(alphaModels.length).toBeGreaterThan(0);
+    const first = alphaModels[0];
+    const response = await fetchWorker(
+        `/v1/models/${encodeURIComponent(first.id)}`,
+    );
+    expect(response.status, first.id).toBe(200);
+    const retrieved = (await response.json()) as ListedModel;
+    expect(retrieved.alpha, first.id).toBe(true);
 });

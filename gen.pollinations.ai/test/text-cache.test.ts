@@ -9,7 +9,7 @@ import { CreateChatCompletionRequestSchema } from "@shared/schemas/openai.ts";
 import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
 import { Hono } from "hono";
 import type { RequestIdVariables } from "hono/request-id";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
@@ -220,6 +220,38 @@ describe("text cache", () => {
             expect(originHits).toBe(2);
         },
     );
+
+    it("shares non-streaming cache identity while keeping SSE separate", async () => {
+        const base = {
+            model: "openai/gpt-5.4-nano",
+            messages: [{ role: "user", content: "cache me" }],
+            seed: 7,
+        };
+        const keyFor = async (body: Record<string, unknown>, query = "") => {
+            const request = new Request(
+                `https://gen.pollinations.ai/v1/chat/completions${query}`,
+                chatInit(body),
+            );
+            return generateCacheKey(request, await request.clone().text());
+        };
+        const omitted = await keyFor(base);
+        expect(await keyFor({ ...base, stream: false })).toBe(omitted);
+        expect(await keyFor({ ...base, stream: null })).toBe(omitted);
+        expect(await keyFor(base, "?stream=false")).toBe(omitted);
+        const streaming = await keyFor({ ...base, stream: true });
+        expect(streaming).not.toBe(omitted);
+        // POST response format comes only from the JSON body.
+        expect(await keyFor(base, "?stream=true")).toBe(omitted);
+        expect(await keyFor({ ...base, stream: false }, "?stream=true")).toBe(
+            omitted,
+        );
+        expect(await keyFor({ ...base, stream: null }, "?stream=true")).toBe(
+            omitted,
+        );
+        expect(await keyFor({ ...base, stream: true }, "?stream=false")).toBe(
+            streaming,
+        );
+    });
 
     it("partitions managed-agent cache keys by caller API key", async () => {
         const request = new Request(
@@ -565,6 +597,26 @@ describe("text cache", () => {
         expect(cache.originHits).toBe(1);
     });
 
+    it("reuses buffered text after a transient R2 failure", async () => {
+        const cache = createTextCacheApp();
+        const bucket = createTestR2Bucket();
+        const put = vi
+            .spyOn(bucket, "put")
+            .mockRejectedValueOnce(new Error("put: Internal error (10001)"))
+            .mockRejectedValueOnce(new Error("put: Too many requests (10058)"));
+        const bindings = createTextCacheEnv(bucket);
+        const path = "/text/retry-storage?model=openai-fast";
+        const first = await dispatch(cache.app, path, undefined, bindings);
+        const body = await consumeAndWait(first);
+        expect(put).toHaveBeenCalledTimes(3);
+        expect(put.mock.calls[1]).toEqual(put.mock.calls[0]);
+        expect(put.mock.calls[2]).toEqual(put.mock.calls[0]);
+        const replay = await dispatch(cache.app, path, undefined, bindings);
+        expect(await consumeAndWait(replay)).toBe(body);
+        expect(replay.response.headers.get("x-cache")).toBe("HIT");
+        expect(cache.originHits).toBe(1);
+    });
+
     it("refreshes cached text TTL on aged cache hits", async () => {
         const cache = createTextCacheApp();
         const { app } = cache;
@@ -675,7 +727,7 @@ describe("text cache", () => {
         expect(cache.originHits).toBe(2);
     });
 
-    it("caches seed -1 in POST bodies and GET query params", async () => {
+    it("generates fresh results for seed -1 even when request IDs repeat", async () => {
         const cache = createTextCacheApp();
         const { app } = cache;
         const env = createTextCacheEnv();
@@ -721,10 +773,15 @@ describe("text cache", () => {
         await consumeAndWait(secondGet);
 
         expect(firstPost.response.headers.get("X-Cache")).toBe("MISS");
-        expect(secondPost.response.headers.get("X-Cache")).toBe("HIT");
+        expect(secondPost.response.headers.get("X-Cache")).toBe("MISS");
         expect(firstGet.response.headers.get("X-Cache")).toBe("MISS");
-        expect(secondGet.response.headers.get("X-Cache")).toBe("HIT");
-        expect(cache.originHits).toBe(2);
+        expect(secondGet.response.headers.get("X-Cache")).toBe("MISS");
+        expect(cache.originHits).toBe(4);
+        for (const result of [firstPost, secondPost, firstGet, secondGet]) {
+            expect(result.response.headers.get("Cache-Control")).toBe(
+                "private, no-store",
+            );
+        }
     });
 
     it("does not cache SSE protocol errors", async () => {

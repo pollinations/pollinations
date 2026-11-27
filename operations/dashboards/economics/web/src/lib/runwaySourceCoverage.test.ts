@@ -7,6 +7,7 @@ import type {
 import { providerAccountBalanceRows } from "./providerBalances";
 import {
     bankPaymentHasServiceEvidence,
+    coversCalendarMonth,
     providerCloseRows,
 } from "./providerClose";
 import { buildRunway } from "./runway";
@@ -63,6 +64,8 @@ const sales: StripeSalesRow = {
     refunds: 0,
     reversals: 0,
     stripe_fees: 5,
+    stripe_fees_credit: 0,
+    fee_credit_funding: 0,
     dispute_fees: 0,
     net_sales: 100,
     net_after_fees: 95,
@@ -72,6 +75,62 @@ const sales: StripeSalesRow = {
 };
 
 describe("Runway source coverage", () => {
+    it("uses a reconciled monthly control for sparse daily exports without posting its amount", () => {
+        const usage = vendor({
+            vendor: "fireworks",
+            account_id: "neoglyph",
+            type: "inference",
+            start: "2026-09-06 00:00:00",
+            end: "2026-09-07 00:00:00",
+            paid: -10,
+        });
+        const statement = vendor({
+            ...usage,
+            entry_id: "monthly-control",
+            type: "statement",
+            start: "2026-09-01 00:00:00",
+            end: "2026-10-01 00:00:00",
+            paid: 0,
+            statement_amount: 10,
+            comparison_basis: "cost",
+            comparison_month: "2026-09",
+            compared_entry_ids: [usage.entry_id],
+        });
+        expect(coversCalendarMonth([usage], "2026-09")).toBe(false);
+        expect(coversCalendarMonth([usage], "2026-09", [statement])).toBe(true);
+        for (const invalid of [
+            { ...statement, account_id: "other-account" },
+            { ...statement, statement_amount: 11 },
+            { ...statement, compared_entry_ids: ["missing"] },
+            {
+                ...statement,
+                evidence: `${invoice}; calendar_coverage=unverified`,
+            },
+            { ...statement, start: "2026-09-02 00:00:00" },
+        ]) {
+            expect(coversCalendarMonth([usage], "2026-09", [invalid])).toBe(
+                false,
+            );
+        }
+        const result = buildRunway(
+            [opening],
+            now,
+            [usage],
+            undefined,
+            [sales],
+            { baselineMonth: "2026-09", asOf: "2026-10-16" },
+            [statement],
+        );
+        const line = result.rows.find((row) => row.vendor === "fireworks");
+        expect(line?.values["2026-09:actual"]).toBe(-10);
+        expect(line?.values["2026-10:forecast"]).toBe(-10);
+        expect(result.flags.join(" ")).not.toContain(
+            "complete 2026-09 usage is missing",
+        );
+        expect(result.flags.join(" ")).toContain(
+            "checked account balance missing",
+        );
+    });
     it("keeps reviewed prepaid funding in cash without requiring same-month service costs", () => {
         const prepaid = bank({ category: "balance_sheet", amount: -100 });
         const laterPayment = bank({
@@ -206,6 +265,7 @@ describe("Runway source coverage", () => {
                 },
             },
             [sales],
+            { baselineMonth: "2026-09", asOf: "2026-10-16" },
         );
         const refunds = result.rows.find(
             (row) => row.vendor === "stripe refunds",

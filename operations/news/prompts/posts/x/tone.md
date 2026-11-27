@@ -32,7 +32,7 @@ Think: the person at the hackerspace who just got something working and wants to
 - Over-explain. tweets should be tight
 - Use more than 1-2 hashtags
 - Say "we're excited to announce" — just show the thing
-- Discuss pricing, Pollen balance or Quest/Paid eligibility changes, revenue, business pressures or operational checklists such as credential approvals and deployment instructions
+- Discuss pricing, balance or Quest/paid eligibility changes, revenue, business pressures or operational checklists such as credential approvals and deployment instructions
 - Write hooks designed to bait ("The hardest part of X isn't Y...")
 
 ## Tweet Types

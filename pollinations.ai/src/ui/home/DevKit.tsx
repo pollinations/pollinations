@@ -179,7 +179,7 @@ const BUILD_FEATURES: Feature[] = [
         chips: ["BYOP", "Earnings"],
         body: (
             <>
-                Your users connect through Pollinations Connect and set a
+                With Pollinations Pay, users connect their accounts and set a
                 spending limit. <Em>They pay for their own usage.</Em>
             </>
         ),
@@ -263,7 +263,7 @@ const PUBLISH_FEATURES: Feature[] = [
         body: (
             <>
                 Connect your endpoint and <Em>set your price</Em>. Each call
-                adds pollen to your balance.
+                adds to your balance.
             </>
         ),
         links: [
@@ -529,7 +529,8 @@ function PublishCard({ feature }: { feature: Feature }) {
                     className="size-10 shrink-0"
                     style={{ color: feature.color }}
                 />
-                <span className="flex items-center gap-1 text-right text-sm font-semibold text-theme-text-soft">
+                {/* Ink like a link, amber when the card is hovered. */}
+                <span className="flex items-center gap-1 text-right text-sm font-semibold text-theme-text-strong transition-colors [a:hover_&]:text-theme-text-soft">
                     {link.label}
                     <ExternalLinkIcon
                         aria-hidden="true"

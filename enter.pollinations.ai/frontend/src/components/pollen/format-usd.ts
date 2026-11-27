@@ -1,5 +1,5 @@
 /**
- * A Pollen amount in dollars (1 Pollen is worth $1): cents from $1, up to four
+ * A USD amount: cents from $1, up to four
  * decimals below it, compact from $100,000. Rounds toward zero, so a balance
  * is never overstated.
  */

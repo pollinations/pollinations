@@ -123,7 +123,7 @@ async function balance() {
     const result = await response.json();
     if (!Number.isFinite(result.balance))
         throw new Error("No valid account balance returned.");
-    $("balance").textContent = `${result.balance.toFixed(6)} Pollen available`;
+    $("balance").textContent = `$${result.balance.toFixed(6)} available`;
     return result.balance;
 }
 async function connect(value) {
@@ -186,7 +186,7 @@ try {
         if (config.clientId?.startsWith("pk_")) {
             clientId = config.clientId;
             $("oauth-help").textContent =
-                "Authorize Pi Workbench to use your own Pollen. Pollinations shows the app and requested access before you approve. Your current project is downloaded before leaving this page.";
+                "Authorize Pi Workbench to spend from your balance. Pollinations shows the app and requested access before you approve. Your current project is downloaded before leaving this page.";
         }
     }
 } catch {
@@ -197,7 +197,7 @@ function modelPrice() {
     const model = models.find((item) => item.name === $("model").value);
     const prices = model?.pricing;
     $("price").textContent = prices
-        ? `Live base price / 1M tokens: ${(Number(prices.promptTextTokens) * 1e6).toFixed(3)} Pollen in · ${(Number(prices.completionTextTokens) * 1e6).toFixed(3)} out. Your key’s rates may differ.`
+        ? `Live base price / 1M tokens: $${(Number(prices.promptTextTokens) * 1e6).toFixed(3)} in · $${(Number(prices.completionTextTokens) * 1e6).toFixed(3)} out. Your key’s rates may differ.`
         : "See current pricing in the Pollinations dashboard.";
 }
 $("model").onchange = modelPrice;
@@ -627,7 +627,7 @@ async function startPi(mode = "guided") {
                         run.receipts.push(receipt);
                         activity(
                             "RECEIPT",
-                            `${receipt.responseId || receipt.tool} · ${receipt.pollenSinceRunStart.toFixed(6)} Pollen used this run`,
+                            `${receipt.responseId || receipt.tool} · $${receipt.pollenSinceRunStart.toFixed(6)} spent this run`,
                         );
                         result = {
                             status: response.status,

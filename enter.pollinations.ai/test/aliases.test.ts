@@ -174,6 +174,10 @@ test("Azure models use the approved public-price multipliers", () => {
     const azureMultiplierOverrides = new Map<string, number>([
         ["openai/tts-1", 1],
         ["openai/tts-1-hd", 1],
+        // Kling keeps its paid fal quote when Azure serves the fallback.
+        ["kwaivgi/kling-v3.0-pro:azure", 1],
+        // Azure marks these fal meters ineligible for subscription credits.
+        ["lightricks/ltx-2.5-pro:azure", 1],
         // Azure quota covers less than twice Kimi's peak, so overflow reaches
         // the cash-paid DeepInfra fallback.
         ["moonshotai/kimi-k2.6", 1],
@@ -181,7 +185,10 @@ test("Azure models use the approved public-price multipliers", () => {
         ["openai/gpt-image-1-mini", 1],
         ["openai/gpt-image-1.5", 1],
         ["openai/gpt-image-2", 1],
+        // Hidden route for the free Classic API, billed to Classic's account.
+        ["openai/gpt-6-luna:classic", 1],
         ["deepseek/deepseek-v4.1-flash", 0.5],
+        ["deepseek/deepseek-v4.1-flash-1017", 0.5],
     ]);
 
     for (const model of getModels()) {

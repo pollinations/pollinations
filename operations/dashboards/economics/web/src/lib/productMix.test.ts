@@ -158,6 +158,27 @@ describe("monthlyProductMix", () => {
         };
         expect(monthlyProductMix(invalid, ["2026-09"])[0].streams).toBeNull();
     });
+    it("ignores mixed tool and model attribution with no activity in the selected funding", () => {
+        const mixed = share({
+            sources_json: JSON.stringify([
+                ["app", "app-b", "App B", "exa"],
+                ["app", "app-b", "App B", "model-a"],
+            ]),
+            paid_usage: 0,
+            paid_creator_earnings: 0,
+            paid_community_usage: 0,
+            paid_model_creator_earnings: 0,
+        });
+        const withMixed = {
+            ...data,
+            revenueShare: [...data.revenueShare, mixed],
+        };
+        expect(monthlyProductMix(withMixed, ["2026-09"])).toEqual(
+            monthlyProductMix(data, ["2026-09"]),
+        );
+        mixed.paid_usage = 1;
+        expect(monthlyProductMix(withMixed, ["2026-09"])[0].streams).toBeNull();
+    });
 });
 
 it("keeps sub-unit retained amounts readable in chart tooltips", () => {

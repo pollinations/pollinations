@@ -2,7 +2,7 @@
 
 Canonical vendor: `alibaba`
 
-## Verified — 2026-09-04
+## Verified — 2026-11-03
 
 - Status: working provider billing API through the `aliyun` CLI.
 - Login: `elliot@myceli.ai` in the Myceli browser workspace.
@@ -48,7 +48,9 @@ Collection steps:
      -p pollinations-finops
    ```
 
-   Follow `NextToken` if present. Save every raw page to
+   Increment `PageNum` using `PageSize` and `Data.TotalCount` until complete.
+   `DescribeInstanceBill` instead uses `NextToken`/`MaxResults`; do not mix
+   those pagination contracts. Save every raw page to
    `<collection-dir>/evidence/alibaba/alibaba-<period>-instance-bill-items-page-<n>.json`.
 
 2. Sum `Data.Items.Item[].PretaxAmount` for net paid cost.
@@ -66,6 +68,14 @@ Collection steps:
    In the dashboard, wait for the account name, ID and status to load before
    accepting zero balances. Check the full Coupons list as well; preserve
    amount, status and validity (UTC+8). Archive both checks together.
+7. For exact UTC coverage, open **Bill Details → Billable Item → Billing
+   Period** and export **Current List → All Columns** for both source months
+   spanning the UTC boundary. Download the originals from **Export Record**
+   when their status is **Exported**; files remain available for three days.
+   Match each export's row count to **Total Items** and verify unique Line Item
+   IDs. Filter the UTC+8 service start/end intervals, reject straddling intervals,
+   and cross-check the selected rows using Consumed Time. Retain the original
+   billing-cycle invoice separately from the UTC usage control.
 
 Known traps:
 
@@ -75,3 +85,18 @@ Known traps:
   `PretaxGrossAmount` as cash cost.
 - The CLI profile is the auth source; do not put access keys in command arguments or saved evidence.
 - Current-month bill overview is live and may change until the month closes.
+- Billing cycles and timestamps use UTC+8. Obtain Billing Period detail across
+  both month boundaries for a UTC close; preserve an unbridged cycle as such.
+- Preserve signed `WipeZero` rounding lines as cost offsets, not funding.
+  `IsHideZeroCharge` can still return zero rows.
+- In detailed CSVs, **Payable Amount** is cash cost, **Coupon Deduction Amount**
+  is promotional funding, and **Discount Amount** is a price reduction.
+  **Rounded-down Fee** corresponds to signed `WipeZero`; zero-payable free
+  quotas do not establish a grant. Preserve instance, commodity, billing item,
+  line type, list price, region and usage unit when grouping rows.
+- `QueryBill` exposes settlement status and outstanding amount. `PayFinish`
+  does not replace an original invoice; download the relevant cycle from
+  Invoices → Download Invoice.
+- A first-of-month invoice can cover the prior billing cycle. Match its
+  Invoice Cycle and charged currency; any secondary currency conversion is
+  informational and does not establish another cost or settlement.

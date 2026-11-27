@@ -25,6 +25,97 @@ import {
 } from "../src/text/fallbackCompatibility.ts";
 import { resolveDirectResponsesTarget } from "../src/text/responses/client.ts";
 
+describe("Baseten Bison 1 decision routes", () => {
+    it("registers a paid-only canonical model and an OpenRouter fallback", () => {
+        const model = TEXT_SERVICES["baseten/bison-1"];
+        expect(model).toMatchObject({
+            provider: "vercel",
+            category: "decision",
+            paidOnly: true,
+            aliases: [],
+            inputModalities: ["text", "image"],
+            contextLength: 32768,
+            fallbacks: ["baseten/bison-1:openrouter:baseten"],
+        });
+        expect(model.supportedEndpoints).toContain("/alpha/decisions");
+        const primary = findModelByName("baseten/bison-1");
+        expect(primary?.useSystemOneApi).toBe(true);
+        expect(primary?.config()).toMatchObject({
+            model: "baseten/bison-1",
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/decisions",
+            decisionsProtocol: "openai",
+            requiresBase64ImageUrls: true,
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["baseten"] } },
+            },
+        });
+        const fallback = findModelByName("baseten/bison-1:openrouter:baseten");
+        expect(fallback?.useSystemOneApi).toBe(true);
+        expect(fallback?.config()).toMatchObject({
+            model: "baseten/bison-1",
+            directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+            defaultOptions: {
+                provider: { only: ["baseten"], allow_fallbacks: false },
+            },
+        });
+    });
+});
+
+describe("HeyGen Decision 1 routes", () => {
+    it("routes the paid multimodal model through its pinned OpenRouter endpoint", () => {
+        const primary = TEXT_SERVICES["heygen/heygen-decision-1"];
+        expect(primary).toMatchObject({
+            category: "decision",
+            provider: "openrouter",
+            paidOnly: true,
+            aliases: [],
+            inputModalities: ["text", "image", "audio", "video"],
+        });
+        expect(primary).not.toHaveProperty("fallbacks");
+        expect(primary.supportedEndpoints).toContain("/alpha/decisions");
+        const route = findModelByName("heygen/heygen-decision-1");
+        expect(route?.useSystemOneApi).toBe(true);
+        expect(route?.config()).toMatchObject({
+            directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+            defaultOptions: {
+                provider: { only: ["heygen"], allow_fallbacks: false },
+            },
+        });
+    });
+});
+
+describe("Inkling 2 Mini OpenRouter route", () => {
+    it("registers image inputs, tools and reasoning with canonical no-alias routing", () => {
+        const model = TEXT_SERVICES["thinkingmachines/inkling-2-mini"];
+        expect(model).toMatchObject({
+            provider: "openrouter",
+            paidOnly: true,
+            aliases: [],
+            category: "text",
+            inputModalities: ["text", "image"],
+            contextLength: 1048576,
+            tools: true,
+            reasoning: true,
+        });
+        expect(model.supportedParameters).toEqual(
+            expect.arrayContaining([
+                "tools",
+                "response_format",
+                "reasoning",
+                "include_reasoning",
+            ]),
+        );
+        expect(typeof model.billing?.resolveTotalCost).toBe("function");
+        expect(
+            findModelByName("thinkingmachines/inkling-2-mini")?.config(),
+        ).toMatchObject({
+            provider: "openrouter",
+            model: "thinkingmachines/inkling-2-mini",
+            defaultOptions: { provider: { sort: "price" } },
+        });
+    });
+});
+
 const OPENROUTER_ROUTES = [
     [
         "anthropic/claude-opus-4.7:openrouter:vertex-global",
@@ -76,6 +167,16 @@ const OPENROUTER_ROUTES = [
     [
         "google/gemini-3.8-flash:openrouter:vertex-global",
         "google/gemini-3.8-flash",
+        "google-vertex/global",
+    ],
+    [
+        "google/gemini-4-hydrogen:openrouter:vertex-global",
+        "google/gemini-4-hydrogen",
+        "google-vertex/global",
+    ],
+    [
+        "google/gemini-4-neon:openrouter:vertex-global",
+        "google/gemini-4-neon",
         "google-vertex/global",
     ],
     [
@@ -448,33 +549,35 @@ describe("static provider fallbacks", () => {
         expect(billed.price.totalPrice).toBe(0.0002277);
     });
 
-    it("keeps Mistral Large on Azure and bills its direct fallback at the public quote", () => {
+    it("keeps Mistral Large on Azure and bills its Bedrock fallback at the public quote", () => {
         const model = "mistralai/mistral-large-3";
         const primary = TEXT_SERVICES[model];
-        const fallback = TEXT_SERVICES[`${model}:mistral`];
+        const fallback = TEXT_SERVICES[`${model}:aws`];
         expect(primary.provider).toBe("azure");
-        expect(primary.fallbacks).toEqual([`${model}:mistral`]);
-        expect(fallback.provider).toBe("mistral");
+        expect(primary.fallbacks).toEqual([`${model}:aws`]);
+        expect(fallback.provider).toBe("aws");
         expect(fallback.paidOnly).not.toBe(true);
         expect(findModelByName(model)?.config()).toMatchObject({
             "azure-resource-name": "myceli-prod-eastus",
             "azure-deployment-id": "Mistral-Large-3",
         });
-        expect(findModelByName(`${model}:mistral`)?.config()).toMatchObject({
-            "custom-host": "https://api.mistral.ai/v1",
-            model: "mistral-large-2512",
+        expect(findModelByName(`${model}:aws`)?.config()).toMatchObject({
+            provider: "bedrock",
+            model: "mistral.mistral-large-3-675b-instruct",
+            "aws-region": "us-east-1",
+            directEndpoint:
+                "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/chat/completions",
         });
         const billed = calculateUsageBilling({
             model,
             usage: {
                 promptTextTokens: 1_000,
-                promptCachedTokens: 200,
                 completionTextTokens: 100,
             },
             servedBy: fallback,
             quotedBy: primary,
         });
-        const cost = 0.001 * 0.5 + 0.0002 * 0.05 + 0.0001 * 1.5;
+        const cost = 0.001 * 0.5 + 0.0001 * 1.5;
         expect(billed.cost.totalCost).toBeCloseTo(cost, 12);
         expect(billed.price.totalPrice).toBeCloseTo(cost * 0.75, 8);
     });
@@ -500,11 +603,11 @@ describe("static provider fallbacks", () => {
         expect(getVisibleTextModels()).not.toContain(`${model}:anthropic`);
     });
 
-    it("preserves seeded requests on the direct Mistral fallback", async () => {
-        const route = findModelByName("mistralai/mistral-large-3:mistral");
+    it("preserves seeded requests on the Bedrock Mistral fallback", async () => {
+        const route = findModelByName("mistralai/mistral-large-3:aws");
         const options = { seed: 0, reasoning_effort: "high", temperature: 0.2 };
         const result = await route?.transform?.([], options);
-        expect(result?.options).toEqual({ random_seed: 0, temperature: 0.2 });
+        expect(result?.options).toEqual({ seed: 0, temperature: 0.2 });
         expect(options.seed).toBe(0);
         const unseeded = await route?.transform?.([], { temperature: 0.2 });
         expect(unseeded?.options).toEqual({ temperature: 0.2 });
@@ -1418,11 +1521,28 @@ describe("static provider fallbacks", () => {
         },
     );
 
-    it("records DeepSeek Flash 1017's discounted fallback cost at the unchanged primary quote", () => {
+    it("bills Azure DeepSeek Flash 1017 image tokens at its input rate", () => {
         const model = "deepseek/deepseek-v4.1-flash-1017";
         const billing = calculateUsageBilling({
             model,
-            servedBy: TEXT_SERVICES[`${model}:deepinfra`],
+            servedBy: TEXT_SERVICES[model],
+            quotedBy: TEXT_SERVICES[model],
+            usage: {
+                promptTextTokens: 63,
+                promptImageTokens: 184,
+                completionTextTokens: 2,
+                completionReasoningTokens: 79,
+            },
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.0001713, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.00008565, 12);
+    });
+
+    it("records DeepSeek Flash 1017's Fireworks fallback at its Fireworks cost and the unchanged primary quote", () => {
+        const model = "deepseek/deepseek-v4.1-flash-1017";
+        const billing = calculateUsageBilling({
+            model,
+            servedBy: TEXT_SERVICES[`${model}:fireworks`],
             quotedBy: TEXT_SERVICES[model],
             usage: {
                 promptTextTokens: 1000,
@@ -1431,7 +1551,7 @@ describe("static provider fallbacks", () => {
                 completionReasoningTokens: 100,
             },
         });
-        expect(billing.cost.totalCost).toBeCloseTo(0.00015974, 12);
+        expect(billing.cost.totalCost).toBeCloseTo(0.000546, 12);
         expect(billing.price.totalPrice).toBeCloseTo(0.000273, 8);
     });
 
@@ -1832,6 +1952,72 @@ describe("static provider fallbacks", () => {
         expect(billing.price.totalPrice).toBeCloseTo(0.038, 12);
     });
 
+    it("keeps the Gemini 4 Hydrogen Vertex quote when OpenRouter Vertex global serves the fallback", () => {
+        const model = "google/gemini-4-hydrogen";
+        const route = "google/gemini-4-hydrogen:openrouter:vertex-global";
+        const primary = TEXT_SERVICES[model];
+        const fallback = TEXT_SERVICES[route];
+
+        expect(primary).toMatchObject({
+            provider: "google",
+            paidOnly: true,
+            priceMultiplier: 1,
+            fallbacks: [route],
+        });
+        expect(fallback).toMatchObject({
+            provider: "openrouter",
+            hidden: true,
+            fallbackOnly: true,
+        });
+        expect(fallback.cost).toMatchObject({
+            promptTextTokens: (1.5 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.075 / 1_000_000) * 1.055,
+            completionTextTokens: (7.5 / 1_000_000) * 1.055,
+        });
+        const billing = calculateUsageBilling({
+            model,
+            usage: { promptTextTokens: 1000, completionTextTokens: 1000 },
+            servedBy: fallback,
+            quotedBy: primary,
+            output: { usage: { cost: 0.009 } },
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.009 * 1.055, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.009, 12);
+    });
+
+    it("keeps the Gemini 4 Neon Vertex quote when OpenRouter Vertex global serves the fallback", () => {
+        const model = "google/gemini-4-neon";
+        const route = "google/gemini-4-neon:openrouter:vertex-global";
+        const primary = TEXT_SERVICES[model];
+        const fallback = TEXT_SERVICES[route];
+
+        expect(primary).toMatchObject({
+            provider: "google",
+            paidOnly: true,
+            priceMultiplier: 1,
+            fallbacks: [route],
+        });
+        expect(fallback).toMatchObject({
+            provider: "openrouter",
+            hidden: true,
+            fallbackOnly: true,
+        });
+        expect(fallback.cost).toMatchObject({
+            promptTextTokens: (3 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.15 / 1_000_000) * 1.055,
+            completionTextTokens: (15 / 1_000_000) * 1.055,
+        });
+        const billing = calculateUsageBilling({
+            model,
+            usage: { promptTextTokens: 1000, completionTextTokens: 1000 },
+            servedBy: fallback,
+            quotedBy: primary,
+            output: { usage: { cost: 0.018 } },
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.018 * 1.055, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.018, 12);
+    });
+
     it("keeps the Vertex quote while recording Gemini 4 Argon backup promotional costs", () => {
         const primary = TEXT_SERVICES["google/gemini-4-argon"];
         const fallback =
@@ -2084,6 +2270,24 @@ describe("static provider fallbacks", () => {
         ]) {
             expect(textCapabilityError(sonar, request)).toBeUndefined();
         }
+    });
+
+    it("rejects audio output on text-only models but allows audio models", () => {
+        const text = TEXT_SERVICES["openai/gpt-5.4-nano"];
+        expect(
+            textCapabilityError(text, { modalities: ["text"] }),
+        ).toBeUndefined();
+        expect(
+            textCapabilityError(text, { modalities: ["text", "audio"] }),
+        ).toMatch(/does not support audio output/);
+        expect(
+            textCapabilityError(text, { audio: { voice: "alloy" } }),
+        ).toMatch(/does not support audio output/);
+        expect(
+            textCapabilityError(TEXT_SERVICES["openai/gpt-audio-mini"], {
+                modalities: ["text", "audio"],
+            }),
+        ).toBeUndefined();
     });
 
     it.each([

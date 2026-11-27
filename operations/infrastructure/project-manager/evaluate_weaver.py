@@ -60,7 +60,9 @@ def trial(case, brief, model, seen):
             classification_answer(raw, area_names(brief), case["evidence"]["kind"] == "pull request", hosted=bool(model))
     except (ValueError, SystemExit) as error:
         result["error"] = str(error)
-    if raw_call := next((c for c in reversed(calls) if c.get("http_status") == 200), None):
+    for raw_call in (c for c in calls if c.get("http_status") == 200):
+        if raw_call.get("error"):
+            result["error"] = raw_call["error"]
         completion_id = raw_call.get("completion_id")
         if not completion_id or completion_id in seen or raw_call.get("cache") == "HIT":
             result["error"] = "fresh generation could not be verified"
@@ -69,12 +71,35 @@ def trial(case, brief, model, seen):
     return result
 
 
-def check_preview(mode, reports):
+def preview_verdict(mode, reports):
+    """Return the observed paired scores and the reason a run cannot pass."""
     cases = [case for report in reports.values() for case in report["cases"].values()]
-    if any("error" in trial for case in cases for trial in case["trials"]):
-        raise SystemExit("Invalid or unavailable trials. See the artifact.")
-    if mode in {"shortened", "hosted"} and any(case["misses"] and case["group"] != "diagnostic" for case in cases):
-        raise SystemExit("Classification disagreement requires review before activation. Compare observed rates.")
+    if any("error" in t for case in cases for t in case["trials"]):
+        return {}, "Invalid or unavailable trials. See the artifact."
+    if mode not in {"shortened", "hosted"}:
+        return {}, None
+
+    baseline = reports["baseline"]["cases"]
+    candidate = reports[mode]["cases"]
+    if baseline.keys() != candidate.keys():
+        return {}, "Baseline and candidate must classify the same cases."
+    scores = {group: {"baseline": 0, "candidate": 0, "trials_per_arm": 0}
+              for group in ("development", "holdout")}
+    for case_id, original in baseline.items():
+        proposed = candidate[case_id]
+        count = len(original["trials"])
+        group = original["group"]
+        if (count == 0 or len(proposed["trials"]) != count or proposed["group"] != group
+                or proposed["expected"] != original["expected"]):
+            return {}, f"Incomplete or mismatched pair for {case_id}."
+        if group != "diagnostic":
+            scores[group]["baseline"] += original["matches"]
+            scores[group]["candidate"] += proposed["matches"]
+            scores[group]["trials_per_arm"] += count
+    if any(s["trials_per_arm"] == 0 for s in scores.values()):
+        return scores, "Both scored sets require paired trials."
+    below = [name for name, s in scores.items() if s["candidate"] < s["baseline"]]
+    return scores, ("Candidate scored below the original on " + ", ".join(below)) if below else None
 
 
 def estimate_cost(report):
@@ -125,7 +150,7 @@ def main():
     if gaps := coverage_gaps([c for c in cases if not c.get("diagnostic_only")]):
         raise SystemExit("Missing development coverage: " + ", ".join(gaps))
     holdout = []
-    if mode in {"compare-holdout", "hosted"}:
+    if mode in {"compare-holdout", "shortened", "hosted"}:
         holdout = json.loads((WEAVER_DIR / "holdout-cases.json").read_text())
         if not holdout or {c["source"] for c in cases} & {c["source"] for c in holdout}:
             raise SystemExit("Holdout sources must be new")
@@ -135,17 +160,18 @@ def main():
             raise SystemExit("Select disputed cases in classification-cases.json first")
     elif mode == "compare-holdout":
         cases = holdout
-    elif mode == "hosted":
+    elif mode in {"shortened", "hosted"}:
         cases += holdout
 
     candidate = (WEAVER_DIR / "system-prompt.md").read_text().strip()
-    prompts = {"baseline": (read_brief(), None), "shortened": (candidate, None)}
+    arms = {"baseline": (read_brief(), None)}
     if mode == "hosted":
         model = os.getenv("PREVIEW_WEAVER_MODEL")
         if model != "community/pollinations-ai/weaver":
             raise SystemExit("Provide the callable ID verified by the owner readback")
-        prompts["hosted"] = (candidate, model)
-    arms = prompts if mode.startswith("compare-") else {mode: prompts[mode]}
+        arms["hosted"] = (candidate, model)
+    elif mode != "baseline":
+        arms["shortened"] = (candidate, None)
     reports = {name: {"model": model or AI_MODEL, "prompt_sha256": digest(brief), "cases": {}}
                for name, (brief, model) in arms.items()}
     repetitions = 10 if mode == "compare-misses" else 3
@@ -168,14 +194,22 @@ def main():
                 summaries.append(f"| {case['id']} | {group} | {name} | {matches}/{len(trials)} | {errors} |")
     for report in reports.values():
         estimate_cost(report)
-    output = {"mode": mode, "commit": os.getenv("GITHUB_SHA"), "cases_sha256": case_digest(cases), "arms": reports}
+    scores, failure = preview_verdict(mode, reports)
+    output = {"mode": mode, "commit": os.getenv("GITHUB_SHA"), "cases_sha256": case_digest(cases), "arms": reports,
+              "paired_scores": scores, "failure": failure}
     Path(os.environ["WEAVER_RESULT"]).write_text(json.dumps(output, indent=2) + "\n")
     summary = "\n".join(["| Case | Set | Prompt | Exact | Invalid |", "|---|---|---|---:|---:|", *summaries])
+    for group, score in scores.items():
+        n = score["trials_per_arm"]
+        summary += f"\n\n{group}: original {score['baseline']}/{n}, {mode} {score['candidate']}/{n}."
+    if failure:
+        summary += "\n\n" + failure
     print(summary)
     if path := os.getenv("GITHUB_STEP_SUMMARY"):
         with open(path, "a") as stream:
             print(summary, file=stream)
-    check_preview(mode, reports)
+    if failure:
+        raise SystemExit(failure)
 
 
 if __name__ == "__main__":

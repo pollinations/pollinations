@@ -58,6 +58,13 @@ jobs:
                  and (.email == null or .email == "polli@pollinations.ai")
               then "Verified shared owner via linked GitHub user pollinations-ai"
               else error("Caller does not match the verified shared owner") end' | tee -a "$GITHUB_STEP_SUMMARY"
+          status=$(curl --silent --show-error --max-time 30 -o /dev/null -w '%{http_code}' \
+            -H "Authorization: Bearer $POLLINATIONS_TOKEN" https://gen.pollinations.ai/account/agents)
+          case "$status" in
+            200) echo 'The workflow credential has account:keys access.' ;;
+            403) echo 'Registration and readback require a separate authorized owner session.' ;;
+            *) echo "Agent account check returned HTTP $status"; exit 1 ;;
+          esac | tee -a "$GITHUB_STEP_SUMMARY"
       - uses: actions/checkout@v5
         if: inputs.probe_model_digest != ''
         with:

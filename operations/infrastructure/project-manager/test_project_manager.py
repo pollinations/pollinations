@@ -298,19 +298,71 @@ class WeaverTest(unittest.TestCase):
         self.assertFalse(evaluation.trial_misses(results["baseline"]))
         self.assertIn("2", evaluation.trial_misses(results["shortened"]))
 
-    def test_release_preview_flags_scored_misses_and_reports_borderline_cases(self):
-        from evaluate_weaver import check_preview
+    def test_release_previews_grade_fresh_baseline_pairs_in_each_scored_set(self):
+        from evaluate_weaver import preview_verdict
 
-        case = {"group": "diagnostic", "misses": {"1": {"differences": {"priority": "High"}}}, "trials": [{"differences": {"priority": "High"}}]}
-        reports = {"shortened": {"cases": {"12870": case}}}
-        check_preview("shortened", reports)
-        case["group"] = "holdout"
-        check_preview("compare-holdout", reports)
-        with self.assertRaisesRegex(SystemExit, "requires review"):
-            check_preview("hosted", reports)
-        case["trials"] = [{"error": "generation replayed"}]
-        with self.assertRaisesRegex(SystemExit, "Invalid"):
-            check_preview("compare-holdout", reports)
+        def arm(dev, holdout, diagnostic):
+            return {"cases": {group: {"group": group, "matches": matches, "expected": {"priority": "Medium"},
+                                      "trials": [{}, {}, {}]} for group, matches in (
+                                          ("development", dev), ("holdout", holdout), ("diagnostic", diagnostic))}}
+
+        for mode in ("shortened", "hosted"):
+            with self.subTest(mode=mode):
+                reports = {"baseline": arm(2, 2, 3), mode: arm(2, 3, 0)}
+                scores, error = preview_verdict(mode, reports)
+                self.assertIsNone(error)
+                self.assertEqual(scores["development"], {"baseline": 2, "candidate": 2, "trials_per_arm": 3})
+                self.assertNotIn("diagnostic", scores)
+                reports[mode] = arm(3, 1, 3)
+                self.assertIn("below the original on holdout", preview_verdict(mode, reports)[1])
+                reports[mode] = arm(1, 3, 3)
+                self.assertIn("below the original on development", preview_verdict(mode, reports)[1])
+                reports[mode]["cases"]["development"]["trials"].pop()
+                self.assertIn("mismatched pair", preview_verdict(mode, reports)[1])
+                reports[mode]["cases"]["diagnostic"]["trials"][0]["error"] = "invalid JSON"
+                self.assertIn("Invalid", preview_verdict(mode, reports)[1])
+
+    def test_release_entry_point_pairs_original_with_the_selected_candidate(self):
+        import evaluate_weaver as evaluation
+
+        hosted = "community/pollinations-ai/weaver"
+        def exact_trial(case, brief, model, seen):
+            return {"actual": case["expected"], "differences": {}, "calls": []}
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "results.json"
+            for mode in ("shortened", "hosted"):
+                with self.subTest(mode=mode), patch.dict(os.environ, {
+                    "POLLINATIONS_TOKEN": "test", "PREVIEW_WEAVER_MODEL": hosted, "WEAVER_RESULT": str(path),
+                }), patch.object(evaluation.sys, "argv", ["evaluate_weaver.py", mode]), \
+                     patch.object(evaluation, "trial", side_effect=exact_trial) as invoke, \
+                     patch.object(evaluation, "estimate_cost"), redirect_stdout(StringIO()):
+                    evaluation.main()
+                report = json.loads(path.read_text())
+                self.assertEqual(set(report["arms"]), {"baseline", mode})
+                self.assertIsNone(report["failure"])
+                self.assertEqual(set(report["paired_scores"]), {"development", "holdout"})
+                self.assertEqual(report["arms"][mode]["model"], hosted if mode == "hosted" else manager.AI_MODEL)
+                for score in report["paired_scores"].values():
+                    self.assertEqual(score["baseline"], score["trials_per_arm"])
+                    self.assertEqual(score["candidate"], score["baseline"])
+                calls = {(c.args[1], c.args[2]) for c in invoke.call_args_list}
+                self.assertEqual(calls, {(manager.read_brief(), None), ((manager.WEAVER_DIR / "system-prompt.md").read_text().strip(),
+                                                                         hosted if mode == "hosted" else None)})
+
+    def test_malformed_hosted_json_is_visible_even_when_a_retry_recovers(self):
+        import evaluate_weaver as evaluation
+
+        case = json.loads((manager.WEAVER_DIR / "classification-cases.json").read_text())[0]
+        bad = Mock(status_code=200, headers={"X-Cache": "MISS"})
+        bad.json.return_value = {"id": "first", "choices": [{"message": {"content": "not JSON"}}]}
+        good = Mock(status_code=200, headers={"X-Cache": "MISS"})
+        good.json.return_value = {"id": "second", "choices": [{"message": {
+            "content": json.dumps({**case["expected"], "reasoning": "One model answered."})}}]}
+        with patch.object(manager.requests, "post", side_effect=[bad, good]) as post, patch.object(manager.time, "sleep"):
+            result = evaluation.trial(case, manager.read_brief(), "community/pollinations-ai/weaver", set())
+        self.assertEqual(result["error"], "invalid JSON")
+        self.assertNotIn("response_format", post.call_args.kwargs["json"])
 
     def test_baseline_misses_survive_and_cannot_fill_required_coverage(self):
         import evaluate_weaver as evaluation

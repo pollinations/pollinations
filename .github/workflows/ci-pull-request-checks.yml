@@ -176,6 +176,7 @@ jobs:
           operations/app-management/ingestion/*.test.js
           operations/app-management/performance/*.test.js
           operations/infrastructure/deployment/*.test.cjs
+          operations/infrastructure/isolation-manifest/*.test.cjs
           operations/monitoring/community-leaderboards/*.test.js
           operations/monitoring/model-evals/*.test.js
           operations/dashboards/model-monitor/src/*.test.js

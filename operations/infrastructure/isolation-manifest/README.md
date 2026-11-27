@@ -1,10 +1,27 @@
 # Offline two-slot isolation manifest pilot
 
-This is a **non-deploying**, dependency-free policy experiment for #16681. Run:
+This is a **non-deploying** policy experiment for #16681. The manifest
+checks are dependency-free:
 
 ```sh
 node --test operations/infrastructure/isolation-manifest/manifest.test.cjs
 ```
+
+After `npm ci` at the repository root, also run the local runtime smoke test:
+
+```sh
+node --test operations/infrastructure/isolation-manifest/local-isolation.test.cjs
+```
+
+It starts two Enter/Gen pairs in Wrangler's local emulator using fixture
+Workers, in-memory bindings and no cloud configuration. It checks that Gen
+reaches its own Enter, that the pair shares its D1 and KV, and that writes to
+D1, KV, R2 and Durable Objects remain separate across the two slots even
+when both receive requests. Remote Cloudflare resources, real application
+entrypoints and real providers are not exercised.
+
+See [SECURITY.md](SECURITY.md) for the publisher and gateway boundaries,
+deployment prerequisites, and acceptance tests for a real pilot.
 
 `createPlan()` returns a human-readable logical graph for `pilot-a` and `pilot-b`. Each has an Enter and Gen Worker, its own D1, KV, R2 and Gen-owned Durable Object classes; within a slot Enter and Gen intentionally share D1 and KV, including Enter's `SETUP_HOLDS` alias. Gen's only service binding is `ENTER` to its own Enter. The binding names and classes follow the existing Wrangler configurations; this is a deliberately incomplete feature subset, not a deployable Wrangler config. In particular there are no MCP, media, email, images, rate limits, outbound, dispatch, VPC, cron, provider, payment, or secret bindings.
 

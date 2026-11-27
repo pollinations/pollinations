@@ -4,7 +4,8 @@
   "description": "The Pollinations CLI — for humans, AI agents, and everything in between",
   "type": "module",
   "bin": {
-    "polli": "bin/polli.js"
+    "polli": "bin/polli.js",
+    "sandbox-cli": "bin/sandbox-cli"
   },
   "scripts": {
     "build": "tsup",

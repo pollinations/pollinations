@@ -944,6 +944,8 @@ const TEXT_BASE_SERVICES = {
         supportedParameters: CHAT_PARAMETERS.azureResponses,
         aliases: [],
         hidden: true,
+        // polli@pollinations.ai, which owns the Classic API's key
+        ownerUserId: "LJVtOPiUl0C4uRku8kL8prpp95m8jLnt",
         provider: "azure",
         publisher: "OpenAI",
         category: "text",

@@ -950,3 +950,28 @@ test("integer_math rejects what is not integer arithmetic", async (t) => {
         );
     }
 });
+
+test("convert_units converts temperature, length, and digital storage", async (t) => {
+    const client = await clientFor(t);
+    const temp = await call(client, "convert_units", {
+        value: 100,
+        from: "C",
+        to: "F",
+    });
+    assert.equal(temp.result, 212);
+
+    const dist = await call(client, "convert_units", {
+        value: 1,
+        from: "mi",
+        to: "km",
+    });
+    assert.equal(dist.result, 1.609344);
+
+    const data = await call(client, "convert_units", {
+        value: 1024,
+        from: "MiB",
+        to: "GiB",
+    });
+    assert.equal(data.result, 1);
+});
+

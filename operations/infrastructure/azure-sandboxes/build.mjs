@@ -14,9 +14,14 @@
 import { execFileSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
-const here = new URL(".", import.meta.url).pathname;
+// fileURLToPath, so a Windows checkout keeps its drive letter and loses the
+// percent-encoding that URL.pathname leaves behind.
+const here = fileURLToPath(new URL(".", import.meta.url));
 const wrangler = `${here}../../../gen.pollinations.ai/wrangler.toml`;
+// A Windows checkout has CRLF, and every comparison below is line-based.
+const readWrangler = () => readFileSync(wrangler, "utf8").replace(/\r\n/g, "\n");
 // Staging first: the builder box runs there, and a broken image fails there
 // before production imports it.
 const staging = (url) => url.endsWith("/pollisbx-staging");
@@ -24,7 +29,7 @@ const staging = (url) => url.endsWith("/pollisbx-staging");
 const groups = [
     ...new Set(
         [
-            ...readFileSync(wrangler, "utf8").matchAll(
+            ...readWrangler().matchAll(
                 /^AZURE_SANDBOX_GROUP_URL = "(.+)"$/gm,
             ),
         ].map(([, url]) => url),
@@ -33,7 +38,7 @@ const groups = [
 
 // The image line follows its group's line in each block that uses it.
 function pin(group, image) {
-    const lines = readFileSync(wrangler, "utf8").split("\n");
+    const lines = readWrangler().split("\n");
     lines.forEach((line, i) => {
         if (line !== `AZURE_SANDBOX_GROUP_URL = "${group}"`) return;
         if (!lines[i + 1]?.startsWith("AZURE_SANDBOX_IMAGE = ")) {

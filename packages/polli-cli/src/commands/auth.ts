@@ -304,13 +304,13 @@ export async function showAuthStatus(): Promise<void> {
         throw new ExitSignal(1);
     }
 
-    if (!profile) {
+    if (!profile && !balance) {
         printResult({
-            authenticated: true,
+            authenticated: null,
             key: masked,
-            status: "Could not reach API",
+            status: "Could not verify API key. Retry later.",
         });
-        return;
+        throw new ExitSignal(1);
     }
 
     // `balance` is a budgeted key's remaining budget, not the wallet; the
@@ -324,7 +324,7 @@ export async function showAuthStatus(): Promise<void> {
     printResult({
         authenticated: true,
         key: masked,
-        name: profileName(profile),
+        name: profile ? profileName(profile) : undefined,
         ...(human
             ? {
                   balance:

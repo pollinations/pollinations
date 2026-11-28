@@ -48,4 +48,15 @@ export const wellKnownRoutes = new Hono<Env>()
             `${getCurrentGenOrigin(c)}/.well-known/api-catalog`,
             308,
         );
+    })
+    .get("/agent-skills/index.json", (c) => {
+        // The canonical Agent Skills index lives on gen, next to the skill
+        // artifacts it digests. A copy here would need the skill bytes just to
+        // keep the required SHA-256 digests in sync; the discovery RFC requires
+        // clients to follow 3xx, so delegation stays a valid index. Same
+        // pattern as the api-catalog above.
+        return c.redirect(
+            `${getCurrentGenOrigin(c)}/.well-known/agent-skills/index.json`,
+            308,
+        );
     });

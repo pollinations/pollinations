@@ -1,0 +1,70 @@
+{
+  "date": "2026-11-27",
+  "period_start": "2026-11-27",
+  "period_end": "2026-11-27",
+  "title": "Classic text moves to GPT-6 Luna",
+  "summary": "Classic text moved to GPT-6 Luna, while Bison 1 added decision scoring and Whisper Turbo added another transcription option.\n\nClassic text now uses GPT-6 Luna while keeping existing caller model names. Replies can run to 1,500 tokens instead of 800. The route sends no reasoning, so reasoning tokens do not take up the reply cap. It uses Azure Flex, which has no latency SLA and can return a busy response when capacity is full.\n\nAdded paid-only `baseten/bison-1` for scoring predefined yes/no, choice, and ordinal questions from text, JSON, or images. It accepts up to 16 reference images through the decisions endpoints or chat adapter.\n\nAdded paid-only `openai/whisper-large-v3-turbo` to `/v1/audio/transcriptions`, with word timestamps and subtitle output. Existing `whisper-large-v3` routes remain unchanged.",
+  "pr_count": 7,
+  "prs": [
+    {
+      "number": 20437,
+      "date": "2026-11-27"
+    },
+    {
+      "number": 20648,
+      "date": "2026-11-27"
+    },
+    {
+      "number": 20663,
+      "date": "2026-11-27"
+    },
+    {
+      "number": 20681,
+      "date": "2026-11-27"
+    },
+    {
+      "number": 20684,
+      "date": "2026-11-27"
+    },
+    {
+      "number": 20685,
+      "date": "2026-11-27"
+    },
+    {
+      "number": 20690,
+      "date": "2026-11-27"
+    }
+  ],
+  "generated_at": "2026-11-28T06:06:15.446264+00:00",
+  "daily": [
+    {
+      "emoji": "✨",
+      "title": "Classic gets longer replies",
+      "text": "Classic text now uses GPT-6 Luna, with replies up to 1,500 tokens. Existing caller model names still work, and reasoning tokens no longer take up the reply cap. [Try the text API](https://gen.pollinations.ai/text/{prompt}).",
+      "prs": [
+        20663,
+        20685
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Bison 1 scores decisions",
+      "text": "Use paid-only `baseten/bison-1` to score predefined yes/no, choice, or ordinal questions from text, JSON, or images. It supports up to 16 reference images. [View the model](https://enter.pollinations.ai/models?q=baseten/bison-1).",
+      "prs": [
+        20437
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎵",
+      "title": "Whisper Turbo transcription",
+      "text": "Transcribe audio with paid-only `openai/whisper-large-v3-turbo` at `/v1/audio/transcriptions`. It supports word timestamps and subtitle output. [View the model](https://enter.pollinations.ai/models?q=openai/whisper-large-v3-turbo).",
+      "prs": [
+        20690
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
+}

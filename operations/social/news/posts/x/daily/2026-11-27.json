@@ -1,0 +1,14 @@
+{
+  "platform": "x",
+  "scope": "daily",
+  "date": "2026-11-27",
+  "period_start": "2026-11-27",
+  "period_end": "2026-11-27",
+  "generated_at": "2026-11-28T06:06:15.446264+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/19063af362a6de7202f76494664a04ce175e09503a3c9513047aac1e8723800d"
+    }
+  ],
+  "text": "Classic text now uses GPT-6 Luna under existing model names. Replies cap at 1,500 tokens instead of 800; reasoning is off so it can't use the cap. Azure Flex has no latency SLA and can return busy when capacity is full."
+}

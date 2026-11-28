@@ -164,6 +164,12 @@ export async function proxy(host: string) {
     });
 }
 
+// A config written by a Windows editor ends its lines with \r\n, and split("\n")
+// would keep the \r, so the same Include line would be added on every run.
+export function hasSshInclude(current: string): boolean {
+    return current.split(/\r?\n/).includes(INCLUDE);
+}
+
 export function setupSsh() {
     mkdirSync(SSH_DIR, { recursive: true, mode: 0o700 });
     if (!existsSync(SSH_KEY)) {
@@ -210,7 +216,7 @@ export function setupSsh() {
     const current = existsSync(USER_SSH_CONFIG)
         ? readFileSync(USER_SSH_CONFIG, "utf8")
         : "";
-    if (!current.split("\n").includes(INCLUDE)) {
+    if (!hasSshInclude(current)) {
         mkdirSync(join(homedir(), ".ssh"), { recursive: true, mode: 0o700 });
         // Include must come before any Host block to apply everywhere.
         writeFileSync(USER_SSH_CONFIG, `${INCLUDE}\n\n${current}`);

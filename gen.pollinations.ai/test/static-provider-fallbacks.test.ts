@@ -754,7 +754,8 @@ describe("static provider fallbacks", () => {
             }),
         ).toBe("long_context");
         expect(fallback.priceMultiplier).toBe(1);
-        expect(fallback.paidOnly).not.toBe(true);
+        expect(primary.paidOnly).toBe(true);
+        expect(fallback.paidOnly).toBe(true);
         const billing = calculateUsageBilling({
             model: "openai/gpt-6-astra",
             usage: { promptTextTokens: 11, completionTextTokens: 5 },
@@ -773,6 +774,17 @@ describe("static provider fallbacks", () => {
                 "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/responses",
         });
     });
+
+    it.each([
+        ["openai/gpt-6.2-astra", true],
+        ["openai/gpt-6.2-sol", false],
+    ] as const)(
+        "keeps the same Pollen access when %s falls back to AWS",
+        (model, paidOnly) => {
+            expect(TEXT_SERVICES[model].paidOnly).toBe(paidOnly);
+            expect(TEXT_SERVICES[`${model}:aws`].paidOnly).toBe(paidOnly);
+        },
+    );
 
     it.each([
         "openai/gpt-5.5",

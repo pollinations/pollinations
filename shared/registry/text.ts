@@ -602,7 +602,7 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2026-09-04").getTime(),
         // Provider retires this route on 2028-01-11.
         priceMultiplier: 0.75,
-        paidOnly: false,
+        paidOnly: true,
         cost: {
             promptTextTokens: perMillion(10.0),
             promptCachedTokens: perMillion(1.0),
@@ -771,7 +771,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-11-17").getTime(),
-        paidOnly: true,
+        paidOnly: false,
         priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(2),

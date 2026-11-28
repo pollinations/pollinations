@@ -4,6 +4,7 @@ import {
     buildUsageHeaders,
     createAudioSecondsUsage,
 } from "@shared/registry/usage-headers.ts";
+import type { Usage } from "@shared/registry/registry.ts";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import {
     assertTranscriptionResponseFormat,
@@ -131,6 +132,13 @@ export async function transcribeWithAssemblyAi(opts: {
         id: submitted.id,
         apiKey,
         log,
+        // AssemblyAI keeps transcribing (and billing) after our 240s poll
+        // window ends. Estimate the audio duration from the upload size at a
+        // typical 128 kbps bitrate, bounded at an hour, so an abandoned job
+        // is not a free transcription.
+        billedUsage: createAudioSecondsUsage(
+            Math.min((file.size * 8) / 128_000, 3600),
+        ),
     });
 
     const duration = getAssemblyAiDuration(transcript, log);
@@ -251,8 +259,10 @@ async function pollAssemblyAiTranscript(opts: {
     id: string;
     apiKey: string;
     log: Logger;
+    /** Charged on timeout: the provider keeps processing after we give up. */
+    billedUsage?: Usage;
 }): Promise<AssemblyAiTranscriptResponse> {
-    const { id, apiKey, log } = opts;
+    const { id, apiKey, log, billedUsage } = opts;
     const deadline = Date.now() + ASSEMBLYAI_TRANSCRIPTION_TIMEOUT_MS;
     const transcriptUrl = `${ASSEMBLYAI_API_BASE}/v2/transcript/${id}`;
 
@@ -290,6 +300,7 @@ async function pollAssemblyAiTranscript(opts: {
 
     throw new UpstreamError(504 as ContentfulStatusCode, {
         message: "AssemblyAI transcription timed out",
+        ...(billedUsage ? { billedUsage } : {}),
     });
 }
 

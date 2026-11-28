@@ -1390,10 +1390,7 @@ test.each([
         expect(body.error.code).toBe("KEY_BUDGET_EXHAUSTED");
         expect(body.error.message).toContain("$0.0027");
         expect(body.error.message).toContain(
-            `$${median}, based on this model's median session price over the past seven days`,
-        );
-        expect(body.error.message).toContain(
-            "No charge was made for this session.",
+            `Opening a session needs about $${median.toFixed(4)} (7-day median for this model). Nothing was charged.`,
         );
         expect(new URL(body.error.fixUrl).searchParams.get("id")).toBe(id);
         expect(upstream.maybeServer).toBeUndefined();

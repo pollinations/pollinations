@@ -39,11 +39,11 @@ import { genDocsUrl } from "../config.ts";
 import { generateFunName } from "../lib/fun-name.ts";
 import { ModelFormRow } from "./community-endpoints/model-form-row.tsx";
 import { ResourceConfirmationContent } from "./community-endpoints/resource-confirmation-content.tsx";
-import { readError } from "./community-endpoints/types.ts";
 import { CopyDocs } from "./copy-docs.tsx";
 import { LoadError, SectionContent } from "./layout/dashboard-loading.tsx";
 import { ResourceDialog } from "./layout/resource-dialog.tsx";
 import { Footnotes } from "./pollen/pollen-balance.tsx";
+import { type SandboxError, sandboxError } from "./sandbox-error.ts";
 import {
     amount,
     LAUNCH_DISCOUNT,
@@ -115,7 +115,7 @@ type Pending =
 async function e2b<T>(path: string, method = "GET", body?: unknown) {
     const response = await genFetch(`${E2B_PATH}${path}`, { method, body });
     if (!response.ok)
-        throw new Error(await readError(response), { cause: response.status });
+        throw await sandboxError(response, window.location.origin);
     // Pause and kill answer 204 with no body.
     const text = await response.text();
     return (text ? JSON.parse(text) : undefined) as T;
@@ -495,7 +495,7 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
     // be running and using balance.
     const [loadError, setLoadError] = useState<string | null>(null);
     const [listError, setListError] = useState<string | null>(null);
-    const [actionError, setActionError] = useState<Error | null>(null);
+    const [actionError, setActionError] = useState<SandboxError | null>(null);
     const [busyId, setBusyId] = useState<string | null>(null);
     const [pending, setPending] = useState<Pending | null>(null);
     const [amount, setAmount] = useState("1");
@@ -671,10 +671,12 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
     const actionAlert = actionError && (
         <Alert intent="danger">
             {actionError.message}
-            {actionError.cause === 402 && (
+            {actionError.recovery && (
                 <>
                     {" "}
-                    <InlineLink href="/pollen">Open wallet</InlineLink>
+                    <InlineLink href={actionError.recovery.href}>
+                        {actionError.recovery.label}
+                    </InlineLink>
                 </>
             )}
         </Alert>

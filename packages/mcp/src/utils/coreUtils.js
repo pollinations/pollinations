@@ -200,10 +200,7 @@ export function parseApiError(status, errorText) {
                 "Authentication failed. Send a valid API key as an Authorization bearer token. Get your key at https://enter.pollinations.ai/keys"
             );
         case 402:
-            return (
-                errorMessage ||
-                "Check the account balance and the spending limits on this API key."
-            );
+            return errorMessage || "Check the account balance and key budget.";
         case 403:
             return (
                 errorMessage ||

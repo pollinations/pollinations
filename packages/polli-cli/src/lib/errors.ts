@@ -18,11 +18,7 @@ export async function budgetHint(
     const { code, message } = paymentError(bodyText);
     if (message) return message;
     if (code === "KEY_BUDGET_EXHAUSTED") {
-        return [
-            "This key has too little budget available for the request.",
-            "Manage key budget: https://enter.pollinations.ai/keys",
-            `Server said: ${bodyText}`,
-        ].join("\n");
+        return "Key budget too low. Review it at https://enter.pollinations.ai/keys";
     }
     const balance = await gen<{ accountBalance?: { total: number } }>(
         "/account/balance",
@@ -40,11 +36,10 @@ export async function budgetHint(
         ...(code === "INSUFFICIENT_BALANCE"
             ? ["Top up: https://enter.pollinations.ai/top-up"]
             : ["Manage key budget: https://enter.pollinations.ai/keys"]),
-        "",
     ];
     if (balance != null)
         lines.push(`Account balance: ${formatDollars(balance)}`);
-    lines.push(`Server said: ${bodyText}`);
+    if (bodyText) lines.push(bodyText);
     return lines.join("\n");
 }
 

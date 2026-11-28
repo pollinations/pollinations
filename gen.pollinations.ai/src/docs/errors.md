@@ -17,7 +17,7 @@ Pollinations HTTP errors usually include a status and a machine-readable `error.
 |--------|---------|
 | `400` | Invalid parameters, malformed request, or an explicit output-token limit exhausted without an answer (`output_token_limit_exceeded`) |
 | `401` | Missing or invalid API key |
-| `402` | The key budget or spendable account balance cannot cover the request. See the codes below. |
+| `402` | Key budget or account balance cannot cover the request |
 | `403` | API key lacks required permission |
 | `404` | Unknown path or resource, such as a file or sandbox (an unknown model returns `400`) |
 | `422` | Content policy violation |
@@ -27,18 +27,18 @@ Pollinations HTTP errors usually include a status and a machine-readable `error.
 
 ### Budget and balance errors
 
-For a generation request refused before it starts, no charge is made. Read `error.message` for the reason and `error.fixUrl` for the page where the account owner can resolve it.
+Requests refused before generation incur no charge. Read `error.message` for the reason and open `error.fixUrl` to resolve it.
 
 | `error.code` | What to do |
 |---|---|
-| `KEY_BUDGET_EXHAUSTED` | Increase this key’s remaining budget. If another request reserved it, retry after that request finishes. Adding funds to the account leaves the key’s spending limit in place. |
-| `INSUFFICIENT_BALANCE` | For models that accept Quest funds, either the Quest balance or the paid balance must cover the estimate on its own. For a paid-only model, add funds to the paid balance. |
-| `QUEST_POLLEN_ONLY` | This key can spend only Quest funds. Allow the key to use paid funds, or earn more Quest funds if the model accepts them. |
-| `QUEST_POLLEN_RESTRICTED` | The account’s Quest balance is locked. Follow the purchase link or contact `hello@pollinations.ai` for help. |
+| `KEY_BUDGET_EXHAUSTED` | Increase the key budget. If another request holds a reservation, retry when it finishes. |
+| `INSUFFICIENT_BALANCE` | Either the Quest balance or the paid balance must cover the estimate on its own. Paid-only models require paid balance. |
+| `QUEST_POLLEN_ONLY` | Allow this key to use paid balance, or earn Quest balance if the model accepts it. |
+| `QUEST_POLLEN_RESTRICTED` | Unlock the Quest balance with a first purchase, or contact `hello@pollinations.ai`. |
 
-For ordinary text output, the API can deliver this guidance as a chat response with zero usage. Requests for structured JSON or audio retain the HTTP error.
+For text output, budget errors can appear as a chat reply with zero usage. Structured JSON and audio requests retain the HTTP error.
 
-On a realtime WebSocket upgrade, Pollinations returns a budget refusal as HTTP 402 before the session starts. If the upstream provider rejects the handshake, its HTTP status and response body can pass through directly. Browser WebSocket clients do not expose the HTTP response body for a failed upgrade.
+A realtime provider can return its own HTTP status and body when it refuses a WebSocket upgrade. Browsers hide this response from the WebSocket client.
 
 ### Output token limits and billing
 

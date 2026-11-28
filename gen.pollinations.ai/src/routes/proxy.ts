@@ -176,7 +176,7 @@ function describeRealtimeWebSocket(path: "/realtime" | "/v1/realtime") {
             "",
             `**Models:** ${REALTIME_MODEL_NAMES.map((model) => `\`${model}\``).join(", ")}.`,
             "",
-            "Opening a session requires available account funds and, for a budgeted key, enough remaining budget to reserve the estimate. A budget refusal returns HTTP 402 before the session starts. When the session closes, the API bills actual usage and releases any unused reservation. Upstream handshake failures can return the provider’s HTTP status and body.",
+            "The handshake checks the account balance and key budget. A budgeted key reserves the estimate until the session closes. Billing is based on actual usage. A budget refusal returns HTTP 402 without a charge.",
         ].join("\n"),
         responses: {
             101: {
@@ -185,7 +185,7 @@ function describeRealtimeWebSocket(path: "/realtime" | "/v1/realtime") {
             ...errorResponseDescriptions(401, 402, 403, 429, 500, 503),
             400: {
                 description:
-                    "Invalid request or provider refusal during the handshake. Azure may return just error.code and error.message. Other provider bodies can differ.",
+                    "Invalid request or failed WebSocket handshake. A provider can return its own error body.",
                 content: {
                     "application/json": {
                         schema: resolver(

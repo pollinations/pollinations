@@ -61,6 +61,7 @@ export async function checkBalance(
         {
             paidOnly: isPaidOnly,
             free: isFreeModel(model.definition),
+            knownPrice: requestPrice !== undefined,
             realtimeMedian:
                 model.definition.category === "realtime" &&
                 requestPrice === undefined &&
@@ -86,8 +87,11 @@ export async function requireAccountFunds(
     price: number,
 ): Promise<void> {
     const userId = c.var.auth.requireUser().id;
-    await requireFunds(c, price, () =>
-        getFundedUserBalance(drizzle(c.env.DB), c.env.DB, userId),
+    await requireFunds(
+        c,
+        price,
+        () => getFundedUserBalance(drizzle(c.env.DB), c.env.DB, userId),
+        { knownPrice: true },
     );
 }
 

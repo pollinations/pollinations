@@ -143,9 +143,7 @@ describe("connectRealtime", () => {
         socket().close(1006, "");
         await expect(connected).rejects.toMatchObject({
             code: "REALTIME_CONNECT_FAILED",
-            message: expect.stringContaining(
-                "remaining budget, and the account balance",
-            ),
+            message: expect.stringContaining("key budget, and account balance"),
         });
     });
 

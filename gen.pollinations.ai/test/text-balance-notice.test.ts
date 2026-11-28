@@ -437,7 +437,7 @@ it.each([
                 `https://enter.pollinations.ai/edit-key?id=${caller.id}&ref=agent_key_budget`,
             );
             if (redirect) link.searchParams.set("redirect", redirect);
-            expect(text).toContain(`[Increase the key budget](<${link}>)`);
+            expect(text).toContain(`[Raise the key budget](<${link}>)`);
             expect(text).not.toContain("$0.0007");
             expect(text).toContain("$0.001");
             expect(text).not.toContain("/quests?");

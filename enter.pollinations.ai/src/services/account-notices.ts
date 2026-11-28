@@ -45,7 +45,7 @@ export function runningLowNotice(balance: number): Notice {
         id: "running_low",
         subject: "Your paid balance is running low",
         balance,
-        body: "Requests that need your paid balance can be declined when their estimate exceeds the amount available.\n\nTop up now, or turn on **auto top-up** so it refills by itself.",
+        body: "Requests that need paid balance may be declined if their estimate exceeds it.\n\nTop up or turn on **auto top-up** to refill automatically.",
         button: { label: "Top up", path: "/top-up" },
     };
 }
@@ -57,7 +57,7 @@ export function autoTopUpOffNotice(balance: number, topUp: number): Notice {
         subject: "Auto top-up failed",
         balance,
         intro: `We couldn’t charge your saved payment method for your $${topUp} auto top-up, so auto top-up is now off.`,
-        body: "Requests that need your paid balance can be declined when their estimate exceeds the amount available.\n\nUpdate your payment method, then turn auto top-up back on.",
+        body: "Requests that need paid balance may be declined if their estimate exceeds it.\n\nUpdate your payment method, then turn auto top-up back on.",
         button: { label: "Open wallet", path: "/pollen" },
     };
 }

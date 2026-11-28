@@ -178,7 +178,7 @@ export async function connectRealtime(
             reject(
                 new PollinationsError(
                     reason ||
-                        "The realtime session closed before opening. Check the model name, the key's permissions and remaining budget, and the account balance. A network or provider error can also prevent a connection.",
+                        "The realtime connection closed before opening. Check the model name, key permissions, key budget, and account balance.",
                     "REALTIME_CONNECT_FAILED",
                     0,
                     { closeCode: code },

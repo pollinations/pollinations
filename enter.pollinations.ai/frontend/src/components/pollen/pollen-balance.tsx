@@ -17,6 +17,7 @@ import {
 } from "@pollinations/ui";
 import { WalletBalanceCard, WalletKindIcon } from "@pollinations/ui/wallet";
 import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
+import { roundPollenLedgerAmount } from "@shared/billing/precision.ts";
 import { type PollenPackKey, SERVICE_FEE_NAME } from "@shared/pollen-packs.ts";
 import { Link } from "@tanstack/react-router";
 import type { FC, ReactNode } from "react";
@@ -35,13 +36,8 @@ type PollenBalanceProps = {
     compact?: boolean;
 };
 
-const BALANCE_DISPLAY_EPSILON = 0.0001;
 export const TERMS_URL = "https://pollinations.ai/terms";
 export const REFUND_POLICY_URL = "https://pollinations.ai/refunds";
-
-function normalizeDisplayBalance(value: number): number {
-    return Math.abs(value) < BALANCE_DISPLAY_EPSILON ? 0 : value;
-}
 
 const TooltipList: FC<{
     title: string;
@@ -81,12 +77,10 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
     tierWeek = 0,
     compact = false,
 }) => {
-    const displayTierBalance = normalizeDisplayBalance(tierBalance);
-    const displayPaidBalance = normalizeDisplayBalance(packBalance);
-    const totalPollen = normalizeDisplayBalance(
-        (questPollenRestricted ? 0 : displayTierBalance) + displayPaidBalance,
+    const totalPollen = roundPollenLedgerAmount(
+        (questPollenRestricted ? 0 : tierBalance) + packBalance,
     );
-    const totalWeek = normalizeDisplayBalance(
+    const totalWeek = roundPollenLedgerAmount(
         paidWeek + (questPollenRestricted ? 0 : tierWeek),
     );
 
@@ -97,7 +91,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                 <WalletBalanceCard
                     kind="paid"
                     label="Paid"
-                    value={formatUsd(displayPaidBalance)}
+                    value={formatUsd(packBalance)}
                     info={
                         <InfoTip
                             label="About Paid balance"
@@ -137,7 +131,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                     : undefined
                             }
                         >
-                            {formatUsd(displayTierBalance)}
+                            {formatUsd(tierBalance)}
                         </span>
                     }
                     info={
@@ -202,8 +196,8 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 />
                                 <span>
                                     <span className="font-semibold text-theme-text-strong">
-                                        {formatUsd(displayTierBalance)} Quest
-                                        balance locked.
+                                        {formatUsd(tierBalance)} Quest balance
+                                        locked.
                                     </span>{" "}
                                     Verification needed:{" "}
                                     <InlineLink
@@ -259,7 +253,7 @@ export const SidebarEarnings: FC<{ paidWeek: number; tierWeek: number }> = ({
     paidWeek,
     tierWeek,
 }) => {
-    const earned = normalizeDisplayBalance(paidWeek + tierWeek);
+    const earned = roundPollenLedgerAmount(paidWeek + tierWeek);
     if (earned <= 0) return null;
     return (
         <Chip
@@ -303,7 +297,7 @@ export const SidebarBalance: FC<{
             />
         ) : (
             <>
-                {formatUsd(normalizeDisplayBalance(balance))}
+                {formatUsd(balance)}
                 <span className="sr-only">
                     {kind === "paid" ? " paid" : " Quest"} balance
                 </span>

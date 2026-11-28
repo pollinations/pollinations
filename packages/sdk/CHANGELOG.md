@@ -5,7 +5,7 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
 ## [5.1.0-alpha.40] - 2026-11-28
 
 ### Changed
-- Clarify which balances to check when a realtime connection closes before opening and the browser hides the reason.
+- Clarify what to check when a realtime connection fails before opening.
 
 ## [5.1.0-alpha.37] - 2026-11-26
 

@@ -128,7 +128,7 @@ describe("billing deduction", () => {
             errorCode: "INSUFFICIENT_BALANCE",
             paidOnly: true,
             message: expect.stringContaining(
-                "This model needs the paid balance. Your available paid balance is $0.0000. The estimated amount needed to start is $0.0001.",
+                "This model needs the paid balance. You have $0.0000 there. Your paid balance must exceed the estimate of $0.0001.",
             ),
         });
     });
@@ -147,7 +147,7 @@ describe("billing deduction", () => {
             errorCode: "INSUFFICIENT_BALANCE",
             paidOnly: true,
             message: expect.stringContaining(
-                "Your available paid balance is $0.0000. A positive balance is required to start. The final price depends on usage.",
+                "You have $0.0000 there. A positive paid balance is required. Final cost depends on usage.",
             ),
         });
     });
@@ -162,9 +162,65 @@ describe("billing deduction", () => {
             status: 402,
             errorCode: "INSUFFICIENT_BALANCE",
             message: expect.stringContaining(
-                "The estimated amount needed to start is less than $0.00000001.",
+                "One balance must cover the estimate of less than $0.0001.",
             ),
         });
+    });
+
+    it("explains which balance a free request needs", async () => {
+        const budgetedKey = { id: "test-key", pollenBalance: -0.01 };
+        const c = { env, var: { auth: { apiKey: budgetedKey } } } as Parameters<
+            typeof requireFunds
+        >[0];
+        const funded = async () => ({ tierBalance: 1, packBalance: 0 });
+        await expect(
+            requireFunds(c, 0, funded, { free: true }),
+        ).rejects.toMatchObject({
+            errorCode: "KEY_BUDGET_EXHAUSTED",
+            message: expect.stringContaining(
+                "Free requests need a key budget of zero or more.",
+            ),
+        });
+        budgetedKey.pollenBalance = 0;
+        await expect(
+            requireFunds(c, 0, funded, { free: true }),
+        ).resolves.toEqual(await funded());
+        await expect(
+            requireFunds(
+                c,
+                0,
+                async () => ({ tierBalance: 0, packBalance: 0 }),
+                { free: true },
+            ),
+        ).rejects.toMatchObject({
+            errorCode: "INSUFFICIENT_BALANCE",
+            message: expect.stringContaining(
+                "Free requests need a positive Quest or paid balance.",
+            ),
+        });
+    });
+
+    it("shows the difference at the paid-balance threshold without disclosing it in chat", async () => {
+        const cost = 0.01578;
+        const balance = { tierBalance: 0, packBalance: 0.01577999 };
+        const check = () =>
+            requireFunds({ env, var: {} }, cost, async () => balance, {
+                paidOnly: true,
+            });
+        await expect(check()).rejects.toMatchObject({
+            message: expect.stringContaining(
+                "You have $0.01577999 there. Your paid balance must exceed the estimate of $0.01578.",
+            ),
+            chatMessage: expect.stringContaining(
+                "Your paid balance must exceed the estimate of about $0.0158.",
+            ),
+        });
+        balance.packBalance = cost;
+        await expect(check()).rejects.toMatchObject({
+            errorCode: "INSUFFICIENT_BALANCE",
+        });
+        balance.packBalance += 0.00000001;
+        await expect(check()).resolves.toEqual(balance);
     });
 
     it("settles every admitted parallel request even after restricted paid funds run out", async () => {

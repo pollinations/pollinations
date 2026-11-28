@@ -25,11 +25,12 @@ async function client(options = {}) {
     return connection;
 }
 
-test("private worker exposes eight tools using the MCP transport", async () => {
+test("private worker exposes nine tools using the MCP transport", async () => {
     const c = await client();
     assert.deepEqual((await c.listTools()).tools.map((t) => t.name).sort(), [
         "earthquake_event",
         "earthquake_search",
+        "feed_discover",
         "feed_read",
         "history_on_this_day",
         "hn_item",
@@ -59,7 +60,7 @@ test("private worker exposes eight tools using the MCP transport", async () => {
 test("modern MCP clients work without server-side sessions", async () => {
     const c = await client({ versionNegotiation: { mode: "auto" } });
     assert.equal(c.getProtocolEra(), "modern");
-    assert.equal((await c.listTools()).tools.length, 8);
+    assert.equal((await c.listTools()).tools.length, 9);
     await c.close();
 });
 
@@ -238,6 +239,190 @@ test("search preserves upstream fields and correctly encodes query", async (t) =
     assert.deepEqual(JSON.parse(result.content[0].text), [
         { objectID: "1", title: "test" },
     ]);
+    await c.close();
+});
+
+test("feed_discover reads a declared link and never forwards caller credentials", async (t) => {
+    const requests = [];
+    t.mock.method(globalThis, "fetch", async (input, init) => {
+        const url = String(input);
+        requests.push({ url, init });
+        if (url === "https://example.com/")
+            return new Response(
+                '<html><head><link rel="alternate" type="application/rss+xml" href="/feed.xml">' +
+                    '<link rel="stylesheet" href="/style.css"></head></html>',
+                { headers: { "content-type": "text/html" } },
+            );
+        if (url === "https://example.com/feed.xml")
+            return new Response(
+                '<rss version="2.0"><channel><title>Example</title><item><title>One</title></item></channel></rss>',
+                { headers: { "content-type": "application/rss+xml" } },
+            );
+        return new Response("nope", { status: 404 });
+    });
+    const c = await client();
+    const result = await c.callTool({
+        name: "feed_discover",
+        arguments: { url: "https://example.com" },
+    });
+    assert.notEqual(result.isError, true);
+    const data = JSON.parse(result.content[0].text);
+    assert.deepEqual(data.feeds, [
+        { url: "https://example.com/feed.xml", type: "rss", title: "Example" },
+    ]);
+    // The caller's own headers stay behind: nothing reaches the site.
+    for (const { init } of requests) {
+        assert.equal(
+            init.headers.Authorization ?? init.headers.authorization,
+            undefined,
+        );
+        assert.equal(init.headers.Cookie ?? init.headers.cookie, undefined);
+    }
+    await c.close();
+});
+
+test("feed_discover falls back to conventional paths and collapses one feed listed twice", async (t) => {
+    t.mock.method(globalThis, "fetch", async (input) => {
+        const url = String(input);
+        if (url === "https://example.org/")
+            return new Response(
+                "<html><head><title>No links here</title></head></html>",
+                {
+                    headers: { "content-type": "text/html" },
+                },
+            );
+        // The conventional list is probed in order, so /feed is the first hit.
+        if (url === "https://example.org/feed")
+            return new Response(
+                '<feed xmlns="http://www.w3.org/2005/Atom"><title>Org</title></feed>',
+                { headers: { "content-type": "application/atom+xml" } },
+            );
+        return new Response("nope", { status: 404 });
+    });
+    const c = await client();
+    const data = JSON.parse(
+        (
+            await c.callTool({
+                name: "feed_discover",
+                arguments: { url: "https://example.org" },
+            })
+        ).content[0].text,
+    );
+    assert.deepEqual(data.feeds, [
+        { url: "https://example.org/feed", type: "atom", title: "Org" },
+    ]);
+    await c.close();
+});
+
+test("feed_discover probes conventional paths at the site root, not under the page", async (t) => {
+    const requests = [];
+    t.mock.method(globalThis, "fetch", async (input) => {
+        const url = String(input);
+        requests.push(url);
+        if (url === "https://example.net/blog/post")
+            return new Response(
+                "<html><head><title>Post</title></head></html>",
+                {
+                    headers: { "content-type": "text/html" },
+                },
+            );
+        if (url === "https://example.net/feed")
+            return new Response(
+                '<feed xmlns="http://www.w3.org/2005/Atom"><title>Net</title></feed>',
+                { headers: { "content-type": "application/atom+xml" } },
+            );
+        return new Response("nope", { status: 404 });
+    });
+    const c = await client();
+    const data = JSON.parse(
+        (
+            await c.callTool({
+                name: "feed_discover",
+                arguments: { url: "https://example.net/blog/post" },
+            })
+        ).content[0].text,
+    );
+    assert.deepEqual(data.feeds, [
+        { url: "https://example.net/feed", type: "atom", title: "Net" },
+    ]);
+    assert.equal(
+        requests.includes("https://example.net/blog/post/feed"),
+        false,
+    );
+    await c.close();
+});
+test("feed_discover reports a feed it cannot read the title of, and no feed at all", async (t) => {
+    t.mock.method(globalThis, "fetch", async (input) => {
+        const url = String(input);
+        if (url === "https://wordpress.example/")
+            return new Response(
+                '<link rel=alternate type="application/rss+xml" href=/feed/>',
+                { headers: { "content-type": "text/html" } },
+            );
+        if (url === "https://wordpress.example/feed/")
+            // WordPress ships a DOCTYPE, which is what feed_read refuses; the site
+            // still publishes a feed, so the URL is reported without a title.
+            return new Response(
+                '<?xml version="1.0"?><!DOCTYPE html><rss version="2.0"><channel><title>WP</title></channel></rss>',
+                { headers: { "content-type": "application/rss+xml" } },
+            );
+        if (url === "https://bare.example/")
+            return new Response("<html></html>", {
+                headers: { "content-type": "text/html" },
+            });
+        return new Response("nope", { status: 404 });
+    });
+    const c = await client();
+    const dtd = JSON.parse(
+        (
+            await c.callTool({
+                name: "feed_discover",
+                arguments: { url: "https://wordpress.example" },
+            })
+        ).content[0].text,
+    );
+    assert.deepEqual(dtd.feeds, [
+        { url: "https://wordpress.example/feed/", type: "rss", title: null },
+    ]);
+
+    const bare = JSON.parse(
+        (
+            await c.callTool({
+                name: "feed_discover",
+                arguments: { url: "https://bare.example" },
+            })
+        ).content[0].text,
+    );
+    // A site with no feed is an empty answer, not an error.
+    assert.deepEqual(bare.feeds, []);
+    await c.close();
+});
+
+test("feed_discover returns a URL that is already a feed without scanning it", async (t) => {
+    const stub = t.mock.method(
+        globalThis,
+        "fetch",
+        async () =>
+            new Response(
+                '<rss version="2.0"><channel><title>Direct</title></channel></rss>',
+                {
+                    headers: { "content-type": "application/rss+xml" },
+                },
+            ),
+    );
+    const c = await client();
+    const data = JSON.parse(
+        (
+            await c.callTool({
+                name: "feed_discover",
+                arguments: { url: "https://feeds.example/rss" },
+            })
+        ).content[0].text,
+    );
+    assert.deepEqual(data.feeds, [
+        { url: "https://feeds.example/rss", type: "rss", title: "Direct" },
+    ]);
+    assert.equal(stub.mock.callCount(), 1);
     await c.close();
 });
 

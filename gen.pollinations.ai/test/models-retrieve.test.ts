@@ -628,6 +628,15 @@ test("resolves an alias to the canonical ID with identical metadata", async () =
     expect(aliasBody.created).toBe(idBody.created);
 });
 
+test("resolves the DeepSeek 1017 short aliases", async () => {
+    for (const alias of ["deepseek-1017", "deepseek-v4.1-flash-1017"]) {
+        const response = await fetchWorker(`/v1/models/${alias}`);
+        expect(response.status, alias).toBe(200);
+        const body = (await response.json()) as { id: string };
+        expect(body.id, alias).toBe("deepseek/deepseek-v4.1-flash-1017");
+    }
+});
+
 test("retrieve matches the list entry exactly (shared mapper)", async () => {
     const listResponse = await fetchWorker("/v1/models");
     expect(listResponse.status).toBe(200);

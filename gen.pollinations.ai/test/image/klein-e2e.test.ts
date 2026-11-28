@@ -160,3 +160,37 @@ test.each([
         expect(before.packBalance - after.packBalance).toBeCloseTo(0.005, 8);
     },
 );
+
+test("Klein rejects a truncated image without charging or caching it", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { packBalance: 100 },
+    });
+    const mocks = createFetchMock({ tinybird: createMockTinybird() });
+    await mocks.enable("tinybird");
+    const truncated = Buffer.from(png, "base64").subarray(0, -12);
+    const backend = vi.fn(async () =>
+        Response.json([{ image: truncated.toString("base64") }]),
+    );
+    const bindings = withInlineGenerationCoordinator({
+        ...env,
+        KLEIN_VPC: { fetch: backend } as unknown as Fetcher,
+    });
+    const before = await getUserBalance(drizzle(env.DB), userId);
+    const url = `https://gen.pollinations.ai/image/klein-${crypto.randomUUID()}?model=${model}&seed=42`;
+    for (const _ of [1, 2]) {
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(url, { headers: { authorization: `Bearer ${key}` } }),
+            bindings,
+            ctx,
+        );
+        expect(response.status).toBe(502);
+        await waitOnExecutionContext(ctx);
+    }
+    // The failure is not cached, so the second request reaches the backend.
+    expect(backend).toHaveBeenCalledTimes(2);
+    expect(
+        mocks.tinybird.state.events.filter((event) => event.isBilledUsage),
+    ).toHaveLength(0);
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual(before);
+});

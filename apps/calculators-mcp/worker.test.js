@@ -61,6 +61,7 @@ for (const modern of [false, true])
         assert.deepEqual(
             (await client.listTools()).tools.map((x) => x.name).sort(),
             [
+                "aspect_ratio",
                 "currency_convert",
                 "currency_list",
                 "currency_rates",
@@ -177,6 +178,56 @@ test("date math clamps month ends, supports reverse intervals and rejects confli
             true,
         );
 });
+test("aspect ratio simplifies, scales, and sizes a target ratio", async (t) => {
+    const client = await clientFor(t);
+    const landscape = await call(client, "aspect_ratio", {
+        width: 1920,
+        height: 1080,
+        max_side: 1024,
+        target_ratio: "9:16",
+    });
+    assert.equal(landscape.ratio, "16:9");
+    assert.equal(landscape.decimal, 1.7778);
+    assert.equal(landscape.orientation, "landscape");
+    assert.deepEqual(landscape.scaled, { width: 1024, height: 576 });
+    assert.deepEqual(landscape.target, {
+        ratio: "9:16",
+        width: 576,
+        height: 1024,
+    });
+
+    const portrait = await call(client, "aspect_ratio", {
+        width: 1080,
+        height: 1920,
+        max_side: 1024,
+    });
+    assert.equal(portrait.ratio, "9:16");
+    assert.equal(portrait.orientation, "portrait");
+    assert.deepEqual(portrait.scaled, { width: 576, height: 1024 });
+
+    const square = await call(client, "aspect_ratio", {
+        width: 1000,
+        height: 1000,
+        max_side: 1024,
+    });
+    assert.equal(square.ratio, "1:1");
+    assert.equal(square.orientation, "square");
+    assert.deepEqual(square.scaled, { width: 1024, height: 1024 });
+
+    for (const target_ratio of ["0:9", "16:0", "16x9", "16:9:1", "1:99999"]) {
+        assert.equal(
+            (
+                await client.callTool({
+                    name: "aspect_ratio",
+                    arguments: { width: 1920, height: 1080, target_ratio },
+                })
+            ).isError,
+            true,
+            target_ratio,
+        );
+    }
+});
+
 test("cron uses exclusive starts, OR semantics, DST and bounded impossible schedules", {
     timeout: 10000,
 }, async (t) => {

@@ -39,6 +39,7 @@ import {
     callOpenRouterQwenImage3API,
     callOpenRouterQwenImage21ProAPI,
     callOpenRouterRecraftFlashAPI,
+    callOpenRouterRecraftV4ProVectorAPI,
     callOpenRouterRecraftVectorAPI,
     callOpenRouterSeedream55API,
     callOpenRouterSeedreamFlashAPI,
@@ -52,6 +53,7 @@ import {
 import { callArrowSVGAPI } from "./models/quiverSvgModel.ts";
 import { callQwenImageAPI } from "./models/qwenImageModel.ts";
 import { callRecraftFlashFalAPI } from "./models/recraftFalModel.ts";
+import { callRecraftV4ProVectorFalAPI } from "./models/recraftV4ProVectorFalModel.ts";
 import { callReplicateFallbackImage } from "./models/replicateFallbackImageModel.ts";
 import { callSeedream5API } from "./models/seedream5ReplicateModel.ts";
 import {
@@ -1205,6 +1207,15 @@ const generateImage = async (
 
         case "x-ai/grok-imagine-image-2.0:openrouter":
             return await callOpenRouterGrokImagineImage2API(prompt, safeParams);
+
+        case "recraft/recraft-v4-pro-vector":
+            return await callRecraftV4ProVectorFalAPI(prompt, safeParams);
+
+        case "recraft/recraft-v4-pro-vector:openrouter":
+            return await callOpenRouterRecraftV4ProVectorAPI(
+                prompt,
+                safeParams,
+            );
 
         case "recraft/recraft-v4.1-vector":
             return await callOpenRouterRecraftVectorAPI(prompt, safeParams);

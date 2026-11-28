@@ -364,6 +364,7 @@ for (const modern of [false, true]) {
                 "list_countries",
                 "crossref_search",
                 "crossref_work",
+                "openlibrary_search",
             ].sort(),
         );
     });
@@ -644,4 +645,37 @@ test("CrossRef search and work lookup formats DOIs, authors and citation metrics
     const workVal = value(workRes);
     assert.equal(workVal.work.doi, "10.1038/nature12373");
     assert.equal(workVal.work.container, "Nature");
+});
+
+test("openlibrary_search formats books, authors, ISBNs, and Open Library URLs", async (t) => {
+    const urls = [];
+    mock.method(globalThis, "fetch", async (url) => {
+        urls.push(String(url));
+        return Response.json({
+            numFound: 1,
+            docs: [
+                {
+                    key: "/works/OL123W",
+                    title: "Designing Data-Intensive Applications",
+                    author_name: ["Martin Kleppmann"],
+                    first_publish_year: 2017,
+                    isbn: ["9781449373320"],
+                    subject: ["Distributed systems", "Databases"],
+                },
+            ],
+        });
+    });
+
+    const c = await client(t);
+    const res = await call(c, "openlibrary_search", {
+        query: "Designing Data-Intensive Applications",
+        limit: 5,
+    });
+    assert.notEqual(res.isError, true, JSON.stringify(res));
+    const parsed = value(res);
+    assert.equal(parsed.num_found, 1);
+    assert.equal(parsed.books[0].title, "Designing Data-Intensive Applications");
+    assert.deepEqual(parsed.books[0].authors, ["Martin Kleppmann"]);
+    assert.equal(parsed.books[0].url, "https://openlibrary.org/works/OL123W");
+    assert.match(urls[0], /^https:\/\/openlibrary\.org\/search\.json\?q=/);
 });

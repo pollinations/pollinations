@@ -358,7 +358,7 @@ def item_prompt(kind, author, author_type, title, body, files, linked):
 
 
 def classify(brief: str, areas: list) -> Optional[dict]:
-    """Use Weaver only on opening events after an explicit release selection."""
+    """Use the repository policy directly unless the workflow selects a hosted agent."""
     linked = [{"number": i["number"], "type": (i.get("issueType") or {}).get("name")}
               for i in closing_issues()] if IS_PULL_REQUEST else []
     prompt = item_prompt("pull request" if IS_PULL_REQUEST else "issue", ISSUE_AUTHOR,

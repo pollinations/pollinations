@@ -11,13 +11,13 @@ Choose the primary Area from the headings below. Use outcomes and changed files.
 The four Models areas cover the models we serve: registry entries (`shared/registry/`, `gen.pollinations.ai/src/text/configs/`), routing, fallbacks, prices and our GPU workers (`operations/infrastructure/gpu/`). Pick the one matching the primary outcome. Other model-related work goes where it happens: catalog or API features → API & reliability; community-published models and features users build on models → Community models; model research and tooling → Internal automation; a wrong charge → Billing & payments; key model access → Accounts & keys.
 
 ### Models · Add
-A new public model, or a model on a provider we don't use yet.
+Introduces a new public model.
 
 ### Models · Repair
 A served model failing or misbehaving, including corrective catalog changes, emergency reroutes and GPU worker failures.
 
 ### Models · Update
-A working model's price, version, capabilities, aliases or route, and routine GPU fleet upkeep.
+A working model's price, version, capabilities, aliases or route (including a switch to a new provider), and routine GPU fleet upkeep.
 
 ### Models · Retire
 A planned removal or provider shutdown, including a migration that keeps the public ID.

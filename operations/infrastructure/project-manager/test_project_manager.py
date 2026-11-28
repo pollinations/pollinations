@@ -155,7 +155,7 @@ class WeaverTest(unittest.TestCase):
                                         input=json.dumps({**saved, **change}), capture_output=True)
                 self.assertEqual(status.returncode == 0, not change)
 
-    def test_hosted_request_sends_only_facts_and_accepts_one_json_fence(self):
+    def test_direct_request_sends_policy_and_hosted_request_sends_only_facts(self):
         response = Mock(status_code=200)
         response.json.return_value = {"choices": [{"message": {"content": '```json\n{"area":null}\n```'}}]}
         with patch.object(manager.requests, "post", return_value=response) as post:
@@ -164,10 +164,16 @@ class WeaverTest(unittest.TestCase):
             self.assertEqual(payload["messages"], [{"role": "user", "content": "item facts"}])
             self.assertEqual(payload["model"], "weaver")
             self.assertNotIn("response_format", payload)
-            response.json.return_value["choices"][0]["message"]["content"] = "{}"
-            manager.ask_ai("original", "item facts")
+            response.json.return_value["choices"][0]["message"]["content"] = json.dumps({
+                "area": "Models · Update", "type": "Task", "priority": "Low", "reasoning": "Planned provider switch."
+            })
+            brief = manager.read_brief()
+            with patch.dict(os.environ, clear=True), patch.object(manager, "IS_PULL_REQUEST", False):
+                answer = manager.classify(brief, manager.area_names(brief))
+            self.assertEqual(answer, {"area": "Models · Update", "type": "Task", "priority": "Low"})
             direct = post.call_args.kwargs["json"]
-            self.assertEqual(direct["messages"][0], {"role": "system", "content": "original"})
+            self.assertEqual(direct["model"], manager.AI_MODEL)
+            self.assertEqual(direct["messages"][0], {"role": "system", "content": brief})
             self.assertEqual(direct["response_format"], {"type": "json_object"})
 
     def test_invalid_hosted_output_and_rejected_key_fail(self):
@@ -198,7 +204,7 @@ class WeaverTest(unittest.TestCase):
             writes = [c for c in write.call_args_list if c.args[1] is priority]
             self.assertEqual(writes, [] if existing else [call("item", priority, "High")])
 
-    def test_every_classification_uses_weaver_and_rejects_invalid_fields(self):
+    def test_configured_weaver_handles_openings_and_backfills_and_rejects_invalid_fields(self):
         good = {"area": "Models · Repair", "type": "Bug", "priority": "Medium", "reasoning": "One model fails."}
         with patch.dict(os.environ, {"WEAVER_MODEL": "weaver"}), patch.object(manager, "IS_PULL_REQUEST", False):
             for action, expected in (("opened", "weaver"), (None, "weaver")):

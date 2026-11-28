@@ -56,8 +56,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
-          # Opened issues and PRs are classified by the hosted agent; see apps/agent-weaver/README.md.
-          WEAVER_MODEL: community/pollinations-ai/weaver
           PR_NUMBERS: ${{ inputs.pr_numbers }}
           ISSUE_NUMBERS: ${{ inputs.issue_numbers }}
           DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '' }}

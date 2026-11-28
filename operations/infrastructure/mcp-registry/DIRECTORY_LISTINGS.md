@@ -13,6 +13,13 @@ GitHub OIDC; no stored publishing secret is needed. Published versions are
 immutable: use a new version for changes, including after a partially successful
 batch. Check the workflow output and registry before retrying.
 
+Pushes to `main` that change the server catalog (`shared/registry/mcp.ts`,
+`shared/registry/mcp-server-json.ts`, or `operations/infrastructure/mcp-registry/**`)
+publish automatically with a date-based version (`YYYY.M.D`, e.g. `2026.11.14`).
+If that version is already published (two catalog pushes on one day), the run
+skips publishing instead of failing; after a partially successful batch,
+re-dispatch manually with a new version, as above.
+
 Local preview (Node 24, no dependencies or login):
 
 ```sh

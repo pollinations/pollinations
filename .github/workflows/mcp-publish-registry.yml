@@ -1,6 +1,12 @@
 name: MCP / Publish registry entries
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - "shared/registry/mcp.ts"
+      - "shared/registry/mcp-server-json.ts"
+      - "operations/infrastructure/mcp-registry/**"
   workflow_dispatch:
     inputs:
       version:
@@ -24,20 +30,54 @@ jobs:
           node-version: 24
           check-latest: true
 
+      - name: Resolve registry version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            version="${{ inputs.version }}"
+          else
+            # Date-based so a push-triggered publish never reuses (or
+            # overwrites) an existing version; matches the 2026.9.27 style
+            # the generator tests already use.
+            version="$(date -u +%Y.%-m.%-d)"
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
       - name: Test registry generation
         run: node --test operations/infrastructure/mcp-registry/generate-server-json.test.ts
 
       - name: Generate server.json entries from shared/registry/mcp.ts
         env:
-          REGISTRY_VERSION: ${{ inputs.version }}
+          REGISTRY_VERSION: ${{ steps.version.outputs.version }}
         run: node operations/infrastructure/mcp-registry/generate-server-json.ts "$RUNNER_TEMP/mcp-registry" "$REGISTRY_VERSION"
 
+      - name: Skip if this version is already published
+        id: already-published
+        # Manual dispatches always publish: a maintainer re-dispatching
+        # with a new version after a partially successful batch must not
+        # be skipped. Only date-versioned push runs are deduplicated.
+        if: github.event_name != 'workflow_dispatch'
+        run: |
+          # Two catalog pushes on one day share a date version; published
+          # versions are immutable, so skip instead of failing the run.
+          # All entries in a batch share one version, so checking one
+          # server is enough. A network error fails open (publishes),
+          # so a blip never silently drops a publish.
+          if curl -fsSL "https://registry.modelcontextprotocol.io/v0/servers/io.github.pollinations%2Fpollinations/versions/${{ steps.version.outputs.version }}" -o /dev/null; then
+            echo "already=true" >> "$GITHUB_OUTPUT"
+            echo "Version ${{ steps.version.outputs.version }} is already published; nothing to do."
+          else
+            echo "already=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Install mcp-publisher
+        if: steps.already-published.outputs.already != 'true'
         working-directory: ${{ runner.temp }}
         run: |
           curl -fL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
 
       - name: Validate every entry before publishing any
+        if: steps.already-published.outputs.already != 'true'
         working-directory: ${{ runner.temp }}
         run: |
           for file in mcp-registry/*.json; do
@@ -45,10 +85,12 @@ jobs:
           done
 
       - name: Login to the MCP registry via GitHub OIDC
+        if: steps.already-published.outputs.already != 'true'
         working-directory: ${{ runner.temp }}
         run: ./mcp-publisher login github-oidc
 
       - name: Publish server entries
+        if: steps.already-published.outputs.already != 'true'
         working-directory: ${{ runner.temp }}
         run: |
           for file in mcp-registry/*.json; do

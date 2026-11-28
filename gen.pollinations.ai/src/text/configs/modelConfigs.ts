@@ -1637,6 +1637,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         createInferencePortModelConfig({ model: "lightning" }),
     "inferenceport-lightning-text-v2.1": () =>
         createInferencePortModelConfig({ model: "lightning-text-v2.1" }),
+    "inferenceport-ltra2-research": () =>
+        createInferencePortModelConfig({ model: "LTRA2-Research" }),
 
     // -- GPT-OSS 20B: DeepInfra, then Bedrock Mantle ----------------------------
     "gpt-oss-20b": () =>

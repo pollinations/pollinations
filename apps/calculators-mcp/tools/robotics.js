@@ -8,14 +8,16 @@ export function inversePlanarArm({ x, y, link1, link2 }) {
     // Normalize to avoid overflow in squares when all lengths are very large.
     const scale = Math.max(Math.abs(x), Math.abs(y), link1, link2);
     const [a, b, px, py] = [link1 / scale, link2 / scale, x / scale, y / scale];
-    if (a === 0 || b === 0 || a * b === 0) throw new Error("Link lengths differ too much to calculate reliably.");
+    if (Math.min(a, b) < 1e-12) throw new Error("Link lengths or target coordinates differ too much to calculate reliably.");
     const d = Math.hypot(px, py);
-    const epsilon = 1e-12 * Math.max(a, b);
+    const epsilon = 8 * Number.EPSILON * Math.max(a, b);
     if (d > a + b + epsilon || d < Math.abs(a - b) - epsilon) return { reachable: false, solutions: [] };
     if (d === 0 && a === b) return { reachable: true, singular: true, solutions: [], message: "Infinitely many solutions: equal links fold at the origin." };
     const cosine = Math.max(-1, Math.min(1, (d * d - a * a - b * b) / (2 * a * b)));
-    const theta = Math.acos(cosine);
-    const angles = theta < 1e-12 || Math.PI - theta < 1e-12 ? [theta] : [theta, -theta];
+    // Heron's product preserves small elbow angles when acos would round to 0 or pi.
+    const sine = Math.sqrt(Math.max(0, (a + b - d) * (a + b + d) * (d - Math.abs(a - b)) * (d + Math.abs(a - b)))) / (2 * a * b);
+    const theta = Math.atan2(sine, cosine);
+    const angles = sine === 0 ? [theta] : [theta, -theta];
     return {
         reachable: true,
         singular: angles.length === 1,

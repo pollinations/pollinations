@@ -5,7 +5,7 @@ on:
     types: [opened, labeled]
   pull_request_target:
     types: [opened]
-  # Reclassify Area, Source and type. Fill empty Priority and Model work fields. Defaults to every open PR.
+  # Reclassify Area, Source and type. Fill empty Priority fields. Defaults to every open PR.
   workflow_dispatch:
     inputs:
       pr_numbers:

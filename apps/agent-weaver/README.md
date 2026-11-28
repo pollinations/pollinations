@@ -1,6 +1,6 @@
 # Weaver · Project Manager
 
-Weaver classifies newly opened issues and PRs, and manual backfills, from its [policy](system-prompt.md): Area, Type, Priority and Model work. The organizer workflow validates each answer and makes every GitHub write.
+Weaver classifies newly opened issues and PRs, and manual backfills, from its [policy](system-prompt.md): Area, Type and Priority. The organizer workflow validates each answer and makes every GitHub write.
 
 It is a private prompt agent owned by `polli@pollinations.ai` (GitHub user `pollinations-ai`), callable as `community/pollinations-ai/weaver`, listing `636a81d6-12e5-4379-9b98-1054bc44982b`. The organizer's inference key belongs to the same account, which is what lets it call a private agent. Managed agents reject JSON mode, so the hosted request asks for JSON in the prompt and the workflow validates the fields.
 

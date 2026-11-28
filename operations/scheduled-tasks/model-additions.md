@@ -1,6 +1,6 @@
 # Weekly model additions
 
-Start with the [Addition queue](https://github.com/orgs/pollinations/projects/20/views/42?filterQuery=is%3Aopen%20is%3Apr%20area%3AModels%20model-work%3AAddition).
+Start with the [Models · Add queue](https://github.com/orgs/pollinations/projects/20/views/42?filterQuery=is%3Aopen%20is%3Apr%20area%3A%22Models%20%C2%B7%20Add%22).
 Review open PRs that introduce a new public model. Read any linked request for context.
 
 1. Check the live catalog, registry and open PRs for an existing model, alias,

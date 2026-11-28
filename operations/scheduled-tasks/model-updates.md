@@ -1,6 +1,6 @@
 # Weekly model updates
 
-Start with the [Update queue](https://github.com/orgs/pollinations/projects/20/views/42?filterQuery=is%3Aopen%20is%3Apr%20area%3AModels%20model-work%3AUpdate).
+Start with the [Models · Update queue](https://github.com/orgs/pollinations/projects/20/views/42?filterQuery=is%3Aopen%20is%3Apr%20area%3A%22Models%20%C2%B7%20Update%22).
 Review open PRs for planned version, capability, pricing, access or routing
 changes to working models. Read linked issues for context.
 

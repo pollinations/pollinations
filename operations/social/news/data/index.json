@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-27T06:08:04.221724+00:00",
+  "generated_at": "2026-11-28T06:07:21.795531+00:00",
   "models": [
     {
       "id": "2026-10-30:anthropic/claude-fable-5.1",
@@ -3169,6 +3169,99 @@
           }
         }
       }
+    },
+    {
+      "id": "2026-11-27:baseten/bison-1",
+      "model_id": "baseten/bison-1",
+      "title": "Bison 1",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "decision",
+      "date": "2026-11-27",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "context_length": {
+          "before": null,
+          "after": 32768
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 16
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-11-27:openai/whisper-large-v3-turbo",
+      "model_id": "openai/whisper-large-v3-turbo",
+      "title": "Whisper Large V3 Turbo",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "audio",
+      "date": "2026-11-27",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "audio"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptAudioSeconds": "0.000003333333"
+          }
+        }
+      }
     }
   ],
   "api": [
@@ -3571,6 +3664,37 @@
     }
   ],
   "daily": [
+    {
+      "date": "2026-11-27",
+      "emoji": "✨",
+      "title": "Classic gets longer replies",
+      "text": "Classic text now uses GPT-6 Luna, with replies up to 1,500 tokens. Existing caller model names still work, and reasoning tokens no longer take up the reply cap. [Try the text API](https://gen.pollinations.ai/text/{prompt}).",
+      "prs": [
+        20663,
+        20685
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-11-27",
+      "emoji": "🎯",
+      "title": "Bison 1 scores decisions",
+      "text": "Use paid-only `baseten/bison-1` to score predefined yes/no, choice, or ordinal questions from text, JSON, or images. It supports up to 16 reference images. [View the model](https://enter.pollinations.ai/models?q=baseten/bison-1).",
+      "prs": [
+        20437
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-11-27",
+      "emoji": "🎵",
+      "title": "Whisper Turbo transcription",
+      "text": "Transcribe audio with paid-only `openai/whisper-large-v3-turbo` at `/v1/audio/transcriptions`. It supports word timestamps and subtitle output. [View the model](https://enter.pollinations.ai/models?q=openai/whisper-large-v3-turbo).",
+      "prs": [
+        20690
+      ],
+      "kind": "model"
+    },
     {
       "date": "2026-11-26",
       "emoji": "🎵",
@@ -4783,16 +4907,6 @@
       "text": "`/v1/models` and `/v1/models/:model` can now return `pricing_units` when a model defines them. For some image and video models, this identifies `completionImageTokens` as priced per megapixel. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
         18540
-      ],
-      "kind": "api"
-    },
-    {
-      "date": "2026-10-28",
-      "emoji": "🔗",
-      "title": "Grant missing key permissions",
-      "text": "Owners can use the grant link in Enter's 403 error, also returned as JSON `fixUrl`, to add missing `keys`, `machines`, or `usage` permission to an existing key. For keys obtained through a website redirect, add `keys` permission on the Keys page instead.",
-      "prs": [
-        18615
       ],
       "kind": "api"
     }

@@ -18,6 +18,15 @@ workers_dev = true
 # Public hostnames are attached directly in the Myceli account.
 [env.production]
 
+[[env.production.send_email]]
+name = "REFUND_EMAIL"
+allowed_sender_addresses = ["notifications@notify.pollinations.ai"]
+
+[[env.production.ratelimits]]
+name = "REFUND_LIMIT"
+namespace_id = "1008"
+simple = { limit = 3, period = 60 }
+
 [[env.production.routes]]
 pattern = "pollinations.myceli.ai"
 zone_name = "myceli.ai"

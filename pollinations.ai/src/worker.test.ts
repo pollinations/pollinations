@@ -339,3 +339,84 @@ describe("markdown for agents", () => {
         expect(response.headers.get("content-type")).toContain("text/html");
     });
 });
+
+describe("withdrawal on the Refunds page", () => {
+    const fields = {
+        name: "Ana García",
+        purchase: "18 November, $10",
+        email: "ana@example.com",
+    };
+    const post = (data = fields, origin = "https://pollinations.ai") => {
+        const body = new URLSearchParams(data).toString();
+        return new Request("https://pollinations.ai/refunds", {
+            method: "POST",
+            headers: {
+                Origin: origin,
+                "Content-Type": "application/x-www-form-urlencoded",
+                "CF-Connecting-IP": "192.0.2.10",
+            },
+            body,
+        });
+    };
+    const bindings = () => ({
+        ASSETS: { fetch: vi.fn() },
+        REFUND_EMAIL: {
+            send: vi.fn().mockResolvedValue({ messageId: "local-test" }),
+        },
+        REFUND_LIMIT: { limit: vi.fn().mockResolvedValue({ success: true }) },
+    });
+
+    test("sends one dated declaration to billing and the customer before acknowledging it", async () => {
+        const env = bindings();
+        expect((await worker.fetch(post(), env)).status).toBe(204);
+        expect(env.REFUND_EMAIL.send).toHaveBeenCalledTimes(1);
+        const [message] = env.REFUND_EMAIL.send.mock.calls[0];
+        expect(message).toMatchObject({
+            to: "billing@pollinations.ai",
+            cc: [fields.email],
+            replyTo: "billing@pollinations.ai",
+        });
+        for (const value of [
+            ...Object.values(fields),
+            "I withdraw from the contract",
+        ])
+            expect(message.text).toContain(value);
+        expect(message.text).toMatch(
+            /Received \(UTC\): \d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z/,
+        );
+        expect(env.REFUND_LIMIT.limit.mock.calls).toEqual([
+            [{ key: "ip:192.0.2.10" }],
+            [{ key: "email:ana@example.com" }],
+        ]);
+        expect(env.ASSETS.fetch).not.toHaveBeenCalled();
+    });
+
+    test("rejects invalid, cross-site and rate-limited submissions and reports mail failures", async () => {
+        const env = bindings();
+        expect(
+            (
+                await worker.fetch(
+                    post({ ...fields, email: "x@example.com,y@example.com" }),
+                    env,
+                )
+            ).status,
+        ).toBe(400);
+        expect(
+            (await worker.fetch(post(fields, "https://other.example"), env))
+                .status,
+        ).toBe(403);
+        expect(
+            (
+                await worker.fetch(
+                    post({ ...fields, purchase: "x".repeat(8193) }),
+                    env,
+                )
+            ).status,
+        ).toBe(413);
+        env.REFUND_LIMIT.limit.mockResolvedValueOnce({ success: false });
+        expect((await worker.fetch(post(), env)).status).toBe(429);
+        expect(env.REFUND_EMAIL.send).not.toHaveBeenCalled();
+        env.REFUND_EMAIL.send.mockRejectedValueOnce(new Error("unavailable"));
+        expect((await worker.fetch(post(), env)).status).toBe(503);
+    });
+});

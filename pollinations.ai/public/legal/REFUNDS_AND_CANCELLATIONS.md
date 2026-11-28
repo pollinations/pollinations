@@ -8,39 +8,26 @@
 
 ## 1) Your Balance Is Digital API Credit
 
-Your balance is in-service credit, counted in US dollars, used only for Pollinations API usage. We previously called it "Pollen". It is not legal tender, e-money, cryptocurrency, a deposit, a bank account balance, or stored value outside the Service. It is not transferable, withdrawable, or redeemable for cash except where required by law or expressly approved by us as a refund.
+Your balance is in-service credit, counted in US dollars, used only for Pollinations API usage. It is not legal tender, e-money, cryptocurrency, a deposit, a bank account balance, or stored value outside the Service. It is not transferable, withdrawable, or redeemable for cash except where required by law or expressly approved by us as a refund.
 
 Your account may hold two types of credit:
 
-- **Quest balance:** credit earned from quests, contribution rewards, free grants, promotional credits, manual credits, and developer earnings from Quest balance usage.
+- **Quest balance:** credit from quests, contributions, free or promotional grants, manual credits, and earnings from Quest balance usage.
 - **Paid balance:** purchased credit and developer earnings from paid balance usage.
 
-## 2) Final-Sale Policy
+## 2) Refunds for unused top-ups
 
-All sales are final except where required by law or expressly approved by us. Our API is a digital service delivered immediately after purchase. Once credit is spent on API usage, that usage cannot be returned.
+If you bought a top-up and haven’t used any of that purchase, we’ll refund it on request. Billing checks the purchase, removes the refunded credit and returns the money to the original payment method. The Quest balance, promotional credit and developer earnings have no cash value.
 
-Paid top-ups are non-refundable once provisioned, including unused paid balance. We do not guarantee refunds because you changed your mind, stopped using the Service, disliked an output, chose the wrong model, authorized an app you no longer want to use, or did not use the full balance.
+## 3) Other refund requests
 
-Used credit cannot be refunded or clawed back. The Quest balance, free or promotional grants, quest or other rewards, and developer earnings have no cash value and are not refundable.
+If you were charged twice, didn’t authorize a payment, didn’t receive the credit, or couldn’t use the service because of a technical fault, email billing@pollinations.ai so we can investigate. For a refund involving used credit, your legal rights still apply. Credit and developer earnings associated with a refunded payment may be adjusted as described in [Terms §6](/terms#6-balance-fees-taxes--billing).
 
-## 3) Limited Refund Review
+## 4) EU/EEA consumer withdrawal
 
-We may review refund requests for unused paid balance in these cases:
+If you bought a top-up online as an EEA consumer, you generally have 14 days from purchase to withdraw without giving a reason. Choose **Withdraw from contract here** at the top of this page, identify your purchase, and select **Confirm withdrawal**. We email a copy of your request with the submission date and time to you and to billing. You can also withdraw by emailing billing@pollinations.ai before the deadline.
 
-- A refund is required by law.
-- A duplicate or unauthorized charge is proven.
-- We fail to provision paid credit after payment.
-- A material, documented technical fault prevents any meaningful use within a reasonable start period, and you contact us promptly before substantial use.
-
-Approval is discretionary except where required by law. On any approved refund, associated credit, benefits, and developer earnings may be reversed or adjusted. See Terms §6 for developer-earnings reversibility.
-
-## 4) EU/EEA Consumer Withdrawal
-
-If you purchase as a consumer in the EEA, you may have a 14-day right of withdrawal for distance contracts. API access is a digital service: that right ends only once the service has been fully performed, and only if you expressly asked for it to start during the withdrawal period and acknowledged that you would then lose the right. If you withdraw after asking for the service to start, you pay for the part already provided.
-
-We do not currently ask for that request and acknowledgement at checkout. Requests based on a non-waivable withdrawal right will be reviewed under applicable law.
-
-This policy does not limit any non-waivable statutory rights for non-conforming digital services.
+API access is a digital service. Using some credit does not, by itself, end your withdrawal right. Our checkout currently does not ask you to agree to start the service during those 14 days. If you exercise this right, we refund your payment within 14 days of receiving your request, including the part you used. Your rights if the service is faulty also apply.
 
 ## 5) Chargebacks & Payment Fraud
 
@@ -52,6 +39,6 @@ If you provide a valid VAT ID or purchase for business use, consumer withdrawal 
 
 ## 7) How to Request Review
 
-Email billing@pollinations.ai with your order ID, account email, and a short description of the issue. Approved refunds return to the original payment method subject to payment-network timelines. A refund of a full purchase includes that purchase's service fee and tax; partial refunds are prorated on the amount paid.
+For billing questions, email billing@pollinations.ai with enough detail to identify your purchase. Your payment provider may take time to show the refund. A refund of a full purchase includes that purchase's service fee and tax; partial refunds are prorated on the amount paid.
 
 Crypto payments follow the same refund policy. Approved crypto refunds are processed by Stripe and returned as stablecoins to the wallet used for the original payment.

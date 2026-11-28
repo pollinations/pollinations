@@ -1,5 +1,6 @@
 import type { Logger } from "@logtape/logtape";
 import { getTinybirdDatasourceIngestUrl } from "@shared/events.ts";
+import { TRACKED_REFERRAL_REFS } from "@shared/http/referral-refs.ts";
 import { Hono } from "hono";
 import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
@@ -54,14 +55,7 @@ async function trackReferral(
 export const referralRoutes = new Hono<Env>().post("/", (c) => {
     const ref = c.req.query("ref");
 
-    if (
-        ref === "image" ||
-        ref === "text" ||
-        ref === "agent_low_balance_topup" ||
-        ref === "agent_low_balance_quests" ||
-        ref === "agent_key_budget" ||
-        ref === "agent_grant"
-    ) {
+    if (ref && TRACKED_REFERRAL_REFS.includes(ref)) {
         c.executionCtx.waitUntil(
             trackReferral(c.env, ref, c.req.raw.headers, c.get("log")).catch(
                 (error) =>

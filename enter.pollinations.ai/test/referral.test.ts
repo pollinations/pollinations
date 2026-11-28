@@ -3,20 +3,14 @@ import { INVITE_REF_COOKIE } from "@shared/auth/additional-fields.ts";
 import { signSessionToken } from "@shared/auth/session-token.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { session as sessionTable } from "@shared/db/better-auth.ts";
+import { TRACKED_REFERRAL_REFS } from "@shared/http/referral-refs.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
 import { POLLINATIONS_AI_GITHUB_ID } from "../src/services/quests/groups/referrals.ts";
 import { signInWithGithub, test } from "./fixtures.ts";
 
-for (const ref of [
-    "image",
-    "text",
-    "agent_low_balance_topup",
-    "agent_low_balance_quests",
-    "agent_key_budget",
-    "agent_grant",
-]) {
+for (const ref of TRACKED_REFERRAL_REFS) {
     test(`tracks the ${ref} referral`, async ({ mocks }) => {
         await mocks.enable("tinybird");
 

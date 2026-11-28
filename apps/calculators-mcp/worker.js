@@ -5,6 +5,7 @@ import { checkDigitTools } from "./tools/checkdigit.js";
 import { contrastTools } from "./tools/contrast.js";
 import { currencyTools } from "./tools/currency.js";
 import { diffTools } from "./tools/diff.js";
+import { durationTools } from "./tools/duration.js";
 import { fractionTools } from "./tools/fraction.js";
 import { hashTools } from "./tools/hash.js";
 import { integerTools } from "./tools/integer.js";
@@ -29,6 +30,7 @@ const handler = createMcpHandler(
             ...baseTools,
             ...checkDigitTools,
             ...integerTools,
+            ...durationTools,
             ...diffTools,
             ...fractionTools,
             ...versionTools,

@@ -70,6 +70,7 @@ for (const modern of [false, true])
                 "convert_number_base",
                 "check_digit",
                 "integer_math",
+                "duration_iso",
                 "diff_text",
                 "create_qr",
                 "hash_text",
@@ -944,6 +945,85 @@ test("integer_math rejects what is not integer arithmetic", async (t) => {
     ]) {
         assert.equal(
             (await client.callTool({ name: "integer_math", arguments: args }))
+                .isError,
+            true,
+            JSON.stringify(args),
+        );
+    }
+});
+
+test("duration_iso splits a duration into components", async (t) => {
+    const client = await clientFor(t);
+    assert.deepEqual(
+        await call(client, "duration_iso", { duration: "P1DT2H30M" }),
+        {
+            negative: false,
+            years: 0,
+            months: 0,
+            weeks: 0,
+            days: 1,
+            hours: 2,
+            minutes: 30,
+            seconds: 0,
+            totalSeconds: 95400,
+        },
+    );
+
+    // Fractional seconds appear in real payloads and must not be truncated.
+    assert.equal(
+        (await call(client, "duration_iso", { duration: "PT0.5S" }))
+            .totalSeconds,
+        0.5,
+    );
+    assert.equal(
+        (await call(client, "duration_iso", { duration: "P2W" })).totalSeconds,
+        1209600,
+    );
+});
+
+test("duration_iso refuses to invent a second count for calendar units", async (t) => {
+    const client = await clientFor(t);
+
+    // A month is 28 to 31 days and a year 365 or 366, so neither has one second count.
+    assert.equal(
+        (await call(client, "duration_iso", { duration: "P1M" })).totalSeconds,
+        null,
+    );
+    assert.equal(
+        (await call(client, "duration_iso", { duration: "P1Y" })).totalSeconds,
+        null,
+    );
+
+    const mixed = await call(client, "duration_iso", {
+        duration: "P1Y2M3W4DT5H6M7S",
+    });
+    assert.equal(mixed.years, 1);
+    assert.equal(mixed.months, 2);
+    assert.equal(mixed.totalSeconds, null);
+});
+
+test("duration_iso signs the total and rejects durations that are not one", async (t) => {
+    const client = await clientFor(t);
+
+    // A caller reading totalSeconds alone must not get a positive answer for a negative span.
+    const negative = await call(client, "duration_iso", { duration: "-PT1H" });
+    assert.equal(negative.negative, true);
+    assert.equal(negative.totalSeconds, -3600);
+
+    for (const args of [
+        { duration: "P" },
+        { duration: "PT" },
+        { duration: "P0D" },
+        { duration: "P1H" },
+        { duration: "1H" },
+        // The sign belongs in front of the P, not inside the component.
+        { duration: "P-1D" },
+        { duration: "" },
+        // A 305-digit day count is a double Infinity, and JSON would report it as null.
+        { duration: `P${"9".repeat(305)}D` },
+    ]) {
+        assert.equal(
+            (await client.callTool({ name: "duration_iso", arguments: args }))
                 .isError,
             true,
             JSON.stringify(args),

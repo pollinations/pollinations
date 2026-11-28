@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { syncImageEnv } from "../../src/image/env.ts";
-import { callRecraftFlashFalAPI } from "../../src/image/models/recraftFalModel.ts";
+import {
+    callRecraftFlashFalAPI,
+    callRecraftProVectorFalAPI,
+} from "../../src/image/models/recraftFalModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 
 const FAL_URL = "https://fal.run/recraft/v4.1/flash/text-to-image";
@@ -46,6 +49,63 @@ function mockFal(requests: Record<string, unknown>[]) {
 
 afterEach(() => {
     vi.restoreAllMocks();
+});
+
+describe("callRecraftProVectorFalAPI", () => {
+    it("requests editable SVG at the requested aspect ratio and meters fal units", async () => {
+        const requests: Record<string, unknown>[] = [];
+        syncImageEnv({ FAL_KEY: "fal-test-key" } as CloudflareBindings, [
+            "FAL_KEY",
+        ]);
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
+            if (
+                String(url) ===
+                "https://fal.run/fal-ai/recraft/v4.1/pro/text-to-vector"
+            ) {
+                requests.push(JSON.parse(init?.body as string));
+                return Response.json(
+                    {
+                        images: [
+                            {
+                                url: "https://example.com/vector.svg",
+                                content_type: "image/svg+xml",
+                            },
+                        ],
+                    },
+                    { headers: { "x-fal-billable-units": "1" } },
+                );
+            }
+            return new Response("<svg/>", {
+                headers: { "content-type": "image/svg+xml" },
+            });
+        });
+        const result = await callRecraftProVectorFalAPI("an icon", {
+            ...params,
+            model: "recraft/recraft-v4.1-pro-vector",
+        });
+        expect(requests).toEqual([
+            {
+                prompt: "an icon",
+                image_size: "landscape_16_9",
+                enable_safety_checker: true,
+            },
+        ]);
+        expect(result.buffer.toString()).toBe("<svg/>");
+        expect(result.mimeType).toBe("image/svg+xml");
+        expect(result.trackingData).toMatchObject({
+            actualModel: "recraft/recraft-v4.1-pro-vector",
+            usage: { completionImageTokens: 1 },
+        });
+    });
+    it("rejects image references, which the fal primary does not accept", async () => {
+        await expect(
+            callRecraftProVectorFalAPI("an icon", {
+                ...params,
+                model: "recraft/recraft-v4.1-pro-vector",
+                image: ["https://example.com/seed.png"],
+            }),
+        ).rejects.toMatchObject({ status: 400 });
+    });
 });
 
 describe("callRecraftFlashFalAPI", () => {

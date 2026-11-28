@@ -527,6 +527,14 @@ export const IMAGE_FALLBACKS = {
             ),
         },
     },
+    "recraft/recraft-v4.1-pro-vector": {
+        "recraft/recraft-v4.1-pro-vector:openrouter": {
+            provider: "openrouter",
+            addedDate: Date.parse("2026-11-20"),
+            // OpenRouter fixed $0.30 per SVG plus 5.5% credit fee.
+            cost: { completionImageTokens: 0.3 * 1.055 },
+        },
+    },
     "recraft/recraft-v4.1-flash": {
         "recraft/recraft-v4.1-flash:openrouter": {
             provider: "openrouter",

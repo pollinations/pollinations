@@ -396,6 +396,17 @@ test("currency tools use fixed public rates without forwarding caller credential
         ).rates,
         { USD: 1.0299 },
     );
+    // An out-of-range month or day must fail validation, not throw a RangeError
+    // from toISOString() on an Invalid Date.
+    for (const date of ["2025-13-01", "2025-01-32"]) {
+        const rejected = await client.callTool({
+            name: "currency_convert",
+            arguments: { amount: 1, from: "EUR", to: "USD", date },
+        });
+        assert.equal(rejected.isError, true, date);
+        assert.match(rejected.content[0].text, /not a calendar date/);
+    }
+    assert.equal(requests.length, 2);
     assert.equal((await call(client, "currency_list")).EUR, "Euro");
 });
 

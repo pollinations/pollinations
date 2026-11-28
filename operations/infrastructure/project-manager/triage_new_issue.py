@@ -17,6 +17,8 @@ SKIP_LABELS = {"POLLI", "APP-SUBMISSION", "BEE-CENSUS", "HONEY-CENSUS"}
 MAX_BODY = 12000
 # Markdown and the routes that serve the API reference and its static examples.
 DOCUMENTATION = re.compile(r"\.md$|/routes/[\w-]*docs[\w-]*\.ts$")
+# A test shows what was checked, not what production does.
+TESTS = re.compile(r"\.(test|spec)\.[jt]sx?$|(^|/)(tests?|__tests__)/")
 SEARCH_PROMPT = """Choose search terms for investigating this GitHub issue.
 Return JSON with issue_terms (one short phrase for a GitHub issue search)
 and code_terms (up to three distinct literals likely to occur in code or documentation).
@@ -143,7 +145,8 @@ def decision(verdict, evidence):
     if action == "duplicate" and (not source or not source.startswith("issue-")):
         raise InvalidModelAnswer("Duplicate needs an open issue")
     # Documentation may be the very thing the reporter says is wrong.
-    if action == "resolved" and (not source or source.startswith("issue-") or DOCUMENTATION.search(source.partition("#")[0])):
+    path = (source or "").partition("#")[0]
+    if action == "resolved" and (not source or source.startswith("issue-") or DOCUMENTATION.search(path) or TESTS.search(path)):
         raise InvalidModelAnswer("Resolution needs production code")
     comment = verdict.get("comment")
     if not isinstance(comment, str) or not comment.strip():

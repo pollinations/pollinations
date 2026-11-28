@@ -125,6 +125,40 @@ function normalizeEmail(value: string | null | undefined): string | null {
     return normalized?.includes("@") ? normalized : null;
 }
 
+const KEY_ALPHABET =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+// Byte values from KEY_BYTE_LIMIT upwards would make the modulo mapping
+// non-uniform, so they are rejected and redrawn instead.
+const KEY_BYTE_LIMIT = 256 - (256 % KEY_ALPHABET.length);
+
+/** Maps one random byte to an alphabet character, or null if it must be redrawn. */
+export function keyCharFromByte(byte: number): string | null {
+    if (byte >= KEY_BYTE_LIMIT) {
+        return null;
+    }
+    return KEY_ALPHABET[byte % KEY_ALPHABET.length];
+}
+
+/** Returns a uniformly random alphanumeric string of the requested length. */
+export function generateKeyChars(length: number): string {
+    const chars: string[] = [];
+    while (chars.length < length) {
+        const bytes = crypto.getRandomValues(
+            new Uint8Array(length - chars.length),
+        );
+        for (const byte of bytes) {
+            const char = keyCharFromByte(byte);
+            if (char) {
+                chars.push(char);
+            }
+            if (chars.length === length) {
+                break;
+            }
+        }
+    }
+    return chars.join("");
+}
+
 export function createApiKeyPlugin() {
     return apiKey({
         enableMetadata: true,
@@ -142,15 +176,7 @@ export function createApiKeyPlugin() {
         }) => {
             const isPublishable = options.prefix === PUBLISHABLE_KEY_PREFIX;
             const keyLength = isPublishable ? 16 : 32;
-            const chars =
-                "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-            const randomBytes = crypto.getRandomValues(
-                new Uint8Array(keyLength),
-            );
-            const key = Array.from(
-                randomBytes,
-                (byte) => chars[byte % chars.length],
-            ).join("");
+            const key = generateKeyChars(keyLength);
             return options.prefix ? `${options.prefix}_${key}` : key;
         },
         keyExpiration: {

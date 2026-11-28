@@ -4,6 +4,7 @@ import { dockerTools } from "./tools/docker.js";
 import { hfTools } from "./tools/huggingface.js";
 import { osvTools } from "./tools/osv.js";
 import { packageTools } from "./tools/packages.js";
+import { spdxTools } from "./tools/spdx.js";
 
 const handler = createMcpHandler(
     () => {
@@ -16,6 +17,7 @@ const handler = createMcpHandler(
             ...packageTools,
             ...osvTools,
             ...hfTools,
+            ...spdxTools,
         ]) {
             server.registerTool(
                 name,

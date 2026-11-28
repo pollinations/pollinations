@@ -5,12 +5,12 @@ import {
     readdirSync,
     readFileSync,
     rmSync,
-    statSync,
     writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { expectOwnerOnly } from "../testing/file-mode.js";
 import { configurePi, disablePi, pi, piAgentDir } from "./pi.js";
 import type { HarnessContext } from "./types.js";
 
@@ -77,10 +77,10 @@ describe("pi harness", () => {
 
         expect(read(skillFile())).toContain("name: polli");
 
-        expect(statSync(modelsFile()).mode & 0o777).toBe(0o600);
-        expect(statSync(authFile()).mode & 0o777).toBe(0o600);
-        expect(statSync(settingsFile()).mode & 0o777).toBe(0o600);
-        expect(statSync(skillFile()).mode & 0o777).toBe(0o600);
+        expectOwnerOnly(modelsFile());
+        expectOwnerOnly(authFile());
+        expectOwnerOnly(settingsFile());
+        expectOwnerOnly(skillFile());
 
         expect(pi.status(ctx)).toMatchObject({
             configured: true,

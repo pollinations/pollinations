@@ -5,7 +5,6 @@ import {
     readdirSync,
     readFileSync,
     rmSync,
-    statSync,
     unlinkSync,
     writeFileSync,
 } from "node:fs";
@@ -14,6 +13,7 @@ import { join } from "node:path";
 import { parseEnv } from "node:util";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { parse, stringify } from "yaml";
+import { expectOwnerOnly, expectOwnerOnlyDir } from "../testing/file-mode.js";
 import { configureDsh, disableDsh, dsh } from "./dsh.js";
 import type { HarnessContext } from "./types.js";
 
@@ -84,11 +84,11 @@ describe("dsh harness", () => {
             "!!js '`Bearer ${process.env.POLLI_DSH_API_KEY}`'",
         );
         expect(read(skillFile())).toContain("name: polli");
-        expect(statSync(settingsFile()).mode & 0o777).toBe(0o600);
-        expect(statSync(envFile()).mode & 0o777).toBe(0o600);
-        expect(statSync(patchFile()).mode & 0o777).toBe(0o600);
-        expect(statSync(skillFile()).mode & 0o777).toBe(0o600);
-        expect(statSync(join(home, ".dsh")).mode & 0o777).toBe(0o700);
+        expectOwnerOnly(settingsFile());
+        expectOwnerOnly(envFile());
+        expectOwnerOnly(patchFile());
+        expectOwnerOnly(skillFile());
+        expectOwnerOnlyDir(join(home, ".dsh"));
         expect(dsh.status(ctx)).toMatchObject({
             configured: true,
             model: "deepseek",
@@ -123,8 +123,8 @@ describe("dsh harness", () => {
         });
         expect(read(patchFile())).toContain("# my plugins");
         expect(read(patchFile())).toContain("id: mcp-local");
-        expect(statSync(settingsFile()).mode & 0o777).toBe(0o600);
-        expect(statSync(envFile()).mode & 0o777).toBe(0o600);
+        expectOwnerOnly(settingsFile());
+        expectOwnerOnly(envFile());
     });
 
     it("restores the original files byte-for-byte on off", () => {

@@ -4,12 +4,12 @@ import {
     mkdtempSync,
     readFileSync,
     rmSync,
-    statSync,
     writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { expectOwnerOnly } from "../testing/file-mode.js";
 import { configurePrime, disablePrime, prime } from "./prime.js";
 import type { HarnessContext } from "./types.js";
 
@@ -65,9 +65,9 @@ describe("prime harness", () => {
             defaultModel: "deepseek",
         });
         expect(read(skillFile())).toContain("name: polli");
-        expect(statSync(modelsFile()).mode & 0o777).toBe(0o600);
-        expect(statSync(authFile()).mode & 0o777).toBe(0o600);
-        expect(statSync(settingsFile()).mode & 0o777).toBe(0o600);
+        expectOwnerOnly(modelsFile());
+        expectOwnerOnly(authFile());
+        expectOwnerOnly(settingsFile());
         expect(prime.status(ctx)).toMatchObject({
             configured: true,
             model: "deepseek",

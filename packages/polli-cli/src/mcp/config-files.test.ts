@@ -1,7 +1,8 @@
-import { chmodSync, mkdtempSync, readFileSync, statSync } from "node:fs";
+import { chmodSync, mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { expectOwnerOnly } from "../testing/file-mode.js";
 import {
     isOwnedEntry,
     ownedEntryNames,
@@ -87,13 +88,13 @@ describe("secret file permissions", () => {
         writeJsonObject(jsonFile, {});
         chmodSync(jsonFile, 0o644);
         writeJsonObject(jsonFile, { mcpServers: {} });
-        expect(statSync(jsonFile).mode & 0o777).toBe(0o600);
+        expectOwnerOnly(jsonFile);
 
         const envFile = join(dir, ".env");
         upsertEnvFile(envFile, { A: "1" });
         chmodSync(envFile, 0o644);
         upsertEnvFile(envFile, { A: "2" });
-        expect(statSync(envFile).mode & 0o777).toBe(0o600);
+        expectOwnerOnly(envFile);
     });
 });
 

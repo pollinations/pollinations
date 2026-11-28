@@ -1,3 +1,8 @@
+import {
+    createExecutionContext,
+    env,
+    waitOnExecutionContext,
+} from "cloudflare:test";
 import { IMAGE_SERVICES, type ImageModelName } from "@shared/registry/image.ts";
 import {
     calculatePrice,
@@ -181,5 +186,41 @@ describe("quoteMediaRequest", () => {
                     : {};
             expect(quote(model, options) ?? 1, model).toBeGreaterThan(0);
         }
+    });
+});
+
+describe("GET /quote", () => {
+    async function get(query: string) {
+        const { default: worker } = await import("../../src/index.ts");
+        const context = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(`https://gen.pollinations.ai/quote?${query}`),
+            { ...env, ENVIRONMENT: "test" } as CloudflareBindings,
+            context,
+        );
+        await waitOnExecutionContext(context);
+        return response;
+    }
+
+    it("returns the quote for the options, without a key", async () => {
+        const model = "google/veo-3.1-fast";
+        const response = await get(`model=${model}&duration=8&audio=true`);
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({
+            model,
+            price_usd: quote(model, { duration: 8, audio: true }),
+        });
+    });
+
+    it("returns null when only the provider knows the price", async () => {
+        const response = await get("model=openai/gpt-image-2");
+        expect(await response.json()).toEqual({
+            model: "openai/gpt-image-2",
+            price_usd: null,
+        });
+    });
+
+    it("rejects an unknown model", async () => {
+        expect((await get("model=not-a-model")).status).toBe(400);
     });
 });

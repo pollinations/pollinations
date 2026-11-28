@@ -864,7 +864,8 @@ async def tool_discord_search(
     elif action == "history":
         if not channel_id:
             channel_id = _context.get("channel_id")
-        channel = guild.get_channel(channel_id)
+        # target_channel is the channel_id or channel_name the caller asked for.
+        channel = target_channel or guild.get_channel(channel_id)
         if not channel:
             try:
                 bot = _context.get("discord_bot")

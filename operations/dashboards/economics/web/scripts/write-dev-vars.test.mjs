@@ -58,7 +58,19 @@ test("local setup preserves signing and loads staging reader and Drive access", 
             JSON.parse(parseEnv(vars).ECONOMICS_GOOGLE_DRIVE_CREDENTIALS),
             drive,
         );
-        assert.equal((await stat(join(dir, ".dev.vars"))).mode & 0o777, 0o600);
+        const mode = (await stat(join(dir, ".dev.vars"))).mode & 0o777;
+        if (process.platform === "win32") {
+            // Windows has no permission bits: chmod() only toggles
+            // FILE_ATTRIBUTE_READONLY, so a file written with mode 0o600 reads
+            // back as 0o666. What the script can promise there is that the
+            // owner keeps write access, which 0o600 also grants on POSIX.
+            assert.ok(
+                mode & 0o200,
+                `owner cannot write .dev.vars (mode ${mode.toString(8)})`,
+            );
+        } else {
+            assert.equal(mode, 0o600);
+        }
         assert.throws(
             () =>
                 execFileSync(process.execPath, [script], {

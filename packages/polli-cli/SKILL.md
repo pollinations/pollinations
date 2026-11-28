@@ -272,6 +272,7 @@ polli keys create --name "my-bot" --type secret --budget 1000 --permissions prof
 polli keys create --name "my-app" --type publishable --redirect-uri https://app.example/callback --earnings
 polli keys create --name "server" --models black-forest-labs/flux.1-schnell tongyi-mai/z-image-turbo  # only these two models
 polli keys update <id> --models text black-forest-labs/flux.1-schnell  # every text model plus FLUX.1 Schnell
+polli keys update <id> --all-models  # remove the model restriction
 polli keys revoke <id>                                             # id comes from `keys list --json`
 ```
 `--models` takes categories (`text`, `image`, `video`, `audio`, `3d`, `embedding`, `realtime`, `decision`) and model IDs from `polli models`. A category includes models added later; a model ID allows only that model.

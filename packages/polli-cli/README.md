@@ -107,6 +107,7 @@ polli keys create --name myapp --type publishable \
   --redirect-uri https://myapp.com/callback --earnings          # 3rd-party app key
 polli keys create --name server --models black-forest-labs/flux.1-schnell tongyi-mai/z-image-turbo  # only these models
 polli keys update <id> --models text black-forest-labs/flux.1-schnell  # change the model list
+polli keys update <id> --all-models  # remove the model restriction
 polli keys revoke <id>
 ```
 

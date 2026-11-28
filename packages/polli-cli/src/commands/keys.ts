@@ -258,23 +258,33 @@ Examples:
 const update = new Command("update")
     .description("Change which models an API key can use")
     .argument("<id>", "Key ID to update (see `polli keys list`)")
-    .requiredOption("--models <models...>", MODELS_HELP)
+    .option("--models <models...>", MODELS_HELP)
+    .option(
+        "--all-models",
+        "Remove the model restriction and allow every model this key can otherwise access",
+    )
     .addHelpText(
         "after",
         `
 Examples:
   polli keys update <id> --models black-forest-labs/flux.1-schnell tongyi-mai/z-image-turbo
   polli keys update <id> --models text black-forest-labs/flux.1-schnell
+  polli keys update <id> --all-models
 `,
     )
     .action(async (id, opts) => {
+        if (Boolean(opts.models) === Boolean(opts.allModels)) {
+            fail("Pass exactly one of --models or --all-models");
+        }
         const key = requireKey();
 
         try {
             const updated = await gen<KeyInfo>(`/account/keys/${id}`, {
                 apiKey: key,
                 method: "PATCH",
-                body: { allowedModels: opts.models },
+                body: {
+                    allowedModels: opts.allModels ? null : opts.models,
+                },
             });
 
             printSuccess(`Key ${id} updated.`);

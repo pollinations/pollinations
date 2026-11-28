@@ -63,7 +63,7 @@ export function createVideoCommand() {
                     kind: "video",
                     width: Number(opts.width),
                     height: Number(opts.height),
-                    references: opts.image ? 1 : 0,
+                    references: opts.image?.length ?? 0,
                     duration: opts.duration ? Number(opts.duration) : undefined,
                     audio: !!opts.audio,
                 });

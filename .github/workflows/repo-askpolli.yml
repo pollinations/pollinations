@@ -201,6 +201,7 @@ jobs:
           # The immutable-ID gate already admitted this exact actor. This only
           # bypasses the action's collaborator check; it grants no token scope.
           allowed_non_write_users: ${{ github.actor }}
+          allow_fork_prs: "true"
           additional_permissions: |
             actions: read
           prompt: |

@@ -16,7 +16,10 @@ import { parse } from "yaml";
 import { removedOperations } from "./docs-removed-operations.mjs";
 
 const repository = fileURLToPath(new URL("../../", import.meta.url));
-const read = (path) => readFile(join(repository, path), "utf8");
+// Normalise line endings: a Windows checkout (core.autocrlf=true) hands
+// every file back as CRLF, while the section splits below are written for LF.
+const read = async (path) =>
+    (await readFile(join(repository, path), "utf8")).replace(/\r\n/g, "\n");
 const [ci, production, regeneration] = await Promise.all(
     [
         "ci-pull-request-checks",
@@ -78,10 +81,12 @@ test("raw imports select Gen CI and worker inputs select deployment", async () =
                 /^\s*import\s+[^;]*?\sfrom\s+["']([^"']+)\?raw["']/gm,
             )) {
                 inputs[source].add(
+                    // CI globs use forward slashes; relative() returns
+                    // backslashes on Windows.
                     relative(
                         repository,
                         resolve(repository, dirname(path), match[1]),
-                    ),
+                    ).replaceAll("\\", "/"),
                 );
             }
         }

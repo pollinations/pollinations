@@ -9,9 +9,13 @@ function parseRetryAfter(response: Response): number | undefined {
     // Use Number() (not parseInt) so malformed values like "5abc" or "5e2x"
     // are rejected instead of being silently truncated into an aggressive
     // retry delay.
-    const seconds = Number(retryAfter);
-    if (Number.isFinite(seconds) && seconds >= 0) {
-        return seconds;
+    if (!/^\s*\d+\s*$/.test(retryAfter)) {
+        // fall through to HTTP-date handling below
+    } else {
+        const seconds = Number(retryAfter);
+        if (Number.isFinite(seconds) && seconds >= 0) {
+            return seconds;
+        }
     }
 
     // Try parsing as HTTP date

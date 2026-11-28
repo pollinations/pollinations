@@ -169,4 +169,21 @@ describe("SEP-2127 MCP Server Cards", () => {
         });
         expect(different.status).toBe(200);
     });
+
+    it("serves Markdown on GET /mcp when Accept prefers text/markdown", async () => {
+        const md = await fetchWorker("/mcp", {
+            headers: { Accept: "text/markdown, text/html;q=0.9" },
+        });
+        expect(md.status).toBe(200);
+        expect(md.headers.get("Content-Type")).toContain("text/markdown");
+        expect(md.headers.get("Vary")).toContain("Accept");
+        const body = await md.text();
+        expect(body).toContain("# Pollinations MCP Servers");
+        expect(body).toContain(`${ORIGIN}/mcp/pollinations`);
+        expect(body).toContain(`${ORIGIN}/mcp/pollinations/server-card`);
+
+        const json = await fetchWorker("/mcp");
+        expect(json.status).toBe(200);
+        expect(json.headers.get("Content-Type")).toContain("application/json");
+    });
 });

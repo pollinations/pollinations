@@ -15,7 +15,7 @@ a dedicated chat. Proposed jobs await activation.
 
 Start each weekly model review from its linked queue of open PRs. Use linked issues
 for context and production telemetry to judge impact. The
-[Project Manager](../../apps/agent-weaver/baseline-prompt.md) assigns
+[Project Manager](../../apps/agent-weaver/system-prompt.md) assigns
 the queue when a PR opens. If an existing PR needs a queue, assign its Model
 work field in the Dev project.
 Each model job owns its PR through review and authorized merge. Check test

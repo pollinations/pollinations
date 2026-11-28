@@ -52,7 +52,7 @@ support. The catalog lists each job’s cadence, scope and runbook.
 | [`infrastructure/e2b`](infrastructure/e2b/) | E2B sandbox template |
 | [`infrastructure/azure-sandboxes`](infrastructure/azure-sandboxes/) | Azure sandbox image |
 | [`infrastructure/deployment`](infrastructure/deployment/README.md) | Deploy scripts for every app with a `deploy.json` |
-| [`infrastructure/project-manager`](../apps/agent-weaver/baseline-prompt.md) | Project manager bot that sets Area and Priority on issues and PRs |
+| [`infrastructure/project-manager`](../apps/agent-weaver/system-prompt.md) | Project manager bot that sets Area and Priority on issues and PRs |
 | [`infrastructure/mcp-registry`](infrastructure/mcp-registry/DIRECTORY_LISTINGS.md) | Publishes the hosted MCP servers to the official MCP registry |
 
 ## Legal

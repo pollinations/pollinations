@@ -58,6 +58,8 @@ On the pollinations.ai website and the paid dashboard we also keep a first-party
 
 We do not use third-party analytics or marketing cookies/SDKs.
 
+**Stripe Radar.** We share transaction details, such as the payment amount, with Stripe to screen payments for fraud. In our top-up panel and on Stripe-hosted checkout pages, Stripe’s software can collect information about your device (such as browser type and screen size) and your activity (such as time spent on the payment form). We use Stripe’s risk assessments to review suspicious payments. Stripe acts as a data controller when it uses these signals to prevent fraud across its platform. It may share fraud indicators with other businesses that use Stripe to help them detect and block suspected fraud. See [Stripe’s Privacy Policy](https://stripe.com/privacy).
+
 ## 8) Sharing & Recipients
 
 * **Service providers (sub-processors):** see [Service Providers](/subprocessors).

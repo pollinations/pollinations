@@ -932,6 +932,47 @@ it.each([
     },
 );
 
+it("falls back from a failed completion and only bills the successful provider", async () => {
+    const model = "openai/gpt-5-nano";
+    const { response, text, calls, events } = await chatThroughHandler(
+        model,
+        ["myceli-prod-eastus.openai.azure.com", "api.openai.com"],
+        async (request) => {
+            const fallback = new URL(request.url).hostname === "api.openai.com";
+            return Response.json({
+                id: "failed-primary",
+                object: "chat.completion",
+                model,
+                choices: [
+                    {
+                        index: 0,
+                        message: {
+                            role: "assistant",
+                            content: fallback
+                                ? "Recovered answer"
+                                : "Partial answer",
+                        },
+                        finish_reason: fallback ? "stop" : "error",
+                    },
+                ],
+                usage,
+            });
+        },
+        false,
+    );
+    expect(response.status, text).toBe(200);
+    expect(JSON.parse(text).choices[0].message.content).toBe(
+        "Recovered answer",
+    );
+    expect(calls).toBe(2);
+    expect(
+        events.filter((event) => event.eventType === "generate.text"),
+    ).toEqual([
+        expect.objectContaining({ responseStatus: 502, isBilledUsage: false }),
+        expect.objectContaining({ responseStatus: 200, isBilledUsage: true }),
+    ]);
+});
+
 it.each([0, 1])(
     "preserves an answered choice at index %s alongside an empty length choice",
     async (answeredIndex) => {
@@ -1284,3 +1325,69 @@ it.each([false, true])(
         expect(balance.packBalance).toBeCloseTo(100 - 0.0001, 10);
     },
 );
+
+it("returns 502 and skips caching when GET /text finishes with error", async () => {
+    const { key, userId } = await createTestApiKey({
+        expiresIn: 600,
+        user: { packBalance: 100 },
+    });
+    let calls = 0;
+    const wire = JSON.stringify({
+        id: "chatcmpl-text-error",
+        object: "chat.completion",
+        created: 1760000000,
+        model: "cohere/command-a-plus",
+        choices: [
+            {
+                index: 0,
+                message: { role: "assistant", content: "partial answer" },
+                finish_reason: "error",
+                error: { message: "Provider aborted mid-reply" },
+            },
+        ],
+        usage,
+    });
+    const fetchSpy = vi
+        .spyOn(globalThis, "fetch")
+        .mockImplementation(async (input, init) => {
+            const request = new Request(input, init);
+            const target =
+                request.headers.get("x-portkey-custom-host") ?? request.url;
+            if (new URL(target).host === "openrouter.ai") {
+                calls++;
+                return new Response(wire, {
+                    headers: { "content-type": "application/json" },
+                });
+            }
+            return Response.json({ data: [] });
+        });
+    try {
+        const prompt = `text-error-${crypto.randomUUID()}`;
+        const url = `https://gen.pollinations.ai/text/${encodeURIComponent(prompt)}?model=cohere/command-a-plus`;
+        for (const expectedCalls of [1, 2]) {
+            const context = createExecutionContext();
+            const response = await worker.fetch(
+                new Request(url, {
+                    headers: { authorization: `Bearer ${key}` },
+                }),
+                withInlineGenerationCoordinator(env),
+                context,
+            );
+            const text = await response.text();
+            await waitOnExecutionContext(context);
+            expect(response.status, text).toBe(502);
+            expect(JSON.parse(text)).toMatchObject({
+                status: 502,
+                error: {
+                    code: "BAD_GATEWAY",
+                    message: "Provider aborted mid-reply",
+                },
+            });
+            expect(calls).toBe(expectedCalls);
+        }
+        const balance = await getUserBalance(drizzle(env.DB), userId);
+        expect(balance.packBalance).toBe(100);
+    } finally {
+        fetchSpy.mockRestore();
+    }
+});

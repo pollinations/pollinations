@@ -4764,16 +4764,16 @@ fixtureTest.each(
 fixtureTest.each(
     ["responses", "chat/completions"].flatMap((route) =>
         [false, true].flatMap((stream) =>
-            ["valid", "missing", "malformed"].map((usageKind) => ({
+            ["valid", "missing", "malformed", "failed"].map((outcome) => ({
                 route,
                 stream,
-                usageKind,
+                outcome,
             })),
         ),
     ),
 )(
-    "bills managed $route stream=$stream with $usageKind final usage and a paid MCP call",
-    async ({ route, stream, usageKind }) => {
+    "handles tool calls and billing on managed $route stream=$stream with a $outcome model response",
+    async ({ route, stream, outcome }) => {
         const ownerGithubUsername = `agent-owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `managed-${crypto.randomUUID().slice(0, 8)}`;
         const agentId = crypto.randomUUID();
@@ -4919,7 +4919,7 @@ fixtureTest.each(
                                     message.role === "tool" &&
                                     message.content.includes("exa proxied"),
                             ),
-                        ).toBe(true);
+                        ).toBe(outcome !== "failed");
                     }
                     const message =
                         modelCalls === 1
@@ -4939,16 +4939,19 @@ fixtureTest.each(
                               }
                             : { role: "assistant", content: "managed answer" };
                     const finishReason =
-                        modelCalls === 1 ? "tool_calls" : "stop";
+                        outcome === "failed"
+                            ? "error"
+                            : modelCalls === 1
+                              ? "tool_calls"
+                              : "stop";
                     const usage =
-                        modelCalls >= 2 && usageKind === "missing"
+                        modelCalls >= 2 && outcome === "missing"
                             ? undefined
                             : {
                                   prompt_tokens: 10,
                                   completion_tokens: 5,
                                   total_tokens: 15,
-                                  ...(modelCalls >= 2 &&
-                                  usageKind === "malformed"
+                                  ...(modelCalls >= 2 && outcome === "malformed"
                                       ? {
                                             prompt_tokens_details: {
                                                 cache_write_tokens: -1,
@@ -5048,8 +5051,30 @@ fixtureTest.each(
             }),
         );
         const body = await response.text();
+        if (outcome === "failed") {
+            expect(response.status, body).toBe(stream ? 200 : 502);
+            expect(body).toContain(
+                stream
+                    ? "Agent model failed to complete the response"
+                    : "Chat Completions provider failed to complete the response",
+            );
+            if (stream && route === "responses") {
+                expect(body).toContain('"type":"response.failed"');
+                expect(body).not.toContain('"type":"response.completed"');
+            }
+            // JSON failures can try the declared provider backup within this step.
+            expect(modelCalls).toBe(stream ? 1 : 2);
+            expect(mcpCalls).toBe(0);
+            const balanceAfter = await getUserBalance(db, caller.userId);
+            expect(balanceAfter.packBalance).toBe(balanceBefore.packBalance);
+            expect(
+                tinybirdEvents.filter((event) => event.isBilledUsage === true),
+            ).toEqual([]);
+            return;
+        }
+
         // Invalid non-stream usage retries the declared OpenAI backup.
-        expect(modelCalls).toBe(!stream && usageKind !== "valid" ? 3 : 2);
+        expect(modelCalls).toBe(!stream && outcome !== "valid" ? 3 : 2);
         expect(mcpCalls).toBe(1);
         expect(runtimeClientIps.every((ip) => ip === testClientIp)).toBe(true);
         expect(runtimeToken).toMatch(/^ag_/);
@@ -5061,7 +5086,7 @@ fixtureTest.each(
             parentApiKeyId: caller.id,
             managedAgentId: agentId,
         });
-        if (usageKind === "valid") {
+        if (outcome === "valid") {
             expect(response.status, body).toBe(200);
             expect(body).toContain("managed answer");
             if (route === "responses") {
@@ -5078,7 +5103,7 @@ fixtureTest.each(
             expect(body).not.toContain('"type":"response.completed"');
         }
 
-        const expectedBilledModelCalls = usageKind === "valid" ? 2 : 1;
+        const expectedBilledModelCalls = outcome === "valid" ? 2 : 1;
         const balanceAfter = await getUserBalance(db, caller.userId);
         expect(
             balanceBefore.packBalance - balanceAfter.packBalance,

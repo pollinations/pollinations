@@ -160,6 +160,32 @@ function chatInit(body: unknown): RequestInit {
 }
 
 describe("text cache", () => {
+    it("misses a failed Chat completion written with the old cache key", async () => {
+        const env = createTextCacheEnv();
+        const path = "/v1/chat/completions";
+        const body = {
+            messages: [{ content: "same prompt", role: "user" }],
+            model: "openai-fast",
+        };
+        const legacyKey = await crypto.subtle.digest(
+            "SHA-256",
+            new TextEncoder().encode(`POST|${path}||${JSON.stringify(body)}`),
+        );
+        await env.TEXT_BUCKET.put(
+            Array.from(new Uint8Array(legacyKey), (byte) =>
+                byte.toString(16).padStart(2, "0"),
+            ).join(""),
+            JSON.stringify({ choices: [{ finish_reason: "error" }] }),
+            { customMetadata: { response_content_type: "application/json" } },
+        );
+        const { app } = createTextCacheApp();
+        const result = await dispatch(app, path, chatInit(body), env);
+        expect(result.response.headers.get("X-Cache")).toBe("MISS");
+        expect(JSON.parse(await consumeAndWait(result))).toMatchObject({
+            originHits: 1,
+        });
+    });
+
     it.each(["key", "session"])(
         "caches caller lists per %s while repeats by the same caller rejoin",
         async (mode) => {

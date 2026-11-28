@@ -756,6 +756,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["google/gemma-4-31B-it"],
     },
     {
+        name: "google/gemma-4-31b-it:turbo",
+        config: portkeyConfig["google/gemma-4-31B-it-turbo"],
+    },
+    {
         name: "deepseek/deepseek-v4-pro",
         config: portkeyConfig["deepseek-v4-pro-openrouter-alibaba"],
         transform: fireworksThinking,
@@ -1373,11 +1377,13 @@ const models: ModelDefinition[] = [
     },
     {
         name: "tencent/hy4-flash",
-        config: portkeyConfig["tencent/hy4-flash"],
+        config: portkeyConfig["accounts/fireworks/models/hy4-flash"],
+        transform: fireworksThinkingWithoutCacheControl,
     },
     {
-        name: "tencent/hy4-flash:openrouter",
-        config: portkeyConfig["tencent/hy4-flash:openrouter"],
+        name: "tencent/hy4-flash:deepinfra",
+        config: portkeyConfig["tencent/Hy4-flash"],
+        transform: fireworksThinkingWithoutCacheControl,
     },
     {
         name: "tencent/hy4-preview",
@@ -1535,6 +1541,10 @@ const models: ModelDefinition[] = [
     {
         name: "tencent/hy3",
         config: portkeyConfig["tencent/hy3"],
+    },
+    {
+        name: "inclusionai/ling-3.2-flash",
+        config: portkeyConfig["inclusionai/ling-3.2-flash"],
     },
     {
         name: "inclusionai/ling-3.1-flash",

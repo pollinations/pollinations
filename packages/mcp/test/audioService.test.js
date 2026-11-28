@@ -254,3 +254,33 @@ test("speech transforms require an API key", async () => {
         /API key|Authorization|token/i,
     );
 });
+
+test("generateAudio with async=true returns the job id instead of waiting", async (t) => {
+    const [, , shape, generateAudio] = audioTools.find(
+        ([name]) => name === "generateAudio",
+    );
+    const originalFetch = globalThis.fetch;
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+    let seenPrefer;
+    globalThis.fetch = async (_input, init) => {
+        seenPrefer = init.headers.Prefer;
+        return new Response(
+            JSON.stringify({
+                id: "job-abc",
+                status: "pending",
+                status_url: "u",
+            }),
+            {
+                status: 202,
+                headers: { "Content-Type": "application/json" },
+            },
+        );
+    };
+    const args = z.object(shape).parse({ text: "hello", async: true });
+    const res = await generateAudio(args, CONTEXT);
+    assert.equal(seenPrefer, "respond-async");
+    assert.equal(res.content[0].type, "text");
+    assert.match(res.content[0].text, /"status": "pending"/);
+});

@@ -5,6 +5,7 @@ import { audioTools } from "./services/audioService.js";
 import { discoveryTools } from "./services/discoveryService.js";
 import { embeddingTools } from "./services/embeddingService.js";
 import { imageTools } from "./services/imageService.js";
+import { jobTools } from "./services/jobService.js";
 import { model3dTools } from "./services/model3dService.js";
 import { textTools } from "./services/textService.js";
 import { validateApiBaseUrl } from "./utils/coreUtils.js";
@@ -17,6 +18,7 @@ const tools = [
     ...audioTools,
     ...embeddingTools,
     ...model3dTools,
+    ...jobTools,
     ...discoveryTools,
     ...accountTools,
 ];
@@ -41,6 +43,7 @@ Pollinations is a live multi-model gateway. Never decide that a requested model 
 - When the user names a model or provider, or asks about availability, capabilities, aliases, voices, or pricing, call listModels with the relevant modality first, narrowing with query, capabilities, agent or limit instead of listing every model.
 - Match the request against both model names and aliases, then pass the canonical model name to the generation tool.
 - generateText can invoke any listed text model or agent. Use listModels with agent=true to discover agents. generateImage can invoke any listed image model.
+- For long video, 3D, music or audio generations, pass async=true to the generation tool to get a job id immediately instead of holding the request open, then poll getGenerationJob until it returns status succeeded (the finished media comes back as a resource link).
 - transcribeAudio converts spoken audio from a public HTTPS URL into text.
 - isolateSpeech removes background noise and music from a spoken audio or video URL; changeVoice transforms the speaker's identity while keeping the words and timing.
 - listMcpServers lists the other MCP servers Pollinations hosts, with their endpoints and pricing.

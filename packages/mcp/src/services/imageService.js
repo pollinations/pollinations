@@ -6,6 +6,7 @@ import {
     createTextContent,
     fetchJsonWithAuth,
     fetchMediaLink,
+    submitMediaAsync,
 } from "../utils/coreUtils.js";
 import { validateImageModel, validateVideoModel } from "../utils/models.js";
 
@@ -36,15 +37,17 @@ async function generateImage(params, context) {
         transparent: params.transparent,
         guidance_scale: params.guidance_scale,
     };
-    const result = await fetchJsonWithAuth(
-        buildUrl("/v1/images/generations"),
-        {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-        },
-        context,
-    );
+    const url = buildUrl("/v1/images/generations");
+    const request = {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+    };
+    if (params.async) {
+        const job = await submitMediaAsync(url, request, context);
+        if (job) return createMCPResponse([createTextContent(job, true)]);
+    }
+    const result = await fetchJsonWithAuth(url, request, context);
     const image = result.data?.[0];
     if (!image?.url) throw new Error("Image API returned no image URL");
 
@@ -100,11 +103,12 @@ async function generateVideo(params, context) {
         params,
         context,
     );
-    const { contentType, mediaUrl } = await fetchMediaLink(
-        buildUrl(`/video/${encodedPrompt}`, queryParams),
-        {},
-        context,
-    );
+    const url = buildUrl(`/video/${encodedPrompt}`, queryParams);
+    if (params.async) {
+        const job = await submitMediaAsync(url, {}, context);
+        if (job) return createMCPResponse([createTextContent(job, true)]);
+    }
+    const { contentType, mediaUrl } = await fetchMediaLink(url, {}, context);
     return createMCPResponse([
         {
             type: "resource_link",
@@ -161,6 +165,12 @@ const imageParamsSchema = {
         .number()
         .optional()
         .describe("Guidance scale where supported"),
+    async: z
+        .boolean()
+        .optional()
+        .describe(
+            "Return a job id immediately instead of waiting for the image; poll getGenerationJob for the result",
+        ),
 };
 
 const videoParamsSchema = {
@@ -187,6 +197,12 @@ const videoParamsSchema = {
         .union([z.string(), z.boolean()])
         .optional()
         .describe("Pollinations safety options"),
+    async: z
+        .boolean()
+        .optional()
+        .describe(
+            "Return a job id immediately instead of waiting for the video; poll getGenerationJob for the result",
+        ),
 };
 
 export const imageTools = [

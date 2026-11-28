@@ -30,6 +30,7 @@ const REQUESTS = [
     ],
     ["getEarnings", { days: 30 }, "GET", "/account/earnings?days=30"],
     ["listQuests", {}, "GET", "/account/quests"],
+    ["getProfile", {}, "GET", "/account/profile"],
     ["listKeys", {}, "GET", "/account/keys"],
     [
         "createKey",

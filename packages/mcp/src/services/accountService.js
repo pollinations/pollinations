@@ -67,6 +67,9 @@ const getEarnings = ({ days }, context) =>
 const listQuests = (_params, context) =>
     callAccount("/account/quests", context);
 
+const getProfile = (_params, context) =>
+    callAccount("/account/profile", context);
+
 const listKeys = (_params, context) => callAccount("/account/keys", context);
 
 const createKey = (
@@ -183,6 +186,13 @@ export const accountTools = [
             "Requires 'account:usage' permission.",
         {},
         listQuests,
+    ],
+    [
+        "getProfile",
+        "Get the account profile: linked GitHub username, profile image, and community model access. " +
+            "Name and email are included only when the key has 'account:profile' permission.",
+        {},
+        getProfile,
     ],
     [
         "listKeys",

@@ -1,6 +1,6 @@
 """GitHub project manager: puts every new issue and pull request on the Dev project.
 
-The direct classifier uses baseline-prompt.md. Weaver has a separate candidate policy.
+Weaver classifies opened items from system-prompt.md. baseline-prompt.md is kept for rollback.
 """
 
 import sys

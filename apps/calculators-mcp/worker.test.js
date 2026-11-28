@@ -962,5 +962,11 @@ test("inverse_planar_arm returns both reachable configurations and reports unrea
     }
     assert.equal((await call(client, "inverse_planar_arm", {x: 3, y: 0, link1: 1, link2: 1})).reachable, false);
     assert.equal((await call(client, "inverse_planar_arm", {x: 0, y: 0, link1: 1, link2: 1})).singular, true);
+    const nearFold = await call(client, "inverse_planar_arm", {x: 1e-8, y: 0, link1: 1, link2: 1});
+    assert.equal(nearFold.solutions.length, 2);
+    for (const {joint1_radians: a, joint2_radians: b} of nearFold.solutions) {
+        assert.ok(Math.abs(Math.cos(a) + Math.cos(a + b) - 1e-8) < 1e-14);
+        assert.ok(Math.abs(Math.sin(a) + Math.sin(a + b)) < 1e-14);
+    }
 });
 

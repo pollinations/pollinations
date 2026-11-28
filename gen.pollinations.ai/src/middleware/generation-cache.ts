@@ -30,6 +30,7 @@ export async function hashGenerationCacheIdentity(
 export type GenerationCacheVariables = {
     /** Caller-scoped entries stay internal; shared HTTP caches must not replay them. */
     generationCachePrivate?: boolean;
+    generationCacheSkipWrite?: boolean;
     generationCache?: {
         adapter: GenerationCacheAdapter;
         key: string;
@@ -220,6 +221,10 @@ function capture(
         return;
     }
 
+    if (c.var.generationCacheSkipWrite) {
+        c.res.headers.set("Cache-Control", "private, no-store");
+        return;
+    }
     c.get("log").getChild(adapter.label).debug("Caching response");
     const captured = adapter.capture(c, cacheKey, c.res);
     replaceCapturedResponse(c, captured.response);

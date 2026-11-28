@@ -37,8 +37,7 @@ const CHAT_COMPLETION_CACHE_VERSION = "chat-completion-v2";
 
 /**
  * Streams are not coordinated, so skipping their write only drops the cache
- * entry. Non-streaming results must still be written: the generation
- * coordinator delivers them by reading this entry back.
+ * entry. Cacheable non-streaming results are delivered through R2.
  */
 function isStreamingErrorResponse(
     response: Response,
@@ -165,6 +164,14 @@ export async function generateCacheKey(
         .join("");
 }
 
+/** Headers describing the result can be shared with every joined caller. */
+export function isTextResultHeader(name: string): boolean {
+    return (
+        CACHED_HEADER_NAMES.has(name) ||
+        CACHED_HEADER_PREFIXES.some((prefix) => name.startsWith(prefix))
+    );
+}
+
 /**
  * Prepare metadata for caching
  * Minimal metadata - only what's needed to serve the cached response
@@ -178,12 +185,7 @@ export function prepareMetadata(response: Response): Record<string, string> {
     };
     for (const [name, value] of response.headers.entries()) {
         const lowerName = name.toLowerCase();
-        if (
-            CACHED_HEADER_NAMES.has(lowerName) ||
-            CACHED_HEADER_PREFIXES.some((prefix) =>
-                lowerName.startsWith(prefix),
-            )
-        ) {
+        if (isTextResultHeader(lowerName)) {
             metadata[`header_${lowerName}`] = value;
         }
     }

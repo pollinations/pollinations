@@ -56,6 +56,7 @@ export type GenerationJobHead = Omit<GenerationJob, "request"> & {
 };
 
 export type GenerationOutcome =
+    | { status: "uncached"; body: string; headers: [string, string][] }
     | { status: "cached" }
     | { status: "generated" }
     | { status: "failed"; error: GenerationErrorSnapshot };
@@ -254,6 +255,10 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
                 message: "Generation coordination is unavailable",
                 cause: error,
             });
+        }
+        if (outcome?.status === "uncached") {
+            if (c.var.track) c.var.track.detachedExecutionTracked = true;
+            return new Response(outcome.body, { headers: outcome.headers });
         }
         if (outcome?.status === "failed") {
             if (c.var.track) c.var.track.detachedExecutionTracked = true;

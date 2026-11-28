@@ -174,6 +174,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                 },
             },
             {
+                id: "solana",
+                alpha: true,
+                name: "Solana Launch Radar",
+                description:
+                    "Inspect SPL token mint state, largest token accounts, recent token activity, Pump.fun launches/trades, and PumpSwap pool events via public Solana RPC.",
+                url: "https://gen.pollinations.ai/mcp/solana",
+                pricing: {
+                    description: "Public Solana RPC data. No external provider API key or additional MCP fee.",
+                    rates: [],
+                },
+            },
+            {
                 id: "network",
                 alpha: true,
                 name: "Network",

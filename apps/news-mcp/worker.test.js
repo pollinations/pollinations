@@ -35,6 +35,7 @@ test("private worker exposes eight tools using the MCP transport", async () => {
         "hn_item",
         "hn_search",
         "hn_stories",
+        "lobsters_stories",
         "wayback_snapshots",
     ]);
     await c.close();
@@ -59,7 +60,7 @@ test("private worker exposes eight tools using the MCP transport", async () => {
 test("modern MCP clients work without server-side sessions", async () => {
     const c = await client({ versionNegotiation: { mode: "auto" } });
     assert.equal(c.getProtocolEra(), "modern");
-    assert.equal((await c.listTools()).tools.length, 8);
+    assert.equal((await c.listTools()).tools.length, 9);
     await c.close();
 });
 
@@ -437,5 +438,45 @@ test("history_on_this_day reads each offered type under its own key", async (t) 
     assert.equal(missing.isError, true);
     assert.match(missing.content[0].text, /Month 2 has no day 30/);
     assert.equal(paths.length, 3);
+    await c.close();
+});
+
+test("lobsters_stories fetches hottest and tag feeds", async (t) => {
+    const urls = [];
+    t.mock.method(globalThis, "fetch", async (url) => {
+        urls.push(String(url));
+        return Response.json([
+            {
+                short_id: "abc123",
+                title: "Minimalist Workers",
+                url: "https://example.com/post",
+                comments_url: "https://lobste.rs/s/abc123/minimalist_workers",
+                score: 42,
+                comment_count: 7,
+                tags: ["web", "perf"],
+                submitter_user: "alice",
+                created_at: "2026-11-26T00:00:00.000Z",
+            },
+        ]);
+    });
+    const c = await client();
+    const hottest = await c.callTool({
+        name: "lobsters_stories",
+        arguments: { list: "hottest", limit: 5 },
+    });
+    assert.equal(hottest.isError, undefined);
+    const parsed = JSON.parse(hottest.content[0].text);
+    assert.equal(parsed[0].short_id, "abc123");
+    assert.equal(parsed[0].submitter, "alice");
+
+    const tagged = await c.callTool({
+        name: "lobsters_stories",
+        arguments: { tag: "rust", limit: 3 },
+    });
+    assert.equal(tagged.isError, undefined);
+    assert.deepEqual(urls, [
+        "https://lobste.rs/hottest.json",
+        "https://lobste.rs/t/rust.json",
+    ]);
     await c.close();
 });

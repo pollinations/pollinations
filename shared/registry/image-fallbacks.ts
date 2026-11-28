@@ -53,6 +53,17 @@ export const IMAGE_FALLBACKS = {
             },
         },
     },
+    "lightricks/ltx-2.5-fast": {
+        "lightricks/ltx-2.5-fast:fal": {
+            provider: "fal",
+            cost: { completionVideoSeconds: 0.09 },
+            costVariants: {
+                "1080p": { completionVideoSeconds: 0.13 },
+                "2k": { completionVideoSeconds: 0.19 },
+                "4k": { completionVideoSeconds: 0.3 },
+            },
+        },
+    },
     "lightricks/ltx-2.5-pro": {
         "lightricks/ltx-2.5-pro:azure": {
             provider: "azure",

@@ -2506,6 +2506,44 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionVideoSeconds": 0.094,
     },
   },
+  "lightricks/ltx-2.5-fast": {
+    "cost": {
+      "completionVideoSeconds": 0.03,
+    },
+    "costVariants": {
+      "1080p": {
+        "completionVideoSeconds": 0.06,
+      },
+      "2k": {
+        "completionVideoSeconds": 0.12,
+      },
+      "4k": {
+        "completionVideoSeconds": 0.24,
+      },
+    },
+    "price": {
+      "completionVideoSeconds": 0.03,
+    },
+  },
+  "lightricks/ltx-2.5-fast:fal": {
+    "cost": {
+      "completionVideoSeconds": 0.09,
+    },
+    "costVariants": {
+      "1080p": {
+        "completionVideoSeconds": 0.13,
+      },
+      "2k": {
+        "completionVideoSeconds": 0.19,
+      },
+      "4k": {
+        "completionVideoSeconds": 0.3,
+      },
+    },
+    "price": {
+      "completionVideoSeconds": 0.09,
+    },
+  },
   "lightricks/ltx-2.5-pro": {
     "cost": {
       "completionVideoSeconds": 0.12,

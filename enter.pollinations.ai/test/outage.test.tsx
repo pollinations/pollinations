@@ -144,20 +144,20 @@ describe("dashboard outage state", () => {
             renderToStaticMarkup(
                 <AuthFlowScreen
                     title="Top-up"
-                    error="Couldn’t load your wallet."
+                    error="Couldn’t load your balance."
                     errorPaths={["/account/balance"]}
                     balance={null}
                 />,
             );
         respond(503);
         await trackedFetch("https://gen.example/account/profile");
-        expect(topUp()).toContain("Couldn’t load your wallet.");
+        expect(topUp()).toContain("Couldn’t load your balance.");
         expect(topUp()).not.toContain(OUTAGE_TEXT);
 
         respond(503);
         await trackedFetch("https://gen.example/account/balance");
         expect(topUp()).toContain(OUTAGE_TEXT);
-        expect(topUp()).not.toContain("Couldn’t load your wallet.");
+        expect(topUp()).not.toContain("Couldn’t load your balance.");
     });
 
     it("counts a browser request timeout as an outage", async () => {

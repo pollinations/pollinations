@@ -417,7 +417,7 @@ describe("out-of-pollen banner", () => {
     const buy = "/pollen#buy-pollen";
     it.each([
         [
-            "an empty wallet",
+            "no credit in either balance",
             { tierBalance: 0, packBalance: 0 },
             [buy, "/quests"],
         ],

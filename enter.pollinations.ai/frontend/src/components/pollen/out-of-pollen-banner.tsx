@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import type { FC } from "react";
 import type { AccountBalance } from "../../hooks/use-account-balance.ts";
 
-/** Point to ways to fund generation when the wallet has no spendable balance. */
+/** Point to ways to fund generation when neither balance has credit available. */
 export const OutOfPollenBanner: FC<AccountBalance> = ({
     tierBalance,
     packBalance,
@@ -24,7 +24,7 @@ export const OutOfPollenBanner: FC<AccountBalance> = ({
             title={
                 questPollenRestricted
                     ? "Your Quest balance is locked"
-                    : "Your wallet is empty"
+                    : "You’re out of credit"
             }
             className="max-lg:first:-mt-[3.25rem] max-lg:first:ml-14 max-sm:mr-3"
         >
@@ -47,7 +47,7 @@ export const OutOfPollenBanner: FC<AccountBalance> = ({
                 </InlineLink>
             ) : (
                 <InlineLink as={Link} to="/quests" external={false}>
-                    earn Quest balance
+                    complete a Quest
                 </InlineLink>
             )}
             .

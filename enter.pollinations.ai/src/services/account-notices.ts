@@ -58,7 +58,7 @@ export function autoTopUpOffNotice(balance: number, topUp: number): Notice {
         balance,
         intro: `We couldn’t charge your saved payment method for your $${topUp} auto top-up, so auto top-up is now off.`,
         body: "Requests that need paid balance may be declined if their estimate exceeds it.\n\nUpdate your payment method, then turn auto top-up back on.",
-        button: { label: "Open wallet", path: "/pollen" },
+        button: { label: "Manage billing", path: "/pollen#billing" },
     };
 }
 

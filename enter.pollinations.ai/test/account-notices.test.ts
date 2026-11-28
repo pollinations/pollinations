@@ -114,6 +114,9 @@ test("auto top-up failed emails once per failure", async () => {
     expect(sent.map((email) => email.subject)).toEqual(["Auto top-up failed"]);
     expect(sent[0].text).toContain("💳 less than $0.01 left");
     expect(sent[0].text).toContain("for your $10 auto top-up");
+    const billingUrl = new URL("/pollen#billing", env.BETTER_AUTH_URL).href;
+    expect(sent[0].text).toContain(`Manage billing: ${billingUrl}`);
+    expect(sent[0].html).toContain(`href="${billingUrl}"`);
     // The reason comes before the balance.
     expect(sent[0].html.indexOf("for your $10")).toBeLessThan(
         sent[0].html.indexOf("left</span>"),

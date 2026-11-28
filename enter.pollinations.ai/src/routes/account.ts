@@ -149,7 +149,7 @@ const CreateKeySchema = z.object({
         .nullable()
         .optional()
         .describe(
-            "Remaining amount the key can spend from the account wallet, in US dollars. Requests can be declined when the estimate exceeds the remaining budget. Secret keys use null for unlimited. Publishable keys accept null, omission, or 0 and always use 0.",
+            "How much more this key can spend, in US dollars. Requests can be declined when the estimate exceeds the remaining budget. Secret keys use null for unlimited. Publishable keys accept null, omission, or 0 and always use 0.",
         ),
     questPollenOnly: z
         .boolean()
@@ -1039,7 +1039,7 @@ const balanceResponseSchema = z.object({
     accountBalance: accountBalanceSchema
         .optional()
         .describe(
-            "Full account balances. Included only when the caller can view account usage (dashboard session or `account:usage`). Omitted for budgeted keys that lack that permission so the account wallet is not leaked.",
+            "Quest and paid balances. Visible to dashboard sessions and keys with `account:usage`.",
         ),
 });
 

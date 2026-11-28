@@ -251,7 +251,7 @@ Before a long command, extend the paid lease with `connect_sandbox`; a command's
 
 ### Billing and permissions
 
-Calls use the same wallet as the Pollinations API. The catalog endpoint
+MCP calls use the same account balance as other Pollinations API requests. The catalog endpoint
 shows each server's current pricing. Pollinations generation tools use the
 selected model's listed rate. A `tools/call` on a server with its own rate
 needs a positive balance and returns 402 otherwise; `initialize` and

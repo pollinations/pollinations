@@ -224,7 +224,7 @@ keeps its history while the editor runs.
 
 ## Sandboxes
 
-Linux VMs on E2B or Azure, paid from your wallet (alpha).
+Linux VMs on E2B or Azure, billed to your Pollinations balance (alpha).
 
 ```bash
 polli sandbox create              # prints the id and sets up ssh

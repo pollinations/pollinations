@@ -935,7 +935,7 @@ it.each([
 it.each([0, 1])(
     "preserves an answered choice at index %s alongside an empty length choice",
     async (answeredIndex) => {
-        const model = "openai/gpt-4o-mini";
+        const model = "openai/gpt-5-nano";
         const choices = [0, 1].map((index) => ({
             index,
             message: {
@@ -946,7 +946,7 @@ it.each([0, 1])(
         }));
         const { response, text, calls } = await chatThroughHandler(
             model,
-            "api.openai.com",
+            ["myceli-prod-eastus.openai.azure.com", "api.openai.com"],
             async (request) => {
                 expect(((await request.json()) as { n: number }).n).toBe(2);
                 return Response.json({

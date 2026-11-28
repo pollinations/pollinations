@@ -15,7 +15,8 @@ class TriageTest(unittest.TestCase):
                 "gen.pollinations.ai/src/routes/docs-samples.ts#L3": {"url": "https://github.com/pollinations/pollinations/blob/rev/gen.pollinations.ai/src/routes/docs-samples.ts#L3"}}
 
     def verdict(self, action, source=None, confidence=0.9):
-        return decision({"action": action, "comment": "Details", "source": source, "confidence": confidence}, self.evidence)
+        return decision({"action": action, "comment": "Details", "source": source, "confidence": confidence,
+                         "sensitive": False}, self.evidence)
 
     def test_closures_need_matching_evidence_and_confidence(self):
         for action, source in (("resolved", "issue-42"), ("resolved", "APIDOCS.md#L3"),
@@ -38,11 +39,40 @@ class TriageTest(unittest.TestCase):
         self.assertEqual(self.verdict("reply", "src/file.ts#L3"), (None, None))
         url = self.evidence["issue-42"]["url"]
         comment = "Covered by the open report. [Evidence](issue-42) [src/file.ts#L3] Keep `[DONE]`."
-        reply, reason = decision({"action": "reply", "comment": comment, "source": "issue-42", "confidence": 0.9}, self.evidence)
+        answer = {"action": "reply", "comment": comment, "source": "issue-42", "confidence": 0.9, "sensitive": False}
+        reply, reason = decision(answer, self.evidence)
         self.assertEqual(reply, f"Covered by the open report. Keep `[DONE]`.\n\n[issue-42]({url})")
         self.assertIsNone(reason)
-        with self.assertRaises(ValueError):
-            decision({"action": "reply", "comment": "[Evidence](issue-42)", "source": None, "confidence": 0.9}, self.evidence)
+        for own_link in ("[Evidence](issue-42)", "Already tracked in #42.", f"See {url} for details."):
+            with self.subTest(own_link=own_link), self.assertRaises(ValueError):
+                decision({**answer, "comment": own_link}, self.evidence)
+
+    def test_sensitive_reports_get_no_public_action(self):
+        for action, source in (("reply", None), ("duplicate", "issue-42"), ("resolved", "src/file.ts#L3"), ("spam", None)):
+            answer = {"action": action, "comment": "Details", "source": source, "confidence": 0.95}
+            with self.subTest(action=action):
+                self.assertEqual(decision({**answer, "sensitive": True}, self.evidence), (None, None))
+                with self.assertRaises(ValueError):
+                    decision(answer, self.evidence)
+
+    def test_exhausted_inference_fails_but_an_explicit_skip_passes(self):
+        issue = {"number": 41, "title": "Timeout", "body": "", "state": "open",
+                 "labels": [], "user": {"login": "reporter", "type": "User"}}
+        terms = {"issue_terms": "timeout", "code_terms": []}
+        for answers, fails in (([None], True), ([terms, None], True), ([terms, {"action": "skip"}], False)):
+            session = Mock(headers={})
+            session.get.side_effect = [Mock(json=Mock(return_value=value)) for value in (
+                issue, {"incomplete_results": False, "items": []})]
+            with self.subTest(answers=answers), patch.dict(os.environ, {"ISSUE_NUMBER": "41", "GH_TOKEN": "test", "DRY_RUN": ""}), \
+                 patch("triage_new_issue.requests.Session", return_value=session), \
+                 patch("triage_new_issue.ask_ai", side_effect=answers):
+                if fails:
+                    with self.assertRaises(SystemExit):
+                        main()
+                else:
+                    main()
+            session.post.assert_not_called()
+            session.patch.assert_not_called()
 
     def test_existing_workflow_exclusions(self):
         issue = {"user": {"type": "User", "login": "reporter"}, "labels": []}
@@ -98,7 +128,7 @@ class TriageTest(unittest.TestCase):
         search = {"incomplete_results": False, "items": [{**issue, "number": 42,
                   "html_url": self.evidence["issue-42"]["url"]}]}
         terms = {"issue_terms": "timeout", "code_terms": []}
-        verdict = {"action": "duplicate", "source": "issue-42", "confidence": 0.9, "comment": "Details"}
+        verdict = {"action": "duplicate", "source": "issue-42", "confidence": 0.9, "comment": "Details", "sensitive": False}
         for prior in (False, True):
             comments = [{"user": {"login": "github-actions[bot]"},
                          "body": "Details\n\n<!-- new-issue-triage:43:not_planned -->"}] if prior else []
@@ -120,7 +150,7 @@ class TriageTest(unittest.TestCase):
                  "labels": [], "user": {"login": "reporter", "type": "User"}}
         search = {"incomplete_results": False, "items": [{**issue, "number": 42,
                   "html_url": self.evidence["issue-42"]["url"]}]}
-        verdict = {"action": "duplicate", "source": "issue-42", "confidence": 0.9, "comment": "Details"}
+        verdict = {"action": "duplicate", "source": "issue-42", "confidence": 0.9, "comment": "Details", "sensitive": False}
         for later in ([{**issue, "state_reason": "reopened"}], [issue, {**issue, "state": "closed"}]):
             session = MagicMock()
             session.get.side_effect = [Mock(json=Mock(return_value=value), links={}) for value in (issue, search, *later)]
@@ -142,7 +172,7 @@ class TriageTest(unittest.TestCase):
              patch("triage_new_issue.requests.Session", return_value=session), \
              patch("triage_new_issue.ask_ai", side_effect=[
                  {"issue_terms": "timeout", "code_terms": []},
-                 {"action": "duplicate", "source": "issue-42", "confidence": 0.9},
+                 {"action": "duplicate", "source": "issue-42", "confidence": 0.9, "sensitive": False},
              ]), patch("builtins.print") as log:
             main()
         log.assert_called_once_with("Skipping #41: Unknown evidence reference")

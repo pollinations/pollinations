@@ -1,6 +1,6 @@
 # Service Providers
 
-**Last updated: 2026-11-24**
+**Last updated: 2026-11-28**
 
 These providers process personal data for us. Some process it outside the EEA, including in the United States; see the [Privacy Policy](/privacy) for transfer safeguards.
 
@@ -12,7 +12,7 @@ These providers process personal data for us. Some process it outside the EEA, i
 | Microsoft Azure | Managed PostgreSQL in Sweden for Open WebUI accounts, chats, and document search data |
 | Tinybird | Usage and billing analytics |
 | Amazon Bedrock | Prompt safety checks |
-| Stripe | Payments and invoices |
+| Stripe | Payments, invoices, and payment fraud prevention through Stripe Radar |
 | Google Workspace | Support email |
 | E2B | Code sandboxes |
 | Exa | Web search |

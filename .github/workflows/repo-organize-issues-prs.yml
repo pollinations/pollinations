@@ -8,18 +8,11 @@ on:
   # Reclassify Area, Source and type. Fill empty Priority and Model work fields. Defaults to every open PR.
   workflow_dispatch:
     inputs:
-      check_weaver_owner:
-        description: "Check the existing Pollinations caller identity without organizing items"
-        type: boolean
-        default: false
-      probe_model_digest:
-        description: "Owner check only. Optional SHA-256 of a verified tool-free private model ID for the paired transport probe"
-        required: false
       weaver_preview:
-        description: "Read-only classification preview or repeated direct comparison"
+        description: "Read-only classification preview on the frozen cases"
         type: choice
         default: none
-        options: [none, baseline, shortened, hosted, compare-misses, compare-holdout]
+        options: [none, baseline, shortened, hosted]
       preview_model:
         description: "Hosted preview only. Callable ID from the verified owner readback"
         required: false
@@ -39,45 +32,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  check-weaver-owner:
-    if: github.event_name == 'workflow_dispatch' && inputs.check_weaver_owner
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - name: Check the Pollinations caller identity
-        env:
-          POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
-        run: |
-          set -euo pipefail
-          curl --fail --silent --show-error --max-time 30 \
-            -H "Authorization: Bearer $POLLINATIONS_TOKEN" \
-            https://gen.pollinations.ai/account/profile |
-            jq -er '
-              if ((.githubUsername // "" | ascii_downcase) == "pollinations-ai")
-                 and (.email == null or .email == "polli@pollinations.ai")
-              then "Verified shared owner via linked GitHub user pollinations-ai"
-              else error("Caller does not match the verified shared owner") end' | tee -a "$GITHUB_STEP_SUMMARY"
-          status=$(curl --silent --show-error --max-time 30 -o /dev/null -w '%{http_code}' \
-            -H "Authorization: Bearer $POLLINATIONS_TOKEN" https://gen.pollinations.ai/account/agents)
-          case "$status" in
-            200) echo 'The workflow credential has account:keys access.' ;;
-            403) echo 'Registration and readback require a separate authorized owner session.' ;;
-            *) echo "Agent account check returned HTTP $status"; exit 1 ;;
-          esac | tee -a "$GITHUB_STEP_SUMMARY"
-      - uses: actions/checkout@v5
-        if: inputs.probe_model_digest != ''
-        with:
-          persist-credentials: false
-      - name: Probe private-agent Chat Completions
-        if: inputs.probe_model_digest != ''
-        env:
-          POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
-          PROBE_MODEL_DIGEST: ${{ inputs.probe_model_digest }}
-        run: python operations/infrastructure/project-manager/probe_agent.py
-
   weaver-preview:
-    if: github.event_name == 'workflow_dispatch' && !inputs.check_weaver_owner && inputs.weaver_preview != 'none'
+    if: github.event_name == 'workflow_dispatch' && inputs.weaver_preview != 'none'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
@@ -104,7 +60,7 @@ jobs:
   organize:
     # Reclassify after a workflow label changes the source.
     if: >-
-      !(github.event_name == 'workflow_dispatch' && (inputs.check_weaver_owner || inputs.weaver_preview != 'none')) &&
+      !(github.event_name == 'workflow_dispatch' && inputs.weaver_preview != 'none') &&
       (github.event.action != 'labeled' || github.event.label.name == 'APP-SUBMISSION' || github.event.label.name == 'QUEST')
     runs-on: ubuntu-latest
     permissions:

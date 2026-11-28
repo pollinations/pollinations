@@ -142,7 +142,7 @@ def measure(case, arms, repetitions):
 
 def main():
     mode = sys.argv[1]
-    if mode not in {"baseline", "shortened", "hosted", "compare-misses", "compare-holdout"}:
+    if mode not in {"baseline", "shortened", "hosted"}:
         raise SystemExit("Unknown Weaver preview")
     if not os.getenv("POLLINATIONS_TOKEN"):
         raise SystemExit("Missing Pollinations credential")
@@ -150,17 +150,10 @@ def main():
     if gaps := coverage_gaps([c for c in cases if not c.get("diagnostic_only")]):
         raise SystemExit("Missing development coverage: " + ", ".join(gaps))
     holdout = []
-    if mode in {"compare-holdout", "shortened", "hosted"}:
+    if mode != "baseline":
         holdout = json.loads((WEAVER_DIR / "holdout-cases.json").read_text())
         if not holdout or {c["source"] for c in cases} & {c["source"] for c in holdout}:
             raise SystemExit("Holdout sources must be new")
-    if mode == "compare-misses":
-        cases = [c for c in cases if c.get("repeat_comparison")]
-        if not cases:
-            raise SystemExit("Select disputed cases in classification-cases.json first")
-    elif mode == "compare-holdout":
-        cases = holdout
-    elif mode in {"shortened", "hosted"}:
         cases += holdout
 
     candidate = (WEAVER_DIR / "system-prompt.md").read_text().strip()
@@ -174,7 +167,7 @@ def main():
         arms["shortened"] = (candidate, None)
     reports = {name: {"model": model or AI_MODEL, "prompt_sha256": digest(brief), "cases": {}}
                for name, (brief, model) in arms.items()}
-    repetitions = 10 if mode == "compare-misses" else 3
+    repetitions = 3
     holdout_ids = {c["id"] for c in holdout}
     summaries = []
     with ThreadPoolExecutor(max_workers=4) as workers:

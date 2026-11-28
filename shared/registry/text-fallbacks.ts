@@ -665,6 +665,18 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "mistralai/mistral-large-4": {
+        "mistralai/mistral-large-4:mistral": {
+            provider: "mistral",
+            addedDate: new Date("2026-11-12").getTime(),
+            // Mistral direct API standard rates.
+            cost: {
+                promptTextTokens: perMillion(0.7),
+                promptCachedTokens: perMillion(0.07),
+                completionTextTokens: perMillion(2.1),
+            },
+        },
+    },
     "mistralai/mistral-large-3": {
         "mistralai/mistral-large-3:aws": {
             supportedParameters: CHAT_PARAMETERS.mistralLarge,
@@ -692,23 +704,16 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
-    "mistralai/mistral-large-4": {
-        // Both routes use Mistral infrastructure; this covers gateway failures.
-        "mistralai/mistral-large-4:vercel": {
-            supportedParameters: CHAT_PARAMETERS.vercelMistralLarge4,
-            provider: "vercel",
-            addedDate: new Date("2026-10-06").getTime(),
-        },
-    },
     "tencent/hy4-flash": {
-        // OpenRouter's route for the same model, with its 5.5% credit fee.
-        "tencent/hy4-flash:openrouter": {
-            provider: "openrouter",
-            addedDate: new Date("2026-11-16").getTime(),
+        "tencent/hy4-flash:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
+            provider: "deepinfra",
+            contextLength: 1048576,
+            // https://deepinfra.com/tencent/Hy4-flash/api
             cost: {
-                promptTextTokens: perMillion(0.035) * 1.055,
-                promptCachedTokens: perMillion(0.0015) * 1.055,
-                completionTextTokens: perMillion(0.1405) * 1.055,
+                promptTextTokens: perMillion(0.07),
+                promptCachedTokens: perMillion(0.003),
+                completionTextTokens: perMillion(0.281),
             },
         },
     },

@@ -1930,6 +1930,57 @@ test("Chat uses a native Responses target and preserves billing usage", async ({
     });
 });
 
+test.for([
+    { model: "openai/gpt-6-astra", questAccess: false },
+    { model: "openai/gpt-6.2-astra", questAccess: false },
+    { model: "openai/gpt-6.2-sol", questAccess: true },
+])(
+    "Quest-only Chat access for $model is $questAccess",
+    async ({ model, questAccess }, { mocks }) => {
+        await mocks.enable("tinybird", "responsesDirect");
+        const caller = await createTestApiKey({
+            user: { tierBalance: 100, packBalance: 0 },
+        });
+        const { response, wait } = await fetchWorker("/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${caller.key}`,
+            },
+            body: JSON.stringify({
+                model,
+                messages: [{ role: "user", content: crypto.randomUUID() }],
+            }),
+        });
+
+        const body = await response.text();
+        expect(response.status, body).toBe(200);
+        await wait();
+
+        const balance = await getUserBalance(drizzle(env.DB), caller.userId);
+        const billed = mocks.tinybird.state.events.filter(
+            (event) => event.isBilledUsage,
+        );
+        expect(balance.packBalance).toBe(0);
+        if (questAccess) {
+            expect(body).toContain("direct response");
+            expect(mocks.responsesDirect.state.requests).toHaveLength(1);
+            expect(billed).toHaveLength(1);
+            expect(billed[0].modelUsed).toBe(model);
+            expect(balance.tierBalance).toBeLessThan(100);
+            expect(balance.tierBalance).toBeCloseTo(
+                100 - billed[0].totalPrice,
+                8,
+            );
+        } else {
+            expect(body).toContain("This model needs the paid balance.");
+            expect(mocks.responsesDirect.state.requests).toHaveLength(0);
+            expect(billed).toHaveLength(0);
+            expect(balance.tierBalance).toBe(100);
+        }
+    },
+);
+
 test("Chat-over-Responses streaming converts events and bills terminal usage", async ({
     paidApiKey,
     mocks,

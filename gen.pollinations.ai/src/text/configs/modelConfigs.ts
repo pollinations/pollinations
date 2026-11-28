@@ -640,6 +640,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         createDeepInfraModelConfig({ model: "XiaomiMiMo/MiMo-V2.6-Flash" }),
     "xiaomi/mimo-v2.6-pro:deepinfra": () =>
         createDeepInfraModelConfig({ model: "XiaomiMiMo/MiMo-V2.6-Pro" }),
+    "inclusionai/ling-3.2-flash": () =>
+        createOpenRouterModelConfig({
+            model: "inclusionai/ling-3.2-flash",
+        }),
     "inclusionai/ling-3.1-flash": () =>
         createNovitaModelConfig({ model: "inclusionai/ling-3.1-flash" }),
     "inclusionai/ling-3.1-flash:vercel:novita": () =>
@@ -650,19 +654,19 @@ export const portkeyConfig: PortkeyConfigMap = {
                 providerOptions: { gateway: { only: ["novita"] } },
             },
         }),
-    "mistral-large-4": () =>
+    // Use the chat adapter for Responses; Azure native Responses fails for this deployment.
+    "Mistral-Large-4": () =>
+        createAzureModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/mistral-large-4-latest/chat/completions?api-version=2024-12-01-preview",
+            // Mistral's server rejects unknown message fields on Azure too.
+            { supportsReasoningHistory: false },
+        ),
+    "mistral-large-4-direct": () =>
         createMistralModelConfig({
             model: "mistral-large-4",
             directEndpoint: "https://api.mistral.ai/v1/chat/completions",
             useMistralChatFormat: true,
-        }),
-    "mistral-large-4-vercel": () =>
-        createVercelAIGatewayModelConfig({
-            model: "mistral/mistral-large-4",
-            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
-            defaultOptions: {
-                providerOptions: { gateway: { only: ["mistral"] } },
-            },
         }),
     // Nex returns a generic server error when it cannot fetch an image URL.
     "nex-agi/nex-n2.5-mini": () => ({
@@ -829,20 +833,12 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
-    // Reasoning defaults to "high" and burns ~1,300 tokens on even a
-    // trivial schema, so a caller relying on the upstream default (no
-    // explicit max_tokens) can get finish_reason:"length", content:null
-    // under a normal budget. Matches this route's own max_completion_tokens
-    // cap. Callers who pass an explicit max_tokens still hit the same gap —
-    // resolveModelConfig drops this default the moment one is supplied.
-    "tencent/hy4-flash": () =>
-        createVercelAIGatewayModelConfig({
-            model: "tencent/hy4-flash",
+    "accounts/fireworks/models/hy4-flash": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/hy4-flash",
         }),
-    "tencent/hy4-flash:openrouter": () =>
-        createOpenRouterModelConfig({
-            model: "tencent/hy4-flash",
-        }),
+    "tencent/Hy4-flash": () =>
+        createDeepInfraModelConfig({ model: "tencent/Hy4-flash" }),
     "tencent/hy4-preview": () =>
         createOpenRouterModelConfig({
             model: "tencent/hy4-preview",
@@ -993,6 +989,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         createDeepInfraModelConfig({ model: "google/gemma-4-26B-A4B-it" }),
     "google/gemma-4-31B-it": () =>
         createDeepInfraModelConfig({ model: "google/gemma-4-31B-it" }),
+    "google/gemma-4-31B-it-turbo": () =>
+        createDeepInfraModelConfig({ model: "google/gemma-4-31B-it-turbo" }),
     "mistral-large-3-bedrock": () =>
         createBedrockNativeConfig({
             model: "mistral.mistral-large-3-675b-instruct",

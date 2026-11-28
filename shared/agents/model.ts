@@ -1,5 +1,14 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import type { FinishReason, ToolSet } from "ai";
+import {
+    type FinishReason,
+    type LanguageModelMiddleware,
+    type ToolSet,
+    wrapLanguageModel,
+} from "ai";
+import {
+    chatCompletionChoiceError,
+    extractProviderErrorMessage,
+} from "../http/chat-completion-error.ts";
 import {
     type CompletionUsage,
     CompletionUsageSchema,
@@ -8,6 +17,76 @@ import type { AgentUsage } from "./types.ts";
 
 type AgentStep = {
     providerMetadata?: Record<string, Record<string, unknown>>;
+};
+
+const MODEL_FAILURE = "Agent model failed to complete the response";
+
+function choiceFinishError(body: unknown): string | null {
+    const error = (body as { error?: unknown } | null)?.error;
+    return (
+        extractProviderErrorMessage(error) ??
+        chatCompletionChoiceError(body, MODEL_FAILURE) ??
+        null
+    );
+}
+
+function agentModelError({
+    finishReason,
+    providerMetadata,
+}: AgentStep & { finishReason: { raw?: string; unified: FinishReason } }):
+    | Error
+    | undefined {
+    const message = providerMetadata?.pollinations?.finishError;
+    if (typeof message === "string") return new Error(message);
+    if (finishReason.raw === "error" || finishReason.unified === "error") {
+        return new Error(MODEL_FAILURE);
+    }
+    return undefined;
+}
+
+const rejectFailedStep: LanguageModelMiddleware = {
+    async wrapGenerate({ doGenerate }) {
+        const result = await doGenerate();
+        const error = agentModelError(result);
+        if (error) throw error;
+        return result;
+    },
+    async wrapStream({ doStream }) {
+        const { stream, ...result } = await doStream();
+        type Part =
+            typeof stream extends ReadableStream<infer Value> ? Value : never;
+        // The SDK invokes tool input callbacks on start/delta as well as
+        // executing completed tool calls. Release both after a successful step.
+        const toolParts: Part[] = [];
+        let failed = false;
+        return {
+            ...result,
+            stream: stream.pipeThrough(
+                new TransformStream<Part, Part>({
+                    transform(part, controller) {
+                        if (part.type.startsWith("tool-")) {
+                            if (!failed) toolParts.push(part);
+                            return;
+                        }
+                        if (part.type === "error") {
+                            failed = true;
+                            toolParts.length = 0;
+                        }
+                        if (part.type === "finish" && !failed) {
+                            const error = agentModelError(part);
+                            if (error) {
+                                controller.enqueue({ type: "error", error });
+                                return;
+                            }
+                            for (const toolPart of toolParts)
+                                controller.enqueue(toolPart);
+                        }
+                        controller.enqueue(part);
+                    },
+                }),
+            ),
+        };
+    },
 };
 
 export function createAgentModelProvider({
@@ -19,7 +98,7 @@ export function createAgentModelProvider({
     fetch: typeof fetch;
     apiKey?: string;
 }) {
-    return createOpenAICompatible({
+    const provider = createOpenAICompatible({
         name: "pollinations",
         ...(apiKey ? { apiKey } : {}),
         baseURL,
@@ -29,11 +108,13 @@ export function createAgentModelProvider({
                 return {
                     pollinations: {
                         completionUsage: completionUsageFromBody(parsedBody),
+                        finishError: choiceFinishError(parsedBody),
                     },
                 };
             },
             createStreamExtractor() {
                 let usage: unknown;
+                let finishError: string | null = null;
                 return {
                     processChunk(chunk) {
                         if (
@@ -45,6 +126,7 @@ export function createAgentModelProvider({
                             // Providers may send provisional counts before final usage.
                             usage = chunk.usage;
                         }
+                        finishError = choiceFinishError(chunk) ?? finishError;
                     },
                     buildMetadata() {
                         return {
@@ -53,12 +135,22 @@ export function createAgentModelProvider({
                                     usage == null
                                         ? null
                                         : completionUsage(usage),
+                                finishError,
                             },
                         };
                     },
                 };
             },
         },
+    });
+    const languageModel: typeof provider.languageModel = (modelId, config) =>
+        wrapLanguageModel({
+            model: provider.languageModel(modelId, config),
+            middleware: rejectFailedStep,
+        });
+    return Object.assign(languageModel, provider, {
+        languageModel,
+        chatModel: languageModel,
     });
 }
 
@@ -80,6 +172,9 @@ export function awaitsCaller(
 }
 
 export function openAIFinishReason(reason: FinishReason): string {
+    if (reason === "error") {
+        throw new Error(MODEL_FAILURE);
+    }
     if (reason === "tool-calls") return "tool_calls";
     if (reason === "content-filter") return "content_filter";
     if (reason === "stop" || reason === "length") return reason;

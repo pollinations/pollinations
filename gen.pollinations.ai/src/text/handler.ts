@@ -1,5 +1,6 @@
 import { UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { chatCompletionChoiceError } from "@shared/http/chat-completion-error.ts";
 import {
     buildUsageHeaders,
     FALLBACK_TARGET_HEADER,
@@ -434,7 +435,24 @@ async function generateTextResponse(
             );
         const { result: completion, candidate } = await withModelFallback(
             candidates,
-            (attempt) => generateChatAttempt(c, requestData, attempt),
+            async (attempt) => {
+                const completion = await generateChatAttempt(
+                    c,
+                    requestData,
+                    attempt,
+                );
+                const finishError = chatCompletionChoiceError(completion);
+                if (finishError) {
+                    throw new UpstreamError(502, {
+                        message: finishError,
+                        requestUrl: completion.upstreamRequestUrl,
+                        responseBody: JSON.stringify(
+                            publicChatCompletion(completion),
+                        ),
+                    });
+                }
+                return completion;
+            },
             c.var.track?.attempts,
             (attempt) => requireModelAttemptAccess(c, attempt),
         );

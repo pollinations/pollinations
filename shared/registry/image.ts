@@ -1963,6 +1963,23 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 3,
     },
+    "recraft/recraft-v4.1-pro-vector": {
+        aliases: ["recraft-v4.1-pro-vector"],
+        provider: "fal",
+        publisher: "Recraft",
+        category: "image",
+        addedDate: Date.parse("2026-11-20"),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // Native, editable SVG; fal bills $0.30 per output vector.
+        cost: { completionImageTokens: 0.3 },
+        title: "Recraft V4.1 Pro Vector",
+        description:
+            "Create detailed, high-resolution, editable SVG illustrations from a text prompt.",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+        maxReferenceImages: 0,
+    },
     "recraft/recraft-v4.1-vector": {
         aliases: [
             "recraft-vector",
@@ -2454,6 +2471,54 @@ const IMAGE_BASE_SERVICES = {
         minDuration: 3,
         maxDuration: 20,
         defaultDuration: 5,
+    },
+    "lightricks/ltx-2.5-fast": {
+        aliases: [],
+        provider: "replicate",
+        publisher: "Lightricks",
+        category: "video",
+        addedDate: new Date("2026-11-13").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: { completionVideoSeconds: 0.03 },
+        ...defineCostVariants(
+            {
+                "1080p": { completionVideoSeconds: 0.06 },
+                "2k": { completionVideoSeconds: 0.12 },
+                "4k": { completionVideoSeconds: 0.24 },
+            },
+            matchResolution("1080p", "2k", "4k"),
+            {
+                "1080p": { label: "1080p", description: "Output at 1080p." },
+                "2k": { label: "2k", description: "Output at 2k." },
+                "4k": { label: "4k", description: "Output at 4k." },
+            },
+            "720p",
+            [
+                {
+                    key: "resolution",
+                    label: "Resolution",
+                    values: {
+                        "": "720p",
+                        "1080p": "1080p",
+                        "2k": "2k",
+                        "4k": "4k",
+                    },
+                },
+            ],
+        ),
+        resolutions: ["720p", "1080p", "2k", "4k"],
+        title: "LTX 2.5 Fast",
+        description:
+            "Fast video up to 4K with synchronized audio and optional start and end frames",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2,
+        minDuration: 6,
+        maxDuration: 20,
+        defaultDuration: 6,
+        allowedDurations: [6, 8, 10, 12, 14, 16, 18, 20],
     },
     "lightricks/ltx-2.5-pro": {
         aliases: [],

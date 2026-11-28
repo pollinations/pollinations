@@ -53,6 +53,17 @@ export const IMAGE_FALLBACKS = {
             },
         },
     },
+    "lightricks/ltx-2.5-fast": {
+        "lightricks/ltx-2.5-fast:fal": {
+            provider: "fal",
+            cost: { completionVideoSeconds: 0.09 },
+            costVariants: {
+                "1080p": { completionVideoSeconds: 0.13 },
+                "2k": { completionVideoSeconds: 0.19 },
+                "4k": { completionVideoSeconds: 0.3 },
+            },
+        },
+    },
     "lightricks/ltx-2.5-pro": {
         "lightricks/ltx-2.5-pro:azure": {
             provider: "azure",
@@ -514,6 +525,14 @@ export const IMAGE_FALLBACKS = {
                 },
                 "720p",
             ),
+        },
+    },
+    "recraft/recraft-v4.1-pro-vector": {
+        "recraft/recraft-v4.1-pro-vector:openrouter": {
+            provider: "openrouter",
+            addedDate: Date.parse("2026-11-20"),
+            // OpenRouter fixed $0.30 per SVG plus 5.5% credit fee.
+            cost: { completionImageTokens: 0.3 * 1.055 },
         },
     },
     "recraft/recraft-v4.1-flash": {

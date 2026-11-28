@@ -602,7 +602,7 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2026-09-04").getTime(),
         // Provider retires this route on 2028-01-11.
         priceMultiplier: 0.75,
-        paidOnly: false,
+        paidOnly: true,
         cost: {
             promptTextTokens: perMillion(10.0),
             promptCachedTokens: perMillion(1.0),
@@ -771,7 +771,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-11-17").getTime(),
-        paidOnly: true,
+        paidOnly: false,
         priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(2),
@@ -1667,6 +1667,34 @@ const TEXT_BASE_SERVICES = {
         title: "Gemma 4 31B",
         description:
             "Adjust the reasoning effort when asking questions about text and images.",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 262144,
+        isSpecialized: false,
+    },
+    "google/gemma-4-31b-it:turbo": {
+        supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
+        aliases: [],
+        provider: "deepinfra",
+        publisher: "Google",
+        category: "text",
+        addedDate: new Date("2026-11-24").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // DeepInfra fp4 turbo list rates (2026-11-24), no gateway fee. The
+        // route bills cached input at 55.6% of the input rate.
+        cost: {
+            promptTextTokens: perMillion(0.09),
+            promptCachedTokens: perMillion(0.05),
+            promptImageTokens: perMillion(0.09),
+            completionTextTokens: perMillion(0.34),
+        },
+        title: "Gemma 4 31B Turbo",
+        description:
+            "Get lower per-token pricing and discounted cached input for long, repetitive prompts about text and images.",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
@@ -3026,19 +3054,19 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "tencent/hy4-flash": {
-        supportedParameters: CHAT_PARAMETERS.vercelHy4Flash,
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
         aliases: [],
-        provider: "vercel",
+        provider: "fireworks",
         publisher: "Tencent",
         category: "text",
         addedDate: new Date("2026-11-16").getTime(),
-        paidOnly: true,
+        paidOnly: false,
         priceMultiplier: 1,
         cost: {
-            // Vercel AI Gateway list rates (2026-11-16). Vercel adds no gateway fee.
-            promptTextTokens: perMillion(0.035),
-            promptCachedTokens: perMillion(0.0015),
-            completionTextTokens: perMillion(0.1405),
+            // Fireworks list rates, checked 2026-11-25.
+            promptTextTokens: perMillion(0.07),
+            promptCachedTokens: perMillion(0.003),
+            completionTextTokens: perMillion(0.281),
         },
         title: "Hy4 Flash",
         description:
@@ -3047,7 +3075,7 @@ const TEXT_BASE_SERVICES = {
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
-        contextLength: 1024000,
+        contextLength: 524288,
         isSpecialized: false,
     },
     "tencent/hy4-preview": {
@@ -3109,6 +3137,31 @@ const TEXT_BASE_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 262144,
+        isSpecialized: false,
+    },
+    "inclusionai/ling-3.2-flash": {
+        supportedParameters: CHAT_PARAMETERS.openRouterLing32,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "inclusionAI",
+        category: "text",
+        addedDate: new Date("2026-11-27").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter list rates (2026-11-27), including the mandatory 5.5%
+            // OpenRouter credit fee.
+            promptTextTokens: perMillion(0.3) * 1.055,
+            promptCachedTokens: perMillion(0.06) * 1.055,
+            completionTextTokens: perMillion(0.9) * 1.055,
+        },
+        title: "Ling 3.2 Flash",
+        description: "Long-context agentic work over text and images",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
         isSpecialized: false,
     },
     "inclusionai/ling-3.1-flash": {
@@ -4056,15 +4109,16 @@ const TEXT_BASE_SERVICES = {
     "mistralai/mistral-large-4": {
         supportedParameters: CHAT_PARAMETERS.mistralLarge4,
         aliases: [],
-        provider: "mistral",
+        provider: "azure",
         publisher: "Mistral",
         category: "text",
         addedDate: new Date("2026-10-06").getTime(),
-        paidOnly: true,
-        priceMultiplier: 1,
+        paidOnly: false,
+        priceMultiplier: 0.75,
         cost: {
-            // Mistral direct API standard rates, verified 2026-11-11:
-            // https://docs.mistral.ai/inference/pricing
+            // Azure Foundry Global Standard rates for mistral-large-4-latest,
+            // from the Foundry model page (2026-11-11). Matches Mistral's direct
+            // standard rate. DataZone deployments cost more.
             promptTextTokens: perMillion(0.7),
             promptCachedTokens: perMillion(0.07),
             completionTextTokens: perMillion(2.1),

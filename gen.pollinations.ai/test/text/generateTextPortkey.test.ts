@@ -594,7 +594,7 @@ describe("generateTextPortkey", () => {
             });
         };
         const portkeyFetcher = vi.fn(respond);
-        // Mistral Large 4 calls Mistral directly, without the Portkey fetcher.
+        // Mistral Small 4 calls Mistral directly, without the Portkey fetcher.
         vi.spyOn(globalThis, "fetch").mockImplementation(respond);
         const toolCall = {
             id: "call_1",
@@ -653,8 +653,7 @@ describe("generateTextPortkey", () => {
         expect(azureMistral).toEqual(withoutReasoning);
         expect(inferencePort).toEqual(withoutReasoning);
         expect(fireworks).toEqual({ ...withoutReasoning, ...reasoning });
-        // Mistral's own reasoning model gets its thinking back as a chunk.
-        expect(mistralLarge4).toEqual(thinkingChunk);
+        expect(mistralLarge4).toEqual(withoutReasoning);
     });
 
     it.each([

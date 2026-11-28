@@ -1145,7 +1145,7 @@ function finishReasonError(
             if (!hasUsage && finish.finish_reason === "content_filter") {
                 return { status: CONTENT_POLICY_STATUS };
             }
-            if (finish.finish_reason === "error") {
+            if (finish.finish_reason === "error" || finish.error) {
                 return streamError(finish.error);
             }
         }

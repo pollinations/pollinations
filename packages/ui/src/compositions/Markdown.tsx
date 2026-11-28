@@ -10,6 +10,11 @@ export type MarkdownProps = {
     className?: string;
     /** Quiet links stay grey, so they don't compete with a title beside them. */
     linkTone?: "accent" | "quiet";
+    /**
+     * "links" shows images, audio and video as links to open, so untrusted
+     * text makes the reader's browser load nothing by itself.
+     */
+    media?: "inline" | "links";
 };
 
 function textContent(value: ReactNode): string {
@@ -82,12 +87,17 @@ function MarkdownCodeBlock({ children }: { children?: ReactNode }) {
     return <CodeBlock code={code} language={language} className="polli:my-3" />;
 }
 
+type Tone = NonNullable<MarkdownProps["linkTone"]>;
+type Media = NonNullable<MarkdownProps["media"]>;
+
 /** A markdown link: an inline link, or the media it points to. */
 const link =
-    (tone: "accent" | "quiet"): Components["a"] =>
+    (tone: Tone, media: Media): Components["a"] =>
     ({ node, href, ...props }) => {
-        const media = inlineMedia(href, textContent(props.children));
-        if (media) return media;
+        const player =
+            media === "inline" &&
+            inlineMedia(href, textContent(props.children));
+        if (player) return player;
         return <InlineLink href={href} tone={tone} {...props} />;
     };
 
@@ -136,15 +146,41 @@ const components: Components = {
             />
         );
     },
-    a: link("accent"),
 };
-const quietComponents: Components = { ...components, a: link("quiet") };
+
+function componentsFor(tone: Tone, media: Media): Components {
+    const a = link(tone, media);
+    if (media === "inline") return { ...components, a };
+    return {
+        ...components,
+        a,
+        img: ({ src, alt }) => {
+            const href = typeof src === "string" ? src : undefined;
+            return (
+                <InlineLink href={href} tone={tone}>
+                    {alt || href}
+                </InlineLink>
+            );
+        },
+    };
+}
+const componentSets = {
+    accent: {
+        inline: componentsFor("accent", "inline"),
+        links: componentsFor("accent", "links"),
+    },
+    quiet: {
+        inline: componentsFor("quiet", "inline"),
+        links: componentsFor("quiet", "links"),
+    },
+};
 
 /** Compact markdown for cards and snippets. Use Prose for document-style content. */
 export function Markdown({
     children,
     className,
     linkTone = "accent",
+    media = "inline",
 }: MarkdownProps) {
     return (
         <div
@@ -155,7 +191,7 @@ export function Markdown({
         >
             <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
-                components={linkTone === "quiet" ? quietComponents : components}
+                components={componentSets[linkTone][media]}
             >
                 {children}
             </ReactMarkdown>

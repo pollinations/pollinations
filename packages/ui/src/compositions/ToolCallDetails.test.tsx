@@ -114,4 +114,22 @@ describe("ToolCallDetails", () => {
         expect(html).toContain('data-tool-status="approval-requested"');
         expect(html).toContain('aria-expanded="false"');
     });
+
+    it("shows a readable label, the exact name in the details, and no status when none was reported", () => {
+        const html = renderToStaticMarkup(
+            <ToolCallDetails
+                name="mcp__pollinations__generateAudio"
+                label="Generate audio"
+                input={{ text: "hello" }}
+                status={null}
+                defaultOpen
+            />,
+        );
+
+        expect(html).toContain("Generate audio");
+        expect(html).toContain("mcp__pollinations__generateAudio");
+        expect(html).not.toContain("data-tool-status");
+        expect(html).not.toContain("Completed");
+        expect(html).not.toContain("Running");
+    });
 });

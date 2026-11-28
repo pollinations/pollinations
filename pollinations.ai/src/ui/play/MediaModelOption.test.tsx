@@ -45,4 +45,40 @@ describe("model dropdown option", () => {
             expect(html).toMatch(/Example model.*8 gen\/\$1.*role="img"/s);
         },
     );
+    it("shows a community agent's uploaded logo, else the agent icon", () => {
+        const agent = {
+            title: "Agent",
+            paidOnly: false,
+            category: "text",
+            community: true,
+            agent: true,
+        };
+        const logo = "https://media.pollinations.ai/f4747bba-ca12";
+        const withLogo = renderToStaticMarkup(
+            <MediaModelOption model={{ ...agent, brandIconUrl: logo }} />,
+        );
+        expect(withLogo).toContain(logo);
+        const without = renderToStaticMarkup(
+            <MediaModelOption model={agent} />,
+        );
+        expect(without).toContain("<svg");
+        expect(
+            renderToStaticMarkup(
+                <MediaModelOption
+                    model={{
+                        ...agent,
+                        brandIconUrl: "https://evil.example/x.svg",
+                    }}
+                />,
+            ),
+        ).not.toContain("evil.example");
+    });
+    it("marks an official agent", () => {
+        const html = renderToStaticMarkup(
+            <MediaModelOption
+                model={{ title: "Floret", paidOnly: false, verified: true }}
+            />,
+        );
+        expect(html).toContain("Verified");
+    });
 });

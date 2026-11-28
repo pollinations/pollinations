@@ -31,8 +31,12 @@ import {
     InfoTip,
     InlineLink,
     Input,
+    LoadingStatus,
     MediaPlaceholder,
     MicIcon,
+    PauseIcon,
+    PlayIcon,
+    RobotIcon,
     ScrollArea,
     Slider,
     StableLabel,
@@ -43,8 +47,10 @@ import {
     UploadedFileTile,
     VideoIcon,
     VideoRecorder,
+    WarningIcon,
     XIcon,
 } from "@pollinations/ui";
+import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
 import {
     ModalityTab,
     modalityBgVar,
@@ -57,11 +63,10 @@ import {
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
     Fragment,
-    type RefObject,
+    type ReactNode,
     useCallback,
     useEffect,
     useId,
-    useImperativeHandle,
     useMemo,
     useRef,
     useState,
@@ -73,13 +78,15 @@ import {
     typicalRequestCost,
 } from "../../../../shared/model-price-display";
 import { isNewModel } from "../../../../shared/model-recency";
-import { API_BASE_URL, ENTER_URL } from "../../config";
+import { API_BASE_URL, DEFAULT_AGENT_ID, ENTER_URL } from "../../config";
+import { LINKS } from "../../copy/content/socialLinks";
 import {
     type AudioCatalogMetadata,
     playgroundAudioMetadata,
     playgroundModelOverride,
 } from "../../data/playground-model-overrides";
 import { PLAY_SEARCH_KEYS, type PlaySearch } from "../../routes/-play-search";
+import { AgentChat, NewChatButton, useAgentChat } from "./AgentChat";
 import { ApiUrlCard } from "./ApiUrlCard";
 import { audioEndpoint, audioTaskGroups, audioTaskIds } from "./audio-endpoint";
 import {
@@ -104,6 +111,13 @@ import {
     type MediaModelMetadata,
     mediaModelSettings,
 } from "./media-model-settings";
+import {
+    agentAttachments,
+    agentFilters,
+    matchesAgentFilter,
+    modelAbilities,
+    takesFileLinks,
+} from "./model-abilities";
 import {
     audioConstraintError,
     audioInputError,
@@ -138,12 +152,22 @@ type PlaygroundModel = MediaModelMetadata & {
     description: string;
     category: ModelCategory;
     inputModalities: string[];
+    /** Catalog capabilities such as web_search, for the ability chips. */
+    capabilities: string[];
+    mcpServers?: string[];
     outputFormats?: ImageFormats;
     supportedEndpoints: string[];
     voices: string[];
     paidOnly: boolean;
     free: boolean;
     publisher?: string;
+    /** Community listings show their owner's uploaded logo, else their type. */
+    community: boolean;
+    /** Published by an official Pollinations account. */
+    verified: boolean;
+    brandIconUrl?: string;
+    /** Listed on the Agent tab; reached through /v1/responses. */
+    agent: boolean;
     addedDate?: number;
     maxReferenceVideos?: number;
     maxReferenceAudios?: number;
@@ -152,6 +176,12 @@ type PlaygroundModel = MediaModelMetadata & {
 };
 
 const WORKSPACES = [
+    {
+        label: "Agent",
+        icon: RobotIcon,
+        category: "text",
+        operations: ["agent"],
+    },
     {
         label: "Image",
         icon: ImageIcon,
@@ -177,6 +207,8 @@ const WORKSPACES = [
         operations: ["decide"],
     },
 ] as const;
+/** Agents publish no image limit; this keeps a message to a few attachments. */
+const AGENT_MAX_IMAGES = 4;
 type Workspace = (typeof WORKSPACES)[number];
 const TASKS = WORKSPACES.flatMap((workspace) =>
     workspace.operations.map((id) => ({
@@ -186,6 +218,11 @@ const TASKS = WORKSPACES.flatMap((workspace) =>
     })),
 );
 type Task = (typeof TASKS)[number];
+
+/** Run by its owner rather than Pollinations; listed after official models. */
+function isCommunityRun(model: { community: boolean; verified: boolean }) {
+    return model.community && !model.verified;
+}
 
 function playgroundModel(
     model: ModelInfo & AudioCatalogMetadata & { added_date?: number },
@@ -204,19 +241,34 @@ function playgroundModel(
         outputFormats: previewImageFormats(model, override?.imageFormats),
         supportedEndpoints: model.supported_endpoints ?? [],
         videoCapabilities: model.video_capabilities ?? [],
+        capabilities: model.capabilities ?? [],
+        mcpServers: Array.isArray(model.mcp_servers)
+            ? model.mcp_servers.filter(
+                  (id): id is string => typeof id === "string",
+              )
+            : undefined,
         resolutions: model.resolutions ?? [],
         minDuration: model.min_duration,
         maxDuration: model.max_duration,
         defaultDuration: model.default_duration,
         allowedDurations: model.allowed_durations ?? [],
         durationStep: model.duration_step,
-        maxReferenceImages: model.max_reference_images,
+        maxReferenceImages:
+            model.max_reference_images ??
+            (model.agent ? AGENT_MAX_IMAGES : undefined),
         voices: model.voices ?? [],
         // Gen treats a missing flag as not paid-only.
         paidOnly: model.paid_only ?? false,
         free: hasFreePricing(model),
+        agent: !!model.agent,
         addedDate: model.added_date,
         publisher: model.publisher,
+        community: !!model.community,
+        verified: model.verified === true,
+        brandIconUrl:
+            typeof model.brand_icon_url === "string"
+                ? model.brand_icon_url
+                : undefined,
         maxReferenceVideos: model.max_reference_videos,
         ...playgroundAudioMetadata(id, model),
     };
@@ -299,6 +351,52 @@ function mediaResult(
     };
 }
 
+/**
+ * One media link from an agent's reply, fetched like any other result so it
+ * gets the same panel. A link that cannot load stays a plain link.
+ */
+function AgentMedia({ url }: { url: string }) {
+    const [result, setResult] = useState<PlaygroundResult | null>();
+    useEffect(() => {
+        let objectUrl: string | undefined;
+        let active = true;
+        const request = new AbortController();
+        fetch(url, {
+            credentials: "omit",
+            referrerPolicy: "no-referrer",
+            signal: request.signal,
+        })
+            .then(async (response) => {
+                if (!response.ok) throw new Error(response.statusText);
+                const media = {
+                    buffer: await response.arrayBuffer(),
+                    contentType: response.headers.get("content-type") ?? "",
+                };
+                const kind = (["audio", "video"] as const).find((type) =>
+                    media.contentType.startsWith(`${type}/`),
+                );
+                const next = kind
+                    ? mediaResult(kind, media)
+                    : imageResult(media);
+                if ("url" in next) objectUrl = next.url;
+                if (active) setResult(next);
+                else if (objectUrl) URL.revokeObjectURL(objectUrl);
+            })
+            .catch(() => {
+                if (active) setResult(null);
+            });
+        return () => {
+            active = false;
+            request.abort();
+            if (objectUrl) URL.revokeObjectURL(objectUrl);
+        };
+    }, [url]);
+    if (result === undefined)
+        return <LoadingStatus>Loading media…</LoadingStatus>;
+    if (result === null) return <InlineLink href={url}>{url}</InlineLink>;
+    return <ResultPanel result={result} playable />;
+}
+
 // Kept in memory so leaving /play and coming back restores the last inputs,
 // result and any run still in flight. Connect saves selected files for the redirect.
 let lastInputs: PlaySearch | undefined;
@@ -326,6 +424,10 @@ function exampleReferenceUrls(media: UploadMedia, files: File[]) {
 
 function supportsTask(model: PlaygroundModel, task: Task) {
     if (model.category !== task.workspace.category) return false;
+    if (task.id === "agent")
+        return (
+            model.agent && model.supportedEndpoints.includes("/v1/responses")
+        );
     if (task.id === "decide")
         return model.supportedEndpoints.includes("/alpha/decisions");
     if (model.category === "audio") return audioTaskForModel(model) === task.id;
@@ -531,6 +633,7 @@ function acceptsFramePair(model: PlaygroundModel) {
 
 function matchesModelFilter(model: PlaygroundModel, filter: string) {
     if (filter === "All") return true;
+    if (model.agent) return matchesAgentFilter(model, filter);
     if (model.category === "audio") return audioGroupForModel(model) === filter;
     if (model.category === "video") {
         if (filter === videoFilters.end_frame) return acceptsFramePair(model);
@@ -578,7 +681,10 @@ function ModelPicker({
     selectedModel,
     isLoading,
     onSelectModel,
+    details,
 }: {
+    /** The selected model's description and badges, shown under the selector. */
+    details?: ReactNode;
     models: PlaygroundModel[];
     stats: ModelRunStat[];
     costByModel: ReadonlyMap<string, number | null | undefined>;
@@ -599,14 +705,15 @@ function ModelPicker({
         if (value === "Fast") return fastModels.has(model.id);
         return matchesModelFilter(model, value);
     }
-    const filterOptions =
-        category === "video"
-            ? ["All", ...Object.values(videoFilters)]
-            : imageModels
-              ? imageFilterOptions
-              : category === "audio"
-                ? audioFilters
-                : [];
+    const filterOptions = models[0]?.agent
+        ? agentFilters
+        : category === "video"
+          ? ["All", ...Object.values(videoFilters)]
+          : imageModels
+            ? imageFilterOptions
+            : category === "audio"
+              ? audioFilters
+              : [];
     const [questOnly, setQuestOnly] = useState(false);
     const eligibleModels = questOnly
         ? models.filter((model) => !model.paidOnly)
@@ -651,224 +758,258 @@ function ModelPicker({
     }
 
     return (
-        <div className="flex min-w-0 items-center gap-2">
-            {stepButton(-1)}
-            <div className="min-w-0 flex-1">
-                <Dropdown
-                    portalled={false}
-                    onOpenChange={(open) => {
-                        if (!open) {
-                            setFilter("All");
-                            setQuestOnly(false);
-                        }
-                    }}
-                    className="w-[var(--reference-width)] overscroll-y-contain p-2"
-                    trigger={(open) => (
-                        <Button
-                            type="button"
-                            intent="neutral"
-                            size="lg"
-                            disabled={isLoading || models.length === 0}
-                            className="w-full touch-pan-y justify-between gap-2 pr-3 pl-6"
-                            title={selected?.title}
-                            aria-label={`Model: ${selected?.title ?? (models.length ? "Choose a model" : "Unavailable")}`}
-                            aria-description={
-                                selected &&
-                                [
-                                    selected.paidOnly
-                                        ? "Uses paid balance only"
-                                        : "Works with any balance",
-                                    selected.publisher,
-                                    isNewModel(selected.addedDate)
-                                        ? "New"
-                                        : undefined,
-                                ]
-                                    .filter(Boolean)
-                                    .join(", ")
+        <div className="flex min-w-0 flex-col gap-3">
+            <div className="flex min-w-0 items-center gap-2">
+                <div className="min-w-0 flex-1">
+                    <Dropdown
+                        portalled={false}
+                        onOpenChange={(open) => {
+                            if (!open) {
+                                setFilter("All");
+                                setQuestOnly(false);
                             }
-                            onPointerDown={(event) => {
-                                swiped.current = false;
-                                swipeStart.current =
-                                    canStep &&
-                                    event.pointerType === "touch" &&
-                                    event.isPrimary
-                                        ? {
-                                              x: event.clientX,
-                                              y: event.clientY,
-                                          }
-                                        : null;
-                            }}
-                            onPointerCancel={() => {
-                                swipeStart.current = null;
-                            }}
-                            onPointerUp={(event) => {
-                                const start = swipeStart.current;
-                                swipeStart.current = null;
-                                if (!start || !canStep) return;
-                                const dx = event.clientX - start.x;
-                                if (
-                                    Math.abs(dx) < 40 ||
-                                    Math.abs(dx) <=
-                                        Math.abs(event.clientY - start.y)
-                                )
-                                    return;
-                                swiped.current = true;
-                                step(dx < 0 ? 1 : -1);
-                            }}
-                            onClickCapture={(event) => {
-                                if (swiped.current && event.detail > 0) {
-                                    event.preventDefault();
-                                    event.stopPropagation();
+                        }}
+                        className="w-[var(--reference-width)] overscroll-y-contain rounded-card! bg-[linear-gradient(var(--polli-color-bg-subtle),var(--polli-color-bg-subtle)),linear-gradient(var(--polli-color-surface-opaque),var(--polli-color-surface-opaque))]! p-2"
+                        trigger={(open) => (
+                            <Button
+                                type="button"
+                                intent="neutral"
+                                size="lg"
+                                disabled={isLoading || models.length === 0}
+                                className="w-full touch-pan-y justify-between gap-2 px-5 text-lg font-semibold"
+                                title={selected?.title}
+                                aria-label={`Model: ${selected?.title ?? (models.length ? "Choose a model" : "Unavailable")}`}
+                                aria-description={
+                                    selected &&
+                                    [
+                                        selected.paidOnly
+                                            ? "Uses paid balance only"
+                                            : "Works with any balance",
+                                        selected.publisher,
+                                        isNewModel(selected.addedDate)
+                                            ? "New"
+                                            : undefined,
+                                    ]
+                                        .filter(Boolean)
+                                        .join(", ")
                                 }
-                                swiped.current = false;
-                            }}
-                        >
-                            <span
-                                className="flex min-w-0 flex-1 text-left"
-                                aria-live="polite"
+                                onPointerDown={(event) => {
+                                    swiped.current = false;
+                                    swipeStart.current =
+                                        canStep &&
+                                        event.pointerType === "touch" &&
+                                        event.isPrimary
+                                            ? {
+                                                  x: event.clientX,
+                                                  y: event.clientY,
+                                              }
+                                            : null;
+                                }}
+                                onPointerCancel={() => {
+                                    swipeStart.current = null;
+                                }}
+                                onPointerUp={(event) => {
+                                    const start = swipeStart.current;
+                                    swipeStart.current = null;
+                                    if (!start || !canStep) return;
+                                    const dx = event.clientX - start.x;
+                                    if (
+                                        Math.abs(dx) < 40 ||
+                                        Math.abs(dx) <=
+                                            Math.abs(event.clientY - start.y)
+                                    )
+                                        return;
+                                    swiped.current = true;
+                                    step(dx < 0 ? 1 : -1);
+                                }}
+                                onClickCapture={(event) => {
+                                    if (swiped.current && event.detail > 0) {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                    }
+                                    swiped.current = false;
+                                }}
                             >
-                                {isLoading ? (
-                                    "Loading models…"
-                                ) : selected ? (
-                                    <MediaModelOption
-                                        model={selected}
-                                        showPricing={false}
-                                    />
-                                ) : models.length ? (
-                                    "Choose a model"
-                                ) : (
-                                    "No models available"
-                                )}
-                            </span>
-                            <ChevronIcon expanded={open} />
-                        </Button>
-                    )}
-                >
-                    {(close) => (
-                        <ScrollArea
-                            ref={modelMenu}
-                            className="max-h-[min(26rem,60dvh)] overscroll-y-contain"
-                        >
-                            {filters.length > 1 && (
-                                <fieldset
-                                    aria-label={`Filter ${category} models`}
-                                    className="sticky top-0 z-10 mb-1 flex flex-wrap gap-1 border-b border-theme-text-muted/20 bg-surface-menu pt-1 pr-px pb-2 pl-1"
+                                <span
+                                    className="flex min-w-0 flex-1 text-left"
+                                    aria-live="polite"
                                 >
-                                    {filters.map((value) => (
+                                    {isLoading ? (
+                                        "Loading models…"
+                                    ) : selected ? (
+                                        <MediaModelOption
+                                            model={selected}
+                                            iconClassName="size-6 text-(--polli-color-text-display)"
+                                            showPricing={false}
+                                        />
+                                    ) : models.length ? (
+                                        "Choose a model"
+                                    ) : (
+                                        "No models available"
+                                    )}
+                                </span>
+                                <ChevronIcon expanded={open} />
+                            </Button>
+                        )}
+                    >
+                        {(close) => (
+                            <ScrollArea
+                                ref={modelMenu}
+                                className="max-h-[min(26rem,60dvh)] overscroll-y-contain"
+                            >
+                                {filters.length > 1 && (
+                                    <fieldset
+                                        aria-label={`Filter ${category} models`}
+                                        className="sticky top-0 z-10 mb-1 flex flex-wrap gap-1 border-b border-theme-text-muted/20 bg-[linear-gradient(var(--polli-color-bg-subtle),var(--polli-color-bg-subtle)),linear-gradient(var(--polli-color-surface-opaque),var(--polli-color-surface-opaque))] pt-1 pr-px pb-2 pl-1"
+                                    >
+                                        {filters.map((value) => (
+                                            <TabButton
+                                                key={value}
+                                                active={value === activeFilter}
+                                                title={
+                                                    value === "Fast"
+                                                        ? "Fastest quarter by measured response time"
+                                                        : undefined
+                                                }
+                                                className="max-sm:px-2 max-sm:text-xs"
+                                                size="sm"
+                                                disabled={
+                                                    questOnly &&
+                                                    !eligibleModels.some(
+                                                        (model) =>
+                                                            matches(
+                                                                model,
+                                                                value,
+                                                            ),
+                                                    )
+                                                }
+                                                onClick={() => {
+                                                    setFilter(value);
+                                                    modelMenu.current?.scrollTo(
+                                                        0,
+                                                        0,
+                                                    );
+                                                }}
+                                            >
+                                                {value}
+                                            </TabButton>
+                                        ))}
                                         <TabButton
-                                            key={value}
-                                            active={value === activeFilter}
-                                            title={
-                                                value === "Fast"
-                                                    ? "Fastest quarter by measured response time"
-                                                    : undefined
-                                            }
-                                            className="max-sm:px-2 max-sm:text-xs"
+                                            active={questOnly}
                                             size="sm"
+                                            intent="green"
+                                            ariaLabel="Quests"
+                                            className="ml-auto size-9 shrink-0 p-0"
+                                            title="Show models that accept Quest balance"
                                             disabled={
-                                                questOnly &&
-                                                !eligibleModels.some((model) =>
-                                                    matches(model, value),
+                                                !questOnly &&
+                                                !visible.some(
+                                                    (model) => !model.paidOnly,
                                                 )
                                             }
                                             onClick={() => {
-                                                setFilter(value);
+                                                setQuestOnly(!questOnly);
                                                 modelMenu.current?.scrollTo(
                                                     0,
                                                     0,
                                                 );
                                             }}
                                         >
-                                            {value}
+                                            <WalletKindIcon
+                                                kind="tier"
+                                                className="size-4"
+                                            />
                                         </TabButton>
+                                    </fieldset>
+                                )}
+                                <div className="flex flex-col gap-1">
+                                    {visible.map((model, index) => (
+                                        <Fragment key={model.id}>
+                                            {isCommunityRun(model) &&
+                                                !(
+                                                    index > 0 &&
+                                                    isCommunityRun(
+                                                        visible[index - 1],
+                                                    )
+                                                ) && (
+                                                    <p className="flex items-center gap-2 px-3 pt-2 pb-1 text-xs text-theme-text-muted before:h-px before:w-3 before:bg-theme-text-muted/30 after:h-px after:flex-1 after:bg-theme-text-muted/30">
+                                                        Community · run by their
+                                                        publishers
+                                                    </p>
+                                                )}
+                                            <TabButton
+                                                active={
+                                                    model.id === selectedModel
+                                                }
+                                                size="sm"
+                                                variant="ghost"
+                                                aria-description={
+                                                    model.publisher
+                                                }
+                                                className="play-model-option w-full justify-start pr-0 text-left"
+                                                onClick={() => {
+                                                    onSelectModel(
+                                                        model,
+                                                        activeFilter !==
+                                                            "All" &&
+                                                            activeFilter !==
+                                                                "Fast" &&
+                                                            (imageModels ||
+                                                                category ===
+                                                                    "video")
+                                                            ? activeFilter
+                                                            : undefined,
+                                                    );
+                                                    close();
+                                                }}
+                                            >
+                                                <MediaModelOption
+                                                    model={model}
+                                                    perDollar={estimatePerDollar(
+                                                        model,
+                                                        costByModel.get(
+                                                            model.id,
+                                                        ),
+                                                    )}
+                                                />
+                                            </TabButton>
+                                        </Fragment>
                                     ))}
-                                    <TabButton
-                                        active={questOnly}
-                                        size="sm"
-                                        intent="green"
-                                        ariaLabel="Quests"
-                                        className="ml-auto size-9 shrink-0 p-0"
-                                        title="Show models that accept Quest balance"
-                                        disabled={
-                                            !questOnly &&
-                                            !visible.some(
-                                                (model) => !model.paidOnly,
-                                            )
-                                        }
-                                        onClick={() => {
-                                            setQuestOnly(!questOnly);
-                                            modelMenu.current?.scrollTo(0, 0);
-                                        }}
-                                    >
-                                        <WalletKindIcon
-                                            kind="tier"
-                                            className="size-4"
-                                        />
-                                    </TabButton>
-                                </fieldset>
-                            )}
-                            <div className="flex flex-col gap-1">
-                                {visible.map((model) => (
-                                    <TabButton
-                                        key={model.id}
-                                        active={model.id === selectedModel}
-                                        size="sm"
-                                        variant="ghost"
-                                        aria-description={model.publisher}
-                                        className="play-model-option w-full justify-start pr-0 text-left"
-                                        onClick={() => {
-                                            onSelectModel(
-                                                model,
-                                                activeFilter !== "All" &&
-                                                    activeFilter !== "Fast" &&
-                                                    (imageModels ||
-                                                        category === "video")
-                                                    ? activeFilter
-                                                    : undefined,
-                                            );
-                                            close();
-                                        }}
-                                    >
-                                        <MediaModelOption
-                                            model={model}
-                                            perDollar={estimatePerDollar(
-                                                model,
-                                                costByModel.get(model.id),
-                                            )}
-                                        />
-                                    </TabButton>
-                                ))}
-                            </div>
-                        </ScrollArea>
-                    )}
-                </Dropdown>
+                                </div>
+                            </ScrollArea>
+                        )}
+                    </Dropdown>
+                </div>
+                {stepButton(-1)}
+                {stepButton(1)}
             </div>
-            {stepButton(1)}
+            {details && <div className="flex flex-col gap-2">{details}</div>}
         </div>
     );
 }
 
 function RunStatBadge({
-    label,
-    value,
+    cost,
+    time,
     walletKind,
-    detail,
-    href,
-    linkLabel,
+    costDetail,
+    pricingHref,
 }: {
-    label: string;
-    value?: string;
-    walletKind?: WalletKindIconProps["kind"];
-    detail: string;
-    href: string;
-    linkLabel: string;
+    cost?: string;
+    time?: string;
+    walletKind: WalletKindIconProps["kind"];
+    costDetail: string;
+    pricingHref: string;
 }) {
     const id = useId();
     const panel = useRef<HTMLDivElement>(null);
     const anchor = `--stat-${id}`;
+    const hidePanel = () => panel.current?.hidePopover();
 
     return (
+        // Inline: it opens the sentence that the description continues.
         <div
+            className="inline"
             onPointerEnter={(event) => {
                 if (event.pointerType === "mouse") panel.current?.showPopover();
             }}
@@ -877,7 +1018,7 @@ function RunStatBadge({
                     event.pointerType === "mouse" &&
                     !panel.current?.contains(document.activeElement)
                 ) {
-                    panel.current?.hidePopover();
+                    hidePanel();
                 }
             }}
         >
@@ -886,48 +1027,79 @@ function RunStatBadge({
                 popoverTarget={id}
                 popoverTargetAction="show"
                 style={{ anchorName: anchor }}
-                aria-label={`${label} ${value ?? "unavailable"}`}
-                className="flex cursor-help rounded-lg"
+                aria-label={`Average cost ${cost ?? "unavailable"}, average time ${time ?? "unavailable"}`}
+                className="inline-flex cursor-help items-baseline gap-1 rounded-sm tabular-nums"
             >
-                <Chip size="md" data-theme="neutral" className="tabular-nums">
-                    <span className="text-theme-text-muted">{label}</span>{" "}
-                    {walletKind ? (
-                        <>
-                            <span
-                                className={
-                                    walletKind === "paid"
-                                        ? "polli-wallet-text-paid"
-                                        : "polli-wallet-text-tier"
-                                }
-                            >
-                                {value ?? "—"}
-                            </span>
-                            <WalletKindIcon kind={walletKind} />
-                        </>
-                    ) : (
-                        (value ?? "—")
-                    )}
-                </Chip>
+                {cost || time ? (
+                    <>
+                        <span
+                            className={
+                                walletKind === "paid"
+                                    ? "polli-wallet-text-paid"
+                                    : "polli-wallet-text-tier"
+                            }
+                        >
+                            {cost ?? "—"}
+                        </span>
+                        <WalletKindIcon
+                            kind={walletKind}
+                            className="self-center"
+                        />
+                        <span
+                            aria-hidden="true"
+                            className="text-theme-text-muted"
+                        >
+                            ·
+                        </span>
+                        {time ?? "—"}
+                        <span className="text-theme-text-muted">
+                            on average
+                        </span>
+                    </>
+                ) : (
+                    <>
+                        <span className="text-theme-text-muted">
+                            Measuring…
+                        </span>
+                        <WalletKindIcon
+                            kind={walletKind}
+                            className="self-center"
+                        />
+                    </>
+                )}
             </button>
             <div
                 ref={panel}
                 id={id}
                 popover="auto"
                 style={{ positionAnchor: anchor }}
-                className="play-stat-popover w-64 max-w-[calc(100vw-1.5rem)] rounded-lg bg-surface-menu px-3 py-2 text-xs text-theme-text-base shadow-lg"
+                className="play-stat-popover w-64 max-w-[calc(100vw-1.5rem)] space-y-2 rounded-lg bg-surface-menu px-3 py-2 text-xs text-theme-text-base shadow-lg"
             >
                 <p>
-                    {value ? detail : "No estimate available for this model."}
+                    <strong>Cost.</strong>{" "}
+                    {cost ? costDetail : "No estimate available yet."}{" "}
+                    <InlineLink
+                        href={pricingHref}
+                        tone="quiet"
+                        style={{ fontWeight: "inherit" }}
+                    >
+                        Pricing
+                    </InlineLink>
                 </p>
-                <InlineLink
-                    href={href}
-                    onBlur={() => panel.current?.hidePopover()}
-                    tone="quiet"
-                    className="mt-1 inline-block"
-                    style={{ fontWeight: "inherit" }}
-                >
-                    {linkLabel}
-                </InlineLink>
+                <p>
+                    <strong>Time.</strong>{" "}
+                    {time
+                        ? "Average time to complete a successful request over the last 7 days."
+                        : "No estimate available yet."}{" "}
+                    <InlineLink
+                        href="https://model-monitor.pollinations.ai"
+                        onBlur={hidePanel}
+                        tone="quiet"
+                        style={{ fontWeight: "inherit" }}
+                    >
+                        Model Monitor
+                    </InlineLink>
+                </p>
             </div>
         </div>
     );
@@ -1037,7 +1209,111 @@ function BusyPlaceholder({ category }: { category: "image" | "video" }) {
     );
 }
 
-function ResultPanel({ result }: { result: PlaygroundResult }) {
+const clock = (seconds: number) =>
+    `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
+
+/** A clip with the basics in the site's own style: play, seek and time. */
+function ResultVideo({ src }: { src: string }) {
+    const video = useRef<HTMLVideoElement>(null);
+    const [playing, setPlaying] = useState(false);
+    const [position, setPosition] = useState(0);
+    const [duration, setDuration] = useState(0);
+    const toggle = () => {
+        const element = video.current;
+        if (!element) return;
+        if (element.paused) void element.play().catch(() => {});
+        else element.pause();
+    };
+    const seek = (seconds: number) => {
+        const next = Math.min(Math.max(seconds, 0), duration);
+        if (video.current) video.current.currentTime = next;
+        setPosition(next);
+    };
+    const readDuration = (element: HTMLVideoElement) =>
+        setDuration(Number.isFinite(element.duration) ? element.duration : 0);
+    return (
+        <div className="relative">
+            {/* The Play button below does the same for the keyboard. */}
+            <video
+                ref={video}
+                src={src}
+                playsInline
+                preload="metadata"
+                onClick={toggle}
+                onPlay={() => setPlaying(true)}
+                onPause={() => setPlaying(false)}
+                onEnded={() => setPlaying(false)}
+                onTimeUpdate={(event) =>
+                    setPosition(event.currentTarget.currentTime)
+                }
+                onLoadedMetadata={(event) => readDuration(event.currentTarget)}
+                onDurationChange={(event) => readDuration(event.currentTarget)}
+                className="block h-auto max-h-[min(70dvh,640px)] w-auto max-w-full cursor-pointer"
+            >
+                <track kind="captions" />
+            </video>
+            <div className="play-video-bar absolute inset-x-2 bottom-2 flex items-center gap-3 rounded-full bg-surface-opaque/90 py-1 pr-4 pl-1">
+                <Button
+                    size="icon"
+                    intent="neutral"
+                    aria-label={playing ? "Pause" : "Play"}
+                    title={playing ? "Pause" : "Play"}
+                    onClick={toggle}
+                    className="size-8! min-h-0! shrink-0 bg-transparent! p-0!"
+                >
+                    {playing ? (
+                        <PauseIcon className="size-4" />
+                    ) : (
+                        <PlayIcon className="size-4" />
+                    )}
+                </Button>
+                {/* A plain track: click or arrow keys to move through the clip. */}
+                <div
+                    role="slider"
+                    tabIndex={0}
+                    aria-label="Seek"
+                    aria-valuemin={0}
+                    aria-valuemax={Math.round(duration)}
+                    aria-valuenow={Math.round(position)}
+                    aria-valuetext={`${clock(position)} of ${clock(duration)}`}
+                    onClick={(event) => {
+                        const track =
+                            event.currentTarget.getBoundingClientRect();
+                        seek(
+                            ((event.clientX - track.left) / track.width) *
+                                duration,
+                        );
+                    }}
+                    onKeyDown={(event) => {
+                        if (event.key === "ArrowRight") seek(position + 1);
+                        else if (event.key === "ArrowLeft") seek(position - 1);
+                    }}
+                    className="play-video-extra relative h-1.5 min-w-0 flex-1 cursor-pointer rounded-full bg-theme-text-muted/30"
+                >
+                    <div
+                        className="absolute inset-y-0 left-0 rounded-full bg-(--polli-color-fill)"
+                        style={{
+                            width: `${duration ? (position / duration) * 100 : 0}%`,
+                        }}
+                    />
+                </div>
+                <span className="play-video-extra shrink-0 text-sm tabular-nums text-theme-text-strong">
+                    {clock(position)} / {clock(duration)}
+                </span>
+            </div>
+        </div>
+    );
+}
+
+function ResultPanel({
+    result,
+    playable = false,
+}: {
+    result: PlaygroundResult;
+    /** Give a clip its own controls in place, where it sits among pictures:
+     * the play button and its length say it is one. */
+    playable?: boolean;
+}) {
     const [expanded, setExpanded] = useState(false);
 
     if (result.type === "decision")
@@ -1109,7 +1385,13 @@ function ResultPanel({ result }: { result: PlaygroundResult }) {
                 <div className="relative w-fit max-w-full overflow-hidden rounded-card bg-surface-opaque text-theme-text-strong max-md:mx-auto">
                     <ResultDownloadButton
                         result={result}
-                        className="absolute bottom-3 right-3 z-10"
+                        className={cn(
+                            "absolute right-3 z-10",
+                            // Clear of a player's own controls.
+                            result.type === "video" && playable
+                                ? "top-3"
+                                : "bottom-3",
+                        )}
                     />
                     {result.type === "image" && (
                         <button
@@ -1126,7 +1408,10 @@ function ResultPanel({ result }: { result: PlaygroundResult }) {
                         </button>
                     )}
 
-                    {result.type === "video" && (
+                    {result.type === "video" && playable && (
+                        <ResultVideo src={result.url} />
+                    )}
+                    {result.type === "video" && !playable && (
                         // The inline preview drops its native controls so the
                         // whole frame is one click target for the lightbox —
                         // nesting controls inside a button would fight it.
@@ -1162,13 +1447,7 @@ function ResultPanel({ result }: { result: PlaygroundResult }) {
     );
 }
 
-export function Playground({
-    connectRef,
-    drafts,
-}: {
-    connectRef: RefObject<(() => void) | null>;
-    drafts: ConnectDrafts;
-}) {
+export function Playground({ drafts }: { drafts: ConnectDrafts }) {
     const dimensionsLabelId = useId();
     const { apiKey, isLoggedIn, isHydrated, error: authError } = useAuthState();
     const { login } = useAuthActions();
@@ -1204,9 +1483,14 @@ export function Playground({
         params.task === "gif" || (!params.task && params.tab === "gif");
     const task =
         TASKS.find((item) => item.id === (legacyGif ? "image" : params.task)) ??
-        TASKS.find((item) => item.workspace.category === params.tab) ??
+        TASKS.find(
+            (item) =>
+                item.workspace.category === params.tab ||
+                item.id === params.tab,
+        ) ??
         TASKS[0];
     const isDecide = task.id === "decide";
+    const isAgent = task.id === "agent";
     const activeCategory = task.workspace.category;
     const lastTask = useRef(new Map<Workspace, Task>());
     const taskDrafts = useRef(drafts);
@@ -1315,12 +1599,14 @@ export function Playground({
     // Community models stay off the playground menu: this page pitches the
     // official catalog, and owner/model entries would double the list. Every
     // pick below goes through this so state never lands on a hidden model.
+    // Agents are the exception: they are all community models.
     const visibleModels = useMemo(
         () =>
             catalog.models
                 .filter(
                     (model) =>
-                        !model.community && model.health?.status !== "down",
+                        (!model.community || model.agent) &&
+                        model.health?.status !== "down",
                 )
                 .map(playgroundModel)
                 .filter((model): model is PlaygroundModel => model !== null)
@@ -1371,6 +1657,9 @@ export function Playground({
         return visibleModels
             .filter((model) => tasks.some((item) => supportsTask(model, item)))
             .sort((a, b) => {
+                const community =
+                    Number(isCommunityRun(a)) - Number(isCommunityRun(b));
+                if (community) return community;
                 const aNew = isNewModel(a.addedDate);
                 const bNew = isNewModel(b.addedDate);
                 if (aNew !== bNew) return aNew ? -1 : 1;
@@ -1433,11 +1722,13 @@ export function Playground({
             }
         }
         if (selectedModel || !stats) return;
-        const first = pickerModels.find(
+        const usable = pickerModels.filter(
             (model) =>
                 (!isLoggedIn || catalog.allowedModelIds.has(model.id)) &&
                 (!params.task || supportsTask(model, task)),
         );
+        const first =
+            usable.find((model) => model.id === DEFAULT_AGENT_ID) ?? usable[0];
         if (first) {
             setParams((previous) => ({
                 ...previous,
@@ -1558,16 +1849,28 @@ export function Playground({
     const MediaUploadIcon = isAudioTranscription
         ? MicIcon
         : CATEGORY_ICON[uploadMedia[0] ?? "audio"];
-    const showPromptInput = formatInfo
-        ? formatInfo.input_modalities.includes("text")
-        : currentModel?.category !== "audio" ||
-          (transcription?.prompt ??
-              currentModel.inputModalities.includes("text"));
-    const promptLabel = isDecide
-        ? "Context"
-        : isAudioTranscription
-          ? "Instructions"
-          : "Description";
+    const showPromptInput =
+        !isAgent &&
+        (formatInfo
+            ? formatInfo.input_modalities.includes("text")
+            : currentModel?.category !== "audio" ||
+              (transcription?.prompt ??
+                  currentModel.inputModalities.includes("text")));
+    const agentChat = useAgentChat(
+        isAgent ? currentModel?.id : undefined,
+        async (file) => {
+            if (!session) throw new Error("Connect to attach images.");
+            return uploadReference(session.client, file, session.referenceUrls);
+        },
+        isAgent && !!currentModel && takesFileLinks(currentModel),
+    );
+    const promptLabel = isAgent
+        ? "Message"
+        : isDecide
+          ? "Context"
+          : isAudioTranscription
+            ? "Instructions"
+            : "Description";
     const selectedModelAllowed =
         !!currentModel &&
         isLoggedIn &&
@@ -1580,6 +1883,14 @@ export function Playground({
                   ),
               )
             : [];
+    // An agent takes audio and video links like the Video tab's references.
+    const agentKinds =
+        isAgent && currentModel ? agentAttachments(currentModel) : [];
+    const queueMedia = isAgent
+        ? UPLOAD_MEDIA_ORDER.filter(
+              (media) => media !== "image" && agentKinds.includes(media),
+          )
+        : videoReferenceMedia;
     const hasReferenceMedia = videoReferenceMedia.some(
         (media) => videoReferences[media].length > 0,
     );
@@ -1726,12 +2037,20 @@ export function Playground({
                             : { reference_audio: "YOUR_UPLOADED_AUDIO_URL" }
                         : {}),
               }
-            : decisionRequest;
-    const postEndpoint = isDecide
-        ? "/alpha/decisions"
-        : currentAudioEndpoint === "/audio/{text}"
-          ? "/v1/audio/speech"
-          : currentAudioEndpoint;
+            : isAgent && currentModel
+              ? {
+                    model: currentModel.id,
+                    input: prompt.trim() || "your-message-here",
+                    stream: true,
+                }
+              : decisionRequest;
+    const postEndpoint = isAgent
+        ? "/v1/responses"
+        : isDecide
+          ? "/alpha/decisions"
+          : currentAudioEndpoint === "/audio/{text}"
+            ? "/v1/audio/speech"
+            : currentAudioEndpoint;
     const apiUrl = currentModel
         ? apiMethod === "POST"
             ? `${API_BASE_URL}${postEndpoint}`
@@ -2041,22 +2360,25 @@ export function Playground({
     const editsImage =
         currentModel?.category === "image" &&
         (requiresImage || (acceptsImageParam && referenceImages.length > 0));
-    const generateLabel = isDecide
-        ? "Evaluate"
-        : currentModel?.category === "video"
-          ? "Generate video"
-          : currentModel?.category === "audio"
-            ? isAudioTranscription
-                ? "Transcribe audio"
-                : currentAudioEndpoint === "/v1/audio/voice-changer"
-                  ? "Change voice"
-                  : currentAudioEndpoint === "/v1/audio/voice-isolator"
-                    ? "Isolate speech"
-                    : currentAudioEndpoint === "/alpha/audio/stem-separation"
-                      ? "Separate stems"
-                      : "Generate audio"
-            : imageActionLabel(editsImage, format);
-    const GenerateIcon = task.workspace.icon;
+    const generateLabel = isAgent
+        ? "Send"
+        : isDecide
+          ? "Evaluate"
+          : currentModel?.category === "video"
+            ? "Generate video"
+            : currentModel?.category === "audio"
+              ? isAudioTranscription
+                  ? "Transcribe audio"
+                  : currentAudioEndpoint === "/v1/audio/voice-changer"
+                    ? "Change voice"
+                    : currentAudioEndpoint === "/v1/audio/voice-isolator"
+                      ? "Isolate speech"
+                      : currentAudioEndpoint === "/alpha/audio/stem-separation"
+                        ? "Separate stems"
+                        : "Generate audio"
+              : imageActionLabel(editsImage, format);
+    const GenerateIcon =
+        isAgent && agentChat.busy ? XIcon : task.workspace.icon;
     const busyLabel = isDecide
         ? "Evaluating…"
         : isAudioTranscription
@@ -2069,7 +2391,12 @@ export function Playground({
     const againLabel = generateLabel.startsWith("Generate ")
         ? "Generate again"
         : generateLabel;
-    const generateText = (
+    const generateText = isAgent ? (
+        <StableLabel
+            text={agentChat.busy ? "Stop" : "Send"}
+            options={["Send", "Stop"]}
+        />
+    ) : (
         <StableLabel
             text={
                 isGenerating ? busyLabel : result ? againLabel : generateLabel
@@ -2082,9 +2409,14 @@ export function Playground({
     // Signed out is a step, not a fault — handled by the button itself.
     const needsSignIn = isHydrated && !apiKey;
     const needsEditImage = requiresImage && referenceImages.length === 0;
-    const missingInput = requiresMediaUpload
-        ? audioFiles.length === 0
-        : !prompt.trim();
+    const missingInput = isAgent
+        ? !agentChat.busy &&
+          !prompt.trim() &&
+          referenceImages.length === 0 &&
+          referenceQueue.length === 0
+        : requiresMediaUpload
+          ? audioFiles.length === 0
+          : !prompt.trim();
 
     /** Why the button cannot fire, or null when it can. Shown beside the button. */
     const blockedReason = recording
@@ -2142,8 +2474,17 @@ export function Playground({
             });
         }
     }
-    useImperativeHandle(connectRef, () => connect);
-    const run = needsSignIn ? connect : generate;
+    function sendToAgent() {
+        if (agentChat.busy) return agentChat.stop();
+        agentChat.send(prompt.trim(), [
+            ...(agentKinds.includes("image") ? referenceImages : []),
+            ...referenceQueue.map(({ file }) => file),
+        ]);
+        setParam("prompt", "");
+        setReferenceImages([]);
+        setReferenceQueue([]);
+    }
+    const run = needsSignIn ? connect : isAgent ? sendToAgent : generate;
     const modelStats = stats?.find((stat) => stat.model === currentModel?.id);
     const cost =
         formatRunCost(modelStats?.avg_cost_usd) ??
@@ -2157,7 +2498,12 @@ export function Playground({
             maxBytes={maxBytes}
             onRecord={onRecord}
             onBusyChange={setRecordingVideo}
-            disabled={recordingAudio || isGenerating || mediaDisabled}
+            disabled={
+                recordingAudio ||
+                isGenerating ||
+                mediaDisabled ||
+                agentChat.busy
+            }
         />
     );
     const audioUploadProps = acceptsMediaUpload
@@ -2221,13 +2567,14 @@ export function Playground({
         ) : null;
     const queuedTiles = referenceQueue.map(
         (item) =>
-            videoReferenceMedia.includes(item.media) && (
+            queueMedia.includes(item.media) && (
                 <UploadedFileTile
                     key={item.id}
                     drop={videoUploadProps(item.media)}
                     file={item.file}
                     modality={item.media}
                     disabled={
+                        agentChat.busy ||
                         (item.media === "audio" &&
                             (recording || isGenerating)) ||
                         (item.media === "video" && recordingVideo)
@@ -2243,9 +2590,47 @@ export function Playground({
                 />
             ),
     );
-    const videoPicker = videoReferenceMedia.includes("video")
+    const videoPicker = queueMedia.includes("video")
         ? videoUploadProps("video")
         : undefined;
+    const mediaTiles = (
+        <>
+            {queueMedia.map((media) => {
+                const props = videoUploadProps(media);
+                return media === "audio" ? (
+                    <AudioInput
+                        key={`${currentModel?.id}-audio`}
+                        actionsOnly
+                        {...props}
+                        onBusyChange={setRecordingAudio}
+                        disabled={
+                            isGenerating ||
+                            recordingVideo ||
+                            mediaDisabled ||
+                            agentChat.busy
+                        }
+                    />
+                ) : (
+                    <FileUpload
+                        key={media}
+                        actionsOnly
+                        {...props}
+                        disabled={
+                            mediaDisabled ||
+                            agentChat.busy ||
+                            (media === "video" && recordingVideo)
+                        }
+                        label={capitalize(media)}
+                    />
+                );
+            })}
+            {videoPicker &&
+                videoPicker.value.length < videoPicker.maxFiles &&
+                cameraTile(videoPicker.maxSizeBytes, (file) =>
+                    videoPicker.onChange([...videoPicker.value, file]),
+                )}
+        </>
+    );
     const frameTiles =
         supportsFrames &&
         (supportsLastFrame
@@ -2283,36 +2668,6 @@ export function Playground({
         ));
     return (
         <div className="relative z-10 flex w-full flex-col pb-12 text-theme-text-base sm:pb-16">
-            <fieldset
-                aria-label="Playground task"
-                className="m-0 flex min-w-0 flex-wrap gap-2 border-0 p-0"
-            >
-                {WORKSPACES.map((item) => (
-                    <ModalityTab
-                        key={item.label}
-                        active={item === task.workspace}
-                        size="lg"
-                        modality={
-                            item.category === "decision"
-                                ? "text"
-                                : item.category
-                        }
-                        icon={item.icon}
-                        onClick={() => {
-                            if (item === task.workspace) return;
-                            const next =
-                                lastTask.current.get(item) ??
-                                TASKS.find(
-                                    (candidate) => candidate.workspace === item,
-                                );
-                            if (next) selectTask(next);
-                        }}
-                    >
-                        {item.label}
-                    </ModalityTab>
-                ))}
-            </fieldset>
-
             <div className="grid grid-cols-1 overflow-clip">
                 {catalogError && (
                     <div className="pt-4">
@@ -2321,7 +2676,63 @@ export function Playground({
                         </Alert>
                     </div>
                 )}
-                <div className="flex flex-col gap-4 pt-6">
+                <div className="flex flex-col gap-4 pt-1">
+                    {/* Connect sits midway between the page intro and the tabs. */}
+                    <div className="mb-7 flex flex-wrap items-center gap-x-4 gap-y-2">
+                        <div inert={!isHydrated}>
+                            <AppUserMenu
+                                connectSize="lg"
+                                onConnect={connect}
+                                labels={{
+                                    authorize: "Connect",
+                                    logout: "Disconnect app",
+                                }}
+                            />
+                        </div>
+                        {isHydrated && (
+                            <Text
+                                size="xs"
+                                tone="muted"
+                                className="min-w-0 max-w-72 flex-1 basis-44"
+                            >
+                                Want this button in your app? Your users pay
+                                with their own balance.{" "}
+                                <InlineLink href={LINKS.byopDocs} tone="quiet">
+                                    How it works
+                                </InlineLink>
+                            </Text>
+                        )}
+                    </div>
+                    <fieldset
+                        aria-label="Playground task"
+                        className="m-0 flex min-w-0 flex-wrap gap-2 border-0 p-0"
+                    >
+                        {WORKSPACES.map((item) => (
+                            <ModalityTab
+                                key={item.label}
+                                active={item === task.workspace}
+                                size="lg"
+                                modality={
+                                    item.category === "decision"
+                                        ? "text"
+                                        : item.category
+                                }
+                                icon={item.icon}
+                                onClick={() => {
+                                    if (item === task.workspace) return;
+                                    const next =
+                                        lastTask.current.get(item) ??
+                                        TASKS.find(
+                                            (candidate) =>
+                                                candidate.workspace === item,
+                                        );
+                                    if (next) selectTask(next);
+                                }}
+                            >
+                                {item.label}
+                            </ModalityTab>
+                        ))}
+                    </fieldset>
                     {isHydrated &&
                         !isLoading &&
                         !catalogError &&
@@ -2332,559 +2743,633 @@ export function Playground({
                                 another model to continue.
                             </Alert>
                         )}
-                    <section
-                        aria-label="Model details"
-                        className="@container flex min-w-0 flex-col gap-2"
-                    >
-                        <ModelPicker
-                            key={activeCategory}
-                            models={pickerModels}
-                            stats={stats ?? []}
-                            costByModel={costByModel}
-                            selectedModel={selectedModel}
-                            isLoading={isLoading || !isHydrated}
-                            onSelectModel={selectModel}
-                        />
-                        {currentModel && (
-                            <>
-                                {currentModel.description && (
-                                    <Text tone="soft" data-theme="accent">
-                                        {currentModel.description}
-                                    </Text>
-                                )}
-                                <div className="flex flex-wrap items-center gap-2 text-xs">
-                                    <RunStatBadge
-                                        label="Typical cost"
-                                        value={cost}
-                                        walletKind={
-                                            currentModel.paidOnly
-                                                ? "paid"
-                                                : "tier"
-                                        }
-                                        detail={
-                                            cost === "Free"
-                                                ? "This model is free to use."
-                                                : "Median cost of a successful paid request over the last 7 days. Your settings can change the price."
-                                        }
-                                        href={`${ENTER_URL}/models?${new URLSearchParams({ category: currentModel.category, q: currentModel.id })}`}
-                                        linkLabel="Pricing"
-                                    />
-                                    <RunStatBadge
-                                        label="Average time"
-                                        value={time}
-                                        detail="Average time to complete a successful request over the last 7 days."
-                                        href="https://model-monitor.pollinations.ai"
-                                        linkLabel="Model Monitor"
-                                    />
-                                </div>
-                            </>
-                        )}
-                    </section>
-                    <Surface
-                        as="section"
-                        variant="card"
-                        aria-label="Generation inputs"
-                        className="@container/play-inputs flex flex-col gap-5"
-                    >
-                        <fieldset
-                            aria-label="Model input"
-                            className="flex min-w-0 flex-col gap-3"
+                    {/* The setup in one card: the model, then what goes into
+                        it. The action stays outside, below. */}
+                    <div className="flex min-w-0 flex-col gap-4 rounded-card bg-surface-opaque p-4">
+                        <section
+                            aria-label="Model"
+                            className="@container min-w-0"
                         >
-                            {showPromptInput && (
-                                <FieldStack
-                                    label={isDecide ? "Context" : undefined}
-                                    orientation={
-                                        isDecide ? "inline" : "stacked"
-                                    }
-                                    className={
-                                        isDecide
-                                            ? "[&>div:first-child]:self-start [&>div:first-child]:pt-2"
-                                            : undefined
-                                    }
-                                >
-                                    <Textarea
-                                        aria-label={
-                                            isAudioTranscription
-                                                ? "Instructions (optional)"
-                                                : promptLabel
+                            <ModelPicker
+                                key={activeCategory}
+                                models={pickerModels}
+                                stats={stats ?? []}
+                                costByModel={costByModel}
+                                selectedModel={selectedModel}
+                                isLoading={isLoading || !isHydrated}
+                                onSelectModel={selectModel}
+                                details={
+                                    currentModel && (
+                                        <>
+                                            {/* What the model does, then what
+                                            else it can do. Its price sits by
+                                            the button that spends it. */}
+                                            {currentModel.description && (
+                                                <Text
+                                                    as="div"
+                                                    size="sm"
+                                                    data-theme="neutral"
+                                                    className="w-fit max-w-full rounded-lg bg-theme-bg-active px-2.5 py-0.5 leading-5! text-theme-text-strong"
+                                                >
+                                                    {currentModel.description}
+                                                </Text>
+                                            )}
+                                            <div className="flex flex-wrap items-start gap-2 empty:hidden">
+                                                {modelAbilities(
+                                                    currentModel,
+                                                ).some(
+                                                    (ability) =>
+                                                        !ability.shownByInputs,
+                                                ) && (
+                                                    <ul
+                                                        aria-label="Abilities"
+                                                        className="contents list-none"
+                                                    >
+                                                        {modelAbilities(
+                                                            currentModel,
+                                                        )
+                                                            .filter(
+                                                                (ability) =>
+                                                                    !ability.shownByInputs,
+                                                            )
+                                                            .map(
+                                                                ({
+                                                                    label,
+                                                                    Icon,
+                                                                }) => (
+                                                                    <li
+                                                                        key={
+                                                                            label
+                                                                        }
+                                                                        className="flex"
+                                                                    >
+                                                                        <Chip
+                                                                            size="md"
+                                                                            data-theme="neutral"
+                                                                            className="gap-1"
+                                                                        >
+                                                                            <Icon
+                                                                                aria-hidden="true"
+                                                                                className="size-3.5 text-intent-info-text"
+                                                                            />
+                                                                            {
+                                                                                label
+                                                                            }
+                                                                        </Chip>
+                                                                    </li>
+                                                                ),
+                                                            )}
+                                                    </ul>
+                                                )}
+                                            </div>
+                                        </>
+                                    )
+                                }
+                            />
+                        </section>
+                        <section
+                            aria-label="Generation inputs"
+                            className="play-inputs @container/play-inputs flex min-w-0 flex-col gap-5"
+                        >
+                            <fieldset
+                                aria-label="Model input"
+                                className="flex min-w-0 flex-col gap-3"
+                            >
+                                {isAgent && currentModel && (
+                                    <AgentChat
+                                        agentTitle={currentModel.title}
+                                        turns={agentChat.turns}
+                                        draft={prompt}
+                                        onDraftChange={(value) =>
+                                            setParam("prompt", value)
                                         }
-                                        value={prompt}
-                                        rows={
-                                            isAudioTranscription || isDecide
-                                                ? 3
-                                                : 7
-                                        }
-                                        onChange={(event) =>
-                                            setParam(
-                                                "prompt",
-                                                event.target.value,
+                                        onSubmit={() => {
+                                            if (
+                                                !blockedReason &&
+                                                !agentChat.busy
+                                            )
+                                                run();
+                                        }}
+                                        onRetry={agentChat.retry}
+                                        renderMedia={(url) => (
+                                            <AgentMedia url={url} />
+                                        )}
+                                        attachments={
+                                            agentKinds.length > 0 && (
+                                                <div className="flex flex-col gap-2">
+                                                    <div className="flex flex-wrap items-start gap-3">
+                                                        {agentKinds.includes(
+                                                            "image",
+                                                        ) && (
+                                                            <FileUpload
+                                                                value={
+                                                                    referenceImages
+                                                                }
+                                                                onChange={
+                                                                    setReferenceImages
+                                                                }
+                                                                maxFiles={
+                                                                    maxReferenceImages
+                                                                }
+                                                                disabled={
+                                                                    agentChat.busy
+                                                                }
+                                                                {...uploadProps(
+                                                                    ["image"],
+                                                                    `Use up to ${maxReferenceImages} images.`,
+                                                                )}
+                                                                label="Image"
+                                                            />
+                                                        )}
+                                                        {queuedTiles}
+                                                        {mediaTiles}
+                                                    </div>
+                                                    {(referenceImages.length >
+                                                        0 ||
+                                                        referenceQueue.length >
+                                                            0) && (
+                                                        <UploadPrivacyNote />
+                                                    )}
+                                                </div>
                                             )
                                         }
-                                        onKeyDown={(event) => {
-                                            if (
-                                                event.key === "Enter" &&
-                                                (event.metaKey || event.ctrlKey)
-                                            ) {
-                                                event.preventDefault();
-                                                run();
-                                            }
-                                        }}
-                                        placeholder={promptPlaceholder(
-                                            task,
-                                            editsImage,
-                                            format,
-                                        )}
-                                        className={cn(
-                                            !isDecide && "lg:min-h-56",
-                                            isAudioTranscription || isDecide
-                                                ? "min-h-24"
-                                                : "min-h-44",
-                                        )}
                                     />
-                                </FieldStack>
-                            )}
-                            {decision && (
-                                <>
-                                    <OptionField
-                                        label="Question type"
-                                        options={decision.types}
-                                        value={decision.type}
-                                        onChange={(type) =>
-                                            setParam("questionType", type)
-                                        }
-                                        format={questionTypeLabel}
-                                    />
+                                )}
+                                {showPromptInput && (
                                     <FieldStack
-                                        label="Question"
-                                        orientation="inline"
+                                        label={isDecide ? "Context" : undefined}
+                                        orientation={
+                                            isDecide ? "inline" : "stacked"
+                                        }
+                                        className={
+                                            isDecide
+                                                ? "[&>div:first-child]:self-start [&>div:first-child]:pt-2"
+                                                : undefined
+                                        }
                                     >
-                                        <Input
-                                            aria-label="Question"
-                                            value={decision.instructions}
+                                        <Textarea
+                                            aria-label={
+                                                isAudioTranscription
+                                                    ? "Instructions (optional)"
+                                                    : promptLabel
+                                            }
+                                            value={prompt}
+                                            rows={
+                                                isAudioTranscription || isDecide
+                                                    ? 3
+                                                    : 7
+                                            }
                                             onChange={(event) =>
                                                 setParam(
-                                                    "question",
+                                                    "prompt",
+                                                    event.target.value,
+                                                )
+                                            }
+                                            onKeyDown={(event) => {
+                                                if (
+                                                    event.key === "Enter" &&
+                                                    (event.metaKey ||
+                                                        event.ctrlKey)
+                                                ) {
+                                                    event.preventDefault();
+                                                    run();
+                                                }
+                                            }}
+                                            placeholder={promptPlaceholder(
+                                                task,
+                                                editsImage,
+                                                format,
+                                            )}
+                                            className={cn(
+                                                !isDecide && "lg:min-h-56",
+                                                isAudioTranscription || isDecide
+                                                    ? "min-h-24"
+                                                    : "min-h-44",
+                                            )}
+                                        />
+                                    </FieldStack>
+                                )}
+                                {decision && (
+                                    <>
+                                        <OptionField
+                                            label="Question type"
+                                            options={decision.types}
+                                            value={decision.type}
+                                            onChange={(type) =>
+                                                setParam("questionType", type)
+                                            }
+                                            format={questionTypeLabel}
+                                        />
+                                        <FieldStack
+                                            label="Question"
+                                            orientation="inline"
+                                        >
+                                            <Input
+                                                aria-label="Question"
+                                                value={decision.instructions}
+                                                onChange={(event) =>
+                                                    setParam(
+                                                        "question",
+                                                        event.target.value,
+                                                    )
+                                                }
+                                            />
+                                        </FieldStack>
+                                        {(decision.type === "choice" ||
+                                            decision.type === "score") && (
+                                            <DecisionCriteriaFields
+                                                type={decision.type}
+                                                values={decision.criteria}
+                                                onChange={(values) =>
+                                                    setParam(
+                                                        decision.type ===
+                                                            "score"
+                                                            ? "levels"
+                                                            : "choices",
+                                                        values.join("\n"),
+                                                    )
+                                                }
+                                            />
+                                        )}
+                                    </>
+                                )}
+                                {audioInput}
+                                {isReferenceImageListMode && (
+                                    <fieldset
+                                        aria-label={
+                                            requiresImage
+                                                ? "Required image"
+                                                : "Reference images"
+                                        }
+                                        className="flex min-w-0 flex-col gap-2"
+                                    >
+                                        <div className="flex flex-wrap items-end gap-2">
+                                            <FileUpload
+                                                value={referenceImages}
+                                                onChange={setReferenceImages}
+                                                maxFiles={maxReferenceImages}
+                                                {...uploadProps(
+                                                    ["image"],
+                                                    `Use up to ${maxReferenceImages === 1 ? "1 image" : `${maxReferenceImages} images`}.`,
+                                                )}
+                                                label="Image"
+                                            />
+                                            {maxReferenceImages > 1 &&
+                                                referenceImages.length > 0 && (
+                                                    <Text
+                                                        size="xs"
+                                                        tone="muted"
+                                                        aria-label={`${referenceImages.length} of ${maxReferenceImages} reference images`}
+                                                    >
+                                                        {referenceImages.length}
+                                                        /{maxReferenceImages}
+                                                    </Text>
+                                                )}
+                                        </div>
+                                        {referenceImages.length > 0 && (
+                                            <UploadPrivacyNote />
+                                        )}
+                                    </fieldset>
+                                )}
+
+                                {(supportsFrames ||
+                                    videoReferenceMedia.length > 0) && (
+                                    <fieldset
+                                        aria-label="Video references"
+                                        className="m-0 flex min-w-0 flex-col gap-2 border-0 p-0"
+                                    >
+                                        <div
+                                            className={cn(
+                                                "flex flex-wrap items-start gap-3",
+                                                mediaDisabled &&
+                                                    "[&_button:disabled]:grayscale [&_label:has(input:disabled)]:grayscale",
+                                            )}
+                                        >
+                                            {queuedTiles}
+                                            {frameTiles}
+                                            {mediaTiles}
+                                        </div>
+                                        {clipStatus && (
+                                            <Text size="xs" tone="muted">
+                                                {clipStatus}
+                                            </Text>
+                                        )}
+                                        {((supportsFrames &&
+                                            referenceImages.length > 0) ||
+                                            hasReferenceMedia) && (
+                                            <UploadPrivacyNote />
+                                        )}
+                                    </fieldset>
+                                )}
+                            </fieldset>
+                            <div className="play-parameter-grid">
+                                {currentModel &&
+                                    currentModel.voices.length > 0 && (
+                                        <VoicePicker
+                                            key={currentModel.id}
+                                            voices={currentModel.voices}
+                                            value={selectedVoice}
+                                            onChange={(value) =>
+                                                setParam("voice", value)
+                                            }
+                                        />
+                                    )}
+
+                                {isStemSeparation && (
+                                    <OptionField
+                                        label="Stems"
+                                        options={["2", "6"]}
+                                        value={
+                                            stemVariationId === "two_stems_v1"
+                                                ? "2"
+                                                : "6"
+                                        }
+                                        onChange={(value) =>
+                                            setParam("stems", value)
+                                        }
+                                    />
+                                )}
+                                {transcription?.language && (
+                                    <FieldStack
+                                        label="Language"
+                                        orientation="inline"
+                                        className="min-w-0"
+                                    >
+                                        <Input
+                                            className="max-w-40"
+                                            placeholder="Auto (e.g. en)"
+                                            value={language}
+                                            onChange={(event) =>
+                                                setParam(
+                                                    "language",
                                                     event.target.value,
                                                 )
                                             }
                                         />
                                     </FieldStack>
-                                    {(decision.type === "choice" ||
-                                        decision.type === "score") && (
-                                        <DecisionCriteriaFields
-                                            type={decision.type}
-                                            values={decision.criteria}
-                                            onChange={(values) =>
-                                                setParam(
-                                                    decision.type === "score"
-                                                        ? "levels"
-                                                        : "choices",
-                                                    values.join("\n"),
-                                                )
-                                            }
-                                        />
-                                    )}
-                                </>
-                            )}
-                            {audioInput}
-                            {isReferenceImageListMode && (
-                                <fieldset
-                                    aria-label={
-                                        requiresImage
-                                            ? "Required image"
-                                            : "Reference images"
-                                    }
-                                    className="flex min-w-0 flex-col gap-2"
-                                >
-                                    <div className="flex flex-wrap items-end gap-2">
-                                        <FileUpload
-                                            value={referenceImages}
-                                            onChange={setReferenceImages}
-                                            maxFiles={maxReferenceImages}
-                                            {...uploadProps(
-                                                ["image"],
-                                                `Use up to ${maxReferenceImages === 1 ? "1 image" : `${maxReferenceImages} images`}.`,
-                                            )}
-                                            label="Image"
-                                        />
-                                        {maxReferenceImages > 1 &&
-                                            referenceImages.length > 0 && (
-                                                <Text
-                                                    size="xs"
-                                                    tone="muted"
-                                                    aria-label={`${referenceImages.length} of ${maxReferenceImages} reference images`}
-                                                >
-                                                    {referenceImages.length}/
-                                                    {maxReferenceImages}
-                                                </Text>
-                                            )}
-                                    </div>
-                                    {referenceImages.length > 0 && (
-                                        <UploadPrivacyNote />
-                                    )}
-                                </fieldset>
-                            )}
+                                )}
 
-                            {(supportsFrames ||
-                                videoReferenceMedia.length > 0) && (
-                                <fieldset
-                                    aria-label="Video references"
-                                    className="m-0 flex min-w-0 flex-col gap-2 border-0 p-0"
-                                >
-                                    <div
-                                        className={cn(
-                                            "flex flex-wrap items-start gap-3",
-                                            mediaDisabled &&
-                                                "[&_button:disabled]:grayscale [&_label:has(input:disabled)]:grayscale",
-                                        )}
-                                    >
-                                        {queuedTiles}
-                                        {frameTiles}
-                                        {videoReferenceMedia.map((media) => {
-                                            const props =
-                                                videoUploadProps(media);
-                                            return media === "audio" ? (
-                                                <AudioInput
-                                                    key={`${currentModel?.id}-audio`}
-                                                    actionsOnly
-                                                    {...props}
-                                                    onBusyChange={
-                                                        setRecordingAudio
-                                                    }
-                                                    disabled={
-                                                        isGenerating ||
-                                                        recordingVideo ||
-                                                        mediaDisabled
-                                                    }
-                                                />
-                                            ) : (
-                                                <FileUpload
-                                                    key={media}
-                                                    actionsOnly
-                                                    {...props}
-                                                    disabled={
-                                                        mediaDisabled ||
-                                                        (media === "video" &&
-                                                            recordingVideo)
-                                                    }
-                                                    label={capitalize(media)}
-                                                />
-                                            );
-                                        })}
-                                        {videoPicker &&
-                                            videoPicker.value.length <
-                                                videoPicker.maxFiles &&
-                                            cameraTile(
-                                                videoPicker.maxSizeBytes,
-                                                (file) =>
-                                                    videoPicker.onChange([
-                                                        ...videoPicker.value,
-                                                        file,
-                                                    ]),
-                                            )}
-                                    </div>
-                                    {clipStatus && (
-                                        <Text size="xs" tone="muted">
-                                            {clipStatus}
-                                        </Text>
-                                    )}
-                                    {((supportsFrames &&
-                                        referenceImages.length > 0) ||
-                                        hasReferenceMedia) && (
-                                        <UploadPrivacyNote />
-                                    )}
-                                </fieldset>
-                            )}
-                        </fieldset>
-                        <div className="play-parameter-grid">
-                            {currentModel && currentModel.voices.length > 0 && (
-                                <VoicePicker
-                                    key={currentModel.id}
-                                    voices={currentModel.voices}
-                                    value={selectedVoice}
-                                    onChange={(value) =>
-                                        setParam("voice", value)
-                                    }
-                                />
-                            )}
-
-                            {isStemSeparation && (
-                                <OptionField
-                                    label="Stems"
-                                    options={["2", "6"]}
-                                    value={
-                                        stemVariationId === "two_stems_v1"
-                                            ? "2"
-                                            : "6"
-                                    }
-                                    onChange={(value) =>
-                                        setParam("stems", value)
-                                    }
-                                />
-                            )}
-                            {transcription?.language && (
-                                <FieldStack
-                                    label="Language"
-                                    orientation="inline"
-                                    className="min-w-0"
-                                >
-                                    <Input
-                                        className="max-w-40"
-                                        placeholder="Auto (e.g. en)"
-                                        value={language}
-                                        onChange={(event) =>
-                                            setParam(
-                                                "language",
-                                                event.target.value,
-                                            )
-                                        }
-                                    />
-                                </FieldStack>
-                            )}
-
-                            {showsAudioLength && (
-                                <FieldStack
-                                    label={
-                                        <span className="font-normal">
-                                            Duration
-                                        </span>
-                                    }
-                                    orientation="inline"
-                                    className="min-w-0"
-                                >
-                                    <div className="flex min-w-0 items-center gap-2">
-                                        <Input
-                                            className="w-24 min-w-0"
-                                            aria-label="Duration in seconds"
-                                            type="number"
-                                            hideNumberSteppers
-                                            min={0}
-                                            step="any"
-                                            placeholder={
-                                                currentModel.defaultDuration?.toString() ??
-                                                "Auto"
-                                            }
-                                            value={audioLength}
-                                            onChange={(event) =>
-                                                setParam(
-                                                    "length",
-                                                    event.target.value,
-                                                )
-                                            }
-                                        />
-                                        <Text
-                                            as="span"
-                                            size="sm"
-                                            tone="muted"
-                                            aria-hidden="true"
-                                        >
-                                            seconds
-                                        </Text>
-                                    </div>
-                                </FieldStack>
-                            )}
-                            {isVisualModel && (
-                                <>
-                                    <OptionField
-                                        label="Output format"
-                                        options={formatOptions}
-                                        value={format ?? "still"}
-                                        onChange={(value) =>
-                                            setParam(
-                                                "format",
-                                                value === "still" ? "" : value,
-                                            )
-                                        }
-                                        format={imageFormatLabel}
-                                    />
-                                    <OptionField
-                                        label="Resolution"
-                                        options={currentModel.resolutions}
-                                        value={mediaSettings.resolution}
-                                        onChange={(value) =>
-                                            setParam("size", value)
-                                        }
-                                        format={(resolution) =>
-                                            resolution.toUpperCase()
-                                        }
-                                    />
-
-                                    {currentModel.category === "video" && (
-                                        <>
-                                            <OptionField
-                                                label="Aspect ratio"
-                                                options={videoConfig.ratios}
-                                                value={videoAspectRatio}
-                                                onChange={(ratio) =>
-                                                    setParam(
-                                                        "aspect",
-                                                        ratio || "auto",
-                                                    )
-                                                }
-                                                format={(ratio) =>
-                                                    ratio || "Auto"
-                                                }
-                                            />
-                                            <OptionField
-                                                label="Sound"
-                                                options={
-                                                    videoConfig.sound ===
-                                                    "optional"
-                                                        ? ["on", "off"]
-                                                        : [videoConfig.sound]
-                                                }
-                                                value={
-                                                    videoSound ? "on" : "off"
-                                                }
-                                                onChange={(value) =>
-                                                    setParam("sound", value)
-                                                }
-                                                format={(value) =>
-                                                    value === "on"
-                                                        ? "On"
-                                                        : "Off"
-                                                }
-                                            />
-                                        </>
-                                    )}
-                                    {videoDuration && (
-                                        <VideoDurationField
-                                            duration={videoDuration}
-                                            onChange={(seconds) =>
-                                                setParam("duration", seconds)
-                                            }
-                                        />
-                                    )}
-                                    {autoVideoDuration && (
-                                        <FieldStack
-                                            label="Duration"
-                                            orientation="inline"
-                                            className="min-w-0"
-                                        >
-                                            <Text size="sm" tone="muted">
-                                                Replicate chooses the duration.
-                                                Billing uses the output seconds.
-                                            </Text>
-                                        </FieldStack>
-                                    )}
-
-                                    {customSize && (
-                                        <fieldset
-                                            aria-labelledby={dimensionsLabelId}
-                                            className="grid min-w-0 grid-cols-[6.5rem_minmax(0,1fr)] items-start gap-x-4 gap-y-2 max-sm:grid-cols-[5.5rem_minmax(0,1fr)] max-sm:gap-x-2"
-                                        >
-                                            <Text
-                                                as="span"
-                                                id={dimensionsLabelId}
-                                                className="min-h-8 content-center"
-                                                size="sm"
-                                                weight="semibold"
-                                                tone="strong"
-                                            >
-                                                Dimensions
-                                            </Text>
-                                            <div className="flex min-w-0 items-center gap-2">
-                                                {(
-                                                    [
-                                                        [
-                                                            "Width",
-                                                            width,
-                                                            "width",
-                                                        ],
-                                                        [
-                                                            "Height",
-                                                            height,
-                                                            "height",
-                                                        ],
-                                                    ] as const
-                                                ).map(
-                                                    (
-                                                        [label, value, key],
-                                                        index,
-                                                    ) => (
-                                                        <Fragment key={label}>
-                                                            {index > 0 && (
-                                                                <span
-                                                                    aria-hidden="true"
-                                                                    className="text-theme-text-muted"
-                                                                >
-                                                                    ×
-                                                                </span>
-                                                            )}
-                                                            <Input
-                                                                aria-label={`${label} in pixels`}
-                                                                className="w-24 min-w-0 px-2"
-                                                                type="number"
-                                                                hideNumberSteppers
-                                                                min={1}
-                                                                step={1}
-                                                                placeholder="Auto"
-                                                                value={value}
-                                                                onChange={(
-                                                                    event,
-                                                                ) =>
-                                                                    setParam(
-                                                                        key,
-                                                                        event
-                                                                            .target
-                                                                            .value,
-                                                                    )
-                                                                }
-                                                            />
-                                                        </Fragment>
-                                                    ),
-                                                )}
-                                                <span
-                                                    aria-hidden="true"
-                                                    className="text-sm text-theme-text-muted"
-                                                >
-                                                    px
-                                                </span>
-                                            </div>
-                                        </fieldset>
-                                    )}
-
+                                {showsAudioLength && (
                                     <FieldStack
                                         label={
-                                            <span className="inline-flex items-center">
-                                                Seed
-                                                <InfoTip
-                                                    label="About seed"
-                                                    tapEnabled
-                                                    content="A positive integer up to 2,147,483,647 (10 digits). Controls generation randomness. Reusing a seed can help reproduce a result with the same model and inputs."
-                                                />
+                                            <span className="font-normal">
+                                                Duration
                                             </span>
                                         }
                                         orientation="inline"
                                         className="min-w-0"
                                     >
-                                        <Input
-                                            aria-label="Seed"
-                                            className="max-w-40"
-                                            type="number"
-                                            hideNumberSteppers
-                                            min={1}
-                                            max={2147483647}
-                                            step={1}
-                                            placeholder="Random"
-                                            value={seed}
-                                            onChange={(event) =>
+                                        <div className="flex min-w-0 items-center gap-2">
+                                            <Input
+                                                className="w-24 min-w-0"
+                                                aria-label="Duration in seconds"
+                                                type="number"
+                                                hideNumberSteppers
+                                                min={0}
+                                                step="any"
+                                                placeholder={
+                                                    currentModel.defaultDuration?.toString() ??
+                                                    "Auto"
+                                                }
+                                                value={audioLength}
+                                                onChange={(event) =>
+                                                    setParam(
+                                                        "length",
+                                                        event.target.value,
+                                                    )
+                                                }
+                                            />
+                                            <Text
+                                                as="span"
+                                                size="sm"
+                                                tone="muted"
+                                                aria-hidden="true"
+                                            >
+                                                seconds
+                                            </Text>
+                                        </div>
+                                    </FieldStack>
+                                )}
+                                {isVisualModel && (
+                                    <>
+                                        <OptionField
+                                            label="Output format"
+                                            options={formatOptions}
+                                            value={format ?? "still"}
+                                            onChange={(value) =>
                                                 setParam(
-                                                    "seed",
-                                                    event.target.value,
+                                                    "format",
+                                                    value === "still"
+                                                        ? ""
+                                                        : value,
                                                 )
                                             }
+                                            format={imageFormatLabel}
                                         />
-                                    </FieldStack>
-                                </>
-                            )}
-                        </div>
-                    </Surface>
+                                        <OptionField
+                                            label="Resolution"
+                                            options={currentModel.resolutions}
+                                            value={mediaSettings.resolution}
+                                            onChange={(value) =>
+                                                setParam("size", value)
+                                            }
+                                            format={(resolution) =>
+                                                resolution.toUpperCase()
+                                            }
+                                        />
+
+                                        {currentModel.category === "video" && (
+                                            <>
+                                                <OptionField
+                                                    label="Aspect ratio"
+                                                    options={videoConfig.ratios}
+                                                    value={videoAspectRatio}
+                                                    onChange={(ratio) =>
+                                                        setParam(
+                                                            "aspect",
+                                                            ratio || "auto",
+                                                        )
+                                                    }
+                                                    format={(ratio) =>
+                                                        ratio || "Auto"
+                                                    }
+                                                />
+                                                <OptionField
+                                                    label="Sound"
+                                                    options={
+                                                        videoConfig.sound ===
+                                                        "optional"
+                                                            ? ["on", "off"]
+                                                            : [
+                                                                  videoConfig.sound,
+                                                              ]
+                                                    }
+                                                    value={
+                                                        videoSound
+                                                            ? "on"
+                                                            : "off"
+                                                    }
+                                                    onChange={(value) =>
+                                                        setParam("sound", value)
+                                                    }
+                                                    format={(value) =>
+                                                        value === "on"
+                                                            ? "On"
+                                                            : "Off"
+                                                    }
+                                                />
+                                            </>
+                                        )}
+                                        {videoDuration && (
+                                            <VideoDurationField
+                                                duration={videoDuration}
+                                                onChange={(seconds) =>
+                                                    setParam(
+                                                        "duration",
+                                                        seconds,
+                                                    )
+                                                }
+                                            />
+                                        )}
+                                        {autoVideoDuration && (
+                                            <FieldStack
+                                                label="Duration"
+                                                orientation="inline"
+                                                className="min-w-0"
+                                            >
+                                                <Text size="sm" tone="muted">
+                                                    Replicate chooses the
+                                                    duration. Billing uses the
+                                                    output seconds.
+                                                </Text>
+                                            </FieldStack>
+                                        )}
+
+                                        {customSize && (
+                                            <fieldset
+                                                aria-labelledby={
+                                                    dimensionsLabelId
+                                                }
+                                                className="grid min-w-0 grid-cols-[6.5rem_minmax(0,1fr)] items-center gap-x-4 gap-y-2 max-sm:grid-cols-[5.5rem_minmax(0,1fr)] max-sm:gap-x-2"
+                                            >
+                                                <Text
+                                                    as="span"
+                                                    id={dimensionsLabelId}
+                                                    className="min-h-8 content-center"
+                                                    size="sm"
+                                                    weight="semibold"
+                                                    tone="strong"
+                                                >
+                                                    Dimensions
+                                                </Text>
+                                                <div className="flex min-w-0 items-center gap-2">
+                                                    {(
+                                                        [
+                                                            [
+                                                                "Width",
+                                                                width,
+                                                                "width",
+                                                            ],
+                                                            [
+                                                                "Height",
+                                                                height,
+                                                                "height",
+                                                            ],
+                                                        ] as const
+                                                    ).map(
+                                                        (
+                                                            [label, value, key],
+                                                            index,
+                                                        ) => (
+                                                            <Fragment
+                                                                key={label}
+                                                            >
+                                                                {index > 0 && (
+                                                                    <span
+                                                                        aria-hidden="true"
+                                                                        className="text-theme-text-muted"
+                                                                    >
+                                                                        ×
+                                                                    </span>
+                                                                )}
+                                                                <Input
+                                                                    aria-label={`${label} in pixels`}
+                                                                    className="w-24 min-w-0 px-2"
+                                                                    type="number"
+                                                                    hideNumberSteppers
+                                                                    min={1}
+                                                                    step={1}
+                                                                    placeholder="Auto"
+                                                                    value={
+                                                                        value
+                                                                    }
+                                                                    onChange={(
+                                                                        event,
+                                                                    ) =>
+                                                                        setParam(
+                                                                            key,
+                                                                            event
+                                                                                .target
+                                                                                .value,
+                                                                        )
+                                                                    }
+                                                                />
+                                                            </Fragment>
+                                                        ),
+                                                    )}
+                                                    <span
+                                                        aria-hidden="true"
+                                                        className="text-sm text-theme-text-muted"
+                                                    >
+                                                        px
+                                                    </span>
+                                                </div>
+                                            </fieldset>
+                                        )}
+
+                                        <FieldStack
+                                            label={
+                                                <span className="inline-flex items-center">
+                                                    Seed
+                                                    <InfoTip
+                                                        label="About seed"
+                                                        tapEnabled
+                                                        content="A positive integer up to 2,147,483,647 (10 digits). Controls generation randomness. Reusing a seed can help reproduce a result with the same model and inputs."
+                                                    />
+                                                </span>
+                                            }
+                                            orientation="inline"
+                                            className="min-w-0"
+                                        >
+                                            <Input
+                                                aria-label="Seed"
+                                                className="max-w-40"
+                                                type="number"
+                                                hideNumberSteppers
+                                                min={1}
+                                                max={2147483647}
+                                                step={1}
+                                                placeholder="Random"
+                                                value={seed}
+                                                onChange={(event) =>
+                                                    setParam(
+                                                        "seed",
+                                                        event.target.value,
+                                                    )
+                                                }
+                                            />
+                                        </FieldStack>
+                                    </>
+                                )}
+                            </div>
+                        </section>
+                    </div>
 
                     {/* Not connected is not a broken state, so the button
-                            becomes the connect action. When it genuinely
-                            cannot fire, the line beside it says why. */}
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                        becomes the connect action. When it genuinely
+                        cannot fire, the line beside it says why. Set apart
+                        from the settings above, which sit closer together. */}
+                    <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
                         <Button
                             size="lg"
                             intent="brand"
@@ -2894,7 +3379,11 @@ export function Playground({
                             // stays on the button; generate() ignores repeats.
                             disabled={!!blockedReason}
                             aria-disabled={isGenerating || undefined}
-                            aria-busy={isGenerating}
+                            // A working agent fills and animates the button
+                            // too: it stays pressable, as Stop.
+                            aria-busy={
+                                isGenerating || (isAgent && agentChat.busy)
+                            }
                             aria-describedby={
                                 clipError && blockedReason === clipError
                                     ? clipStatusId
@@ -2915,6 +3404,15 @@ export function Playground({
                                 generateText
                             )}
                         </Button>
+                        {isAgent &&
+                            currentModel &&
+                            agentChat.turns.length > 0 && (
+                                <NewChatButton
+                                    agentTitle={currentModel.title}
+                                    disabled={agentChat.busy}
+                                    onClear={agentChat.clear}
+                                />
+                            )}
                         <Text
                             id={statusId}
                             size="xs"
@@ -2923,7 +3421,49 @@ export function Playground({
                         >
                             {blockedReason !== clipError && blockedReason}
                         </Text>
+                        {/* What pressing it costs, once nothing is in the way. */}
+                        {currentModel && !blockedReason && (
+                            <Text as="div" size="sm" data-theme="neutral">
+                                <RunStatBadge
+                                    cost={cost}
+                                    time={time}
+                                    walletKind={
+                                        currentModel.paidOnly ? "paid" : "tier"
+                                    }
+                                    costDetail={
+                                        cost === "Free"
+                                            ? "This model is free to use."
+                                            : "Median cost of a successful paid request over the last 7 days. Your settings can change the price."
+                                    }
+                                    pricingHref={`${ENTER_URL}/models?${new URLSearchParams({ category: currentModel.category, q: currentModel.id })}`}
+                                />
+                            </Text>
+                        )}
                     </div>
+                    {/* Said once per conversation: gone after the first message. */}
+                    {isAgent &&
+                        currentModel &&
+                        isCommunityRun(currentModel) &&
+                        agentChat.turns.length === 0 && (
+                            <Text
+                                size="xs"
+                                tone="muted"
+                                data-theme="neutral"
+                                className="-mt-2 flex items-start gap-2"
+                            >
+                                <WarningIcon
+                                    aria-hidden="true"
+                                    className="mt-0.5 size-3.5 shrink-0 text-intent-warning-text"
+                                />
+                                <span>
+                                    Made by a community member, not
+                                    Pollinations. Avoid sensitive data.{" "}
+                                    <InlineLink href="/privacy" tone="quiet">
+                                        Privacy Policy
+                                    </InlineLink>
+                                </span>
+                            </Text>
+                        )}
 
                     {/* Holds the result's place while an image or video is
                         on its way, so the API card below moves once, not

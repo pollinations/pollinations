@@ -10,3 +10,5 @@
 export const POLLI_APP_KEY = "pk_5F0qxjbCjlgBODHa";
 export const ENTER_URL = "https://enter.pollinations.ai";
 export const API_BASE_URL = "https://gen.pollinations.ai";
+/** The agent a bare /play opens on. Runs on any balance, unlike the picker's first row. */
+export const DEFAULT_AGENT_ID = "community/pollinations-ai/floret";

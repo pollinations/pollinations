@@ -1,13 +1,16 @@
-import { Chip } from "@pollinations/ui";
+import { Chip, ShieldCheckIcon } from "@pollinations/ui";
 import { ModelBrandIcon } from "@pollinations/ui/gen";
 import { WalletKindIcon } from "@pollinations/ui/wallet";
 import { isNewModel } from "../../../../shared/model-recency";
 
 export function MediaModelOption({
     model,
+    iconClassName = "size-4 text-theme-text-muted",
     showPricing = true,
     perDollar,
 }: {
+    /** Icon size and colour; the closed selector shows it larger, in the accent. */
+    iconClassName?: string;
     showPricing?: boolean;
     perDollar?: string;
     model: {
@@ -15,18 +18,38 @@ export function MediaModelOption({
         paidOnly: boolean;
         publisher?: string;
         addedDate?: number;
+        category?: string;
+        community?: boolean;
+        agent?: boolean;
+        verified?: boolean;
+        brandIconUrl?: string;
     };
 }) {
     return (
         <span className="flex w-full min-w-0 items-center gap-2">
             <ModelBrandIcon
                 model={model}
-                className="size-4 shrink-0 text-theme-text-muted"
+                className={`${iconClassName} shrink-0`}
             />
-            <span className="flex min-w-0 flex-1 items-center gap-2">
+            <span className="flex min-w-0 flex-1 items-baseline gap-[0.6em]">
                 <span className="truncate">{model.title}</span>
+                {model.verified && (
+                    <Chip
+                        size="sm"
+                        data-theme="accent"
+                        className="play-model-chip relative pl-6!"
+                        title="Published and run by Pollinations"
+                    >
+                        {/* Out of flow: the badge then shares its text's baseline, like New. */}
+                        <ShieldCheckIcon
+                            aria-hidden="true"
+                            className="absolute top-1/2 left-2 size-3 -translate-y-1/2"
+                        />
+                        Verified
+                    </Chip>
+                )}
                 {isNewModel(model.addedDate) && (
-                    <Chip intent="success" size="sm" className="play-model-new">
+                    <Chip intent="info" size="sm" className="play-model-chip">
                         New
                     </Chip>
                 )}

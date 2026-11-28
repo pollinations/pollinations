@@ -37,6 +37,23 @@ describe("Markdown", () => {
         expect(html).not.toContain("javascript:");
     });
 
+    test("shows media as links when asked, so nothing loads by itself", () => {
+        const html = renderToStaticMarkup(
+            <Markdown media="links">
+                {
+                    "![Chart](https://cdn.example/chart.png)\n\n![][ref]\n\n[Clip](https://cdn.example/clip.mp4)\n\n[Generated audio](https://cdn.example/voice)\n\n[ref]: https://cdn.example/ref.png"
+                }
+            </Markdown>,
+        );
+        expect(html).not.toMatch(/<(img|audio|video|source)\b/);
+        expect(html).not.toContain("src=");
+        expect(html).toContain('href="https://cdn.example/chart.png"');
+        expect(html).toContain(">Chart<");
+        expect(html).toContain('href="https://cdn.example/ref.png"');
+        expect(html).toContain('href="https://cdn.example/clip.mp4"');
+        expect(html).toContain('href="https://cdn.example/voice"');
+    });
+
     test("renders fenced code as a labelled, copyable, wrapping panel", () => {
         const html = renderToStaticMarkup(
             <Markdown>

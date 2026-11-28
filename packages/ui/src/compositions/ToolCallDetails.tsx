@@ -20,11 +20,15 @@ export type ToolCallStatus =
     | "denied";
 
 export interface ToolCallDetailsProps {
+    /** The tool's exact name, as the API sent it. */
     name: string;
+    /** Readable row text; the exact name then shows in the details. */
+    label?: string;
     input?: unknown;
     output?: unknown;
     error?: unknown;
-    status?: ToolCallStatus;
+    /** `null` shows no status: the call's outcome was never reported. */
+    status?: ToolCallStatus | null;
     defaultOpen?: boolean;
     className?: string;
 }
@@ -137,6 +141,7 @@ function ToolStatus({ status }: { status: ToolCallStatus }) {
 /** Framework-neutral disclosure for server- or client-executed tool calls. */
 export function ToolCallDetails({
     name,
+    label,
     input,
     output,
     error,
@@ -148,7 +153,7 @@ export function ToolCallDetails({
     const [open, setOpen] = useState(defaultOpen);
     return (
         <div
-            data-tool-status={status}
+            data-tool-status={status ?? undefined}
             className={cn(
                 "polli:overflow-hidden polli:rounded-xl polli:border polli:border-theme-border/35 polli:bg-surface-opaque",
                 className,
@@ -163,10 +168,16 @@ export function ToolCallDetails({
                 <span className="polli:flex polli:size-7 polli:shrink-0 polli:items-center polli:justify-center polli:rounded-lg polli:bg-theme-bg-active polli:text-theme-text-strong">
                     <ToolIcon className="polli:size-3.5" />
                 </span>
-                <code className="polli:min-w-0 polli:truncate polli:text-xs polli:font-semibold polli:text-theme-text-strong">
-                    {name}
-                </code>
-                <ToolStatus status={status} />
+                {label ? (
+                    <span className="polli:min-w-0 polli:flex-1 polli:truncate polli:text-sm polli:font-semibold polli:text-theme-text-strong">
+                        {label}
+                    </span>
+                ) : (
+                    <code className="polli:min-w-0 polli:flex-1 polli:truncate polli:text-xs polli:font-semibold polli:text-theme-text-strong">
+                        {name}
+                    </code>
+                )}
+                {status && <ToolStatus status={status} />}
                 <ChevronIcon
                     expanded={open}
                     className="polli:size-4 polli:shrink-0 polli:text-theme-text-soft"
@@ -174,6 +185,14 @@ export function ToolCallDetails({
             </button>
             {open && (
                 <div className="polli:flex polli:flex-col polli:gap-4 polli:border-theme-border/30 polli:border-t polli:bg-theme-bg-pale/35 polli:px-3 polli:py-3">
+                    {label && (
+                        <div className="polli:flex polli:flex-col polli:gap-1">
+                            <Text size="xs" tone="muted" weight="bold">
+                                Tool
+                            </Text>
+                            <ToolValue value={name} />
+                        </div>
+                    )}
                     {input !== undefined && (
                         <div className="polli:flex polli:flex-col polli:gap-1">
                             <Text size="xs" tone="muted" weight="bold">

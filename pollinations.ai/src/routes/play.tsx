@@ -1,12 +1,7 @@
-import {
-    PolliProvider,
-    useAuthActions,
-    useAuthState,
-} from "@pollinations/sdk/react";
-import { Alert, ContentHeader } from "@pollinations/ui";
-import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
+import { PolliProvider, useAuthState } from "@pollinations/sdk/react";
+import { Alert, ContentHeader, GitHubIcon, GoogleIcon } from "@pollinations/ui";
 import { createFileRoute } from "@tanstack/react-router";
-import { type RefObject, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ENTER_URL, POLLI_APP_KEY } from "../config";
 import { routeHead } from "../routeMeta";
 import { type ConnectDrafts, takeConnectDraft } from "../ui/play/connect-draft";
@@ -34,30 +29,27 @@ export const Route = createFileRoute("/play")({
  * token-driven light/dark choice as every other route.
  */
 function PlayPage() {
-    const connect = useRef<(() => void) | null>(null);
     return (
         <PolliProvider
             appKey={POLLI_APP_KEY}
             enterUrl={ENTER_URL}
             permissions={["profile", "usage"]}
         >
-            <PlayHero connect={connect} />
+            <PlayHero />
             <div className={postHeroSpacingClassName}>
-                <HydratedPlayground connect={connect} />
+                <HydratedPlayground />
             </div>
             <BottomScene page="play" />
         </PolliProvider>
     );
 }
 
-type ConnectProps = { connect: RefObject<(() => void) | null> };
-
 /**
  * The playground reads its inputs from the URL once, on mount. Returning from
  * Connect, the provider first puts back the URL saved before sign-in, so the
  * playground mounts only after that.
  */
-function HydratedPlayground({ connect }: ConnectProps) {
+function HydratedPlayground() {
     const { isHydrated } = useAuthState();
     const restore = useRef<Promise<ConnectDrafts | undefined> | null>(null);
     const [drafts, setDrafts] = useState<ConnectDrafts>();
@@ -89,31 +81,53 @@ function HydratedPlayground({ connect }: ConnectProps) {
                         Couldn’t restore the files saved before sign-in.
                     </Alert>
                 )}
-                <Playground connectRef={connect} drafts={drafts} />
+                <Playground drafts={drafts} />
             </>
         )
     );
 }
 
-function PlayHero({ connect }: ConnectProps) {
-    const { login } = useAuthActions();
-    const { isHydrated } = useAuthState();
+function PlayHero() {
+    const { isHydrated, isLoggedIn } = useAuthState();
     return (
         // The monitor robot, showing off something it just made.
         <HeroScene page="play" compactBottom>
             <ContentHeader
-                eyebrow="Models in the browser"
+                eyebrow="API playground"
                 title="Try it out."
-                subtitle="Create images, video and audio with your own balance."
+                subtitle={
+                    <>
+                        Try the Pollinations API{" "}
+                        <strong>without writing code</strong>. Every run shows
+                        the request behind it.
+                        {isHydrated && !isLoggedIn && (
+                            <span className="mt-2 block">
+                                <strong>
+                                    Connect your Pollinations account
+                                </strong>{" "}
+                                to start, or create one with{" "}
+                                <span className="inline-flex items-center gap-1 align-[-0.125em]">
+                                    <GitHubIcon
+                                        aria-hidden="true"
+                                        className="size-[1em]"
+                                    />
+                                    GitHub
+                                </span>{" "}
+                                or{" "}
+                                <span className="inline-flex items-center gap-1 align-[-0.125em]">
+                                    <GoogleIcon
+                                        aria-hidden="true"
+                                        className="size-[1em]"
+                                    />
+                                    Google
+                                </span>
+                                .
+                            </span>
+                        )}
+                    </>
+                }
                 variant="page"
             />
-            <div className="self-start" inert={!isHydrated}>
-                <AppUserMenu
-                    connectSize="lg"
-                    onConnect={() => (connect.current ?? login)()}
-                    labels={{ logout: "Disconnect app" }}
-                />
-            </div>
         </HeroScene>
     );
 }

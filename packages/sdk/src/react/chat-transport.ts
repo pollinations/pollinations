@@ -8,7 +8,14 @@ import { useAuth } from "./hooks.js";
 /** A `useChat` message. Structural, so the optional `ai` peer is not imported. */
 export interface ChatMessage {
     role: string;
-    parts: { type: string; text?: string }[];
+    /** Text parts, and `file` parts (`url`, `mediaType`, `filename`) for attachments. */
+    parts: {
+        type: string;
+        text?: string;
+        url?: string;
+        mediaType?: string;
+        filename?: string;
+    }[];
     metadata?: unknown;
 }
 
@@ -17,6 +24,13 @@ export type PollinationsChatChunk =
     | { type: "start" }
     | { type: "text-start" | "text-end"; id: string }
     | { type: "text-delta"; id: string; delta: string }
+    | {
+          type: "tool-input-start";
+          toolCallId: string;
+          toolName: string;
+          dynamic: true;
+          providerExecuted: true;
+      }
     | {
           type: "tool-input-available";
           toolCallId: string;
@@ -93,20 +107,49 @@ function toResponsesInput(messages: ChatMessage[]): unknown[] {
         const content = parts
             .map((part) => (part.type === "text" ? (part.text ?? "") : ""))
             .join("");
+        const files =
+            role === "user"
+                ? parts.filter((part) => part.type === "file" && part.url)
+                : [];
+        if (files.length) {
+            return [
+                {
+                    role,
+                    content: [
+                        ...(content
+                            ? [{ type: "input_text", text: content }]
+                            : []),
+                        ...files.map((part) =>
+                            part.mediaType?.startsWith("image/")
+                                ? { type: "input_image", image_url: part.url }
+                                : {
+                                      type: "input_file",
+                                      file_url: part.url,
+                                      ...(part.filename
+                                          ? { filename: part.filename }
+                                          : {}),
+                                  },
+                        ),
+                    ],
+                },
+            ];
+        }
         return content ? [{ role, content }] : [];
     });
 }
 
 /**
- * Tool chunks for one completed output item of a server-run MCP tool: the call
- * and its result. Caller-run functions are not supported and produce no chunks.
+ * Tool chunks for one completed output item of a server-run tool: the call
+ * and its result. Some agents report calls and never a result. Calls to the
+ * caller's own `tools` are not supported and produce no chunks.
  */
 function functionItemChunks(
     item: ResponseItem | undefined,
+    callerTools: ReadonlySet<string>,
 ): PollinationsChatChunk[] {
     const toolCallId = item?.call_id ?? "";
     if (item?.type === "function_call") {
-        if (!item.name?.startsWith("mcp__")) return [];
+        if (!item.name || callerTools.has(item.name)) return [];
         return [
             {
                 type: "tool-input-available",
@@ -159,8 +202,29 @@ function functionItemChunks(
 function responseEventChunks(
     event: ResponsesEvent,
     openText: Set<string>,
+    callerTools: ReadonlySet<string>,
 ): { chunks: PollinationsChatChunk[]; terminal: boolean } {
     switch (event.type) {
+        // A call can run for a long time before its item is done.
+        case "response.output_item.added": {
+            const { type, name, call_id } = event.item ?? {};
+            const running =
+                type === "function_call" && name && !callerTools.has(name);
+            return {
+                chunks: running
+                    ? [
+                          {
+                              type: "tool-input-start",
+                              toolCallId: call_id ?? "",
+                              toolName: name,
+                              dynamic: true,
+                              providerExecuted: true,
+                          },
+                      ]
+                    : [],
+                terminal: false,
+            };
+        }
         // A refusal explains why the model did not answer; show it as text.
         case "response.refusal.delta":
         case "response.output_text.delta": {
@@ -173,7 +237,10 @@ function responseEventChunks(
             return { chunks, terminal: false };
         }
         case "response.output_item.done":
-            return { chunks: functionItemChunks(event.item), terminal: false };
+            return {
+                chunks: functionItemChunks(event.item, callerTools),
+                terminal: false,
+            };
         case "response.completed":
         case "response.incomplete": {
             const ends = [...openText].map(
@@ -234,6 +301,7 @@ function responseChunks(
     body: ReadableStream<Uint8Array>,
     request: AbortController,
     release: () => void,
+    callerTools: ReadonlySet<string>,
 ): ReadableStream<PollinationsChatChunk> {
     return new ReadableStream<PollinationsChatChunk>({
         async start(controller) {
@@ -248,6 +316,7 @@ function responseChunks(
                     const result = responseEventChunks(
                         JSON.parse(data) as ResponsesEvent,
                         openText,
+                        callerTools,
                     );
                     for (const chunk of result.chunks)
                         controller.enqueue(chunk);
@@ -350,7 +419,15 @@ export function createResponsesTransport(
                         502,
                     );
                 }
-                return responseChunks(response.body, request, release);
+                const tools =
+                    (body as { tools?: { name?: string }[] } | undefined)
+                        ?.tools ?? [];
+                return responseChunks(
+                    response.body,
+                    request,
+                    release,
+                    new Set(tools.map((tool) => tool.name ?? "")),
+                );
             } catch (err) {
                 release();
                 throw err;

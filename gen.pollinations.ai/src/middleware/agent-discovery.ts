@@ -1,10 +1,16 @@
 import type { MiddlewareHandler } from "hono";
 import type { Env } from "@/env.ts";
 
-// Pages whose responses advertise the machine entry points. Agents that start
-// from the human-facing URL find the docs and catalogs without knowing their
-// paths first.
-const DISCOVERY_PATHS = new Set(["/", "/docs"]);
+// Pages and public catalogs whose responses advertise the machine entry
+// points. Agents that start from the landing page or from a model/MCP catalog
+// find the docs and discovery indexes without knowing their paths first.
+const DISCOVERY_PATHS = new Set([
+    "/",
+    "/docs",
+    "/models",
+    "/v1/models",
+    "/mcp",
+]);
 
 // RFC 8288 Web Linking, with relations from the IANA registry (RFC 8288
 // §2.1.2) plus RFC 8631 (service-desc, service-doc) and RFC 9727
@@ -40,9 +46,10 @@ export function acceptsMarkdown(accept: string): boolean {
 }
 
 /**
- * Advertise the machine entry points on the landing and API reference pages.
- * Appends to an existing Link header, and only touches successful GET/HEAD
- * responses so redirects and machine endpoints keep their own metadata.
+ * Advertise the machine entry points on the landing page, the API reference
+ * and the public catalogs. Appends to an existing Link header, and only
+ * touches successful GET/HEAD responses so redirects and errors keep their
+ * own metadata.
  */
 export function agentDiscoveryLinks(): MiddlewareHandler<Env> {
     return async (c, next) => {

@@ -20,6 +20,7 @@ import {
     getGenerationModelRegistry,
     resetGenerationModelRegistryCache,
 } from "../src/model-registry.ts";
+import { isVerifiedFree } from "../src/routes/model-catalog.ts";
 
 async function fetchWorker(path: string, init: RequestInit = {}) {
     const { default: worker } = await import("../src/index.ts");
@@ -626,6 +627,91 @@ test("resolves an alias to the canonical ID with identical metadata", async () =
     );
     const idBody = (await byId.json()) as { created: number };
     expect(aliasBody.created).toBe(idBody.created);
+});
+
+test("verified-free pricing requires every component to be explicit zero", async () => {
+    const registry = await getGenerationModelRegistry(env);
+    const entry = registry
+        .visibleEntries()
+        .find((candidate) => candidate.info.category === "text");
+    if (!entry) throw new Error("Missing text model fixture");
+    const zero = {
+        ...entry.info,
+        paid_only: false,
+        pricing: { currency: "pollen" as const, promptTextTokens: "0" },
+        pricing_variants: undefined,
+        pricing_adjustments: undefined,
+    };
+
+    expect(isVerifiedFree(zero)).toBe(true);
+    expect(
+        isVerifiedFree({
+            ...zero,
+            pricing: { currency: "pollen", promptTextTokens: "0.1" },
+        }),
+    ).toBe(false);
+    expect(isVerifiedFree({ ...zero, pricing: { currency: "pollen" } })).toBe(
+        false,
+    );
+    expect(
+        isVerifiedFree({
+            ...zero,
+            pricing_variants: [
+                {
+                    name: "variant",
+                    label: "Variant",
+                    description: "Nonzero variant",
+                    pricing: {
+                        currency: "pollen",
+                        completionTextTokens: "0.1",
+                    },
+                },
+            ],
+        }),
+    ).toBe(false);
+    expect(
+        isVerifiedFree({
+            ...zero,
+            pricing_adjustments: [
+                {
+                    name: "adjustment",
+                    label: "Adjustment",
+                    kind: "surcharge",
+                    price: "0.1",
+                    currency: "pollen",
+                    quantity: 1,
+                    unit: "request",
+                },
+            ],
+        }),
+    ).toBe(false);
+});
+
+test("free=true returns only verified zero-priced models", async () => {
+    const response = await fetchWorker("/models?reliability=all&free=true");
+    expect(response.status).toBe(200);
+    const models = (await response.json()) as {
+        paid_only: boolean;
+        pricing: Record<string, string>;
+        pricing_variants?: { pricing: Record<string, string> }[];
+        pricing_adjustments?: { price: string }[];
+    }[];
+
+    for (const model of models) {
+        expect(model.paid_only).toBe(false);
+        for (const pricing of [
+            model.pricing,
+            ...(model.pricing_variants ?? []).map((variant) => variant.pricing),
+        ]) {
+            for (const [key, value] of Object.entries(pricing)) {
+                if (key === "currency") continue;
+                expect(Number(value)).toBe(0);
+            }
+        }
+        for (const adjustment of model.pricing_adjustments ?? []) {
+            expect(Number(adjustment.price)).toBe(0);
+        }
+    }
 });
 
 test("retrieve matches the list entry exactly (shared mapper)", async () => {

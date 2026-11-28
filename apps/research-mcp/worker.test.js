@@ -60,7 +60,7 @@ test("RFC tools distinguish Datatracker modification time from publication and e
                 obsoletes: ["7231"],
             });
         return new Response(
-            "Contents\n3.1.  Core Concepts ........ 3\n\n3.1.  Core Concepts\nActual section text\n3.1.1.  Detail\nSubsection\n3.2.  Next Section\nExcluded",
+            "Contents\n3.1.  Core Concepts ........ 3\n\n3.1.  Core Concepts\nActual section text\n3.1.1.  Detail\nSubsection\n3.2.  Next Section\nExcluded\nAppendix A.  Grammar\nAppendix text\nA.1.  Rules\nRule text\nAppendix B.  Changes\nLater",
             { headers: { "content-type": "text/plain" } },
         );
     });
@@ -78,6 +78,11 @@ test("RFC tools distinguish Datatracker modification time from publication and e
     assert.match(value(result).content, /Actual section text/);
     assert.match(value(result).content, /Subsection/);
     assert.doesNotMatch(value(result).content, /Excluded|\.\.\.\./);
+    result = await call(c, "rfc_section", { rfc: 9110, section: "A" });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.match(value(result).content, /^Appendix A\. {2}Grammar\n/);
+    assert.match(value(result).content, /Rule text/);
+    assert.doesNotMatch(value(result).content, /Later/);
 });
 
 test("Wikidata filters metadata and claims at source and preserves time calendar and labels", async (t) => {

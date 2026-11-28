@@ -1522,41 +1522,49 @@ test("an unshared port is served like E2B's own host and wakes nothing, nor does
     expect(await db.select().from(sandboxPort)).toEqual([]);
 });
 
-test.each([
-    {
-        reason: "INSUFFICIENT_BALANCE",
-        tierBalance: 0.0003,
-        packBalance: 0.0004,
-        budget: 1,
-        path: "/top-up",
-        ownerDetails: ["$0.0003", "$0.0004"],
-    },
-    {
-        reason: "KEY_BUDGET_EXHAUSTED",
-        tierBalance: 1,
-        packBalance: 0,
-        budget: 0.0007,
-        path: "/edit-key",
-        ownerDetails: ["$0.0007"],
-    },
-    {
-        reason: "QUEST_POLLEN_ONLY",
-        tierBalance: 0.0003,
-        packBalance: 1,
-        budget: 1,
-        path: "/edit-key",
-        ownerDetails: ["Quest balance", "$0.0003"],
-    },
-    {
-        reason: "QUEST_POLLEN_RESTRICTED",
-        tierBalance: 1,
-        packBalance: 0,
-        budget: 1,
-        path: "/top-up",
-        ownerDetails: ["Quest balance", "locked"],
-    },
-])(
-    "a refused wake keeps $reason details with the owner",
+test.each(
+    [
+        {
+            reason: "INSUFFICIENT_BALANCE",
+            tierBalance: 0.0003,
+            packBalance: 0.0004,
+            budget: 1,
+            path: "/top-up",
+            ownerDetails: ["One balance must cover"],
+            accountAmounts: ["$0.0003", "$0.0004"],
+        },
+        {
+            reason: "KEY_BUDGET_EXHAUSTED",
+            tierBalance: 1,
+            packBalance: 0,
+            budget: 0.0007,
+            path: "/edit-key",
+            ownerDetails: ["$0.0007"],
+            accountAmounts: [],
+        },
+        {
+            reason: "QUEST_POLLEN_ONLY",
+            tierBalance: 0.0003,
+            packBalance: 1,
+            budget: 1,
+            path: "/edit-key",
+            ownerDetails: ["Quest balance"],
+            accountAmounts: ["$0.0003"],
+        },
+        {
+            reason: "QUEST_POLLEN_RESTRICTED",
+            tierBalance: 1,
+            packBalance: 0,
+            budget: 1,
+            path: "/top-up",
+            ownerDetails: ["Quest balance", "locked"],
+            accountAmounts: [],
+        },
+    ].flatMap((scenario) =>
+        [false, true].map((usage) => ({ ...scenario, usage })),
+    ),
+)(
+    "a refused wake protects $reason details with account:usage=$usage",
     async ({
         reason,
         tierBalance,
@@ -1564,11 +1572,13 @@ test.each([
         budget,
         path,
         ownerDetails,
+        accountAmounts,
+        usage,
     }) => {
         const e2b = stubE2b();
         const db = drizzle(env.DB);
         const owner = await createTestApiKey({
-            accountPermissions: ["machines"],
+            accountPermissions: usage ? ["machines", "usage"] : ["machines"],
             pollenBudget: budget,
             questPollenOnly: reason === "QUEST_POLLEN_ONLY",
             user: { tierBalance, packBalance },
@@ -1613,6 +1623,8 @@ test.each([
             expect(link.searchParams.get("id")).toBe(owner.id);
         for (const detail of ownerDetails)
             expect(refusal.message).toContain(detail);
+        for (const amount of accountAmounts)
+            expect(refusal.message.includes(amount)).toBe(usage);
         expect(e2b.sandboxes[0].state).toBe("paused");
         expect(e2b.portRequests).toHaveLength(0);
         expect(e2b.leases()).toHaveLength(0);

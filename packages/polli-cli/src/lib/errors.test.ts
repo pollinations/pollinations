@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { gen, paymentHint } from "./api.js";
 import { POLLI_CLIENT } from "./client.js";
-import { setKeyOverride } from "./config.js";
+import { ENTER_URL, setKeyOverride } from "./config.js";
 import { fetchGen } from "./errors.js";
 
 afterEach(() => vi.restoreAllMocks());
@@ -36,8 +36,29 @@ describe("paymentHint", () => {
         "offers a single recovery hint when a 402 has no message",
         (body) => {
             expect(paymentHint(402, body)).toContain(
-                "Check your balance and key budget",
+                `Check your balance and key budget at ${ENTER_URL}`,
             );
+        },
+    );
+
+    it.each([
+        [undefined, "https://staging.enter.pollinations.ai"],
+        ["https://billing.example.test", "https://billing.example.test"],
+    ])(
+        "uses the configured billing site for a staging 402 (override %s)",
+        async (override, expected) => {
+            vi.stubEnv("POLLINATIONS_ENV", "staging");
+            vi.stubEnv("POLLINATIONS_ENTER_URL", override);
+            vi.resetModules();
+            try {
+                const { paymentHint } = await import("./api.js");
+                expect(paymentHint(402, "")).toBe(
+                    `Payment required. Check your balance and key budget at ${expected}`,
+                );
+            } finally {
+                vi.unstubAllEnvs();
+                vi.resetModules();
+            }
         },
     );
 

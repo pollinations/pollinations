@@ -341,7 +341,7 @@ const REALTIME_DOCS = [
     "",
     "Server clients can authenticate with `Authorization: Bearer <key>`. Browser WebSocket clients pass their user-authorized secret key (`sk_`) in `?key=`.",
     "",
-    "The handshake checks the account balance and key budget. For token-priced models, the estimate uses the model’s seven-day median price for successful billed sessions when available. A budgeted key reserves the estimate until the session closes. Only actual usage is charged.",
+    "The handshake checks the account balance and key budget. For token-priced models, the estimate uses the model’s seven-day median price for successful billed sessions when available, plus any applicable app markup. A budgeted key reserves the estimate until the session closes. Only actual usage is charged.",
     "",
     "Selecting `elevenlabs/scribe-v2-realtime`, `elevenlabs/scribe-v3-live`, or `google/gemini-3.5-transcribe-live` opens a transcription session automatically.",
     "",

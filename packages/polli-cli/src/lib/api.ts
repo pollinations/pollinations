@@ -1,5 +1,5 @@
 import { POLLI_CLIENT } from "./client.js";
-import { BASE_URL, resolveApiKey } from "./config.js";
+import { BASE_URL, ENTER_URL, resolveApiKey } from "./config.js";
 import { fail, printError } from "./output.js";
 
 export class ApiError extends Error {
@@ -24,7 +24,7 @@ export function paymentHint(status: number, body: string): string | null {
     } catch {
         if (body.trim()) return body.trim();
     }
-    return "Payment required. Check your balance and key budget at https://enter.pollinations.ai";
+    return `Payment required. Check your balance and key budget at ${ENTER_URL}`;
 }
 
 export const requireKey = (): string => {

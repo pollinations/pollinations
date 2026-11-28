@@ -45,7 +45,7 @@ This works without an App Key. To show your app's name and earn from usage, add 
 | Attribute | What it does |
 |-----------|-------------|
 | `app-key` | Your App Key (optional; without it the consent screen shows your hostname) |
-| `budget` | Spending cap in dollars, as `budget` below |
+| `budget` | Request budget in dollars, as `budget` below |
 | `expiry` | Key lifetime in days |
 | `models` | Comma-separated, as `models` below |
 | `permissions` | Comma-separated scopes: `profile`, `usage` |
@@ -129,7 +129,7 @@ https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=https://
 | `code_challenge_method` | Must be `S256` | `S256` |
 | `scope` | Account access (space or comma separated). `keys` is only offered in the device flow (below) and on redirects to `http://localhost` or `http://127.0.0.1`. `machines` starts unticked on the consent screen; the user ticks it on purpose | `profile usage` |
 | `models` | Models the key can use. A category (`text`, `image`, `video`, `audio`, `3d`, `embedding`, `realtime`, `decision`) allows every model in it, including models added later; a model ID from `/models` allows only that model. The user can remove entries on the consent screen. | `image,text` or `black-forest-labs/flux.1-schnell,tongyi-mai/z-image-turbo` |
-| `budget` | Spending cap in dollars. Defaults to `5`; a link can pre-fill at most `10`. Users can change it on the consent screen, or clear it for unlimited. | `10` |
+| `budget` | Remaining budget in dollars. Each request’s estimate must fit, and its final charge can exceed the budget. Defaults to `5`; a link can pre-fill at most `10`. Users can change it on the consent screen, or clear it for unlimited. | `10` |
 | `expiry` | User-authorized key lifetime in days (default: 7) | `7` |
 
 Legacy names `app_key`, `redirect_url`, and `permissions` are still accepted for backwards compatibility.

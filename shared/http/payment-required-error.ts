@@ -2,7 +2,7 @@ import { HTTPException } from "hono/http-exception";
 
 type RefusalMessage = (
     link: (label: string, url: string) => string,
-    showBalances: boolean,
+    isApiResponse: boolean,
 ) => string;
 
 export class PaymentRequiredError extends HTTPException {

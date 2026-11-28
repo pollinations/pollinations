@@ -1,6 +1,8 @@
+import { hasAccountPermission } from "@shared/auth/account-permissions.ts";
 import type { AuthenticatedApiKey } from "@shared/auth/api-key.ts";
 import type { UserBalance } from "@shared/billing/balance.ts";
 import { canCoverEstimatedCharge } from "@shared/billing/bucket-selection.ts";
+import { MARKUP_PCT } from "@shared/billing/markup.ts";
 import { POLLEN_BILLING_PRECISION } from "@shared/billing/precision.ts";
 import { fixLink, type RefusalContext } from "@shared/http/fix-link.ts";
 import { PaymentRequiredError } from "@shared/http/payment-required-error.ts";
@@ -102,14 +104,18 @@ export async function requireFunds(
         const rounded =
             price === `$${cost.toFixed(4)}` && Number(cost.toFixed(4)) !== cost;
         const amount = rounded ? `about ${price}` : price;
-        if (funds === "paid balance") {
-            const source = realtimeMedian ? "its 7-day median" : "the estimate";
-            return `This model needs a paid balance above ${source} (${amount}) to start${remaining}.${noCharge}`;
-        }
+        const markup = apiKey?.byopMarkupApplies
+            ? ` plus ${MARKUP_PCT * 100}% app markup`
+            : "";
+        const estimate = realtimeMedian
+            ? `${amount}, based on the 7-day model median${markup}`
+            : amount;
+        if (funds === "paid balance")
+            return `This model needs a paid balance above the estimate (${estimate}) to start${remaining}.${noCharge}`;
         if (realtimeMedian) {
             const source =
                 funds === "Quest or paid balance" ? " in one balance" : "";
-            return `Opening a session needs ${amount}${source} (7-day median for this model).${noCharge}`;
+            return `You need to cover the session estimate (${estimate})${source}.${noCharge}`;
         }
         if (funds === "Quest or paid balance")
             return `Balance too low. One balance must cover ${amount} to start.`;
@@ -122,14 +128,14 @@ export async function requireFunds(
         const url = keyBudgetLink(c);
         throw new PaymentRequiredError(
             "KEY_BUDGET_EXHAUSTED",
-            (link, showBalances) => {
+            (link, isApiResponse) => {
                 const available =
                     budget < 0
                         ? "This key is over budget."
-                        : showBalances
+                        : isApiResponse
                           ? `This key has ${usd(budget, cost)} left.`
                           : "This key has too little budget left.";
-                return `${available} ${requirement("key budget", showBalances, budget)} ${link("Raise the key budget", url)}.`;
+                return `${available} ${requirement("key budget", isApiResponse, budget)} ${link("Raise the key budget", url)}.`;
             },
             url,
         );
@@ -140,6 +146,7 @@ export async function requireFunds(
     const spendable = questOnly ? { ...balance, packBalance: 0 } : balance;
     if (canCoverEstimatedCharge(spendable, cost, paidOnly)) return balance;
 
+    const canViewAccount = hasAccountPermission(apiKey, "usage");
     const allowPaidUrl = fixLink(c, "/edit-key", {
         id: apiKey?.id,
         ref: "agent_quest_pollen_only",
@@ -176,7 +183,8 @@ export async function requireFunds(
     if (questOnly) {
         throw new PaymentRequiredError(
             "QUEST_POLLEN_ONLY",
-            (link, showBalances) => {
+            (link, isApiResponse) => {
+                const showBalances = isApiResponse && canViewAccount;
                 if (paidOnly)
                     return `This model needs the paid balance. This key only spends Quest balance. ${link("Allow paid balance", allowPaidUrl)} for this key.`;
                 const remaining = showBalances
@@ -191,7 +199,8 @@ export async function requireFunds(
 
     throw new PaymentRequiredError(
         "INSUFFICIENT_BALANCE",
-        (link, showBalances) => {
+        (link, isApiResponse) => {
+            const showBalances = isApiResponse && canViewAccount;
             if (paidOnly)
                 return `${requirement("paid balance", showBalances, balance.packBalance)} ${link("Top up", topUp)}.`;
             const remaining = showBalances

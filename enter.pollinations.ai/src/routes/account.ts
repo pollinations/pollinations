@@ -149,7 +149,7 @@ const CreateKeySchema = z.object({
         .nullable()
         .optional()
         .describe(
-            "How much more this key can spend, in US dollars. Requests can be declined when the estimate exceeds the remaining budget. Secret keys use null for unlimited. Publishable keys accept null, omission, or 0 and always use 0.",
+            "Remaining key budget in US dollars. A request’s estimate must fit the budget to start. Its final charge can exceed the budget. Secret keys use null for unlimited. Publishable keys accept null, omission, or 0 and always use 0.",
         ),
     questPollenOnly: z
         .boolean()

@@ -1370,15 +1370,42 @@ test("deducts aggregate session usage from paid pack balance on close", async ()
 });
 
 test.each([
-    ["openai/gpt-realtime-2.1-mini", 0.01578],
-    ["openai/gpt-realtime-2.1", 0.006541],
+    [
+        "openai/gpt-realtime-2.1-mini",
+        0.01578,
+        false,
+        "about $0.0158, based on the 7-day model median",
+    ],
+    [
+        "openai/gpt-realtime-2.1",
+        0.006541,
+        false,
+        "about $0.0065, based on the 7-day model median",
+    ],
+    [
+        "openai/gpt-realtime-2.1",
+        0.04,
+        true,
+        "$0.0500, based on the 7-day model median plus 25% app markup",
+    ],
 ] as const)(
-    "explains the estimated budget before opening %s",
-    async (model, median) => {
+    "explains the estimated budget before opening %s (median %s, app markup %s)",
+    async (model, median, withMarkup, expectedEstimate) => {
+        const budget = withMarkup ? 0.045 : 0.0027;
         const { key, id, userId } = await createTestApiKey({
-            pollenBudget: 0.0027,
+            pollenBudget: budget,
             user: { tierBalance: 0, packBalance: 1 },
         });
+        if (withMarkup) {
+            const app = await createTestApiKey({
+                type: "publishable",
+                metadata: { earningsEnabled: true },
+            });
+            await drizzle(env.DB)
+                .update(apiKeyTable)
+                .set({ byopClientKeyId: app.id })
+                .where(eq(apiKeyTable.id, id));
+        }
         const upstream = mockRealtimeProvider(undefined, median, model);
         const response = await fetchWorker(`/v1/realtime?model=${model}`, {
             headers: { Authorization: `Bearer ${key}`, Upgrade: "websocket" },
@@ -1388,13 +1415,15 @@ test.each([
             error: { message: string; code: string; fixUrl: string };
         }>();
         expect(body.error.code).toBe("KEY_BUDGET_EXHAUSTED");
-        expect(body.error.message).toContain("$0.0027");
         expect(body.error.message).toContain(
-            `Opening a session needs about $${median.toFixed(4)} (7-day median for this model). Nothing was charged.`,
+            `This key has $${budget.toFixed(4)} left.`,
+        );
+        expect(body.error.message).toContain(
+            `You need to cover the session estimate (${expectedEstimate}). Nothing was charged.`,
         );
         expect(new URL(body.error.fixUrl).searchParams.get("id")).toBe(id);
         expect(upstream.maybeServer).toBeUndefined();
-        expect(await getApiKeyBalance(id)).toBe(0.0027);
+        expect(await getApiKeyBalance(id)).toBe(budget);
         expect((await getUserBalances(userId))?.packBalance).toBe(1);
     },
 );

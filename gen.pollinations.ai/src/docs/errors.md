@@ -27,7 +27,7 @@ Pollinations HTTP errors usually include a status and a machine-readable `error.
 
 ### Budget and balance errors
 
-Requests refused before generation incur no charge. Read `error.message` for the reason and open `error.fixUrl` to resolve it.
+Requests refused before generation incur no charge. Read `error.message` for the reason and open `error.fixUrl` to resolve it. A key can see its own remaining budget. Account amounts in HTTP errors require `account:usage` on the key.
 
 | `error.code` | What to do |
 |---|---|

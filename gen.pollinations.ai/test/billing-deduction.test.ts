@@ -222,7 +222,27 @@ describe("billing deduction", () => {
             }),
         ).rejects.toMatchObject({
             chatMessage: expect.stringContaining(
-                "This model needs a paid balance above its 7-day median (about $0.0158) to start. Nothing was charged.",
+                "This model needs a paid balance above the estimate (about $0.0158, based on the 7-day model median) to start. Nothing was charged.",
+            ),
+        });
+        const delegated = {
+            env,
+            var: {
+                auth: {
+                    apiKey: {
+                        id: "delegate",
+                        permissions: { account: ["machines"] },
+                    },
+                },
+            },
+        } as Parameters<typeof requireFunds>[0];
+        await expect(
+            requireFunds(delegated, cost, async () => balance, {
+                paidOnly: true,
+            }),
+        ).rejects.toMatchObject({
+            message: expect.stringContaining(
+                "This model needs a paid balance above the estimate (about $0.0158) to start. Top up",
             ),
         });
         balance.packBalance = cost;
@@ -539,26 +559,42 @@ describe("billing deduction", () => {
         expect(await getApiKeyBalance(apiKeyId)).toBe(0);
     });
 
-    it("settles an API key reservation against the actual price", async () => {
-        const userId = await createUser({ tierBalance: 100, packBalance: 0 });
-        const { id: apiKeyId } = await createTestApiKey({
-            userId,
-            pollenBudget: 10,
-        });
-        const { reserved } = await atomicReserveApiKeyBalance(db, apiKeyId, 5);
+    it.each([
+        [3, 7],
+        [11, -1],
+    ])(
+        "settles a $5 reservation at $%s, leaving a key budget of $%s",
+        async (actual, remaining) => {
+            const userId = await createUser({
+                tierBalance: 100,
+                packBalance: 0,
+            });
+            const { id: apiKeyId } = await createTestApiKey({
+                userId,
+                pollenBudget: 10,
+            });
+            const { reserved } = await atomicReserveApiKeyBalance(
+                db,
+                apiKeyId,
+                5,
+            );
 
-        await handleBalanceDeduction({
-            db,
-            isBilledUsage: true,
-            totalPrice: 3,
-            userId,
-            apiKeyId,
-            apiKeyPollenBalance: 10,
-            apiKeyReservedAmount: reserved,
-        });
+            await handleBalanceDeduction({
+                db,
+                isBilledUsage: true,
+                totalPrice: actual,
+                userId,
+                apiKeyId,
+                apiKeyPollenBalance: 10,
+                apiKeyReservedAmount: reserved,
+            });
 
-        expect(await getApiKeyBalance(apiKeyId)).toBeCloseTo(7, 10);
-    });
+            expect(await getApiKeyBalance(apiKeyId)).toBeCloseTo(remaining, 10);
+            expect((await getUserBalance(db, userId)).tierBalance).toBe(
+                100 - actual,
+            );
+        },
+    );
 
     it("settles post-execution usage without a preflight reservation", async () => {
         const userId = await createUser({ tierBalance: 100, packBalance: 0 });

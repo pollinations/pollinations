@@ -13,7 +13,7 @@ export type PollenPack = {
 
 const CHECKOUT_IMAGE_URL = `${PUBLIC_URLS.enter.production}/checkout/pollen-pack.png`;
 const POLLEN_TAX_CODE = "txcd_10103001";
-const CHECKOUT_FEEDBACK_URL = "https://discord.gg/z5uMbEYK";
+const CHECKOUT_FEEDBACK_URL = "https://discord.gg/k9F7SyTgqn";
 export const SERVICE_FEE_RATE_BPS = 350;
 export const SERVICE_FEE_FIXED_CENTS = 30;
 export const SERVICE_FEE_NAME = "Service fee";

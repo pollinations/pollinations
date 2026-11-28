@@ -13,23 +13,18 @@ export class ApiError extends Error {
     }
 }
 
-/** Read the payment guidance supplied by Gen, including the account-specific link. */
-export function paymentError(body: string): {
-    code?: string;
-    message?: string;
-} {
+/** Show the server's recovery instructions, including the link for this key. */
+export function paymentHint(status: number, body: string): string | null {
+    if (status !== 402) return null;
     try {
-        const error = JSON.parse(body)?.error;
-        return {
-            code: error?.code,
-            message:
-                typeof error?.message === "string"
-                    ? error.message.trim() || undefined
-                    : undefined,
-        };
+        const result = JSON.parse(body);
+        const message = result?.error?.message ?? result?.message;
+        if (typeof message === "string" && message.trim())
+            return message.trim();
     } catch {
-        return {};
+        if (body.trim()) return body.trim();
     }
+    return "Payment required. Check your balance and key budget at https://enter.pollinations.ai";
 }
 
 export const requireKey = (): string => {
@@ -93,9 +88,8 @@ const send = async (
         const text = await res.text().catch(() => "Unknown error");
         throw new ApiError(
             res.status,
-            (res.status === 402
-                ? paymentError(text).message
-                : permissionHint(res.status, text)) ??
+            paymentHint(res.status, text) ??
+                permissionHint(res.status, text) ??
                 `${res.status} ${res.statusText}: ${text}`,
             text,
         );

@@ -1,5 +1,4 @@
 import { cn } from "@pollinations/ui";
-import { POLLEN_BILLING_PRECISION } from "@shared/billing/precision.ts";
 import { type FormatDistanceToken, formatDistanceToNowStrict } from "date-fns";
 import type { FC } from "react";
 import { formatUsd } from "../pollen/format-usd.ts";
@@ -68,15 +67,5 @@ function formatExpiry(expiresAt: Date | null | undefined): string {
 
 function formatBudget(pollenBudget: number | null | undefined): string {
     if (pollenBudget == null) return "Unlimited";
-    if (pollenBudget > 0 && pollenBudget < 0.0001) {
-        if (pollenBudget < 10 ** -POLLEN_BILLING_PRECISION)
-            return "<$0.00000001";
-        return pollenBudget.toLocaleString("en-US", {
-            style: "currency",
-            currency: "USD",
-            maximumFractionDigits: POLLEN_BILLING_PRECISION,
-            roundingMode: "trunc",
-        });
-    }
     return formatUsd(Math.max(0, pollenBudget));
 }

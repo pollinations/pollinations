@@ -634,14 +634,14 @@ test("refuses a media request the balance cannot cover at its own price", async 
     );
     expect(video.status).toBe(402);
     expect(await video.text()).toContain(
-        `${usd(
+        usd(
             calculatePrice(
                 "google/veo-3.1-fast",
                 { completionVideoSeconds: 8, completionAudioSeconds: 8 },
                 undefined,
                 { resolution: "1080p" },
             ).totalPrice,
-        )} to start.`,
+        ),
     );
 
     const image = await fetchWorker("/v1/images/generations", {
@@ -655,14 +655,14 @@ test("refuses a media request the balance cannot cover at its own price", async 
     });
     expect(image.status).toBe(402);
     expect(await image.text()).toContain(
-        `${usd(
+        usd(
             calculatePrice(
                 "x-ai/grok-imagine-image-2.0",
                 { completionImageTokens: 1 },
                 undefined,
                 { resolution: "2k" },
             ).totalPrice,
-        )} to start.`,
+        ),
     );
 }, 15_000);
 

@@ -69,12 +69,7 @@ export async function requireFunds(
     c: RefusalContext,
     cost: number,
     loadBalance: () => Promise<UserBalance>,
-    {
-        paidOnly = false,
-        free = false,
-        realtimeMedian = false,
-        knownPrice = false,
-    } = {},
+    { paidOnly = false, free = false, realtimeMedian = false } = {},
 ): Promise<UserBalance> {
     const apiKey = c.var.auth?.apiKey;
     const budget = apiKey?.pollenBalance;
@@ -87,13 +82,17 @@ export async function requireFunds(
         showBalances: boolean,
         ...balances: number[]
     ) {
+        const remaining =
+            funds === "paid balance" && showBalances
+                ? `, and you have ${usd(balances[0], cost)}`
+                : "";
         if (cost <= 0) {
             if (free) {
                 return funds === "key budget"
                     ? "Free requests need a key budget of zero or more."
-                    : `Free requests need a positive ${funds}.`;
+                    : `Free requests need a positive ${funds}${remaining}.`;
             }
-            return `A positive ${funds} is required. Final cost depends on usage.${realtimeMedian ? " Nothing was charged." : ""}`;
+            return `A positive ${funds} is required${remaining}. Final cost depends on usage.${realtimeMedian ? " Nothing was charged." : ""}`;
         }
         const price = showBalances ? usd(cost, ...balances) : usd(cost);
         const rounded =
@@ -106,20 +105,13 @@ export async function requireFunds(
                     : "Opening a session needs";
             const source =
                 funds === "Quest or paid balance" ? " in one balance" : "";
-            return `${threshold} ${amount}${source} (7-day median for this model). Nothing was charged.`;
+            return `${threshold} ${amount}${source} (7-day median for this model)${remaining}. Nothing was charged.`;
         }
-        if (funds === "paid balance") {
-            return knownPrice
-                ? `Your paid balance must exceed ${amount} to start.`
-                : `Your paid balance must exceed the estimate of ${amount}.`;
-        }
+        if (funds === "paid balance")
+            return `Your paid balance must exceed the starting amount of ${amount}${remaining}.`;
         if (funds === "Quest or paid balance")
-            return knownPrice
-                ? `Balance too low. One balance must cover ${amount} to start.`
-                : `Balance too low. One balance must cover the estimate of ${amount}.`;
-        return knownPrice
-            ? `This request needs ${amount} to start.`
-            : `The estimated cost is ${price}.`;
+            return `Balance too low. One balance must cover ${amount} to start.`;
+        return `This request needs ${amount} to start.`;
     }
     if (
         typeof budget === "number" &&
@@ -198,12 +190,8 @@ export async function requireFunds(
     throw new PaymentRequiredError(
         "INSUFFICIENT_BALANCE",
         (link, showBalances) => {
-            if (paidOnly) {
-                const remaining = showBalances
-                    ? ` You have ${usd(balance.packBalance, cost)} there.`
-                    : "";
-                return `This model needs the paid balance.${remaining} ${requirement("paid balance", showBalances, balance.packBalance)} ${link("Top up", topUp)}.`;
-            }
+            if (paidOnly)
+                return `${requirement("paid balance", showBalances, balance.packBalance)} ${link("Top up", topUp)}.`;
             const remaining = showBalances
                 ? ` You have ${usd(balance.tierBalance, cost)} in Quest balance and ${usd(balance.packBalance, cost)} in paid balance.`
                 : "";

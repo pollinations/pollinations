@@ -201,7 +201,9 @@ describe("BYOP markup", () => {
         } as unknown as Parameters<typeof checkBalance>[0];
         const refusedAt = (price: string) => ({
             status: 402,
-            message: expect.stringContaining(`exceed ${price} to start`),
+            message: expect.stringContaining(
+                `must exceed the starting amount of ${price}`,
+            ),
         });
 
         // A short clip is affordable although the average request is not.
@@ -831,7 +833,9 @@ describe("BYOP markup", () => {
             checkBalance(vars, fakeStatsEnv(33.3433, "vendouple/zimage")),
         ).rejects.toMatchObject({
             status: 402,
-            message: expect.stringContaining("estimated cost is $0.0100"),
+            message: expect.stringContaining(
+                "This request needs $0.0100 to start.",
+            ),
         });
     });
 

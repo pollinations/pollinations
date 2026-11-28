@@ -6,7 +6,7 @@ import { LimitsBadge } from "../frontend/src/components/keys/limits-badge.tsx";
 
 it.each([
     [0.0027, "$0.0027"],
-    [0.000001, "$0.000001"],
+    [0.000001, "$0.00"],
     [0, "$0.00"],
     [-0.01, "$0.00"],
     [null, "Unlimited"],

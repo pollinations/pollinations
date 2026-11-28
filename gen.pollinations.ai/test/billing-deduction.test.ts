@@ -128,7 +128,7 @@ describe("billing deduction", () => {
             errorCode: "INSUFFICIENT_BALANCE",
             paidOnly: true,
             message: expect.stringContaining(
-                "This model needs the paid balance. You have $0.0000 there. Your paid balance must exceed the estimate of $0.0001.",
+                "Your paid balance must exceed the starting amount of $0.0001, and you have $0.0000.",
             ),
         });
     });
@@ -147,7 +147,7 @@ describe("billing deduction", () => {
             errorCode: "INSUFFICIENT_BALANCE",
             paidOnly: true,
             message: expect.stringContaining(
-                "You have $0.0000 there. A positive paid balance is required. Final cost depends on usage.",
+                "A positive paid balance is required, and you have $0.0000. Final cost depends on usage.",
             ),
         });
     });
@@ -162,7 +162,7 @@ describe("billing deduction", () => {
             status: 402,
             errorCode: "INSUFFICIENT_BALANCE",
             message: expect.stringContaining(
-                "Balance too low. One balance must cover the estimate of less than $0.0001.",
+                "Balance too low. One balance must cover less than $0.0001 to start.",
             ),
         });
     });
@@ -209,10 +209,10 @@ describe("billing deduction", () => {
             });
         await expect(check()).rejects.toMatchObject({
             message: expect.stringContaining(
-                "You have $0.01577999 there. Your paid balance must exceed the estimate of $0.01578.",
+                "Your paid balance must exceed the starting amount of $0.01578, and you have $0.01577999.",
             ),
             chatMessage: expect.stringContaining(
-                "Your paid balance must exceed the estimate of about $0.0158.",
+                "Your paid balance must exceed the starting amount of about $0.0158.",
             ),
         });
         balance.packBalance = cost;

@@ -3,7 +3,7 @@ import { AuthAccessItem } from "@pollinations/ui/auth";
 import { useEffect, useId, useState } from "react";
 
 const budgetHelp = (subject: "key" | "app" | "device") =>
-    `Remaining spending limit for this ${subject}. It must cover the request estimate. Top-ups fund the wallet only. Leave blank for no limit.`;
+    `The most this ${subject} can still spend. Wallet top-ups don’t raise this limit. Leave blank for no limit.`;
 
 const limits = {
     budget: {

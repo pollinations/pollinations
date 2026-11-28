@@ -115,8 +115,8 @@ export async function requireFunds(
         }
         if (funds === "Quest or paid balance")
             return knownPrice
-                ? `One balance must cover ${amount} to start.`
-                : `One balance must cover the estimate of ${amount}.`;
+                ? `Balance too low. One balance must cover ${amount} to start.`
+                : `Balance too low. One balance must cover the estimate of ${amount}.`;
         return knownPrice
             ? `This request needs ${amount} to start.`
             : `The estimated cost is ${price}.`;

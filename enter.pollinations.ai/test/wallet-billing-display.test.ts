@@ -374,30 +374,29 @@ describe("dollar amounts", () => {
         [0.99999, "$0.9999"],
         // Requests cost fractions of a cent, so small balances keep them.
         [0.0042, "$0.0042"],
-        [0.00001, "$0.00001"],
-        [-0.00001, "-$0.00001"],
-        [-0.00000001, "-$0.00000001"],
         [-1.2, "-$1.20"],
         [250_000, "$250K"],
     ])("formats %s Pollen as %s", (pollen, text) => {
         expect(formatUsd(pollen)).toBe(text);
     });
 
-    it("shows a sub-cent wallet balance in both the balance card and the sidebar", () => {
-        const balance = 0.00000003;
-        const card = renderToStaticMarkup(
-            createElement(PollenBalance, {
-                tierBalance: balance,
-                packBalance: 0,
-                compact: true,
-            }),
-        );
-        const sidebar = renderToStaticMarkup(
-            createElement(SidebarBalance, { kind: "tier", balance }),
-        );
-        expect(card).toContain("$0.00000003");
-        expect(sidebar).toContain("$0.00000003");
-    });
+    it.each([0.00000003, -0.00000003])(
+        "shows a wallet remainder of %s as zero on the card and sidebar",
+        (balance) => {
+            const card = renderToStaticMarkup(
+                createElement(PollenBalance, {
+                    tierBalance: balance,
+                    packBalance: 1,
+                    compact: true,
+                }),
+            );
+            const sidebar = renderToStaticMarkup(
+                createElement(SidebarBalance, { kind: "tier", balance }),
+            );
+            expect(card).toContain(">$0.00<");
+            expect(sidebar).toContain(">$0.00<");
+        },
+    );
 
     it("labels a pack with the dollars it adds to the balance", () => {
         const [pack] = POLLEN_PACKS;

@@ -162,7 +162,7 @@ describe("billing deduction", () => {
             status: 402,
             errorCode: "INSUFFICIENT_BALANCE",
             message: expect.stringContaining(
-                "One balance must cover the estimate of less than $0.0001.",
+                "Balance too low. One balance must cover the estimate of less than $0.0001.",
             ),
         });
     });

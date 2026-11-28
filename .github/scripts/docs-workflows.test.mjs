@@ -41,6 +41,15 @@ function run(command, args, options = {}) {
     return result.stdout;
 }
 
+// Git Bash does not translate a Windows path used by shell redirection, so
+// `>> "$EVENTS"` misses the file Node later reads. Hand the script POSIX paths
+// on Windows; Linux paths already are.
+function bashPath(path) {
+    return process.platform === "win32"
+        ? `/${path[0].toLowerCase()}${path.slice(2).replaceAll("\\", "/")}`
+        : path;
+}
+
 test("README guide table and plain-text index stay in sync", async () => {
     const guides = (text) => {
         const section = text
@@ -307,8 +316,8 @@ echo push >> "$EVENTS"
                 encoding: "utf8",
                 env: {
                     ...process.env,
-                    RUNNER_TEMP: directory,
-                    EVENTS: events,
+                    RUNNER_TEMP: bashPath(directory),
+                    EVENTS: bashPath(events),
                     DISABLE_STATUS: String(disableStatus),
                     QUERY_STATUS: String(queryStatus),
                     DEQUEUE_STATUS: String(dequeueStatus),

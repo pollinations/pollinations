@@ -1,12 +1,17 @@
 import {
     Button,
     CardIcon,
+    CheckIcon,
     cn,
+    Dialog,
+    DialogBody,
+    DialogHeader,
     InlineLink,
     StableLabel,
     Switch,
     Tooltip,
     WarningIcon,
+    XIcon,
 } from "@pollinations/ui";
 import { WalletKindIcon } from "@pollinations/ui/wallet";
 import {
@@ -113,6 +118,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
         () => (initialPack && getPollenPackByKey(initialPack)) || null,
     );
     const [checkoutOpen, setCheckoutOpen] = useState(false);
+    const [cryptoCheckoutOpen, setCryptoCheckoutOpen] = useState(false);
     const [saving, setSaving] = useState(false);
     // A save or Stripe-portal failure, shown in the status slot.
     const [slotError, setSlotError] = useState<string | null>(null);
@@ -263,7 +269,6 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                     onSelect={setChosenPack}
                 />
                 <div className="flex w-full flex-wrap items-center justify-between gap-x-3 gap-y-3">
-                    {/* Both choices open checkout for the selected pack. */}
                     <div className="flex min-w-0 max-w-full flex-wrap items-center gap-3">
                         <Button
                             size="lg"
@@ -279,24 +284,16 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                             />
                         </Button>
                         {selectedPack && (
-                            <Tooltip
-                                triggerAs="span"
-                                content="Secure payment via Stripe"
-                                className="shrink-0"
+                            <InlineLink
+                                as="button"
+                                type="button"
+                                aria-haspopup="dialog"
+                                onClick={() => setCryptoCheckoutOpen(true)}
+                                size="sm"
+                                className="shrink-0 whitespace-nowrap font-semibold"
                             >
-                                <InlineLink
-                                    href={hostedCheckoutHref(
-                                        selectedPack.packKey,
-                                        cryptoCheckoutParams.toString(),
-                                    )}
-                                    external
-                                    target="_self"
-                                    size="sm"
-                                    className="inline-flex items-center gap-1 whitespace-nowrap font-semibold"
-                                >
-                                    Pay with Crypto
-                                </InlineLink>
-                            </Tooltip>
+                                Pay with Crypto
+                            </InlineLink>
                         )}
                     </div>
                     {/* The switch leads on mobile; desktop keeps it after
@@ -448,6 +445,62 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                     </div>
                 </div>
             </section>
+
+            {/* Mount after opening so the standalone top-up dialog does not hide this portal. */}
+            {cryptoCheckoutOpen && selectedPack && (
+                <Dialog open onOpenChange={setCryptoCheckoutOpen} size="sm">
+                    <DialogBody
+                        actions={
+                            <>
+                                <Button
+                                    intent="neutral"
+                                    onClick={() => setCryptoCheckoutOpen(false)}
+                                >
+                                    Back
+                                </Button>
+                                <Button
+                                    as="a"
+                                    intent="brand"
+                                    href={hostedCheckoutHref(
+                                        selectedPack.packKey,
+                                        cryptoCheckoutParams.toString(),
+                                    )}
+                                >
+                                    Continue to Stripe
+                                </Button>
+                            </>
+                        }
+                    >
+                        <DialogHeader inBody title="Before you send" />
+                        <ul className="space-y-3 text-sm">
+                            <li className="flex items-start gap-3">
+                                <CheckIcon
+                                    aria-hidden="true"
+                                    className="size-7 shrink-0 rounded-full bg-intent-success-bg-bright/15 p-1.5 text-intent-success-text"
+                                />
+                                <div>
+                                    <strong className="text-theme-text-strong">
+                                        Token and network match
+                                    </strong>
+                                    <p>Use the exact pair shown by Stripe.</p>
+                                </div>
+                            </li>
+                            <li className="flex items-start gap-3">
+                                <XIcon
+                                    aria-hidden="true"
+                                    className="size-7 shrink-0 rounded-full bg-intent-danger-bg-light p-1.5 text-intent-danger-text"
+                                />
+                                <div>
+                                    <strong className="text-theme-text-strong">
+                                        Either one differs
+                                    </strong>
+                                    <p>Stop. You could lose your funds.</p>
+                                </div>
+                            </li>
+                        </ul>
+                    </DialogBody>
+                </Dialog>
+            )}
 
             {payCard && (
                 <PackCheckoutDialog

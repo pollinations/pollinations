@@ -6,6 +6,7 @@ import {
     getModelQueryFilterTokens,
     getModelQuerySuggestions,
     getModelQueryVisibleSearch,
+    MODEL_PAGE_QUERY_FILTER_KEYS,
     matchesModelQuery,
     parseModelQuery,
     removeModelQueryFilterToken,
@@ -439,5 +440,24 @@ describe("getModelQuerySuggestions", () => {
         expect(getModelQuerySuggestions("access:", models, agentKeys)).toEqual(
             [],
         );
+    });
+
+    it("does not offer a type filter on the model catalog", () => {
+        expect(
+            getModelQuerySuggestions("", models, MODEL_PAGE_QUERY_FILTER_KEYS),
+        ).toEqual([
+            "access:",
+            "capability:",
+            "id:",
+            "publisher:",
+            "source:",
+            "status:",
+        ]);
+        expect(
+            parseModelQuery("type:image", MODEL_PAGE_QUERY_FILTER_KEYS),
+        ).toEqual({
+            terms: ["type:image"],
+            filters: [],
+        });
     });
 });

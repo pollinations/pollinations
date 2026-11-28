@@ -3,16 +3,16 @@ import { Link } from "@tanstack/react-router";
 import type { FC } from "react";
 import type { AccountBalance } from "../../hooks/use-account-balance.ts";
 
-/** An empty wallet fails every request with 402; point at the refills. */
+/** Point to ways to fund generation when the wallet has no spendable balance. */
 export const OutOfPollenBanner: FC<AccountBalance> = ({
     tierBalance,
     packBalance,
     questPollenRestricted,
 }) => {
     // Locked Quest balance cannot be spent, and quests would only add to it.
-    const spendable = (questPollenRestricted ? 0 : tierBalance) + packBalance;
-    // The API lets a request through while any spendable balance is left.
-    if (spendable > 0) return null;
+    if (packBalance > 0 || (!questPollenRestricted && tierBalance > 0)) {
+        return null;
+    }
     return (
         // Folded, it shares the menu button's row (top-3, h-10) instead of
         // sitting under it, so the page starts higher too; only as the
@@ -21,26 +21,34 @@ export const OutOfPollenBanner: FC<AccountBalance> = ({
         // edge too.
         <Alert
             intent="advisory"
-            title="Your balance is empty"
+            title={
+                questPollenRestricted
+                    ? "Your Quest balance is locked"
+                    : "Your wallet is empty"
+            }
             className="max-lg:first:-mt-[3.25rem] max-lg:first:ml-14 max-sm:mr-3"
         >
-            API requests fail until you add more.{" "}
+            To make a generation request,{" "}
             <InlineLink
                 as={Link}
                 to="/pollen"
                 hash="buy-pollen"
                 external={false}
             >
-                Top up
-            </InlineLink>
-            {!questPollenRestricted && (
-                <>
-                    {" "}
-                    or{" "}
-                    <InlineLink as={Link} to="/quests" external={false}>
-                        earn some with Quests
-                    </InlineLink>
-                </>
+                top up your paid balance
+            </InlineLink>{" "}
+            or{" "}
+            {questPollenRestricted ? (
+                <InlineLink
+                    href="mailto:hello@pollinations.ai"
+                    showIcon={false}
+                >
+                    ask support to review your account
+                </InlineLink>
+            ) : (
+                <InlineLink as={Link} to="/quests" external={false}>
+                    earn Quest balance
+                </InlineLink>
             )}
             .
         </Alert>

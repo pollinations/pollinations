@@ -311,7 +311,7 @@ describe("locked Quest pollen display", () => {
         expect(html).toContain("Verification needed");
         expect(html).toContain("make your first purchase");
         expect(html).toContain('href="/pollen#buy-pollen"');
-        expect(html).toContain('href="mailto:billing@pollinations.ai"');
+        expect(html).toContain('href="mailto:hello@pollinations.ai"');
         expect(html).not.toContain('role="alert"');
         expect(html).not.toContain("request a review");
 
@@ -374,6 +374,8 @@ describe("dollar amounts", () => {
         [0.99999, "$0.9999"],
         // Requests cost fractions of a cent, so small balances keep them.
         [0.0042, "$0.0042"],
+        [0.00001, "<$0.0001"],
+        [-0.00001, ">-$0.0001"],
         [-1.2, "-$1.20"],
         [250_000, "$250K"],
     ])("formats %s Pollen as %s", (pollen, text) => {
@@ -407,15 +409,17 @@ describe("out-of-pollen banner", () => {
         [
             "only locked Quest pollen",
             { tierBalance: 35.54, packBalance: 0, questPollenRestricted: true },
-            [buy],
+            [buy, "mailto:hello@pollinations.ai"],
         ],
-        // The wallet shows this as 0, but the API still accepts a request.
+        // A tiny positive balance may still cover a small request.
         [
             "a remainder too small to show",
             { tierBalance: 0.00004, packBalance: 0 },
             [],
         ],
         ["Quest pollen left", { tierBalance: 0.5, packBalance: 0 }, []],
+        ["Quest beside paid debt", { tierBalance: 0.5, packBalance: -1 }, []],
+        ["paid beside Quest debt", { tierBalance: -1, packBalance: 0.5 }, []],
         [
             "paid pollen beside locked Quest pollen",
             { tierBalance: 35.54, packBalance: 2, questPollenRestricted: true },

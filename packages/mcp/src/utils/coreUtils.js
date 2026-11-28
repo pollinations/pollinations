@@ -201,7 +201,8 @@ export function parseApiError(status, errorText) {
             );
         case 402:
             return (
-                errorMessage || "Balance too low or API key budget exhausted."
+                errorMessage ||
+                "Check the account balance and the spending limits on this API key."
             );
         case 403:
             return (

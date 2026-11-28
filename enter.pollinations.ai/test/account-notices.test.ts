@@ -101,7 +101,7 @@ test("running-low email goes out once per pack below 20% of the last pack", asyn
 test("auto top-up failed emails once per failure", async () => {
     const { sent, notifyEnv } = withOutbox();
     // No Stripe customer: the trigger turns auto top-up off before any charge.
-    await addUser("nocard", { packBalance: 2, autoTopUp: true });
+    await addUser("nocard", { packBalance: 0.0027, autoTopUp: true });
 
     expect(await processAutoTopUpForUser(notifyEnv, "nocard")).toEqual({
         status: "skipped",
@@ -112,7 +112,7 @@ test("auto top-up failed emails once per failure", async () => {
         reason: "auto top-up disabled",
     });
     expect(sent.map((email) => email.subject)).toEqual(["Auto top-up failed"]);
-    expect(sent[0].text).toContain("💳 $2.00 left");
+    expect(sent[0].text).toContain("💳 less than $0.01 left");
     expect(sent[0].text).toContain("for your $10 auto top-up");
     // The reason comes before the balance.
     expect(sent[0].html.indexOf("for your $10")).toBeLessThan(

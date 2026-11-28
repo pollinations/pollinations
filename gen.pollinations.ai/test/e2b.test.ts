@@ -1535,7 +1535,7 @@ test("an unshared port is served like E2B's own host and wakes nothing, nor do a
     const refused = await visit("4002-asleep.pollinations.app");
     expect(refused.status).toBe(402);
     expect(await refused.text()).toMatch(
-        /^This sandbox is asleep and could not be woken: Insufficient balance\..*Top up at https:\/\//,
+        /^This sandbox is asleep and could not be woken: Insufficient balance\..*top up \(https:\/\//,
     );
     expect(e2b.sandboxes.at(-1)?.state).toBe("paused");
     expect(e2b.portRequests).toHaveLength(4);

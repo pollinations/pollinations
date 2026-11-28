@@ -68,7 +68,10 @@ test("parseApiError displays gateway 402 error message unchanged", () => {
 
 test("parseApiError provides generic fallback when 402 body has no details", () => {
     const message = parseApiError(402, "");
-    assert.equal(message, "Balance too low or API key budget exhausted.");
+    assert.equal(
+        message,
+        "Check the account balance and the spending limits on this API key.",
+    );
 });
 
 test("parseApiError provides generic fallback when 403 body has no details", () => {

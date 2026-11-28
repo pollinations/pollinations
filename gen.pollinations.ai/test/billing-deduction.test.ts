@@ -24,6 +24,7 @@ import { createTestApiKey } from "@shared/test/fixtures/index.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect, it } from "vitest";
+import { reserveApiKeyBudget } from "../src/utils/generation-access.ts";
 import { requireFunds } from "../src/utils/refusals.ts";
 
 const db = drizzle(env.DB);
@@ -120,14 +121,14 @@ describe("billing deduction", () => {
                 { env, var: {} },
                 0.0001,
                 () => getUserBalance(db, userId),
-                true,
+                { paidOnly: true },
             ),
         ).rejects.toMatchObject({
             status: 402,
             errorCode: "INSUFFICIENT_BALANCE",
             paidOnly: true,
             message: expect.stringContaining(
-                "This model requires the paid balance, so the Quest balance can't cover it. This request costs about $0.0001, but your available paid balance is $0.0000.",
+                "This model needs the paid balance. Your available paid balance is $0.0000. The estimated amount needed to start is $0.0001.",
             ),
         });
     });
@@ -139,14 +140,14 @@ describe("billing deduction", () => {
                 { env, var: {} },
                 0,
                 () => getUserBalance(db, userId),
-                true,
+                { paidOnly: true },
             ),
         ).rejects.toMatchObject({
             status: 402,
             errorCode: "INSUFFICIENT_BALANCE",
             paidOnly: true,
             message: expect.stringContaining(
-                "The final price depends on usage, but your available paid balance is $0.0000.",
+                "Your available paid balance is $0.0000. A positive balance is required to start. The final price depends on usage.",
             ),
         });
     });
@@ -161,7 +162,7 @@ describe("billing deduction", () => {
             status: 402,
             errorCode: "INSUFFICIENT_BALANCE",
             message: expect.stringContaining(
-                "This request costs less than $0.0001, but your available balance is $0.0000.",
+                "The estimated amount needed to start is less than $0.00000001.",
             ),
         });
     });
@@ -443,6 +444,19 @@ describe("billing deduction", () => {
         );
 
         expect(results.filter((result) => result.ok)).toHaveLength(3);
+        const vars = {
+            auth: { apiKey: { id: apiKeyId } },
+            balance: { apiKeyBudgetEstimate: 3 },
+        } as Parameters<typeof reserveApiKeyBudget>[0];
+        await expect(reserveApiKeyBudget(vars, env)).rejects.toMatchObject({
+            errorCode: "KEY_BUDGET_EXHAUSTED",
+            message: expect.stringContaining(
+                "wait for them to finish and try again",
+            ),
+            chatMessage: expect.stringContaining(
+                "wait for them to finish and try again",
+            ),
+        });
         expect(await getApiKeyBalance(apiKeyId)).toBe(1);
     });
 

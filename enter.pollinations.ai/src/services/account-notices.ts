@@ -45,7 +45,7 @@ export function runningLowNotice(balance: number): Notice {
         id: "running_low",
         subject: "Your paid balance is running low",
         balance,
-        body: "When it runs out, requests that need it will fail.\n\nTop up now, or turn on **auto top-up** so it refills by itself.",
+        body: "Requests that need your paid balance can be declined when their estimate exceeds the amount available.\n\nTop up now, or turn on **auto top-up** so it refills by itself.",
         button: { label: "Top up", path: "/top-up" },
     };
 }
@@ -57,7 +57,7 @@ export function autoTopUpOffNotice(balance: number, topUp: number): Notice {
         subject: "Auto top-up failed",
         balance,
         intro: `We couldn’t charge your saved payment method for your $${topUp} auto top-up, so auto top-up is now off.`,
-        body: "When it runs out, requests that need it will fail.\n\nUpdate your payment method, then turn auto top-up back on.",
+        body: "Requests that need your paid balance can be declined when their estimate exceeds the amount available.\n\nUpdate your payment method, then turn auto top-up back on.",
         button: { label: "Open wallet", path: "/pollen" },
     };
 }
@@ -104,6 +104,10 @@ export function renderNotice(
     baseUrl: string,
     unsubscribeUrl: string,
 ): { html: string; text: string } {
+    const remaining =
+        notice.balance > 0 && notice.balance < 0.01
+            ? "less than $0.01"
+            : `$${amount(notice.balance)}`;
     const url = (path: string) => new URL(path, baseUrl).toString();
     const image = (name: string) => url(`/email/${name}.png`);
     const links = FOOTER_LINKS.map((link) => ({
@@ -128,7 +132,7 @@ export function renderNotice(
 <div style="background:#fffaf0;border-radius:16px;padding:28px">
 <h1 style="margin:0 0 12px;font-size:22px;line-height:28px">${notice.subject}</h1>
 ${notice.intro ? `<p style="margin:0 0 16px;font-size:16px;line-height:24px">${notice.intro}</p>` : ""}
-<p style="margin:0 0 20px;padding:14px 18px;background:#f4efe6;border-radius:12px;color:${PAID_COLOR};font-size:32px;line-height:40px;font-weight:700"><img src="${image("card")}" width="28" height="28" alt="" style="vertical-align:-3px;margin-right:8px">$${amount(notice.balance)} <span style="font-size:18px;font-weight:600">left</span></p>
+<p style="margin:0 0 20px;padding:14px 18px;background:#f4efe6;border-radius:12px;color:${PAID_COLOR};font-size:32px;line-height:40px;font-weight:700"><img src="${image("card")}" width="28" height="28" alt="" style="vertical-align:-3px;margin-right:8px">${remaining} <span style="font-size:18px;font-weight:600">left</span></p>
 ${notice.body
     .split("\n\n")
     .map(
@@ -151,7 +155,7 @@ ${icons}
     // content.
     const text = [
         ...(notice.intro ? [notice.intro, ""] : []),
-        `💳 $${amount(notice.balance)} left`,
+        `💳 ${remaining} left`,
         "",
         notice.body.replaceAll("**", ""),
         "",

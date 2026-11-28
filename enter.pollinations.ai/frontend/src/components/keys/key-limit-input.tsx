@@ -2,6 +2,9 @@ import { CardIcon, ClockIcon, InfoTip, Input, Text } from "@pollinations/ui";
 import { AuthAccessItem } from "@pollinations/ui/auth";
 import { useEffect, useId, useState } from "react";
 
+const budgetHelp = (subject: "key" | "app" | "device") =>
+    `How much this ${subject} can still spend from your wallet. Requests can be declined when their estimate exceeds this amount. Wallet top-ups leave this budget unchanged. Leave blank for no limit.`;
+
 const limits = {
     budget: {
         label: "Budget",
@@ -12,9 +15,8 @@ const limits = {
         min: 0,
         step: "any",
         empty: "Unlimited",
-        helper: "Spending cap for this key. Requests are rejected after the budget is spent. Leave empty for no cap.",
-        accessHelper: (subject: "app" | "device") =>
-            `Spending cap for this ${subject}. Requests are rejected after the budget is spent. Leave empty for no cap.`,
+        helper: budgetHelp("key"),
+        accessHelper: budgetHelp,
     },
     expiry: {
         label: "Expiry",

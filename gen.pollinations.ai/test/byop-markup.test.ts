@@ -202,7 +202,7 @@ describe("BYOP markup", () => {
         const refusedAt = (price: string) => ({
             status: 402,
             message: expect.stringContaining(
-                `This request costs about ${price}`,
+                `The estimated amount needed to start is ${price}`,
             ),
         });
 
@@ -833,7 +833,9 @@ describe("BYOP markup", () => {
             checkBalance(vars, fakeStatsEnv(33.3433, "vendouple/zimage")),
         ).rejects.toMatchObject({
             status: 402,
-            message: expect.stringContaining("costs about $0.0100"),
+            message: expect.stringContaining(
+                "estimated amount needed to start is $0.0100",
+            ),
         });
     });
 

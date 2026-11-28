@@ -1,4 +1,3 @@
-import { fixLink } from "@shared/http/fix-link.ts";
 import { PaymentRequiredError } from "@shared/http/payment-required-error.ts";
 import { PermissionRequiredError } from "@shared/http/permission-required-error.ts";
 import type {
@@ -32,48 +31,6 @@ const NOT_YOUR_ACCOUNT =
 // text; without them they link the closing ")" too.
 const mdLink = (text: string, url: string) => `[${text}](<${url}>)`;
 
-// The links come from the error, so the chat reply and the JSON error agree.
-function balanceNoticeMessage(
-    c: Context<Env>,
-    error: PaymentRequiredError,
-): string {
-    if (error.errorCode === "QUEST_POLLEN_RESTRICTED") {
-        return (
-            "We couldn’t verify the account behind this API key. Its Quest balance is locked. " +
-            `Please ${mdLink("make your first purchase", error.fixUrl)} to unlock it, or ${mdLink("contact us", "mailto:hello@pollinations.ai")} if you think this is a mistake.\n\n` +
-            NOT_YOUR_ACCOUNT
-        );
-    }
-    if (error.errorCode === "KEY_BUDGET_EXHAUSTED") {
-        return (
-            "The API key used for this request has reached its budget. " +
-            `Please ${mdLink("raise the key budget", error.fixUrl)}, then try again.\n\n` +
-            `Topping up the wallet does not raise this limit. ${NOT_YOUR_ACCOUNT}`
-        );
-    }
-    if (error.errorCode === "QUEST_POLLEN_ONLY") {
-        const allowPaid = mdLink(
-            "allow the paid balance for this key",
-            error.fixUrl,
-        );
-        const remedy = error.paidOnly
-            ? `This model needs the paid balance. Please ${allowPaid}, then try again.`
-            : `Please ${mdLink("complete a quest", fixLink(c, "/quests", { ref: "agent_quest_pollen_only_quests" }))} or ${allowPaid}, then try again.`;
-        return (
-            `The API key used for this request only spends the Quest balance${error.paidOnly ? "" : ", and there isn't enough left"}. ` +
-            `${remedy}\n\n${NOT_YOUR_ACCOUNT}`
-        );
-    }
-    const topUp = mdLink("top up", error.fixUrl);
-    const remedy = error.paidOnly
-        ? `This model needs the paid balance. Please ${topUp}, then try again.`
-        : `Please ${topUp} or ${mdLink("complete a quest", fixLink(c, "/quests", { ref: "agent_low_balance_quests" }))}, then try again.`;
-    return (
-        "The account behind this API key doesn't have enough credits. " +
-        `${remedy}\n\n${NOT_YOUR_ACCOUNT}`
-    );
-}
-
 function noticeMessage(c: Context<Env>): string | undefined {
     const error = c.get("error");
     if (
@@ -81,7 +38,7 @@ function noticeMessage(c: Context<Env>): string | undefined {
         c.res.status === 402 &&
         error instanceof PaymentRequiredError
     )
-        return balanceNoticeMessage(c, error);
+        return `${error.chatMessage}\n\n${NOT_YOUR_ACCOUNT}`;
     if (
         TEXT_PERMISSION_NOTICE_ENABLED &&
         c.res.status === 403 &&

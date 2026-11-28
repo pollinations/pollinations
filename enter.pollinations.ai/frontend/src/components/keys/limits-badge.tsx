@@ -1,7 +1,7 @@
 import { cn } from "@pollinations/ui";
-import { formatPollen } from "@pollinations/ui/wallet";
 import { type FormatDistanceToken, formatDistanceToNowStrict } from "date-fns";
 import type { FC } from "react";
+import { formatUsd } from "../pollen/format-usd.ts";
 
 const shortFormatDistance: Record<FormatDistanceToken, string> = {
     lessThanXSeconds: "{{count}}s",
@@ -42,7 +42,7 @@ export const LimitsBadge: FC<{
                 <span className="text-theme-text-muted">{expiryStr}</span>
             </span>
             <span>
-                <span className="text-theme-text-muted">Budget: </span>
+                <span className="text-theme-text-muted">Budget left: </span>
                 <span
                     className={cn(
                         "text-theme-text-muted",
@@ -66,9 +66,6 @@ function formatExpiry(expiresAt: Date | null | undefined): string {
 }
 
 function formatBudget(pollenBudget: number | null | undefined): string {
-    if (pollenBudget == null) return "∞";
-    if (pollenBudget === 0) return "0";
-    if (pollenBudget < 0) return "empty";
-
-    return `${formatPollen(pollenBudget)}p`;
+    if (pollenBudget == null) return "Unlimited";
+    return formatUsd(Math.max(0, pollenBudget));
 }

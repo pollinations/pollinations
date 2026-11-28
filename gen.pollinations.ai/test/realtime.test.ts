@@ -102,7 +102,11 @@ function zeroAudioBase64(byteLength: number): string {
     return btoa("\0".repeat(byteLength));
 }
 
-function mockRealtimeProvider(initialMessage?: string, estimatedCost = 0) {
+function mockRealtimeProvider(
+    initialMessage?: string,
+    estimatedCost = 0,
+    model = "openai/gpt-realtime-2.1",
+) {
     let upstreamRequest: Request | undefined;
     let upstreamClient: WebSocket | undefined;
     let upstreamServer: WebSocket | undefined;
@@ -124,7 +128,7 @@ function mockRealtimeProvider(initialMessage?: string, estimatedCost = 0) {
                         estimatedCost > 0
                             ? [
                                   {
-                                      model: "openai/gpt-realtime-2.1",
+                                      model,
                                       avg_cost_usd: estimatedCost,
                                   },
                               ]
@@ -1364,6 +1368,39 @@ test("deducts aggregate session usage from paid pack balance on close", async ()
     expect(telemetry.tokenCountCompletionAudio).toBe(50);
     expect(telemetry.totalPrice).toBeCloseTo(expectedCharge, 8);
 });
+
+test.each([
+    ["openai/gpt-realtime-2.1-mini", 0.01578],
+    ["openai/gpt-realtime-2.1", 0.006541],
+] as const)(
+    "explains the estimated budget before opening %s",
+    async (model, median) => {
+        const { key, id, userId } = await createTestApiKey({
+            pollenBudget: 0.0027,
+            user: { tierBalance: 0, packBalance: 1 },
+        });
+        const upstream = mockRealtimeProvider(undefined, median, model);
+        const response = await fetchWorker(`/v1/realtime?model=${model}`, {
+            headers: { Authorization: `Bearer ${key}`, Upgrade: "websocket" },
+        });
+        expect(response.status).toBe(402);
+        const body = await response.json<{
+            error: { message: string; code: string; fixUrl: string };
+        }>();
+        expect(body.error.code).toBe("KEY_BUDGET_EXHAUSTED");
+        expect(body.error.message).toContain("$0.0027");
+        expect(body.error.message).toContain(
+            `$${median}, based on this model's median session price over the past seven days`,
+        );
+        expect(body.error.message).toContain(
+            "No charge was made for this session.",
+        );
+        expect(new URL(body.error.fixUrl).searchParams.get("id")).toBe(id);
+        expect(upstream.maybeServer).toBeUndefined();
+        expect(await getApiKeyBalance(id)).toBe(0.0027);
+        expect((await getUserBalances(userId))?.packBalance).toBe(1);
+    },
+);
 
 test("releases a realtime API key reservation when the session has no usage", async () => {
     const session = await openPaidRealtimeSession({

@@ -69,7 +69,17 @@ describe("text balance notice", () => {
             expect(text).toContain(
                 enabled ? "Quest balance is locked" : "QUEST_POLLEN_RESTRICTED",
             );
+            expect(text).toContain("/top-up?ref=quest_pollen_restricted");
             expect(text).toContain("hello@pollinations.ai");
+            expect(text).not.toContain("/quests?");
+            if (questPollenOnly) {
+                // This caller can use its funded paid balance by editing the key.
+                expect(text).toContain(
+                    `/edit-key?id=${caller.id}&ref=agent_quest_pollen_only`,
+                );
+            } else {
+                expect(text).not.toContain("/edit-key?");
+            }
             expect(
                 (await getUserBalance(drizzle(env.DB), caller.userId))
                     .tierBalance,
@@ -146,7 +156,7 @@ describe("text balance notice", () => {
             expect(response.status, text).toBe(enabled && textOnly ? 200 : 402);
             expect(text).toContain(
                 enabled && textOnly
-                    ? "The account behind this API key"
+                    ? "/top-up?ref=agent_low_balance_topup"
                     : "INSUFFICIENT_BALANCE",
             );
             await waitOnExecutionContext(ctx);
@@ -166,7 +176,7 @@ describe("text balance notice", () => {
         "presents $path stream=$stream without caching or billing",
         async ({ path, stream }) => {
             const caller = await createTestApiKey({
-                user: { tierBalance: 0, packBalance: 0 },
+                user: { tierBalance: 0.0003, packBalance: 0.0004 },
                 pollenBudget: 1,
             });
             const events: TinybirdEvent[] = [];
@@ -234,6 +244,7 @@ describe("text balance notice", () => {
                     );
                     expect(body).toContain("?ref=agent_low_balance_topup");
                     expect(body).toContain("?ref=agent_low_balance_quests");
+                    expect(body).not.toMatch(/\$0\.000[34]/);
                     if (stream) {
                         expect(response.headers.get("content-type")).toContain(
                             "text/event-stream",
@@ -279,8 +290,8 @@ describe("text balance notice", () => {
                 });
             const db = drizzle(env.DB);
             expect(await getUserBalance(db, caller.userId)).toMatchObject({
-                tierBalance: 0,
-                packBalance: 0,
+                tierBalance: 0.0003,
+                packBalance: 0.0004,
             });
             expect(
                 (
@@ -393,7 +404,7 @@ it.each([
     async ({ metadata, referer, redirect }) => {
         const caller = await createTestApiKey({
             user: { packBalance: 10 },
-            pollenBudget: 0,
+            pollenBudget: 0.0007,
             metadata,
         });
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
@@ -426,9 +437,10 @@ it.each([
                 `https://enter.pollinations.ai/edit-key?id=${caller.id}&ref=agent_key_budget`,
             );
             if (redirect) link.searchParams.set("redirect", redirect);
-            expect(text).toContain(`[raise the key budget](<${link}>)`);
-            expect(text).toContain("Topping up the wallet does not raise");
-            expect(text).not.toContain("complete a quest");
+            expect(text).toContain(`[Increase the key budget](<${link}>)`);
+            expect(text).not.toContain("$0.0007");
+            expect(text).toContain("$0.001");
+            expect(text).not.toContain("/quests?");
         }
         await waitOnExecutionContext(ctx);
     },
@@ -490,9 +502,7 @@ it("refuses a key with no budget left when the model has no cost history", async
     const text = await response.text();
     await waitOnExecutionContext(ctx);
     expect(text).toContain(
-        TEXT_BALANCE_NOTICE_ENABLED
-            ? "raise the key budget"
-            : "KEY_BUDGET_EXHAUSTED",
+        TEXT_BALANCE_NOTICE_ENABLED ? "/edit-key?id=" : "KEY_BUDGET_EXHAUSTED",
     );
     expect(providerCalls).toBe(0);
     expect(await getUserBalance(drizzle(env.DB), caller.userId)).toEqual({
@@ -501,49 +511,68 @@ it("refuses a key with no budget left when the model has no cost history", async
     });
 });
 
-it("omits the quest link when only paid Pollen can cover the model", async () => {
-    const paidOnlyModel = "inception/mercury-2";
-    await env.KV.put(
-        "model-stats-v3",
-        JSON.stringify({
-            value: { data: [{ model: paidOnlyModel, avg_cost_usd: 0.001 }] },
-            ttl: 3600,
-        }),
-    );
-    const caller = await createTestApiKey({
-        user: { tierBalance: 100, packBalance: 0 },
-    });
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(
-        Response.json({ data: [] }),
-    );
-    const ctx = createExecutionContext();
-    const response = await worker.fetch(
-        new Request("https://gen.pollinations.ai/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${caller.key}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                model: paidOnlyModel,
-                messages: [{ role: "user", content: "hello" }],
+it.each([
+    { paidOnly: true, questPollenOnly: false },
+    { paidOnly: true, questPollenOnly: true },
+    { paidOnly: false, questPollenOnly: true },
+])(
+    "links to ways to pay for the model, paidOnly=$paidOnly questPollenOnly=$questPollenOnly",
+    async ({ paidOnly, questPollenOnly }) => {
+        const requested = paidOnly ? "inception/mercury-2" : model;
+        await env.KV.put(
+            "model-stats-v3",
+            JSON.stringify({
+                value: { data: [{ model: requested, avg_cost_usd: 0.001 }] },
+                ttl: 3600,
             }),
-        }),
-        env,
-        ctx,
-    );
-    const text = await response.text();
-    if (!TEXT_BALANCE_NOTICE_ENABLED) {
-        expect(response.status, text).toBe(402);
-        expect(text).toContain("INSUFFICIENT_BALANCE");
-    } else {
-        expect(response.status, text).toBe(200);
-        expect(text).toContain("needs the paid balance");
-        expect(text).toContain("/top-up?ref=agent_low_balance_topup");
-        expect(text).not.toContain("complete a quest");
-    }
-    await waitOnExecutionContext(ctx);
-});
+        );
+        const caller = await createTestApiKey({
+            user: {
+                tierBalance: paidOnly ? 100 : 0.0003,
+                packBalance: questPollenOnly ? 5 : 0,
+            },
+            questPollenOnly,
+        });
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json({ data: [] }),
+        );
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(
+                `https://gen.pollinations.ai/text/hello?model=${requested}`,
+                {
+                    headers: { Authorization: `Bearer ${caller.key}` },
+                },
+            ),
+            env,
+            ctx,
+        );
+        const text = await response.text();
+        await waitOnExecutionContext(ctx);
+        if (!TEXT_BALANCE_NOTICE_ENABLED) {
+            expect(response.status, text).toBe(402);
+            expect(text).toContain(
+                questPollenOnly ? "QUEST_POLLEN_ONLY" : "INSUFFICIENT_BALANCE",
+            );
+        } else {
+            expect(response.status, text).toBe(200);
+            expect(text).toContain(
+                questPollenOnly
+                    ? `/edit-key?id=${caller.id}&ref=agent_quest_pollen_only`
+                    : "/top-up?ref=agent_low_balance_topup",
+            );
+            if (paidOnly) {
+                expect(text).toContain("paid balance");
+                expect(text).not.toContain("/quests?");
+            } else {
+                expect(text).toContain(
+                    "/quests?ref=agent_quest_pollen_only_quests",
+                );
+                expect(text).not.toContain("$0.0003");
+            }
+        }
+    },
+);
 
 it.each([
     { name: "plain chat", responseFormat: undefined },

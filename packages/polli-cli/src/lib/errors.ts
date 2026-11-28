@@ -1,5 +1,5 @@
 import { createInterface } from "node:readline/promises";
-import { ApiError, gen, requireKey } from "./api.js";
+import { ApiError, gen, paymentError, requireKey } from "./api.js";
 import { POLLI_CLIENT } from "./client.js";
 import { BASE_URL, resolveApiKey } from "./config.js";
 import {
@@ -15,15 +15,11 @@ export async function budgetHint(
     bodyText: string,
 ): Promise<string | null> {
     if (status !== 402) return null;
-    let code: string | undefined;
-    try {
-        code = JSON.parse(bodyText)?.error?.code;
-    } catch {
-        // Non-JSON errors still get the general payment guidance below.
-    }
+    const { code, message } = paymentError(bodyText);
+    if (message) return message;
     if (code === "KEY_BUDGET_EXHAUSTED") {
         return [
-            "API key budget exhausted. Topping up the wallet does not increase the key budget.",
+            "This key has too little budget available for the request.",
             "Manage key budget: https://enter.pollinations.ai/keys",
             `Server said: ${bodyText}`,
         ].join("\n");
@@ -41,10 +37,8 @@ export async function budgetHint(
             ? "Balance too low."
             : "Check your balance and API key budget.",
         "Balance: https://enter.pollinations.ai/pollen",
-        "Complete Quests to add to your balance: https://enter.pollinations.ai/quests",
-        "Top up: https://enter.pollinations.ai/pollen#buy-pollen",
         ...(code === "INSUFFICIENT_BALANCE"
-            ? []
+            ? ["Top up: https://enter.pollinations.ai/top-up"]
             : ["Manage key budget: https://enter.pollinations.ai/keys"]),
         "",
     ];

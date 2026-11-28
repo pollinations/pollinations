@@ -33,6 +33,7 @@ import {
 const resolver = <T extends Parameters<typeof baseResolver>[0]>(schema: T) =>
     baseResolver(schema, { reused: "ref" });
 
+import { createErrorResponseSchema } from "@shared/error.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { AUDIO_VOICES } from "@shared/registry/audio.ts";
 import {
@@ -175,22 +176,38 @@ function describeRealtimeWebSocket(path: "/realtime" | "/v1/realtime") {
             "",
             `**Models:** ${REALTIME_MODEL_NAMES.map((model) => `\`${model}\``).join(", ")}.`,
             "",
-            "**Billing:** requires a positive balance and settles one session total when the socket closes.",
+            "Opening a session requires available account funds and, for a budgeted key, enough remaining budget to reserve the estimate. A budget refusal returns HTTP 402 before the session starts. When the session closes, the API bills actual usage and releases any unused reservation. Upstream handshake failures can return the provider’s HTTP status and body.",
         ].join("\n"),
         responses: {
             101: {
                 description: "WebSocket connection established",
             },
-            ...errorResponseDescriptions(
-                400,
-                401,
-                402,
-                403,
-                426,
-                429,
-                500,
-                503,
-            ),
+            ...errorResponseDescriptions(401, 402, 403, 429, 500, 503),
+            400: {
+                description:
+                    "Invalid request or provider refusal during the handshake. Azure may return just error.code and error.message. Other provider bodies can differ.",
+                content: {
+                    "application/json": {
+                        schema: resolver(
+                            z.union([
+                                createErrorResponseSchema(400),
+                                z.object({
+                                    error: z.object({
+                                        code: z.string(),
+                                        message: z.string(),
+                                    }),
+                                }),
+                            ]),
+                        ),
+                    },
+                },
+            },
+            426: {
+                description: "Send a WebSocket upgrade to open a session.",
+                content: {
+                    "text/plain": { schema: { type: "string" as const } },
+                },
+            },
         },
     });
 }

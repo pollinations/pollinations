@@ -13,6 +13,25 @@ export class ApiError extends Error {
     }
 }
 
+/** Read the payment guidance supplied by Gen, including the account-specific link. */
+export function paymentError(body: string): {
+    code?: string;
+    message?: string;
+} {
+    try {
+        const error = JSON.parse(body)?.error;
+        return {
+            code: error?.code,
+            message:
+                typeof error?.message === "string"
+                    ? error.message.trim() || undefined
+                    : undefined,
+        };
+    } catch {
+        return {};
+    }
+}
+
 export const requireKey = (): string => {
     const key = resolveApiKey();
     if (!key) {
@@ -74,7 +93,9 @@ const send = async (
         const text = await res.text().catch(() => "Unknown error");
         throw new ApiError(
             res.status,
-            permissionHint(res.status, text) ??
+            (res.status === 402
+                ? paymentError(text).message
+                : permissionHint(res.status, text)) ??
                 `${res.status} ${res.statusText}: ${text}`,
             text,
         );

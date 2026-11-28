@@ -119,7 +119,7 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                 disabled={disabled}
                 info={
                     <InfoTip
-                        text={`This ${accessContext ?? "key"} never spends paid balance. Requests stop when the Quest balance runs out.`}
+                        text={`Requests from this ${accessContext ?? "key"} must fit your available Quest balance. Clear this option to allow spending from your paid balance, which paid-only models require.`}
                         label="Quest balance only information"
                     />
                 }

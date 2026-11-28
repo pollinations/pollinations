@@ -5,6 +5,7 @@
  */
 export function formatUsd(pollen: number): string {
     const abs = Math.abs(pollen);
+    if (abs > 0 && abs < 0.0001) return pollen > 0 ? "<$0.0001" : ">-$0.0001";
     return new Intl.NumberFormat("en-US", {
         style: "currency",
         currency: "USD",

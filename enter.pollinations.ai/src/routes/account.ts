@@ -149,13 +149,13 @@ const CreateKeySchema = z.object({
         .nullable()
         .optional()
         .describe(
-            "Budget cap in US dollars. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for unlimited",
+            "Remaining amount the key can spend from the account wallet, in US dollars. Requests can be declined when the estimate exceeds the remaining budget. Secret keys use null for unlimited. Publishable keys accept null, omission, or 0 and always use 0.",
         ),
     questPollenOnly: z
         .boolean()
         .optional()
         .describe(
-            "Spend only the Quest balance, never the paid balance. Requests stop when the Quest balance runs out. Keys created by a Quest-balance-only key are always Quest balance only",
+            "Use only the Quest balance. It must cover the request estimate, and paid-only models are unavailable. Keys created by a Quest-balance-only key inherit this restriction.",
         ),
     accountPermissions: z
         .array(z.enum(CONSENT_PERMISSIONS))
@@ -1010,7 +1010,7 @@ const accountBalanceSchema = z.object({
     total: z
         .number()
         .describe(
-            "Quest balance + paid balance the account can spend on a regular model. Paid-only models spend `paid` alone, so use that field for them rather than this total.",
+            "Sum of the available Quest and paid balances. For a regular model, one eligible balance must cover the request estimate on its own. Paid-only models use only the paid balance.",
         ),
     tier: z
         .number()

@@ -634,7 +634,7 @@ test("refuses a media request the balance cannot cover at its own price", async 
     );
     expect(video.status).toBe(402);
     expect(await video.text()).toContain(
-        `This request costs about ${usd(
+        `The estimated amount needed to start is ${usd(
             calculatePrice(
                 "google/veo-3.1-fast",
                 { completionVideoSeconds: 8, completionAudioSeconds: 8 },
@@ -655,7 +655,7 @@ test("refuses a media request the balance cannot cover at its own price", async 
     });
     expect(image.status).toBe(402);
     expect(await image.text()).toContain(
-        `This request costs about ${usd(
+        `The estimated amount needed to start is ${usd(
             calculatePrice(
                 "x-ai/grok-imagine-image-2.0",
                 { completionImageTokens: 1 },

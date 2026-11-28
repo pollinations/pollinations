@@ -11,6 +11,7 @@ export type ModelQueryFilter =
     | { key: "access"; value: ModelAccess }
     | { key: "source"; value: ModelSource }
     | { key: "status"; value: ModelStatus }
+    | { key: "success"; value: string }
     | {
           key: "publisher" | "id" | "type" | "capability";
           value: string;
@@ -40,6 +41,7 @@ export const MODEL_QUERY_FILTER_KEYS = [
     "access",
     "source",
     "status",
+    "success",
     "publisher",
     "id",
     "type",
@@ -74,6 +76,12 @@ function parseModelQueryFilter(
                 value === "reliable"
                 ? { key, value }
                 : undefined;
+        case "success": {
+            const minimum = Number(value);
+            return Number.isInteger(minimum) && minimum >= 0 && minimum <= 100
+                ? { key, value: String(minimum) }
+                : undefined;
+        }
         case "publisher":
         case "id":
         case "type":
@@ -261,6 +269,8 @@ function getFilterValues(key: string, models: ModelPrice[]): string[] {
             return [...SOURCE_VALUES];
         case "status":
             return [...STATUS_VALUES];
+        case "success":
+            return ["0", "25", "50", "75", "80", "90"];
         case "publisher":
             return models
                 .map(getModelPublisher)
@@ -321,6 +331,16 @@ function matchesFilter(model: ModelPrice, filter: ModelQueryFilter): boolean {
             if (filter.value === "reliable" && model.community)
                 return isModelReliable(model.health?.success_rate);
             return model.health?.status === "healthy";
+        case "success": {
+            // Match the API: only public community proxies have a stability
+            // cutoff; official models, agents and private models stay visible.
+            if (!model.community || model.agent) return true;
+            const minimum = Number(filter.value);
+            return (
+                model.health?.success_rate != null &&
+                model.health.success_rate >= minimum
+            );
+        }
         case "publisher": {
             return getModelPublisher(model) === filter.value;
         }

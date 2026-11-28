@@ -86,6 +86,24 @@ describe("parseModelQuery", () => {
             filters: [{ key: "id", value: "owner/model:variant" }],
         });
     });
+
+    it("parses a 0-100 success cutoff", () => {
+        expect(parseModelQuery("success:50")).toEqual({
+            terms: [],
+            filters: [{ key: "success", value: "50" }],
+        });
+        expect(parseModelQuery("success:0 success:100")).toEqual({
+            terms: [],
+            filters: [
+                { key: "success", value: "0" },
+                { key: "success", value: "100" },
+            ],
+        });
+        expect(parseModelQuery("success:101 success:abc")).toEqual({
+            terms: ["success:101", "success:abc"],
+            filters: [],
+        });
+    });
 });
 
 describe("model query defaults", () => {
@@ -326,6 +344,39 @@ describe("matchesModelQuery", () => {
         );
     });
 
+    it("applies a success cutoff to community proxies only", () => {
+        const healthy = model({
+            community: true,
+            health: { status: "healthy", requests: 50, success_rate: 82 },
+        });
+        expect(matches(healthy, "success:50")).toBe(true);
+        expect(matches(healthy, "success:80")).toBe(true);
+        expect(matches(healthy, "success:90")).toBe(false);
+        expect(
+            matches(
+                model({
+                    community: true,
+                    health: {
+                        status: "unknown",
+                        requests: 0,
+                        success_rate: null,
+                    },
+                }),
+                "success:0",
+            ),
+        ).toBe(false);
+        expect(matches(model(), "success:99")).toBe(true);
+        expect(
+            matches(
+                model({
+                    agent: true,
+                    health: { status: "down", requests: 1, success_rate: 0 },
+                }),
+                "success:50",
+            ),
+        ).toBe(true);
+    });
+
     it("matches an exact canonical ID case-insensitively", () => {
         const candidate = model({ name: "Alice/Quick-Coder" });
 
@@ -398,7 +449,16 @@ describe("getModelQuerySuggestions", () => {
             "publisher:",
             "source:",
             "status:",
+            "success:",
             "type:",
+        ]);
+        expect(getModelQuerySuggestions("success:", models)).toEqual([
+            "success:0 ",
+            "success:25 ",
+            "success:50 ",
+            "success:75 ",
+            "success:80 ",
+            "success:90 ",
         ]);
         expect(getModelQuerySuggestions("access:", models)).toEqual([
             "access:free ",

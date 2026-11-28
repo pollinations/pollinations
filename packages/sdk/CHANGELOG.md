@@ -2,6 +2,12 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.39] - 2026-11-27
+
+### Fixed
+
+- Realtime connection setup rejects and closes the socket when the initial session update fails; malformed JSON event shapes are ignored.
+
 ## [5.1.0-alpha.37] - 2026-11-26
 
 ### Added

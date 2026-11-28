@@ -128,14 +128,22 @@ export async function connectRealtime(
 
     socket.addEventListener("message", (message) => {
         if (typeof message.data !== "string") return; // JSON text frames only
-        let event: RealtimeEvent;
+        let event: unknown;
         try {
-            event = JSON.parse(message.data) as RealtimeEvent;
+            event = JSON.parse(message.data);
         } catch {
             return;
         }
-        emit(event.type, event);
-        emit("*", event);
+        if (
+            !event ||
+            typeof event !== "object" ||
+            typeof (event as RealtimeEvent).type !== "string"
+        ) {
+            return;
+        }
+        const realtimeEvent = event as RealtimeEvent;
+        emit(realtimeEvent.type, realtimeEvent);
+        emit("*", realtimeEvent);
     });
 
     options.signal?.addEventListener("abort", close, { once: true });
@@ -161,13 +169,18 @@ export async function connectRealtime(
 
     return new Promise<RealtimeSession>((resolve, reject) => {
         socket.addEventListener("open", () => {
-            if (options.session) {
-                session.send({
-                    type: "session.update",
-                    session: options.session,
-                });
+            try {
+                if (options.session) {
+                    session.send({
+                        type: "session.update",
+                        session: options.session,
+                    });
+                }
+                resolve(session);
+            } catch (error) {
+                reject(error);
+                close();
             }
-            resolve(session);
         });
         void closed.then(({ code, reason }) => {
             if (options.signal?.aborted) {

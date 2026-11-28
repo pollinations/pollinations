@@ -1,4 +1,9 @@
-import { env, SELF } from "cloudflare:test";
+import {
+    createExecutionContext,
+    env,
+    SELF,
+    waitOnExecutionContext,
+} from "cloudflare:test";
 import { signAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import { signSessionToken } from "@shared/auth/session-token.ts";
 import { getUserBalance } from "@shared/billing/balance.ts";
@@ -10,6 +15,7 @@ import {
 import { createTestApiKey, test } from "@shared/test/fixtures/index.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
+import worker from "../src/index.ts";
 
 const MCP_REQUEST = {
     jsonrpc: "2.0",
@@ -20,6 +26,112 @@ const MCP_REQUEST = {
         arguments: {},
     },
 };
+
+test.for(["staging", "production"] as const)(
+    "publishes Code Mode for external agents in %s",
+    async (environment) => {
+        const prefix = environment === "staging" ? "staging." : "";
+        const origin = `https://${prefix}gen.pollinations.ai`;
+        const endpoint = `${origin}/mcp/pollinations-code`;
+        const fetchPath = async (path: string) => {
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                new Request(origin + path),
+                { ...env, ENVIRONMENT: environment },
+                ctx,
+            );
+            await waitOnExecutionContext(ctx);
+            return response;
+        };
+        for (const path of [
+            "/mcp",
+            "/.well-known/ai-catalog.json",
+            "/.well-known/ard.json",
+        ]) {
+            expect(await (await fetchPath(path)).text()).toContain(endpoint);
+        }
+        const card = await fetchPath("/mcp/pollinations-code/server-card");
+        expect(card.status).toBe(200);
+        expect(await card.text()).toContain(
+            `https://${prefix}enter.pollinations.ai/keys`,
+        );
+        expect((await fetchPath("/mcp/pollinations-code")).status).toBe(401);
+    },
+);
+
+test("requires a funded direct key and shares the code execution limit across an account’s keys", async () => {
+    const funded = await createTestApiKey({ user: { tierBalance: 1 } });
+    const empty = await createTestApiKey({
+        user: { tierBalance: 1 },
+        pollenBudget: 0,
+    });
+    const wallet = await createTestApiKey();
+    const secondKey = await createTestApiKey({ userId: funded.userId });
+    const otherAccount = await createTestApiKey({ user: { tierBalance: 1 } });
+    const production = {
+        ...env,
+        ENVIRONMENT: "production" as const,
+    };
+    const call = async (key: string, method = "tools/call") => {
+        const ctx = createExecutionContext();
+        const res = await worker.fetch(
+            new Request("https://gen.pollinations.ai/mcp/pollinations-code", {
+                method: "POST",
+                headers: {
+                    authorization: `Bearer ${key}`,
+                    "content-type": "application/json",
+                },
+                body: JSON.stringify({
+                    jsonrpc: "2.0",
+                    id: 1,
+                    method,
+                    ...(method === "tools/call"
+                        ? {
+                              params: {
+                                  name: "code",
+                                  arguments: { code: "async () => 1" },
+                              },
+                          }
+                        : {}),
+                }),
+            }),
+            production,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        return res;
+    };
+    const session = await signSessionToken({
+        secret: env.BETTER_AUTH_SECRET,
+        userId: funded.userId,
+    });
+    const agent = await signAgentRunToken({
+        secret: env.BETTER_AUTH_SECRET,
+        parentApiKeyId: funded.id,
+        parentRequestId: crypto.randomUUID(),
+    });
+    expect((await call("sk_invalid")).status).toBe(401);
+    expect((await call(session)).status).toBe(401);
+    expect((await call(agent)).status).toBe(403);
+    expect((await call(empty.key)).status).toBe(402);
+    expect((await call(wallet.key)).status).toBe(402);
+    expect((await call(wallet.key, "tools/list")).status).toBe(200);
+    const execution = await call(funded.key);
+    expect(execution.status).toBe(200);
+    expect(await execution.json()).toEqual({
+        authorization: `Bearer ${funded.key}`,
+    });
+    expect((await call(secondKey.key)).status).toBe(200);
+    const limited = await call(funded.key);
+    expect(limited.status).toBe(429);
+    expect(limited.headers.get("Retry-After")).toBe("60");
+    expect((await call(secondKey.key)).status).toBe(429);
+    expect((await call(otherAccount.key)).status).toBe(200);
+    expect(await getUserBalance(drizzle(env.DB), funded.userId)).toEqual({
+        tierBalance: 1,
+        packBalance: 0,
+    });
+});
 
 test("lists the MCP servers exposed through Gen", async () => {
     const response = await SELF.fetch("https://gen.pollinations.ai/mcp");
@@ -219,6 +331,19 @@ test("lists the MCP servers exposed through Gen", async () => {
                 pricing: {
                     description:
                         "Research lookups are free. No additional MCP fee.",
+                    rates: [],
+                },
+            },
+            {
+                id: "pollinations-code",
+                alpha: true,
+                name: "Pollinations Code",
+                description:
+                    "Run JavaScript that combines Pollinations discovery and generation tools.",
+                url: "https://gen.pollinations.ai/mcp/pollinations-code",
+                pricing: {
+                    description:
+                        "Generation uses the selected model's listed rate. No additional execution fee.",
                     rates: [],
                 },
             },

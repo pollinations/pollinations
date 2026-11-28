@@ -91,15 +91,14 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
         run: npm run push-secrets:staging --workspace pollinations-enter
 
-  # Deploy the original MCP and all five keyless groups before Gen can bind
-  # their staging Workers. Each group uses its own standalone lockfile.
+  # Stage the MCP Workers before deploying their service bindings in Gen.
   deploy-mcp:
     if: inputs.service == 'all' || inputs.service == 'gen'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        app: [mcp, calculators-mcp, network-mcp, packages-mcp, news-mcp, research-mcp]
+        app: [mcp, code-mode-mcp, calculators-mcp, network-mcp, packages-mcp, news-mcp, research-mcp]
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
     steps:
@@ -116,7 +115,7 @@ jobs:
         working-directory: ./apps/${{ matrix.app }}
         run: |
           npm ci --workspaces=false
-          if [ "${{ matrix.app }}" = "mcp" ]; then
+          if [[ "${{ matrix.app }}" = "mcp" || "${{ matrix.app }}" = "code-mode-mcp" ]]; then
             npm ci --prefix ../../packages/mcp --workspaces=false
           fi
 

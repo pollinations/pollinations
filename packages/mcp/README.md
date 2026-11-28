@@ -20,6 +20,28 @@ Authorization: Bearer YOUR_KEY
 Get a key from [enter.pollinations.ai](https://enter.pollinations.ai/keys).
 Calls use that key's wallet, permissions, and budget.
 
+### Code Mode for external agents
+
+Connect a Streamable HTTP client to `https://gen.pollinations.ai/mcp/pollinations-code`
+with a funded [API key](https://enter.pollinations.ai/keys). Pass an async JavaScript
+function to the `code` tool. For example, look up three image models and their prices:
+
+```js
+async () => {
+    const models = await pollinations.listModels({ type: "image", limit: 3 });
+    return models.map(({ name, pricing }) => ({ name, pricing }));
+}
+```
+
+To generate an image, call `pollinations.generateImage({ model, prompt, seed })` and read
+`data[0].url`. Keep the model, prompt, seed and options identical when retrying to rejoin
+a generation or fetch its cached image. Completed generations are billed even if the script fails.
+The [staging replay](../../apps/code-mode-mcp/staging-replay.js) checks three images and their wallet charges.
+
+Each run allows four tool attempts, 100 ms of sandbox CPU and three minutes elapsed, with no direct
+network access. Each account gets ten runs per minute at each Cloudflare location.
+Pollinations covers sandbox execution.
+
 For all Pollinations-hosted MCP servers, see the
 [MCP Servers documentation](https://gen.pollinations.ai/docs#tag/mcp-servers).
 

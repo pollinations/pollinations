@@ -8,6 +8,7 @@ import {
     parseMcpUsageHeaders,
 } from "@shared/mcp-usage.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
+import { limit } from "@shared/rate-limit.ts";
 import {
     getMcpPricingInfo,
     getMcpServerDefinition,
@@ -36,6 +37,7 @@ function requestForMcp(
     server: McpServerDefinition,
     user: AuthUser,
     agentRun: AgentRunClaims | undefined,
+    verifiedKey?: string,
 ): Request {
     const headers = new Headers(request.headers);
     if (server.forwardAuthorization !== true) {
@@ -65,6 +67,11 @@ function requestForMcp(
     url.protocol = "https:";
     url.host = "mcp.internal";
     url.pathname = "/";
+    if (verifiedKey) {
+        url.search = "";
+        headers.delete("x-api-key");
+        headers.set("authorization", `Bearer ${verifiedKey}`);
+    }
     return new Request(url, {
         method: request.method,
         headers,
@@ -182,6 +189,10 @@ export const mcpRoutes = new Hono<Env>()
     )
     .use("/mcp/:serverId", auth())
     .all("/mcp/:serverId", async (c) => {
+        const server = getMcpServerDefinition(c.req.param("serverId"));
+        if (!server) {
+            throw new HTTPException(404, { message: "MCP server not found" });
+        }
         const user = c.var.auth.requireUser();
         const message =
             c.req.method === "POST"
@@ -195,29 +206,48 @@ export const mcpRoutes = new Hono<Env>()
                 message: "MCP batch requests are not supported",
             });
         }
-        const serverId = c.req.param("serverId");
-        const server = getMcpServerDefinition(serverId);
-        if (!server) {
-            throw new HTTPException(404, { message: "MCP server not found" });
-        }
         if (server.agents === false && c.var.auth.agentRun) {
             throw new HTTPException(403, {
                 message: `Agents can't use ${server.name}`,
             });
         }
-        // A tool's cost is known only from its receipt, so a tool call needs a
-        // spendable balance up front. Initialization and discovery stay free.
-        if (
-            server.billing === "usage_receipt" &&
-            message?.method === "tools/call"
-        ) {
+        const binding = c.env[server.binding];
+        if (!binding) {
+            throw new HTTPException(503, { message: "MCP server unavailable" });
+        }
+
+        const codeMode = server.binding === "POLLINATIONS_CODE_MCP";
+        const toolCall = message?.method === "tools/call";
+        const key = c.var.auth.apiKey;
+        if (codeMode) {
+            if (!key?.rawKey) {
+                throw new HTTPException(401, {
+                    message: "Pollinations API key required",
+                });
+            }
+            if (toolCall) {
+                if (!c.env.MCP_CODE_RATE_LIMITER) {
+                    throw new HTTPException(503, {
+                        message: "Code execution unavailable",
+                    });
+                }
+                await limit(c, c.env.MCP_CODE_RATE_LIMITER, user.id, 60);
+            }
+        }
+        // The sandbox and receipt-billed tools need a spendable balance
+        // before execution. MCP discovery and initialization stay free.
+        if (toolCall && (codeMode || server.billing === "usage_receipt")) {
             await requireAccountFunds(c, 0);
         }
-        const binding = c.env[server.binding] as Fetcher;
-
         const startedAt = new Date();
         const response = await binding.fetch(
-            requestForMcp(c.req.raw, server, user, c.var.auth.agentRun),
+            requestForMcp(
+                c.req.raw,
+                server,
+                user,
+                c.var.auth.agentRun,
+                codeMode ? key?.rawKey : undefined,
+            ),
         );
         if (server.billing === "usage_receipt") {
             const usage = parseMcpUsageHeaders(response.headers);

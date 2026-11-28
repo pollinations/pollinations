@@ -48,6 +48,7 @@ export type McpPricingInfo = {
 
 export type McpBindingName =
     | "POLLINATIONS_MCP"
+    | "POLLINATIONS_CODE_MCP"
     | "ASK_JEV_MCP"
     | "FFMPEG_MCP"
     | "EXA_MCP"
@@ -310,6 +311,23 @@ export const MCP_SERVERS = [
         billing: "downstream",
         pricing: {
             description: "Research lookups are free. No additional MCP fee.",
+            rates: [],
+        },
+    },
+
+    {
+        id: "pollinations-code",
+        alpha: true,
+        forwardAuthorization: true,
+        agents: false,
+        name: "Pollinations Code",
+        description:
+            "Run JavaScript that combines Pollinations discovery and generation tools.",
+        binding: "POLLINATIONS_CODE_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Generation uses the selected model's listed rate. No additional execution fee.",
             rates: [],
         },
     },

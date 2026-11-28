@@ -1,3 +1,4 @@
+import { fixLink } from "@shared/http/fix-link.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
 import {
     getMcpServerDefinition,
@@ -21,13 +22,6 @@ const SERVER_CARD_VERSION = "1.0.0";
 const DEFAULT_SERVER_ID = "pollinations";
 
 // A Server Card uses the server.json shape; only its $schema differs.
-function buildServerCard(server: McpServerDefinition, origin: string) {
-    return {
-        ...buildServerEntry(server, SERVER_CARD_VERSION, origin),
-        $schema: SERVER_CARD_SCHEMA_URL,
-    };
-}
-
 function serverCardResponse(
     c: Context<Env>,
     server: McpServerDefinition,
@@ -35,7 +29,19 @@ function serverCardResponse(
     c.header("Content-Type", `${SERVER_CARD_MEDIA_TYPE}; charset=utf-8`);
     c.header("Cache-Control", "public, max-age=3600");
     return c.body(
-        JSON.stringify(buildServerCard(server, getPublicOrigin(c)), null, 2),
+        JSON.stringify(
+            {
+                ...buildServerEntry(
+                    server,
+                    SERVER_CARD_VERSION,
+                    getPublicOrigin(c),
+                    fixLink(c, "/keys", {}),
+                ),
+                $schema: SERVER_CARD_SCHEMA_URL,
+            },
+            null,
+            2,
+        ),
     );
 }
 

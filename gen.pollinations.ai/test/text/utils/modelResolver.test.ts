@@ -1511,6 +1511,19 @@ describe("resolveModelConfig", () => {
         },
     );
 
+    it("routes Gemma 4 31B Turbo directly to DeepInfra", () => {
+        const result = resolveModelConfig(messages, {
+            model: "google/gemma-4-31b-it:turbo",
+        });
+
+        expect(result.options.model).toBe("google/gemma-4-31B-it-turbo");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
     it("does not resolve the removed MiniMax M2.7 gateway fallback", () => {
         expect(
             findModelByName("minimax/minimax-m2.7:openrouter:minimax"),

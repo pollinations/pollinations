@@ -985,6 +985,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         createDeepInfraModelConfig({ model: "google/gemma-4-26B-A4B-it" }),
     "google/gemma-4-31B-it": () =>
         createDeepInfraModelConfig({ model: "google/gemma-4-31B-it" }),
+    "google/gemma-4-31B-it-turbo": () =>
+        createDeepInfraModelConfig({ model: "google/gemma-4-31B-it-turbo" }),
     "mistral-large-3-bedrock": () =>
         createBedrockNativeConfig({
             model: "mistral.mistral-large-3-675b-instruct",

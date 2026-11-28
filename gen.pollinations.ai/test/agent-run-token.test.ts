@@ -311,6 +311,16 @@ test("rejects tampered, expired and malformed agent run tokens", async () => {
             expiresIn: AGENT_RUN_TOKEN_TTL_SECONDS + 1,
         }),
     ).rejects.toThrow("Invalid agent run token lifetime");
+    // NaN passes every numeric comparison, so without an explicit finite check
+    // it would slip through and serialize exp as null.
+    await expect(
+        signAgentRunToken({
+            secret: env.BETTER_AUTH_SECRET,
+            parentApiKeyId: "parent-key-id",
+            parentRequestId: "parent-request-id",
+            expiresIn: Number.NaN,
+        }),
+    ).rejects.toThrow("Invalid agent run token lifetime");
     // Correctly signed but missing the subject: the signature proves origin, it
     // does not prove the payload has the shape the auth layer reads.
     const malformedJwt = await new SignJWT({ version: 1 })

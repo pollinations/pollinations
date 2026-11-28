@@ -186,6 +186,219 @@ describe("applySafetyToInput text", { timeout: 30000 }, () => {
         vi.unstubAllGlobals();
     });
 
+    describe("sensitive message reuse", () => {
+        const bindings = {
+            ...configuredEnv,
+            BETTER_AUTH_SECRET: "local-safety-cache-test-key",
+            BEDROCK_SENSITIVE_MESSAGE_CACHE: "on",
+        } as CloudflareBindings;
+
+        async function scan(
+            app: ReturnType<typeof safetyApp>,
+            texts: string[],
+        ) {
+            const context = createExecutionContext();
+            const result = await app.request(
+                "https://gen.pollinations.ai/texts?safe=privacy,secrets",
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ texts }),
+                },
+                bindings,
+                context,
+            );
+            await waitOnExecutionContext(context);
+            return result;
+        }
+
+        async function sentTexts(call = -1) {
+            const request = fetchMock.mock.calls.at(call)?.[0] as Request;
+            const body = await request.clone().json<{
+                content: { text: { text: string } }[];
+            }>();
+            return body.content.map((item) => item.text.text);
+        }
+
+        it("reapplies a cached redaction across the cutoff and blocks newly added secrets", async () => {
+            const app = safetyApp([], "cache-cutoff-account");
+            const system = "Reply with the same format.";
+            const long = `${"x".repeat(49_000)} Contact synthetic@example.org.`;
+            const safeLong = long.replace("synthetic@example.org", "{EMAIL}");
+            const recent = "This is the previous conversation turn.";
+            const appended = "y".repeat(1700);
+            guardrailResponse = intervened(
+                {
+                    sensitiveInformationPolicy: {
+                        piiEntities: [{ action: "ANONYMIZED", type: "EMAIL" }],
+                    },
+                },
+                [system, safeLong, recent].map((text) => ({ text })),
+            );
+            expect(
+                await (await scan(app, [system, long, recent])).json(),
+            ).toEqual([system, safeLong, recent]);
+
+            guardrailResponse = {
+                action: "NONE",
+                usage: { sensitiveInformationPolicyUnits: 2 },
+            };
+            const conversation = [system, long, recent, appended];
+            const warm = await scan(app, conversation);
+            expect(await warm.json()).toEqual([
+                system,
+                safeLong,
+                recent,
+                appended,
+            ]);
+            expect(warm.headers.get("X-Safety-Redacted")).toBe("EMAIL");
+            expect(await sentTexts()).toEqual([recent, appended]);
+
+            const beforeRetry = fetchMock.mock.calls.length;
+            expect(await (await scan(app, conversation)).json()).toEqual([
+                system,
+                safeLong,
+                recent,
+                appended,
+            ]);
+            expect(fetchMock).toHaveBeenCalledTimes(beforeRetry);
+
+            guardrailResponse = intervened({
+                sensitiveInformationPolicy: {
+                    piiEntities: [{ action: "ANONYMIZED", type: "PASSWORD" }],
+                },
+            });
+            expect(
+                (
+                    await scan(app, [
+                        ...conversation,
+                        "A fictional password for this example.",
+                    ])
+                ).status,
+            ).toBe(400);
+            expect(await sentTexts()).toEqual([
+                appended,
+                "A fictional password for this example.",
+            ]);
+        });
+
+        it("rescans an edited history and keeps cached checks within an account", async () => {
+            const app = safetyApp([], "cache-edit-account");
+            const original = [
+                "Ordinary system text.",
+                "First example.",
+                "Previous question.",
+            ];
+            await scan(app, original);
+            const edited = [
+                ...original.slice(0, 2),
+                "Edited question.",
+                "New question.",
+            ];
+            await scan(app, edited);
+            expect(await sentTexts()).toEqual(edited);
+
+            const other = safetyApp([], "cache-other-account");
+            await scan(other, edited);
+            expect(await sentTexts()).toEqual(edited);
+            expect(fetchMock).toHaveBeenCalledTimes(3);
+        });
+
+        it("rescans a part with multiple redactions and reapplies both masks", async () => {
+            const app = safetyApp([], "cache-multiple-redactions-account");
+            const intro = "Reply with a short note.";
+            const contacts = "Email first@example.org and second@example.org.";
+            const masked = "Email {EMAIL} and {EMAIL}.";
+            const previous = "This is the earlier question.";
+            const next = "Can you make it shorter?";
+            const assessment: NonNullable<
+                BedrockResponse["assessments"]
+            >[number] = {
+                sensitiveInformationPolicy: {
+                    piiEntities: [{ action: "ANONYMIZED", type: "EMAIL" }],
+                },
+            };
+            guardrailResponse = intervened(
+                assessment,
+                [intro, masked, previous].map((text) => ({ text })),
+            );
+            const initial = await scan(app, [intro, contacts, previous]);
+            expect(await initial.json()).toEqual([intro, masked, previous]);
+
+            guardrailResponse = intervened(
+                assessment,
+                [masked, previous, next].map((text) => ({ text })),
+            );
+            const result = await scan(app, [intro, contacts, previous, next]);
+            expect(await sentTexts()).toEqual([contacts, previous, next]);
+            expect(await result.json()).toEqual([
+                intro,
+                masked,
+                previous,
+                next,
+            ]);
+            expect(result.headers.get("X-Safety-Redacted")).toBe("EMAIL");
+        });
+
+        it("logs both Bedrock inputs and paid units after an incomplete partial response", async () => {
+            const app = safetyApp([], "cache-incomplete-response-account");
+            const intro = "Reply succinctly.";
+            const history = "This is the reference.";
+            const recent = "This is the previous response.";
+            const next = "Reply to contact@example.org.";
+            const masked = "Reply to {EMAIL}.";
+            const initial = [intro, history, recent];
+            const current = [...initial, next];
+            await scan(app, initial);
+
+            const assessment: NonNullable<
+                BedrockResponse["assessments"]
+            >[number] = {
+                sensitiveInformationPolicy: {
+                    piiEntities: [{ action: "ANONYMIZED", type: "EMAIL" }],
+                },
+            };
+            fetchMock.mockImplementationOnce(async () =>
+                Response.json({
+                    ...intervened(assessment, [{ text: masked }]),
+                    usage: { sensitiveInformationPolicyUnits: 2 },
+                }),
+            );
+            guardrailResponse = {
+                ...intervened(
+                    assessment,
+                    [...initial, masked].map((text) => ({ text })),
+                ),
+                usage: { sensitiveInformationPolicyUnits: 3 },
+            };
+
+            const info = vi.spyOn(console, "info").mockImplementation(() => {});
+            try {
+                const result = await scan(app, current);
+                expect(await result.json()).toEqual([...initial, masked]);
+                expect(await sentTexts(-2)).toEqual([recent, next]);
+                expect(await sentTexts()).toEqual(current);
+                expect(info).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        message: "Bedrock guardrail usage",
+                        scannedParts: 4,
+                        scannedCharacters: current.join("").length,
+                        bedrockCalls: 2,
+                        bedrockInputParts: 6,
+                        bedrockInputCharacters:
+                            current.join("").length +
+                            recent.length +
+                            next.length,
+                        sensitiveInformationPolicyUnits: 5,
+                        cacheReusedParts: 0,
+                    }),
+                );
+            } finally {
+                info.mockRestore();
+            }
+        });
+    });
+
     it("does not call Bedrock when safe is omitted", async () => {
         const response = await safetyApp().request(
             "/scan/hello",
@@ -266,6 +479,9 @@ describe("applySafetyToInput text", { timeout: 30000 }, () => {
                 requiredFeatures: [],
                 scannedCharacters: 14,
                 scannedParts: 1,
+                bedrockCalls: 1,
+                bedrockInputParts: 1,
+                bedrockInputCharacters: 14,
                 guardrailAction: "NONE",
                 blockedFeatures: [],
                 contentPolicyUnits: 7,

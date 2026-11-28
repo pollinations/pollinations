@@ -60,7 +60,7 @@ The bot only needs Discord's `Guilds` gateway intent. It does not request Messag
 
 ## Credential handling
 
-User authorizations are stored at `./data/tokens.json` by default (override with `TOKEN_STORE_PATH`). The directory is private, writes are serialized and atomic, the file mode is `0600`, and tokens are never included in Discord messages or logs.
+User authorizations are stored at `./data/tokens.json` by default (override with `TOKEN_STORE_PATH`). The directory is private, writes are serialized and atomic, the file mode is `0600` (on Windows, `icacls` removes inherited access and grants the current user), and tokens are never included in Discord messages or logs.
 
 If Pollinations reports an expired or revoked authorization, the local token is removed and the user is asked to `/connect` again.
 

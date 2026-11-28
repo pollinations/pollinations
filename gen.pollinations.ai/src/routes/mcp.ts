@@ -26,6 +26,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { type Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
+import { acceptsMarkdown } from "@/middleware/agent-discovery.ts";
 import { auth } from "@/middleware/auth.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestIdentity } from "@/middleware/track.ts";
@@ -165,21 +166,48 @@ async function settleUsage(
     );
 }
 
+function renderMcpCatalogMarkdown(origin: string): string {
+    const lines = [
+        "# Pollinations MCP Servers",
+        "",
+        `> Connect via \`Authorization: Bearer sk_...\` over Streamable HTTP or \`npx @pollinations/cli mcp\`. Server Cards: ${origin}/.well-known/ai-catalog.json`,
+        "",
+    ];
+    for (const server of MCP_SERVERS) {
+        lines.push(`## ${server.name} (\`${server.id}\`)`);
+        lines.push("");
+        lines.push(server.description);
+        lines.push(`- Endpoint: \`${origin}/mcp/${server.id}\``);
+        lines.push(`- Server Card: \`${origin}/mcp/${server.id}/server-card\``);
+        lines.push("");
+    }
+    return lines.join("\n");
+}
+
 export const mcpRoutes = new Hono<Env>()
     .use("/mcp", edgeRateLimit)
     .use("/mcp/*", edgeRateLimit)
-    .get("/mcp", (c) =>
-        c.json({
+    .get("/mcp", (c) => {
+        const origin = getPublicOrigin(c);
+        c.header("Vary", "Accept", { append: true });
+        if (acceptsMarkdown(c.req.header("accept") ?? "")) {
+            // Cloudflare ignores Vary on cached responses: keep it private.
+            return c.body(renderMcpCatalogMarkdown(origin), 200, {
+                "Content-Type": "text/markdown; charset=utf-8",
+                "Cache-Control": "private, max-age=3600",
+            });
+        }
+        return c.json({
             data: MCP_SERVERS.map((server) => ({
                 id: server.id,
                 name: server.name,
                 description: server.description,
                 alpha: server.alpha,
-                url: `${getPublicOrigin(c)}/mcp/${server.id}`,
+                url: `${origin}/mcp/${server.id}`,
                 pricing: getMcpPricingInfo(server),
             })),
-        }),
-    )
+        });
+    })
     .use("/mcp/:serverId", auth())
     .all("/mcp/:serverId", async (c) => {
         const user = c.var.auth.requireUser();

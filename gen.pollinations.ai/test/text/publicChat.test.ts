@@ -10,6 +10,7 @@ import { createTestApiKey } from "@shared/test/fixtures/index.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import worker from "../../src/index.ts";
+import googleCloudAuth from "../../src/text/auth/googleCloudAuth.ts";
 import {
     publicChatChoices,
     publicChatStream,
@@ -669,6 +670,59 @@ it.each([null, "", " \n\t"])(
         }
     },
 );
+
+it("returns a fresh empty completion for a blank Gemini 3.8 Flash OCR image", async () => {
+    vi.spyOn(googleCloudAuth, "getAccessToken").mockResolvedValue("test-token");
+    const model = "google/gemini-3.8-flash";
+    const body = {
+        model,
+        messages: [
+            {
+                role: "user",
+                content: [
+                    { type: "text", text: "Transcribe only visible words." },
+                    {
+                        type: "image_url",
+                        image_url: {
+                            url: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAAQABABAREA/8QAFQABAQAAAAAAAAAAAAAAAAAAAAX/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oACAEBAAA/ALID/9k=",
+                        },
+                    },
+                ],
+            },
+        ],
+    };
+    const wire = JSON.stringify({
+        model,
+        choices: [
+            {
+                index: 0,
+                message: { role: "assistant", content: null },
+                finish_reason: "stop",
+            },
+        ],
+        usage,
+    });
+    for (let i = 0; i < 2; i++) {
+        const { response, text, calls, events } = await chatThroughHandler(
+            model,
+            ["portkey.test", "openrouter.ai"],
+            wire,
+            false,
+            undefined,
+            { path: "/v1/chat/completions", body },
+        );
+        expect(response.status, text).toBe(200);
+        expect(JSON.parse(text).choices[0]).toMatchObject({
+            finish_reason: "stop",
+            message: { content: "" },
+        });
+        expect(response.headers.get("cache-control")).toContain("no-store");
+        expect(calls).toBe(1);
+        expect(events.filter((event) => event.isBilledUsage)).toMatchObject([
+            { modelUsed: model, fallbackUsed: false },
+        ]);
+    }
+});
 
 const chatProtocolCases = [
     {

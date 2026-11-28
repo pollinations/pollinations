@@ -173,7 +173,6 @@ export async function generateChatAttempt(
         const emptyChoices = (result.choices ?? []).filter(
             ({ message, finish_reason }) =>
                 finish_reason !== "content_filter" &&
-                !(stopsOnRequest && message && finish_reason === "stop") &&
                 (!message ||
                     !(
                         (typeof message.content === "string"
@@ -190,6 +189,45 @@ export async function generateChatAttempt(
             !result.choices?.length ||
             emptyChoices.length === result.choices.length
         ) {
+            // Gemini can finish normally with no text when a blank image has
+            // nothing to transcribe. Both Vertex routes report an explicit stop.
+            if (
+                emptyChoices.length > 0 &&
+                emptyChoices.every(
+                    ({ message, finish_reason }) =>
+                        message?.role === "assistant" &&
+                        finish_reason === "stop",
+                ) &&
+                (candidate.id === "google/gemini-3.8-flash" ||
+                    candidate.id ===
+                        "google/gemini-3.8-flash:openrouter:vertex-global") &&
+                attemptData.messages.some(
+                    ({ content }) =>
+                        Array.isArray(content) &&
+                        content.some(
+                            (part) =>
+                                part &&
+                                typeof part === "object" &&
+                                "type" in part &&
+                                part.type === "image_url",
+                        ),
+                )
+            ) {
+                for (const { message } of emptyChoices) {
+                    if (message) message.content = "";
+                }
+                c.set("generationCacheSkipWrite", true);
+                return buffered ? completionToChatStream(result) : result;
+            }
+            if (
+                stopsOnRequest &&
+                emptyChoices.some(
+                    ({ message, finish_reason }) =>
+                        message && finish_reason === "stop",
+                )
+            ) {
+                return buffered ? completionToChatStream(result) : result;
+            }
             const tokenLimitReached =
                 (requestData.max_tokens != null ||
                     requestData.max_completion_tokens != null) &&

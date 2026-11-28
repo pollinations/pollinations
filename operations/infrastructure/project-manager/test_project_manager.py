@@ -229,10 +229,10 @@ class WeaverTest(unittest.TestCase):
             writes = [c for c in write.call_args_list if c.args[1] is priority]
             self.assertEqual(writes, [] if existing else [call("item", priority, "High")])
 
-    def test_only_opening_uses_weaver_and_rejects_invalid_fields(self):
+    def test_every_classification_uses_weaver_and_rejects_invalid_fields(self):
         good = {"area": "Models", "type": "Bug", "priority": "Medium", "model_work": "Repair", "reasoning": "One model fails."}
         with patch.dict(os.environ, {"WEAVER_MODEL": "weaver"}), patch.object(manager, "IS_PULL_REQUEST", False):
-            for action, expected in (("opened", "weaver"), ("labeled", None), (None, None)):
+            for action, expected in (("opened", "weaver"), (None, "weaver")):
                 with patch.object(manager, "GITHUB_EVENT", {"action": action}), patch.object(manager, "ask_ai", return_value=good) as ask:
                     manager.classify("brief", ["Models"])
                     self.assertEqual(ask.call_args.kwargs["hosted_model"], expected)

@@ -366,7 +366,7 @@ def classify(brief: str, areas: list) -> Optional[dict]:
     prompt = item_prompt("pull request" if IS_PULL_REQUEST else "issue", ISSUE_AUTHOR,
                          "a person, relayed from Discord" if is_relayed() else ITEM_DATA.get("user", {}).get("type", "User"),
                          ISSUE_TITLE, ISSUE_BODY, fetch_pr_files() if IS_PULL_REQUEST else [], linked)
-    hosted = os.getenv("WEAVER_MODEL") if GITHUB_EVENT.get("action") == "opened" else None
+    hosted = os.getenv("WEAVER_MODEL")
     raw = ask_ai(brief, prompt, hosted_model=hosted)
     if raw is None:
         return None

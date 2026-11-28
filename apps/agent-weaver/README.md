@@ -1,6 +1,6 @@
 # Weaver · Project Manager
 
-Weaver classifies newly opened issues and PRs from its [policy](system-prompt.md): Area, Type, Priority and Model work. Manual backfills call the base model directly with the same policy. The [previous policy](baseline-prompt.md) is kept for rollback. The GitHub workflow validates classifications and owns the writes.
+Weaver classifies newly opened issues and PRs, and manual backfills, from its [policy](system-prompt.md): Area, Type, Priority and Model work. The [previous policy](baseline-prompt.md) is kept for rollback. The GitHub workflow validates classifications and owns the writes.
 
 The shared owner is `polli@pollinations.ai`, linked to GitHub user `pollinations-ai`. The organizer’s existing inference key authenticated as that user and invoked an existing private agent with no tools. The paired Chat Completions probe returned HTTP 400 with JSON mode and HTTP 200 with a JSON object when the option was omitted. [Owner check](https://github.com/pollinations/pollinations/actions/runs/46027018143) · [Transport probe](https://github.com/pollinations/pollinations/actions/runs/46027402093)
 
@@ -44,7 +44,7 @@ This gate compares observed accuracy in a finite sample. The five holdout items 
 
 1. Land the reviewed manifest on `main` while the organizer and its documentation point to the baseline. Register from that commit, save the IDs and prompt digest, and run authenticated readback as described above.
 2. Run the hosted release preview with the organizer's inference credential and the callable ID from readback. Require the shortened and hosted paired gates to pass on the frozen prompt and cases before activation.
-3. After approval, use a separate activation PR to set the organizer job's `WEAVER_MODEL` environment value to the exact verified callable ID. Update the policy links in `AGENTS.md`, the issue-maker skill and the operations guides in the same commit. The current workflow ignores a repository variable of that name. Manual backfills continue to use the direct model.
+3. After approval, use a separate activation PR to set the organizer job's `WEAVER_MODEL` environment value to the exact verified callable ID. Update the policy links in `AGENTS.md`, the issue-maker skill and the operations guides in the same commit. The current workflow ignores a repository variable of that name. Manual backfills use Weaver too.
 4. Have the release owner watch the first newly opened issue and PR through completion. Inspect the actual Dev fields, preservation of populated fields, and eligible reward announcement. On failure, revert the activation commit to restore the direct classifier and its documentation. Rerun a missed opening announcement from its original opening event.
 5. For subsequent policy releases, read back the updated listing and run the hosted preview before accepting the change.
 

@@ -724,6 +724,52 @@ it("returns a fresh empty completion for a blank Gemini 3.8 Flash OCR image", as
     }
 });
 
+it("retries an empty Gemini answer when only an earlier user message has an image", async () => {
+    vi.spyOn(googleCloudAuth, "getAccessToken").mockResolvedValue("test-token");
+    const model = "google/gemini-3.8-flash";
+    const wire = JSON.stringify({
+        model,
+        choices: [
+            {
+                message: { role: "assistant", content: null },
+                finish_reason: "stop",
+            },
+        ],
+        usage,
+    });
+    const { response, text, calls } = await chatThroughHandler(
+        model,
+        ["portkey.test", "openrouter.ai"],
+        wire,
+        false,
+        undefined,
+        {
+            path: "/v1/chat/completions",
+            body: {
+                model,
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            {
+                                type: "image_url",
+                                image_url: {
+                                    url: "https://example.org/image.jpg",
+                                },
+                            },
+                        ],
+                    },
+                    { role: "assistant", content: "A photo." },
+                    { role: "user", content: "Explain your answer." },
+                ],
+            },
+        },
+    );
+    expect(response.status, text).toBe(502);
+    expect(JSON.parse(text).error.code).toBe("empty_response");
+    expect(calls).toBe(2);
+});
+
 const chatProtocolCases = [
     {
         path: "/v1/chat/completions",

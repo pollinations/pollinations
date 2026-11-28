@@ -189,6 +189,9 @@ export async function generateChatAttempt(
             !result.choices?.length ||
             emptyChoices.length === result.choices.length
         ) {
+            const lastUserContent = attemptData.messages.findLast(
+                ({ role }) => role === "user",
+            )?.content;
             // Gemini can finish normally with no text when a blank image has
             // nothing to transcribe. Both Vertex routes report an explicit stop.
             if (
@@ -201,16 +204,13 @@ export async function generateChatAttempt(
                 (candidate.id === "google/gemini-3.8-flash" ||
                     candidate.id ===
                         "google/gemini-3.8-flash:openrouter:vertex-global") &&
-                attemptData.messages.some(
-                    ({ content }) =>
-                        Array.isArray(content) &&
-                        content.some(
-                            (part) =>
-                                part &&
-                                typeof part === "object" &&
-                                "type" in part &&
-                                part.type === "image_url",
-                        ),
+                Array.isArray(lastUserContent) &&
+                lastUserContent.some(
+                    (part) =>
+                        part &&
+                        typeof part === "object" &&
+                        "type" in part &&
+                        part.type === "image_url",
                 )
             ) {
                 for (const { message } of emptyChoices) {

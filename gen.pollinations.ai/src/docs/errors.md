@@ -31,7 +31,7 @@ Non-streaming Chat Completions and Chat-adapted Responses return `400 output_tok
 
 This error is billed from provider-reported usage, including input and reasoning tokens, even though no answer was produced. It does not trigger provider fallback and is not cached; a retry starts a new generation and can incur another charge. If the caller omitted the token limit, an empty response remains a retryable `502 empty_response`. Responses containing an answer, tool call, refusal, or media retain their normal response.
 
-For non-streaming Gemini 3.8 Flash image requests, an empty assistant completion with an explicit `stop` and valid usage is returned as an uncached `200` with empty text. This can occur when an image contains no text to transcribe. The request is billed once and skips fallback.
+For non-streaming Gemini 3.8 Flash requests with an image in the last user message, an empty assistant completion with an explicit `stop` and valid usage is returned as an uncached `200` with empty text. This can occur when an image contains no text to transcribe. The request skips fallback. Retrying starts a new generation and bills its usage again.
 
 ### Timeouts and retries
 

@@ -17,7 +17,9 @@ Your account may hold two types of credit:
 
 ## 2) Refunds for unused top-ups
 
-If you bought a top-up and haven’t used any of that purchase, we’ll refund it on request. Billing checks the purchase, removes the refunded credit and returns the money to the original payment method. The Quest balance, promotional credit and developer earnings have no cash value.
+We refund completely unused top-ups on request. For example, if you spend $0.10 of a $10 top-up, that purchase no longer qualifies for an unused-credit refund, even if $9.90 remains. Your legal right to withdraw still applies as described in section 4.
+
+Billing checks the purchase, removes the refunded credit and returns the money to the original payment method. The Quest balance, promotional credit and developer earnings have no cash value.
 
 ## 3) Other refund requests
 
@@ -39,6 +41,6 @@ If you provide a valid VAT ID or purchase for business use, consumer withdrawal 
 
 ## 7) How to Request Review
 
-For billing questions, email billing@pollinations.ai with enough detail to identify your purchase. Your payment provider may take time to show the refund. A refund of a full purchase includes that purchase's service fee and tax; partial refunds are prorated on the amount paid.
+For billing questions, email billing@pollinations.ai with enough detail to identify your purchase. A full refund includes the service fee and tax you paid. Your payment provider may take time to show the refund.
 
 Crypto payments follow the same refund policy. Approved crypto refunds are processed by Stripe and returned as stablecoins to the wallet used for the original payment.

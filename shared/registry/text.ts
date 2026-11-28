@@ -3660,7 +3660,9 @@ const TEXT_BASE_SERVICES = {
             "Analyze long documents at low cost or ask questions about images and videos.",
         inputModalities: ["text", "image", "video"],
         outputModalities: ["text"],
-        maxReferenceImages: 20, // Bedrock Converse image limit.
+        // AWS Nova 2: embedded image data is capped at 5 objects per request
+        // (S3 URIs allow 1000, but this path always embeds the bytes).
+        maxReferenceImages: 5,
         tools: true,
         reasoning: true,
         contextLength: 1048576,

@@ -1,6 +1,6 @@
 """GitHub project manager: puts every new issue and pull request on the Dev project.
 
-project-manager.md is the brief: the only definition of areas, types and priorities.
+The direct classifier uses baseline-prompt.md. Weaver has a separate candidate policy.
 """
 
 import sys
@@ -9,15 +9,21 @@ import json
 import re
 import requests
 import time
+from pathlib import Path
 from functools import cache
 from typing import Optional
 
 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 POLLINATIONS_TOKEN = os.getenv("POLLINATIONS_TOKEN")
-GITHUB_EVENT_JSON = os.getenv("GITHUB_EVENT", "{}")
 try:
-    GITHUB_EVENT = json.loads(GITHUB_EVENT_JSON)
+    if payload := os.getenv("GITHUB_EVENT"):
+        GITHUB_EVENT = json.loads(payload)
+    elif event_path := os.getenv("PROJECT_MANAGER_EVENT_PATH"):
+        with open(event_path) as event_file:
+            GITHUB_EVENT = json.load(event_file)
+    else:
+        GITHUB_EVENT = {}
 except json.JSONDecodeError:
     GITHUB_EVENT = {}
 REPO_OWNER = "pollinations"
@@ -48,12 +54,13 @@ GITHUB_HEADERS = {
     "Content-Type": "application/json",
 }
 
-BRIEF_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "project-manager.md")
+WEAVER_DIR = Path(__file__).resolve().parents[3] / "apps" / "agent-weaver"
 DEV_PROJECT_ID = "PVT_kwDOBS76fs4AwCAM"
 TEAM_IDS = {5099901, 36901823, 74301576, 158852059, 34513273}
 # The Discord relay ends each relayed issue with "**Author:** `name` (UID: `123`)".
 RELAY_AUTHOR_LINE = re.compile(r"^\*\*Author:\*\* .*\(UID:\s*`?\d+`?\)\s*$", re.MULTILINE)
 TYPES = ["Bug", "Feature", "Question", "Task"]
+MODEL_WORK = ["Repair", "Retirement", "Addition", "Update"]
 PR_TYPES = ["Bug", "Feature", "Task"]
 PRIORITIES = ["High", "Medium", "Low"]
 SOURCES = ["Team", "Community", "Agent", "Apps", "Quests"]
@@ -80,8 +87,7 @@ def fail(msg: str):
 
 
 def read_brief() -> str:
-    with open(BRIEF_PATH, "r") as f:
-        return f.read()
+    return (WEAVER_DIR / "baseline-prompt.md").read_text()
 
 
 def area_names(brief: str) -> list:
@@ -90,50 +96,62 @@ def area_names(brief: str) -> list:
     return re.findall(r"^### (.+)$", section, re.MULTILINE)
 
 
-def ask_ai(system_prompt: str, user_prompt: str) -> Optional[dict]:
-    """Ask the model for a JSON object, retrying transport and parse errors."""
+def ask_ai(system_prompt: str, user_prompt: str, *, hosted_model=None, metrics=None, fresh=False) -> Optional[dict]:
+    """Return an object, or None when inference is temporarily unavailable."""
+    messages = [{"role": "user", "content": user_prompt}]
+    payload = {
+        "model": hosted_model or AI_MODEL,
+        "messages": messages,
+        "reasoning_effort": "low",
+        "max_tokens": 2000,
+    }
+    if fresh and not hosted_model:
+        payload["seed"] = -1  # Agent requests already have an isolated cache partition per run.
+    if not hosted_model:
+        messages.insert(0, {"role": "system", "content": system_prompt})
+        payload["response_format"] = {"type": "json_object"}
+    invalid_output = False
     for attempt in range(3):
+        record = {}
+        if metrics is not None:
+            metrics.append(record)
         try:
-            r = requests.post(
-                POLLINATIONS_API,
-                headers={
-                    "content-type": "application/json",
-                    "Authorization": f"Bearer {POLLINATIONS_TOKEN}",
-                },
-                json={
-                    "model": AI_MODEL,
-                    "messages": [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt},
-                    ],
-                    "response_format": {"type": "json_object"},
-                    # Reasoning tokens count toward max_tokens; keep headroom for the answer.
-                    "reasoning_effort": "low",
-                    "max_tokens": 2000,
-                },
-                timeout=120,
+            response = requests.post(
+                POLLINATIONS_API, headers={"Authorization": f"Bearer {POLLINATIONS_TOKEN}"},
+                json=payload, timeout=120,
             )
-            # A rejected key or request won't fix itself; only outages are retried.
-            if 400 <= r.status_code < 500 and r.status_code != 429:
-                fail(f"AI HTTP {r.status_code}: {r.text[:500]}")
-            if r.status_code != 200:
-                log_error(f"AI HTTP {r.status_code}: {r.text[:500]}")
-            else:
-                content = r.json()["choices"][0]["message"]["content"]
-                log_debug(f"AI raw response: {content}")
-                parsed = json.loads(content)
-                if isinstance(parsed, dict):
+        except requests.RequestException:
+            record["error"] = "transport"
+            log_error("AI transport failed")
+        else:
+            status = response.status_code
+            if metrics is not None:
+                record.update(http_status=status, request_id=response.headers.get("X-Request-Id"), cache=response.headers.get("X-Cache"))
+            if 400 <= status < 500 and status != 429:
+                raise SystemExit(f"AI rejected request: HTTP {status}")
+            if status == 200:
+                try:
+                    data = response.json()
+                    if metrics is not None:
+                        usage = data.get("usage") or {}
+                        record.update(completion_id=data.get("id"), usage=usage)
+                    content = data["choices"][0]["message"]["content"].strip()
+                    if hosted_model and (fence := re.fullmatch(r"```(?:json)?\s*(.*?)\s*```", content, re.DOTALL)):
+                        content = fence.group(1)
+                    parsed = json.loads(content)
+                    if not isinstance(parsed, dict):
+                        raise ValueError("expected one object")
                     return parsed
-                log_error(f"AI returned non-object JSON: {content[:200]}")
-        except (
-            requests.RequestException,
-            KeyError,
-            IndexError,
-            TypeError,
-            ValueError,
-        ) as e:
-            log_error(f"AI request failed: {e}")
-        time.sleep(2**attempt)
+                except (ValueError, AttributeError, KeyError, IndexError, TypeError):
+                    invalid_output = True
+                    record["error"] = "invalid JSON"
+                    log_error("AI returned invalid JSON output")
+            else:
+                log_error(f"AI HTTP {status}")
+        if attempt < 2:
+            time.sleep(2**attempt)
+    if hosted_model and invalid_output:
+        raise SystemExit("Weaver returned invalid output and retries were exhausted")
     return None
 
 
@@ -177,13 +195,13 @@ def dev_fields(areas: list) -> dict:
         for n in nodes
         if n.get("options")
     }
-    expected = [("Area", areas), ("Priority", PRIORITIES), ("Source", SOURCES)]
+    expected = [("Area", areas), ("Priority", PRIORITIES), ("Source", SOURCES), ("Model work", MODEL_WORK)]
     if IS_PULL_REQUEST:
         expected.append(("Work type", PR_TYPES))
     for name, values in expected:
         missing = [v for v in values if v not in fields.get(name, {}).get("options", {})]
         if missing:
-            fail(f"Dev field {name} does not match project-manager.md; missing options: {missing}")
+            fail(f"Dev field {name} does not match the classification policy; missing options: {missing}")
     return fields
 
 
@@ -229,18 +247,36 @@ def item_source(labels: set) -> str:
     return author_source()
 
 
-def current_priority() -> Optional[str]:
-    """The issue's Priority on Dev, if someone or an earlier run already set it."""
-    data = graphql_request(
-        """query($id: ID!) { node(id: $id) { ... on Issue { projectItems(first: 10) { nodes {
+def current_dev_fields() -> dict:
+    """Read existing Priority and Model work without confusing read failure with empty fields."""
+    query = """
+    query($id: ID!, $after: String) {
+        node(id: $id) {
+            ... on Issue { projectItems(first: 50, after: $after) { ... ProjectItems } }
+            ... on PullRequest { projectItems(first: 50, after: $after) { ... ProjectItems } }
+        }
+    }
+    fragment ProjectItems on ProjectV2ItemConnection {
+        pageInfo { hasNextPage endCursor }
+        nodes {
             project { id }
-            fieldValueByName(name: "Priority") { ... on ProjectV2ItemFieldSingleSelectValue { name } }
-        } } } } }""",
-        {"id": ISSUE_NODE_ID},
-    )
-    items = data.get("node", {}).get("projectItems", {}).get("nodes", [])
-    item = next((i for i in items if i["project"]["id"] == DEV_PROJECT_ID), {})
-    return (item.get("fieldValueByName") or {}).get("name")
+            priority: fieldValueByName(name: "Priority") { ... on ProjectV2ItemFieldSingleSelectValue { name } }
+            modelWork: fieldValueByName(name: "Model work") { ... on ProjectV2ItemFieldSingleSelectValue { name } }
+        }
+    }
+    """
+    after = None
+    while True:
+        data = graphql_request(query, {"id": ISSUE_NODE_ID, "after": after})
+        page = (data.get("node") or {}).get("projectItems")
+        if page is None:
+            fail(f"Failed to read existing Dev fields for #{ISSUE_NUMBER}")
+        for item in page["nodes"]:
+            if item and item["project"]["id"] == DEV_PROJECT_ID:
+                return item
+        if not page["pageInfo"]["hasNextPage"]:
+            return {}
+        after = page["pageInfo"]["endCursor"]
 
 
 def add_to_dev() -> str:
@@ -324,36 +360,52 @@ def fetch_pr_files() -> list:
         page += 1
 
 
-def classify(brief: str, areas: list) -> Optional[dict]:
-    """Area and type for work; priority only for issues. None while the classifier is down."""
-    if IS_PULL_REQUEST:
-        files = fetch_pr_files()
+def item_prompt(kind, author, author_type, title, body, files, linked):
+    facts = ""
+    if kind == "pull request":
         facts = f"Changed files ({len(files)}):\n" + "\n".join(files[:300])
         if len(files) > 300:
             facts += f"\n... and {len(files) - 300} more"
-        linked = [{"number": issue["number"], "type": (issue.get("issueType") or {}).get("name")} for issue in closing_issues()]
         facts += "\nLinked issue types (hints, verify against PR scope):\n" + json.dumps(linked)
-    else:
-        facts = ""
-    author = "a person, relayed from Discord" if is_relayed() else ITEM_DATA.get("user", {}).get("type", "User")
-    raw = ask_ai(brief, f"""This is {"a pull request" if IS_PULL_REQUEST else "an issue"}.
-Author: {ISSUE_AUTHOR} ({author})
-Title: {ISSUE_TITLE}
-Body: {ISSUE_BODY[:2000]}
-{facts}
-""")
+    item = "a pull request" if kind == "pull request" else "an issue"
+    return f"This is {item}.\nAuthor: {author} ({author_type})\nTitle: {title}\nBody: {body[:2000]}\n{facts}\n"
+
+
+def classify(brief: str, areas: list) -> Optional[dict]:
+    """Use Weaver only on opening events after an explicit release selection."""
+    linked = [{"number": i["number"], "type": (i.get("issueType") or {}).get("name")}
+              for i in closing_issues()] if IS_PULL_REQUEST else []
+    prompt = item_prompt("pull request" if IS_PULL_REQUEST else "issue", ISSUE_AUTHOR,
+                         "a person, relayed from Discord" if is_relayed() else ITEM_DATA.get("user", {}).get("type", "User"),
+                         ISSUE_TITLE, ISSUE_BODY, fetch_pr_files() if IS_PULL_REQUEST else [], linked)
+    hosted = os.getenv("WEAVER_MODEL") if GITHUB_EVENT.get("action") == "opened" else None
+    raw = ask_ai(brief, prompt, hosted_model=hosted)
     if raw is None:
         return None
     try:
-        return classification_answer(raw, areas, IS_PULL_REQUEST)
+        return classification_answer(raw, areas, IS_PULL_REQUEST, hosted=bool(hosted))
     except ValueError as error:
         fail(f"Invalid classification for #{ISSUE_NUMBER}: {error}")
 
 
-def classification_answer(raw: dict, areas: list, is_pr: bool) -> dict:
+def classification_answer(raw: dict, areas: list, is_pr: bool, *, hosted=False) -> dict:
+    if hosted:
+        if set(raw) != {"area", "type", "priority", "model_work", "reasoning"}:
+            raise ValueError("expected precisely the five Weaver response fields")
+        if not isinstance(raw["reasoning"], str) or not raw["reasoning"].strip():
+            raise ValueError("missing reasoning")
+        if is_pr and raw["priority"] is not None:
+            raise ValueError("a PR cannot have an issue priority")
+        if raw["area"] is None and any(raw[k] is not None for k in ("type", "priority", "model_work")):
+            raise ValueError("an unclassified item must have null fields")
     area = raw.get("area")
     if area is not None and area not in areas:
         raise ValueError(f"invalid area: {area!r}")
+    model_work = raw.get("model_work")
+    if model_work is not None and (area != "Models" or model_work not in MODEL_WORK):
+        raise ValueError(f"invalid Model work for {area!r}: {model_work!r}")
+    if area == "Models" and "model_work" not in raw:
+        raise ValueError("missing model_work for Models")
     # Promotions and census responses have no type or priority.
     if area is None:
         return {"area": None, "type": None, "priority": None}
@@ -362,14 +414,20 @@ def classification_answer(raw: dict, areas: list, is_pr: bool) -> dict:
         raise ValueError(f"invalid type: {raw.get('type')!r}")
     if not is_pr and raw.get("priority") not in PRIORITIES:
         raise ValueError(f"invalid priority: {raw.get('priority')!r}")
-    return {"area": area, "type": raw["type"], "priority": None if is_pr else raw["priority"]}
+    return {"area": area, "type": raw["type"], "priority": None if is_pr else raw["priority"], "model_work": model_work}
+
+
+def reward_eligible():
+    labels = {label["name"].upper() for label in ITEM_DATA.get("labels", [])}
+    excluded_issue = (labels & (NOT_WORK_LABELS | {"APP-SUBMISSION"}) or
+                      re.match(r"\[Community(?: Model)? Publisher Access\]", ISSUE_TITLE, re.I))
+    return (GITHUB_EVENT.get("action") == "opened" and ITEM_DATA.get("user", {}).get("type") != "Bot"
+            and ITEM_DATA.get("created_at", "") >= REWARDS_START and (IS_PULL_REQUEST or not excluded_issue))
 
 
 def write_reward_comment():
     """Announce the reward. Enter pays it without reading this comment."""
-    # Only when opened, so a re-run never repeats it.
-    if (GITHUB_EVENT.get("action") != "opened" or ITEM_DATA.get("user", {}).get("type") == "Bot"
-            or ITEM_DATA.get("created_at", "") < REWARDS_START):
+    if not reward_eligible():
         return
     if IS_PULL_REQUEST:
         reward, rule = 5, "The PR author can claim this once it is merged into main. A `reward-N` label on this PR, or else on the community quest it closes, sets the amount instead."
@@ -385,6 +443,17 @@ def write_reward_comment():
         fail(f"Failed to post the reward comment on #{ISSUE_NUMBER}: {r.status_code} - {r.text[:200]}")
 
 
+def report_skipped_classification(reason):
+    message = f"{reason} for #{ISSUE_NUMBER}. Skipped project and type writes."
+    if reward_eligible():
+        message += " Missed opening reward announcement. Rerun the original opening event to recover it."
+    print(f"::warning::{message}")
+    if summary := os.getenv("GITHUB_STEP_SUMMARY"):
+        run_url = f"{os.getenv('GITHUB_SERVER_URL')}/{os.getenv('GITHUB_REPOSITORY')}/actions/runs/{os.getenv('GITHUB_RUN_ID')}"
+        with open(summary, "a") as stream:
+            print(f"{message} [Original run]({run_url})", file=stream)
+
+
 def main():
     if not GITHUB_TOKEN or not POLLINATIONS_TOKEN:
         fail("GITHUB_TOKEN and POLLINATIONS_TOKEN are required")
@@ -396,7 +465,7 @@ def main():
         log_debug(f"#{ISSUE_NUMBER} is a survey response; skipping")
         return
 
-    brief = read_brief()
+    brief = ((WEAVER_DIR / "system-prompt.md").read_text().strip() if os.getenv("WEAVER_MODEL") else read_brief())
     areas = area_names(brief)
     fields = dev_fields(areas)
 
@@ -410,25 +479,37 @@ def main():
     if not IS_PULL_REQUEST and "APP-SUBMISSION" in labels:
         answer = {"area": APP_SUBMISSION_AREA, "type": None, "priority": None}
     else:
-        answer = classify(brief, areas)
+        try:
+            answer = classify(brief, areas)
+        except SystemExit:
+            report_skipped_classification("Classification failed")
+            raise
         if answer is None:
-            # An outage is not the contributor's failure: leave the item for a workflow_dispatch run.
-            print(f"SKIP #{ISSUE_NUMBER}\tclassifier unavailable\t{ISSUE_TITLE}")
+            report_skipped_classification("Classifier unavailable")
             return
         if not IS_PULL_REQUEST and answer["area"] is None:
             log_debug(f"#{ISSUE_NUMBER} is not work (census response); skipping")
             return
 
     source = item_source(labels)
-    # A priority that is already set (by a person, an earlier run or the Express job) is kept.
-    existing = current_priority() if answer["priority"] else None
-    priority = existing or answer["priority"]
-    print(f"{'DRY-RUN ' if DRY_RUN else ''}#{ISSUE_NUMBER}\t{source}\t{answer['area']}\t{answer['type']}\t{priority}{' (kept)' if existing else ''}\t{ISSUE_TITLE}")
+    proposed_queue = answer.get("model_work")
+    # Preserve choices made by maintainers, the Express job or an earlier run.
+    existing = current_dev_fields() if answer["priority"] or proposed_queue else {}
+    existing_priority = (existing.get("priority") or {}).get("name")
+    existing_queue = (existing.get("modelWork") or {}).get("name")
+    priority = existing_priority or answer["priority"]
+    queue = existing_queue or proposed_queue
+    print(
+        f"{'DRY-RUN ' if DRY_RUN else ''}#{ISSUE_NUMBER}\t{source}\t{answer['area']}\t{answer['type']}"
+        f"\t{queue}{' (kept)' if existing_queue else ''}\t{priority}{' (kept)' if existing_priority else ''}\t{ISSUE_TITLE}"
+    )
 
     item_id = add_to_dev()
     set_field(item_id, fields["Area"], answer["area"])
+    if proposed_queue and not existing_queue:
+        set_field(item_id, fields["Model work"], proposed_queue)
     set_field(item_id, fields["Source"], source)
-    if answer["priority"] and not existing:
+    if answer["priority"] and not existing_priority:
         set_field(item_id, fields["Priority"], answer["priority"])
     if IS_PULL_REQUEST:
         set_field(item_id, fields["Work type"], answer["type"])
@@ -442,8 +523,7 @@ def main():
 
     # App listings have their own reward; access requests earn none. Same rules as
     # ISSUE_REPORT_EXCLUDED_TITLE in enter.pollinations.ai/src/services/quests/groups/github-contributions.ts.
-    if IS_PULL_REQUEST or not ("APP-SUBMISSION" in labels or re.match(r"\[Community(?: Model)? Publisher Access\]", ISSUE_TITLE, re.I)):
-        write_reward_comment()
+    write_reward_comment()
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 # Model change and E2E matrix
 
-Every change starts with the confirmation gate in `SKILL.md`. Test the exact configured route with real provider requests and then through local Gen.
+Every change starts with [model change approval](change-approval.md). Test the exact configured route with real provider requests and then through local Gen.
 
 ## Change matrix
 

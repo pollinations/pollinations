@@ -101,7 +101,7 @@ SQL >
         -- Non-final 503s retried elsewhere: capacity pressure, not a
         -- caller-visible failure.
         countIf(NOT is_final AND response_status = 503) as retried_503s,
-        maxIf(start_time, response_status >= 500) as last_error_at,
+        maxOrNullIf(start_time, response_status >= 500) as last_error_at,
         -- Route latency excludes earlier attempts. Historical rows without
         -- attempt timing are omitted instead of assigning request latency.
         round(if(

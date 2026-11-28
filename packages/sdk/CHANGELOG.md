@@ -2,6 +2,13 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.38] - 2026-11-27
+
+### Changed
+- `ModelStatusRow.last_error_at` is `string | null`: `GET /models/status`
+  returns `null` instead of `1970-01-01 00:00:00` when no attempt in the
+  row returned a 5xx.
+
 ## [5.1.0-alpha.37] - 2026-11-26
 
 ### Added

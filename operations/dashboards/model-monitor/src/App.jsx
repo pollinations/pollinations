@@ -768,16 +768,12 @@ export default function App() {
                     ((a.stats?.errors_5xx || 0) - (b.stats?.errors_5xx || 0))
                 );
             case "lastError": {
-                const aTime =
-                    a.stats?.last_error_at &&
-                    a.stats.last_error_at !== "1970-01-01 00:00:00"
-                        ? new Date(`${a.stats.last_error_at}Z`).getTime()
-                        : 0;
-                const bTime =
-                    b.stats?.last_error_at &&
-                    b.stats.last_error_at !== "1970-01-01 00:00:00"
-                        ? new Date(`${b.stats.last_error_at}Z`).getTime()
-                        : 0;
+                const aTime = a.stats?.last_error_at
+                    ? new Date(`${a.stats.last_error_at}Z`).getTime()
+                    : 0;
+                const bTime = b.stats?.last_error_at
+                    ? new Date(`${b.stats.last_error_at}Z`).getTime()
+                    : 0;
                 return dir * (aTime - bTime);
             }
             case "p50":

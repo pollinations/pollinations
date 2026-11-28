@@ -62,6 +62,7 @@ for (const modern of [false, true])
             "http_probe",
             "inspect_cidr",
             "inspect_mac",
+            "inspect_url",
             "ip_whois",
         ]);
         // Only the network tools reach the open world; the inspectors are local.
@@ -437,4 +438,29 @@ test("inspect_mac parses and normalizes MAC addresses across formats", async (t)
     });
     const bResult = JSON.parse(broadcast.content[0].text);
     assert.equal(bResult.properties.is_broadcast, true);
+});
+
+test("inspect_url parses, resolves, and updates query parameters", async (t) => {
+    const client = await clientFor(t);
+    const res = await client.callTool({
+        name: "inspect_url",
+        arguments: {
+            url: "https://example.com/api/v1?keep=1&drop=2",
+            resolve: "../v2/items?keep=1&drop=2#top",
+            remove_params: ["drop"],
+            set_params: { page: "3" },
+        },
+    });
+    const parsed = JSON.parse(res.content[0].text);
+    assert.equal(parsed.origin, "https://example.com");
+    assert.equal(parsed.pathname, "/v2/items");
+    assert.equal(parsed.hash, "#top");
+    assert.deepEqual(parsed.query_params, { keep: "1", page: "3" });
+    assert.equal(parsed.has_credentials, false);
+
+    const invalid = await client.callTool({
+        name: "inspect_url",
+        arguments: { url: "not a url" },
+    });
+    assert.equal(invalid.isError, true);
 });

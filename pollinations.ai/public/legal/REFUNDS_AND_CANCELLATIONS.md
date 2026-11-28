@@ -17,7 +17,7 @@ Your account may hold two types of credit:
 
 ## 2) Refunds for unused top-ups
 
-We refund completely unused top-ups on request. For example, if you spend $0.10 of a $10 top-up, that purchase no longer qualifies for an unused-credit refund, even if $9.90 remains. Your legal right to withdraw still applies as described in section 4.
+We refund a top-up on request only if you haven’t spent any credit from that purchase. Your legal right to withdraw still applies as described in section 4.
 
 Billing checks the purchase, removes the refunded credit and returns the money to the original payment method. The Quest balance, promotional credit and developer earnings have no cash value.
 

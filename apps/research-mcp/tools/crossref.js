@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { decodeEntities } from "./europe-pmc.js";
 
 const API_ROOT = "https://api.crossref.org/works";
 const MAILTO = "mailto=hello@pollinations.ai";
@@ -6,8 +7,7 @@ const ABSTRACT_LIMIT = 8_000;
 
 function cleanString(val) {
     if (!val) return "";
-    return String(val)
-        .replace(/<[^>]+>/g, " ")
+    return decodeEntities(String(val).replace(/<[^>]+>/g, " "))
         .replace(/\s+/g, " ")
         .trim();
 }

@@ -11,6 +11,9 @@ const parser = new XMLParser({
     parseTagValue: false,
     parseAttributeValue: false,
     removeNSPrefix: true,
+    // Also decodes numeric references such as &#8217;, which WordPress feeds
+    // use for apostrophes and quotes.
+    htmlEntities: true,
 });
 const xmlBase = (element, fallback) => {
     const declared = element?.["@_base"] ?? element?.["@_xml:base"];

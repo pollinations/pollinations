@@ -140,19 +140,23 @@ with another endpoint from the table to use FFmpeg or Exa Search.
 ### Pollinations MCP
 
 The Pollinations server exposes the main Pollinations API as agent-friendly
-tools. Agents can discover live models, delegate text requests, generate and
-edit media, create embeddings and 3D assets, transcribe audio, and inspect
+tools. Agents can discover live models and the other hosted MCP servers,
+delegate text requests, generate and edit media, create embeddings and 3D
+assets, transcribe audio, isolate speech, change a speaker's voice, and inspect
 model health, usage, earnings, quests, and API keys.
 
 | Tool | Purpose |
 | --- | --- |
 | `listModels` | Search and list live models, aliases, capabilities, voices, endpoints, and pricing; narrow with `query`, `capabilities`, `agent`, `community`, `limit` |
 | `getModelStatus` | Inspect recent requests, errors, and latency for a model |
+| `listMcpServers` | List the other hosted MCP servers, their endpoints and pricing |
 | `generateText` | Generate text, use search-capable models, process multimodal input, or call a listed agent |
 | `generateImage` | Generate or edit images |
 | `generateVideo` | Generate video |
 | `generateAudio` | Generate speech, music, or sound |
 | `transcribeAudio` | Transcribe audio from a public HTTPS URL |
+| `isolateSpeech` | Remove background noise and music from a public HTTPS audio or video URL |
+| `changeVoice` | Transform the speaker identity of a public HTTPS audio URL |
 | `generate3D` | Generate a GLB 3D model |
 | `createEmbeddings` | Create text or multimodal embeddings |
 | `getBalance` | Check the remaining balance; requires `account:usage` permission |

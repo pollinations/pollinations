@@ -42,7 +42,11 @@ export async function signAgentRunToken(opts: {
 }): Promise<string> {
     const issuedAt = opts.now ?? Math.floor(Date.now() / 1000);
     const expiresIn = opts.expiresIn ?? AGENT_RUN_TOKEN_TTL_SECONDS;
-    if (expiresIn < 1 || expiresIn > AGENT_RUN_TOKEN_TTL_SECONDS) {
+    if (
+        !Number.isFinite(expiresIn) ||
+        expiresIn < 1 ||
+        expiresIn > AGENT_RUN_TOKEN_TTL_SECONDS
+    ) {
         throw new Error("Invalid agent run token lifetime");
     }
 

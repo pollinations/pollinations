@@ -78,6 +78,7 @@ for (const modern of [false, true])
                 "rank_palette",
                 "time_convert",
                 "time_math",
+                "text_stats",
             ].sort(),
         );
         const converted = await call(client, "time_convert", {
@@ -949,4 +950,15 @@ test("integer_math rejects what is not integer arithmetic", async (t) => {
             JSON.stringify(args),
         );
     }
+});
+
+test("text stats counts characters, words, lines and sentences", async (t) => {
+    const client = await clientFor(t);
+    assert.deepEqual(
+        await call(client, "text_stats", { text: "Hello world.\nSecond line! 你好。" }),
+        { characters: 29, charactersNoWhitespace: 25, words: 5, lines: 2, sentences: 3 },
+    );
+    assert.deepEqual(await call(client, "text_stats", { text: "" }), {
+        characters: 0, charactersNoWhitespace: 0, words: 0, lines: 0, sentences: 0,
+    });
 });

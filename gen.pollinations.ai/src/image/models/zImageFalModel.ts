@@ -51,7 +51,7 @@ export async function callZImageFalAPI(
             num_inference_steps: 4,
             seed: safeParams.seed,
             num_images: 1,
-            output_format: "jpeg",
+            output_format: safeParams.transparent || safeParams.background === "transparent" ? "png" : "jpeg",
             enable_prompt_expansion: false,
         }),
         signal: AbortSignal.timeout(ZIMAGE_FAL_TIMEOUT_MS),

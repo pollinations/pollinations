@@ -18,7 +18,7 @@ Authorization: Bearer YOUR_KEY
 ```
 
 Get a key from [enter.pollinations.ai](https://enter.pollinations.ai/keys).
-Calls use that key's wallet, permissions, and budget.
+Calls use your account balance and follow the key’s permissions and spending limit.
 
 For all Pollinations-hosted MCP servers, see the
 [MCP Servers documentation](https://gen.pollinations.ai/docs#tag/mcp-servers).

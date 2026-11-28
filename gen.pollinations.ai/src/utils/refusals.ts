@@ -1,6 +1,9 @@
+import { hasAccountPermission } from "@shared/auth/account-permissions.ts";
 import type { AuthenticatedApiKey } from "@shared/auth/api-key.ts";
 import type { UserBalance } from "@shared/billing/balance.ts";
 import { canCoverEstimatedCharge } from "@shared/billing/bucket-selection.ts";
+import { MARKUP_PCT } from "@shared/billing/markup.ts";
+import { POLLEN_BILLING_PRECISION } from "@shared/billing/precision.ts";
 import { fixLink, type RefusalContext } from "@shared/http/fix-link.ts";
 import { PaymentRequiredError } from "@shared/http/payment-required-error.ts";
 
@@ -19,97 +22,195 @@ export function appOrigin(
     }
 }
 
-/** A USD amount, never below zero. */
-const usd = (pollen: number) => `$${Math.max(0, pollen).toFixed(4)}`;
+const preciseDollars = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 4,
+    maximumFractionDigits: POLLEN_BILLING_PRECISION,
+});
 
-/**
- * Refuses a charge the key's budget or the account's balance can't cover.
- * The budget comes first: topping up the wallet doesn't raise it.
- */
+/** Match the ledger precision when rounding would hide the gap that caused a refusal. */
+function usd(amount: number, ...compared: number[]): string {
+    const value = Math.max(0, amount);
+    const rounded = value.toFixed(4);
+    if (
+        value > 0 &&
+        compared.some(
+            (other) =>
+                other > 0 && other !== value && other.toFixed(4) === rounded,
+        )
+    ) {
+        return value < 10 ** -POLLEN_BILLING_PRECISION
+            ? "less than $0.00000001"
+            : preciseDollars.format(value);
+    }
+    return value > 0 && Number(rounded) === 0
+        ? "less than $0.0001"
+        : `$${rounded}`;
+}
+
+function keyBudgetLink(c: RefusalContext): string {
+    return fixLink(c, "/edit-key", {
+        id: c.var.auth?.apiKey?.id,
+        ref: "agent_key_budget",
+    });
+}
+
+export function keyReservationFailed(c: RefusalContext): PaymentRequiredError {
+    const url = keyBudgetLink(c);
+    return new PaymentRequiredError(
+        "KEY_BUDGET_EXHAUSTED",
+        (link) =>
+            `Key budget unavailable. If other requests are running, wait for them to finish and try again. ${link("Review the key budget", url)}.`,
+        url,
+    );
+}
+
+/** Check the key first. Topping up the account cannot raise its spending limit. */
 export async function requireFunds(
     c: RefusalContext,
     cost: number,
     loadBalance: () => Promise<UserBalance>,
-    paidOnly = false,
-    free = false,
+    { paidOnly = false, free = false, realtimeMedian = false } = {},
 ): Promise<UserBalance> {
     const apiKey = c.var.auth?.apiKey;
-    const charge =
-        cost === 0 && !free
-            ? "The final price depends on usage"
-            : `This request costs ${cost < 0.00005 ? "less than $0.0001" : `about ${usd(cost)}`}`;
     const budget = apiKey?.pollenBalance;
-    // A cost of 0 can mean "not known until billed" (no price history, or a
-    // receipt), so a key with nothing left only makes calls known to be free.
+    function requirement(
+        funds:
+            | "key budget"
+            | "paid balance"
+            | "Quest balance"
+            | "Quest or paid balance",
+        showBalances: boolean,
+        ...balances: number[]
+    ) {
+        const remaining =
+            funds === "paid balance" && showBalances
+                ? `, and you have ${usd(balances[0], cost)}`
+                : "";
+        const noCharge = realtimeMedian ? " Nothing was charged." : "";
+        if (cost <= 0) {
+            const usage = free ? "" : " Final cost depends on usage.";
+            if (funds === "paid balance")
+                return `This model needs a positive paid balance to start${remaining}.${usage}${noCharge}`;
+            if (free) {
+                return funds === "key budget"
+                    ? "Free requests need a key budget of zero or more."
+                    : `Free requests need a positive ${funds}.`;
+            }
+            return `A positive ${funds} is required.${usage}${noCharge}`;
+        }
+        const price = showBalances ? usd(cost, ...balances) : usd(cost);
+        const rounded =
+            price === `$${cost.toFixed(4)}` && Number(cost.toFixed(4)) !== cost;
+        const amount = rounded ? `about ${price}` : price;
+        const markup = apiKey?.byopMarkupApplies
+            ? ` plus ${MARKUP_PCT * 100}% app markup`
+            : "";
+        const basis = `7-day model median${markup}`;
+        if (funds === "paid balance") {
+            const estimate = realtimeMedian
+                ? `${amount}, based on the ${basis}`
+                : amount;
+            return `This model needs a paid balance above the estimate (${estimate}) to start${remaining}.${noCharge}`;
+        }
+        if (realtimeMedian) {
+            const source =
+                funds === "Quest or paid balance" ? " in one balance" : "";
+            return `Opening a session needs ${amount}${source} (${basis}).${noCharge}`;
+        }
+        if (funds === "Quest or paid balance")
+            return `Balance too low. One balance must cover ${amount} to start.`;
+        return `This request needs ${amount} to start.`;
+    }
     if (
         typeof budget === "number" &&
         (budget < Math.max(0, cost) || (budget <= 0 && !free))
     ) {
-        throw keyBudgetExhausted(
-            c,
-            `API key budget too low. ${charge}, but this key has ${usd(budget)} left.`,
+        const url = keyBudgetLink(c);
+        throw new PaymentRequiredError(
+            "KEY_BUDGET_EXHAUSTED",
+            (link, isApiResponse) => {
+                const available =
+                    budget < 0
+                        ? "This key is over budget."
+                        : isApiResponse
+                          ? `This key has ${usd(budget, cost)} left.`
+                          : "This key has too little budget left.";
+                return `${available} ${requirement("key budget", isApiResponse, budget)} ${link("Raise the key budget", url)}.`;
+            },
+            url,
         );
     }
+
     const balance = await loadBalance();
-    // A Quest-balance-only key can never draw on the paid balance.
-    const questPollenOnly = apiKey?.questPollenOnly ?? false;
-    const spendable = questPollenOnly
-        ? { ...balance, packBalance: 0 }
-        : balance;
+    const questOnly = apiKey?.questPollenOnly ?? false;
+    const spendable = questOnly ? { ...balance, packBalance: 0 } : balance;
     if (canCoverEstimatedCharge(spendable, cost, paidOnly)) return balance;
 
+    const canViewAccount = hasAccountPermission(apiKey, "usage");
+    const allowPaidUrl = fixLink(c, "/edit-key", {
+        id: apiKey?.id,
+        ref: "agent_quest_pollen_only",
+    });
     if (balance.questPollenRestricted) {
-        const fixUrl = fixLink(c, "/top-up", {
-            ref: "quest_pollen_restricted",
-        });
+        const url = fixLink(c, "/top-up", { ref: "quest_pollen_restricted" });
         throw new PaymentRequiredError(
             "QUEST_POLLEN_RESTRICTED",
-            `We couldn't verify your account, so your Quest balance is locked. Make your first purchase at ${fixUrl} to unlock it, or contact hello@pollinations.ai if you think this is a mistake.`,
-            fixUrl,
+            (link) => {
+                const unlock = link("Top up", url);
+                const support = link(
+                    "contact support",
+                    "mailto:hello@pollinations.ai",
+                );
+                const model = paidOnly
+                    ? " This model needs the paid balance."
+                    : "";
+                const edit = questOnly
+                    ? ` ${link("Allow paid balance", allowPaidUrl)} for this key to use paid funds.`
+                    : "";
+                return `We couldn't verify this account. Its Quest balance is locked. ${unlock} to unlock it, or ${support}.${model}${edit}`;
+            },
+            url,
             true,
         );
     }
 
-    if (questPollenOnly) {
-        const fixUrl = fixLink(c, "/edit-key", {
-            id: apiKey?.id,
-            ref: "agent_quest_pollen_only",
-        });
-        const allowPaid = `allow the paid balance for this key at ${fixUrl}`;
+    const topUp = fixLink(c, "/top-up", { ref: "agent_low_balance_topup" });
+    const quests = fixLink(c, "/quests", {
+        ref: questOnly
+            ? "agent_quest_pollen_only_quests"
+            : "agent_low_balance_quests",
+    });
+    if (questOnly) {
         throw new PaymentRequiredError(
             "QUEST_POLLEN_ONLY",
-            paidOnly
-                ? `This model needs the paid balance, but this API key only spends the Quest balance. To use it, ${allowPaid}.`
-                : `Not enough Quest balance. ${charge}, but you have ${usd(balance.tierBalance)} of Quest balance, and this API key only spends the Quest balance. Complete a quest at ${fixLink(c, "/quests", { ref: "agent_quest_pollen_only_quests" })} or ${allowPaid}.`,
-            fixUrl,
+            (link, isApiResponse) => {
+                const showBalances = isApiResponse && canViewAccount;
+                if (paidOnly)
+                    return `This model needs the paid balance. This key only spends Quest balance. ${link("Allow paid balance", allowPaidUrl)} for this key.`;
+                const remaining = showBalances
+                    ? ` It has ${usd(balance.tierBalance, cost)} available.`
+                    : "";
+                return `This key only spends Quest balance.${remaining} ${requirement("Quest balance", showBalances, balance.tierBalance)} ${link("Complete a Quest", quests)} or ${link("allow paid balance", allowPaidUrl)}.`;
+            },
+            allowPaidUrl,
             paidOnly,
         );
     }
-    const available = paidOnly
-        ? balance.packBalance
-        : Math.max(balance.tierBalance, balance.packBalance);
-    const fixUrl = fixLink(c, "/top-up", { ref: "agent_low_balance_topup" });
+
     throw new PaymentRequiredError(
         "INSUFFICIENT_BALANCE",
-        paidOnly
-            ? `This model requires the paid balance, so the Quest balance can't cover it. ${charge}, but your available paid balance is ${usd(available)}. Top up at ${fixUrl}.`
-            : `Insufficient balance. ${charge}, but your available balance is ${usd(available)}. Top up at ${fixUrl}.`,
-        fixUrl,
+        (link, isApiResponse) => {
+            const showBalances = isApiResponse && canViewAccount;
+            if (paidOnly)
+                return `${requirement("paid balance", showBalances, balance.packBalance)} ${link("Top up", topUp)}.`;
+            const remaining = showBalances
+                ? ` You have ${usd(balance.tierBalance, cost)} in Quest balance and ${usd(balance.packBalance, cost)} in paid balance.`
+                : "";
+            return `${requirement("Quest or paid balance", showBalances, balance.tierBalance, balance.packBalance)}${remaining} ${link("Complete a Quest", quests)} or ${link("top up", topUp)}.`;
+        },
+        topUp,
         paidOnly,
-    );
-}
-
-export function keyBudgetExhausted(
-    c: RefusalContext,
-    reason: string,
-): PaymentRequiredError {
-    const fixUrl = fixLink(c, "/edit-key", {
-        id: c.var.auth?.apiKey?.id,
-        ref: "agent_key_budget",
-    });
-    return new PaymentRequiredError(
-        "KEY_BUDGET_EXHAUSTED",
-        `${reason} Increase the key budget at ${fixUrl}; topping up the wallet does not increase this limit.`,
-        fixUrl,
     );
 }

@@ -1,31 +1,31 @@
 # Privacy Policy
 
-**Last updated: 2026-11-17**
+**Last updated: 2026-11-28**
 
 ## 1) Scope & Roles
 
 This policy covers (a) the paid dashboard/API, (b) the pollinations.ai community website, (c) the Polli Discord bot and its HTTP API, and (d) the Free API Classic at text.pollinations.ai and image.pollinations.ai, which needs no account. For Discord/GitHub/Google use, their policies also apply.
 
-**Roles:** For our websites, accounts, billing, wallet, app authorization, and abuse-prevention operations, we are controller. When processing Customer Data on your behalf via the API, we act as processor. Our Terms do not currently incorporate a standard DPA; contact **hello@pollinations.ai** before using the Service for processing that requires one. Any separately agreed processing terms remain applicable.
+**Roles:** For our websites, accounts, billing, credit balances, app authorization, and abuse-prevention operations, we are controller. When processing Customer Data on your behalf via the API, we act as processor. Our Terms do not currently incorporate a standard DPA; contact **hello@pollinations.ai** before using the Service for processing that requires one. Any separately agreed processing terms remain applicable.
 
 ## 2) Data We Process
 
 * **Accounts & auth (commercial):** email, name/handle, org, password hash or SSO IDs (the GitHub or Google account you sign in with).
 * **API keys & app authorization:** key type, key ID, scopes, model restrictions, expiry, budget/cap, app name, redirect URI, GitHub identity shown on consent screens, connected-app records, revocations, and developer-earnings settings.
-* **Billing & wallet (commercial):** plan, invoices, payment status, VAT ID, company details, top-ups, Quest balance, paid balance, grants, rewards, developer earnings, refunds, chargebacks, and wallet adjustments. Card data is handled by our payment provider; we do not store full card numbers.
+* **Billing & balances (commercial):** plan, invoices, payment status, VAT ID, company details, top-ups, Quest balance, paid balance, grants, rewards, developer earnings, refunds, chargebacks, and balance adjustments. Card data is handled by our payment provider; we do not store full card numbers.
 * **Service usage & API metadata (commercial):** timestamps, endpoints/models, token/credit usage, balance bucket used, baseline model cost, app markup/developer credit where applicable, rate-limit events, IP, user-agent, and error logs.
 * **Free API Classic usage (no account):** timestamps, endpoints, request status, IP address and country, and the referring site or app name a request carries. We use the IP address to apply the free limit and prevent abuse. Usage records keep a keyed hash and the network prefix of the IP address instead of the full address; the hash counts distinct callers.
 * **Quests & rewards (commercial/community):** quest availability, progress, completions, reward amounts, credited balance bucket, source references, and display/audit metadata such as quest titles, app names/URLs, app-directory approval records, GitHub issue/PR numbers, issue titles/URLs, assignees, labels, and completion timestamps.
 * **Prompts/outputs (commercial & demos):** processed transiently to deliver results; not retained beyond what's necessary to run the Service, except configuration you save and short-lived response caches. Generated responses may be cached temporarily for performance, reliability, cost control, and abuse prevention. Generated media cache identifiers and image metadata may include prompt-derived data.
 * **Community identifiers (community):** Discord ID/username (if you link or use our bots); GitHub ID/username and public GitHub profile/repository/activity signals if you link GitHub, contribute, identify an app, or complete GitHub-based quests; email if you contact us.
-* **Analytics processing:** we also use the data categories above (account identifiers, email, name, GitHub identity where linked, wallet balance attributes, API key metadata, session metadata, and payment-provider event records including customer email) for product analytics, billing attribution, abuse prevention, and developer-earnings reporting. We do not use passwords, password hashes, OAuth tokens, API key secrets, session tokens, or IP addresses for these analytics purposes; Free API Classic analytics use only the keyed IP hash described above.
+* **Analytics processing:** we also use the data categories above (account identifiers, email, name, GitHub identity where linked, account balance attributes, API key metadata, session metadata, and payment-provider event records including customer email) for product analytics, billing attribution, abuse prevention, and developer-earnings reporting. We do not use passwords, password hashes, OAuth tokens, API key secrets, session tokens, or IP addresses for these analytics purposes; Free API Classic analytics use only the keyed IP hash described above.
 * **Telemetry:** aggregated counters and performance metrics.
 * **Support:** emails, tickets, in-app chats.
 
 ## 3) Purposes & Lawful Bases (GDPR)
 
 * **Provide and improve services/sites** (contract; legitimate interests).
-* **Run API keys, app authorization, wallet, quests, rewards, and developer-earnings features** (contract; legitimate interests).
+* **Run API keys, app authorization, account balances, quests, rewards, and developer-earnings features** (contract; legitimate interests).
 * **Verify quest eligibility, credit rewards, and prevent duplicate or abusive reward claims** (contract; legitimate interests).
 * **Security, abuse prevention, fraud prevention, and spending-control enforcement** (legitimate interests).
 * **Billing/tax/compliance** (legal obligations).
@@ -82,10 +82,10 @@ Community providers may process data in other countries. Before sending personal
 * **Account and profile data:** while the account is active. When an account is deleted, access is revoked immediately and its profile, credentials, connected-app access, balances, and user-owned resources are deleted or de-identified from active systems within 30 days.
 * **Reward-protection records:** an immutable linked GitHub or Google user ID and reward ledger records are retained while needed to prevent the same identity from receiving the same one-time reward more than once. We review this retention while the reward programmes remain available.
 * **Sign-up checks:** when an account is created with a private email domain (not a public provider such as Gmail), we record that domain with the sign-up in our product analytics, kept as long as other product events, to detect bulk account creation. Domains associated with bulk sign-ups or disposable email may cause their accounts' Quest balance spending to be restricted, including existing accounts. Quests can still earn rewards, balances are preserved, and the paid balance remains usable. A first purchase or a team member's approval clears the restriction. Contact **hello@pollinations.ai** if you believe a restriction is a mistake. Domain detection and account restriction records are kept while Quest rewards are offered. Earlier in-app review requests are no longer processed by an AI model; their records, including previous approvals, follow that retention period.
-* **Billing, wallet, and tax records:** account term + 7 years where needed for accounting, tax, fraud, disputes, and legal proof.
+* **Billing, account balance, and tax records:** account term + 7 years where needed for accounting, tax, fraud, disputes, and legal proof.
 * **API usage metadata:** typically 24 months (billing, fraud, capacity, developer-earnings attribution).
 * **Website and dashboard usage measurement (§7):** 24 months.
-* **Quest and reward records:** reward ledger records follow wallet/accounting retention where needed for balance, audit, fraud, and dispute purposes. Synced public GitHub quest issue records are retained while needed to display, process, and audit quest rewards.
+* **Quest and reward records:** reward ledger records follow the retention periods for account balances and accounting records where needed for balance, audit, fraud, and dispute purposes. Synced public GitHub quest issue records are retained while needed to display, process, and audit quest rewards.
 * **Generated response caches (text, image, audio, video):** typically up to 30 days, plus any downstream public/browser caches.
 * **Community providers:** each provider sets its own retention policy. Review it before sending sensitive content.
 * **Uploaded media files (media.pollinations.ai):** a 30-day lifecycle applies from upload or the latest refresh. Retrieving the file body refreshes the lifecycle only when the file is at least 15 days old, so actively accessed uploads can remain longer.

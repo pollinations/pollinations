@@ -1,58 +1,8 @@
 import { createInterface } from "node:readline/promises";
-import { ApiError, gen, requireKey } from "./api.js";
+import { ApiError, paymentHint, requireKey } from "./api.js";
 import { POLLI_CLIENT } from "./client.js";
 import { BASE_URL, resolveApiKey } from "./config.js";
-import {
-    ExitSignal,
-    formatDollars,
-    getOutputMode,
-    printError,
-} from "./output.js";
-
-// Returns null for non-402 so callers fall through to their generic error path.
-export async function budgetHint(
-    status: number,
-    bodyText: string,
-): Promise<string | null> {
-    if (status !== 402) return null;
-    let code: string | undefined;
-    try {
-        code = JSON.parse(bodyText)?.error?.code;
-    } catch {
-        // Non-JSON errors still get the general payment guidance below.
-    }
-    if (code === "KEY_BUDGET_EXHAUSTED") {
-        return [
-            "API key budget exhausted. Topping up the wallet does not increase the key budget.",
-            "Manage key budget: https://enter.pollinations.ai/keys",
-            `Server said: ${bodyText}`,
-        ].join("\n");
-    }
-    const balance = await gen<{ accountBalance?: { total: number } }>(
-        "/account/balance",
-        {
-            apiKey: requireKey(),
-        },
-    )
-        .then((r) => r.accountBalance?.total)
-        .catch(() => null);
-    const lines = [
-        code === "INSUFFICIENT_BALANCE"
-            ? "Balance too low."
-            : "Check your balance and API key budget.",
-        "Balance: https://enter.pollinations.ai/pollen",
-        "Complete Quests to add to your balance: https://enter.pollinations.ai/quests",
-        "Top up: https://enter.pollinations.ai/pollen#buy-pollen",
-        ...(code === "INSUFFICIENT_BALANCE"
-            ? []
-            : ["Manage key budget: https://enter.pollinations.ai/keys"]),
-        "",
-    ];
-    if (balance != null)
-        lines.push(`Account balance: ${formatDollars(balance)}`);
-    lines.push(`Server said: ${bodyText}`);
-    return lines.join("\n");
-}
+import { ExitSignal, getOutputMode, printError } from "./output.js";
 
 async function generationKey(): Promise<string> {
     const key = resolveApiKey();
@@ -98,7 +48,7 @@ export async function fetchGen(
 
     const body = await response.text().catch(() => "");
     const message =
-        (await budgetHint(response.status, body)) ??
+        paymentHint(response.status, body) ??
         `${response.status} ${response.statusText}: ${body}`;
     throw new ApiError(response.status, message);
 }

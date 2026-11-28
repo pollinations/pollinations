@@ -251,14 +251,14 @@ Before a long command, extend the paid lease with `connect_sandbox`; a command's
 
 ### Billing and permissions
 
-Calls use the same wallet as the Pollinations API. The catalog endpoint
+MCP calls use the same account balance as other Pollinations API requests. The catalog endpoint
 shows each server's current pricing. Pollinations generation tools use the
 selected model's listed rate. A `tools/call` on a server with its own rate
 needs a positive balance and returns 402 otherwise; `initialize` and
 `tools/list` stay free.
 
 An MCP server can only use models and account features allowed by the caller's
-key and cannot spend beyond that key's budget. Configure both in
+key. The key budget is checked before a call. Final usage can cost more than the estimate. Configure permissions and budget in
 [API key settings](https://enter.pollinations.ai/keys). See
 [Authentication](https://gen.pollinations.ai/docs#tag/authentication) for key
 types and security guidance.

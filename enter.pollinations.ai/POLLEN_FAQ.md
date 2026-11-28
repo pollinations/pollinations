@@ -12,7 +12,7 @@ The [Classic API](https://github.com/pollinations/pollinations/blob/master/APIDO
 
 ## What does it cost, and where can I see what I spent? {#how-much-does-a-generation-cost #what-is-pollen #how-do-i-get-pollen #what-payment-options-are-available}
 
-Pollinations is prepaid. [Models](https://enter.pollinations.ai/models) shows each model's rates in US dollars. [Activity](https://enter.pollinations.ai/activity) shows what you spent by model or API key.
+Pollinations is prepaid. Credit cannot be transferred between accounts or redeemed outside Pollinations. [Models](https://enter.pollinations.ai/models) shows each model's rates in US dollars. [Activity](https://enter.pollinations.ai/activity) shows what you spent by model or API key.
 
 Buy a one-time top-up through Stripe from [Credits](https://enter.pollinations.ai/pollen). Checkout shows the payment methods available to you. You can also turn on automatic top-ups with a supported saved payment method.
 
@@ -20,7 +20,7 @@ Buy a one-time top-up through Stripe from [Credits](https://enter.pollinations.a
 
 One eligible balance must cover the estimate. For most models, the whole charge comes from your **Quest balance** if it covers the final cost, or from your **Paid balance** if it has credit available. Paid-only models always use Paid balance. A final cost above the estimate can take a balance below zero.
 
-A key can also reach its own spending cap or be set to **Quest balance only**. Follow the link in the error to [edit the key](https://enter.pollinations.ai/keys) or [top up](https://enter.pollinations.ai/pollen). Topping up your wallet leaves the key's spending cap in place.
+A key can also be set to **Quest balance only** or have its own budget. The estimate must fit the key's remaining budget, but the final charge can exceed it. Follow the link in the error to [raise the key budget](https://enter.pollinations.ai/keys) or [top up your account balance](https://enter.pollinations.ai/pollen).
 
 ## Which API key should I use?
 
@@ -30,7 +30,7 @@ Connect works without an App Key. Register a publishable App Key (`pk_`) to show
 
 ## Who pays when someone uses my app? {#what-is-pollinations-pay}
 
-With [Pollinations Pay](https://gen.pollinations.ai/docs#tag/pollinations-pay), each user pays from their own balance. Developer earnings are optional. If you enable them on your App Key, a $1 model request costs the user $1.25 and earns you $0.25 in the same balance type they used. You can track that credit in [Activity](https://enter.pollinations.ai/activity?tab=earnings) and spend it on Pollinations.
+With [Pollinations Pay](https://gen.pollinations.ai/docs#tag/pollinations-pay) (BYOP), users authorize your app to pay for requests from their Pollinations balance. Developer earnings are optional. If you enable them on your App Key, a $1 model request costs the user $1.25 and earns you $0.25 in the same balance type they used. You can track that credit in [Activity](https://enter.pollinations.ai/activity?tab=earnings) and spend it on Pollinations.
 
 ## Can I host my app or run code here? {#is-pollinations-a-coding-tool-or-app-builder}
 

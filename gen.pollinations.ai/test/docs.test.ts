@@ -525,7 +525,20 @@ describe("docs routes", () => {
         const realtimeResponses = realtimeGet?.responses as
             | Record<string, unknown>
             | undefined;
-        expect(realtimeResponses?.["426"]).toBeDefined();
+        expect(realtimeResponses?.["400"]).toMatchObject({
+            content: {
+                "application/json": {
+                    schema: {
+                        anyOf: expect.arrayContaining([
+                            expect.objectContaining({ required: ["error"] }),
+                        ]),
+                    },
+                },
+            },
+        });
+        expect(realtimeResponses?.["426"]).toMatchObject({
+            content: { "text/plain": { schema: { type: "string" } } },
+        });
         expect(realtimeResponses?.["503"]).toBeDefined();
         expect(
             renderEndpoint(schema, "get", "/v1/realtime", realtimeGet ?? {}),

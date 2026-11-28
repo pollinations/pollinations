@@ -85,7 +85,7 @@ test("running-low email goes out once per pack below 20% of the last pack", asyn
     expect(sent[0].text).toMatch(/^💳 \$3\.99 left\n/);
     expect(sent[0].text).toContain("\n-- \n");
     expect(sent[0].html).toContain("turn on <strong>auto top-up</strong>");
-    expect(sent[0].text).toContain("turn on auto top-up so");
+    expect(sent[0].text).toContain("turn on auto top-up to refill");
     expect(sent[0].html).toMatch(
         /\/email\/card\.png"[^>]*>\$3\.99 <span[^>]*>left<\/span>/,
     );
@@ -101,7 +101,7 @@ test("running-low email goes out once per pack below 20% of the last pack", asyn
 test("auto top-up failed emails once per failure", async () => {
     const { sent, notifyEnv } = withOutbox();
     // No Stripe customer: the trigger turns auto top-up off before any charge.
-    await addUser("nocard", { packBalance: 2, autoTopUp: true });
+    await addUser("nocard", { packBalance: 0.0027, autoTopUp: true });
 
     expect(await processAutoTopUpForUser(notifyEnv, "nocard")).toEqual({
         status: "skipped",
@@ -112,8 +112,11 @@ test("auto top-up failed emails once per failure", async () => {
         reason: "auto top-up disabled",
     });
     expect(sent.map((email) => email.subject)).toEqual(["Auto top-up failed"]);
-    expect(sent[0].text).toContain("💳 $2.00 left");
+    expect(sent[0].text).toContain("💳 less than $0.01 left");
     expect(sent[0].text).toContain("for your $10 auto top-up");
+    const billingUrl = new URL("/pollen#billing", env.BETTER_AUTH_URL).href;
+    expect(sent[0].text).toContain(`Manage billing: ${billingUrl}`);
+    expect(sent[0].html).toContain(`href="${billingUrl}"`);
     // The reason comes before the balance.
     expect(sent[0].html.indexOf("for your $10")).toBeLessThan(
         sent[0].html.indexOf("left</span>"),

@@ -215,11 +215,11 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                     </InlineLink>{" "}
                                     or{" "}
                                     <InlineLink
-                                        href="mailto:billing@pollinations.ai"
+                                        href="mailto:hello@pollinations.ai"
                                         tone="quiet"
                                         showIcon={false}
                                     >
-                                        contact us
+                                        ask support to review your account
                                     </InlineLink>
                                     .
                                 </span>

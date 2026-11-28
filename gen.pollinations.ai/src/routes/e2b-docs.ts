@@ -67,7 +67,10 @@ function entry(
             },
             401: { description: "Missing or invalid Pollinations API key." },
             ...(charges && {
-                402: { description: "Not enough credits or key budget." },
+                402: {
+                    description:
+                        "The key budget or available balance cannot cover the lease. Pollinations billing errors include a reason and a fixUrl.",
+                },
             }),
             403: {
                 description: "The key lacks the `account:machines` permission.",

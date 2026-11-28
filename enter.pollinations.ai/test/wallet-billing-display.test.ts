@@ -311,7 +311,7 @@ describe("locked Quest pollen display", () => {
         expect(html).toContain("Verification needed");
         expect(html).toContain("make your first purchase");
         expect(html).toContain('href="/pollen#buy-pollen"');
-        expect(html).toContain('href="mailto:billing@pollinations.ai"');
+        expect(html).toContain('href="mailto:hello@pollinations.ai"');
         expect(html).not.toContain('role="alert"');
         expect(html).not.toContain("request a review");
 
@@ -380,6 +380,24 @@ describe("dollar amounts", () => {
         expect(formatUsd(pollen)).toBe(text);
     });
 
+    it.each([0.00000003, -0.00000003])(
+        "shows a wallet remainder of %s as zero on the card and sidebar",
+        (balance) => {
+            const card = renderToStaticMarkup(
+                createElement(PollenBalance, {
+                    tierBalance: balance,
+                    packBalance: 1,
+                    compact: true,
+                }),
+            );
+            const sidebar = renderToStaticMarkup(
+                createElement(SidebarBalance, { kind: "tier", balance }),
+            );
+            expect(card).toContain(">$0.00<");
+            expect(sidebar).toContain(">$0.00<");
+        },
+    );
+
     it("labels a pack with the dollars it adds to the balance", () => {
         const [pack] = POLLEN_PACKS;
         const html = renderToStaticMarkup(
@@ -399,7 +417,7 @@ describe("out-of-pollen banner", () => {
     const buy = "/pollen#buy-pollen";
     it.each([
         [
-            "an empty wallet",
+            "no credit in either balance",
             { tierBalance: 0, packBalance: 0 },
             [buy, "/quests"],
         ],
@@ -407,15 +425,17 @@ describe("out-of-pollen banner", () => {
         [
             "only locked Quest pollen",
             { tierBalance: 35.54, packBalance: 0, questPollenRestricted: true },
-            [buy],
+            [buy, "mailto:hello@pollinations.ai"],
         ],
-        // The wallet shows this as 0, but the API still accepts a request.
+        // A tiny positive balance may still cover a small request.
         [
             "a remainder too small to show",
             { tierBalance: 0.00004, packBalance: 0 },
             [],
         ],
         ["Quest pollen left", { tierBalance: 0.5, packBalance: 0 }, []],
+        ["Quest beside paid debt", { tierBalance: 0.5, packBalance: -1 }, []],
+        ["paid beside Quest debt", { tierBalance: -1, packBalance: 0.5 }, []],
         [
             "paid pollen beside locked Quest pollen",
             { tierBalance: 35.54, packBalance: 2, questPollenRestricted: true },

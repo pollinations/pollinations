@@ -930,7 +930,7 @@ function renderSchemas(spec: Spec): string {
 function renderErrorResponses(): string {
     return `## ${sectionHeading(SECTIONS.errors)}
 
-All endpoints return errors in this envelope:
+Pollinations HTTP errors usually use this envelope. A refused realtime WebSocket upgrade can carry the provider's HTTP status and body.
 
 \`\`\`json
 {
@@ -955,7 +955,11 @@ All endpoints return errors in this envelope:
 | \`400\` | \`unsupported_image_media_type\` | A supplied image declares no media type and could not be recognized from its content. A declared media type is forwarded to the provider as-is, so whether a given format is usable is answered by the provider, not here. |
 | \`400\` | \`content_blocked\` | The input safety check blocked the request before generation — enabled via \`safe\` / the \`Pollinations-Safe\` header, or required by the model (\`required_safety\`). \`message\` names the triggered categories, e.g. \`Request blocked by safety filter: sexual\`. Change the input rather than retrying it. |
 | \`401\` | \`UNAUTHORIZED\` | Missing or invalid API key. Provide via \`Authorization: Bearer <key>\` header or \`?key=<key>\` query param. |
-| \`402\` | \`PAYMENT_REQUIRED\` | Balance too low or API key budget exhausted. |
+| \`402\` | \`KEY_BUDGET_EXHAUSTED\` | Increase the key budget or wait for a pending reservation to settle. |
+| \`402\` | \`INSUFFICIENT_BALANCE\` | One eligible balance must cover the estimate. Paid-only models require paid balance. |
+| \`402\` | \`QUEST_POLLEN_ONLY\` | Allow this key to use paid balance, or earn Quest balance if the model accepts it. |
+| \`402\` | \`QUEST_POLLEN_RESTRICTED\` | Unlock the Quest balance with a first purchase, or contact support. |
+| \`402\` | \`PAYMENT_REQUIRED\` | Other payment requirement. Read \`error.message\` for details. |
 | \`403\` | \`FORBIDDEN\` | Access denied — insufficient permissions or paid-model access for this model. |
 | \`404\` | \`NOT_FOUND\` | Resource not found. |
 | \`405\` | \`METHOD_NOT_ALLOWED\` | HTTP method not supported on this route. |

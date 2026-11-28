@@ -729,6 +729,8 @@ the query string: use a secret key (`sk_`), not an App Key (`pk_`). Without an
 `apiKey`, the key comes from `POLLINATIONS_API_KEY` in the environment.
 `examples/realtime-voice.html` streams the microphone and plays the reply.
 
+Browsers hide the HTTP response to a failed WebSocket upgrade. To diagnose a `REALTIME_CONNECT_FAILED` error, use a server-side WebSocket client that exposes the handshake status and body.
+
 Live transcription runs over the same helper with a transcription model:
 
 ```javascript
@@ -873,7 +875,7 @@ try {
 }
 ```
 
-Common error codes: `400` invalid params, `401` missing/invalid key, `402` insufficient balance, `403` permission denied, `500` server error.
+Common HTTP statuses include `400` for invalid parameters, `401` for a missing or invalid key, `402` for budget or balance restrictions, `403` for denied permissions, and `500` for a server error. For `402`, `err.message` gives the recovery steps.
 
 ## Advanced: Client Class
 

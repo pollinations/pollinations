@@ -2,6 +2,22 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { KeyLimitInput } from "../frontend/src/components/keys/key-limit-input.tsx";
 
+import { LimitsBadge } from "../frontend/src/components/keys/limits-badge.tsx";
+
+it.each([
+    [0.0027, "$0.0027"],
+    [0.000001, "$0.00"],
+    [0, "$0.00"],
+    [-0.01, "$0.00"],
+    [null, "Unlimited"],
+] as const)("shows the remaining key budget %s as %s", (budget, expected) => {
+    const html = renderToStaticMarkup(
+        <LimitsBadge expiresAt={null} pollenBudget={budget} />,
+    );
+    expect(html).toContain("Budget left");
+    expect(html).toContain(`>${expected}<`);
+});
+
 describe("key budget form constraints", () => {
     it.each([4.9987342, 0.005, -0.0003])(
         "preserves %s without a step or minimum that blocks submission",

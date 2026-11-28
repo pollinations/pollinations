@@ -6,6 +6,7 @@
 
 import type { Logger } from "@logtape/logtape";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { chatCompletionChoiceError } from "@shared/http/chat-completion-error.ts";
 import { putGenerationResult, refreshR2ObjectTtl } from "@shared/r2-storage.ts";
 import {
     parseSafeFeatures,
@@ -31,11 +32,12 @@ const CACHED_HEADER_PREFIXES = ["x-usage-", "x-moderation-", "x-safety-"];
 const SAFETY_CACHE_VERSION = "bedrock-input-v1";
 // Part of every stream key since #16911; changing it orphans all cached streams.
 const STREAM_CACHE_VERSION = "stream-output-v1";
+// Older Chat entries can contain partial completions marked as failed.
+const CHAT_COMPLETION_CACHE_VERSION = "chat-completion-v2";
 
 /**
  * Streams are not coordinated, so skipping their write only drops the cache
- * entry. Non-streaming results must still be written: the generation
- * coordinator delivers them by reading this entry back.
+ * entry. Cacheable non-streaming results are delivered through R2.
  */
 function isStreamingErrorResponse(
     response: Response,
@@ -53,7 +55,8 @@ function isStreamingErrorResponse(
         try {
             const event = JSON.parse(line.slice("data:".length).trim());
             return Boolean(
-                event && typeof event === "object" && "error" in event,
+                (event && typeof event === "object" && "error" in event) ||
+                    chatCompletionChoiceError(event),
             );
         } catch {
             return false;
@@ -145,6 +148,8 @@ export async function generateCacheKey(
         parts.push(SAFETY_CACHE_VERSION);
     }
     if (streams) parts.push(STREAM_CACHE_VERSION);
+    if (url.pathname === "/v1/chat/completions")
+        parts.push(CHAT_COMPLETION_CACHE_VERSION);
     if (partition) parts.push(`partition:${partition}`);
 
     // Generate a hash of all parts using Web Crypto API
@@ -157,6 +162,14 @@ export async function generateCacheKey(
     return Array.from(new Uint8Array(hashBuffer))
         .map((b) => b.toString(16).padStart(2, "0"))
         .join("");
+}
+
+/** Headers describing the result can be shared with every joined caller. */
+export function isTextResultHeader(name: string): boolean {
+    return (
+        CACHED_HEADER_NAMES.has(name) ||
+        CACHED_HEADER_PREFIXES.some((prefix) => name.startsWith(prefix))
+    );
 }
 
 /**
@@ -172,12 +185,7 @@ export function prepareMetadata(response: Response): Record<string, string> {
     };
     for (const [name, value] of response.headers.entries()) {
         const lowerName = name.toLowerCase();
-        if (
-            CACHED_HEADER_NAMES.has(lowerName) ||
-            CACHED_HEADER_PREFIXES.some((prefix) =>
-                lowerName.startsWith(prefix),
-            )
-        ) {
+        if (isTextResultHeader(lowerName)) {
             metadata[`header_${lowerName}`] = value;
         }
     }

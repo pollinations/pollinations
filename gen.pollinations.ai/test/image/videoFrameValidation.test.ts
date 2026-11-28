@@ -39,6 +39,8 @@ const VIDEO_FRAME_LIMITS = [
     ["kwaivgi/kling-v3.0-pro", 2],
     ["kwaivgi/kling-v3.0-pro:azure", 2],
     ["kwaivgi/kling-v4.0-flash", 1],
+    ["lightricks/ltx-2.5-fast", 2],
+    ["lightricks/ltx-2.5-fast:fal", 2],
     ["lightricks/ltx-2.5-pro", 2],
     ["lightricks/ltx-2.5-pro:azure", 2],
     ["black-forest-labs/flux-3-max", 2],

@@ -1,5 +1,6 @@
 import { UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { chatCompletionChoiceError } from "@shared/http/chat-completion-error.ts";
 import {
     buildUsageHeaders,
     FALLBACK_TARGET_HEADER,
@@ -172,7 +173,6 @@ export async function generateChatAttempt(
         const emptyChoices = (result.choices ?? []).filter(
             ({ message, finish_reason }) =>
                 finish_reason !== "content_filter" &&
-                !(stopsOnRequest && message && finish_reason === "stop") &&
                 (!message ||
                     !(
                         (typeof message.content === "string"
@@ -189,6 +189,45 @@ export async function generateChatAttempt(
             !result.choices?.length ||
             emptyChoices.length === result.choices.length
         ) {
+            const lastUserContent = attemptData.messages.findLast(
+                ({ role }) => role === "user",
+            )?.content;
+            // Gemini can finish normally with no text when a blank image has
+            // nothing to transcribe. Both Vertex routes report an explicit stop.
+            if (
+                emptyChoices.length > 0 &&
+                emptyChoices.every(
+                    ({ message, finish_reason }) =>
+                        message?.role === "assistant" &&
+                        finish_reason === "stop",
+                ) &&
+                (candidate.id === "google/gemini-3.8-flash" ||
+                    candidate.id ===
+                        "google/gemini-3.8-flash:openrouter:vertex-global") &&
+                Array.isArray(lastUserContent) &&
+                lastUserContent.some(
+                    (part) =>
+                        part &&
+                        typeof part === "object" &&
+                        "type" in part &&
+                        part.type === "image_url",
+                )
+            ) {
+                for (const { message } of emptyChoices) {
+                    if (message) message.content = "";
+                }
+                c.set("generationCacheSkipWrite", true);
+                return buffered ? completionToChatStream(result) : result;
+            }
+            if (
+                stopsOnRequest &&
+                emptyChoices.some(
+                    ({ message, finish_reason }) =>
+                        message && finish_reason === "stop",
+                )
+            ) {
+                return buffered ? completionToChatStream(result) : result;
+            }
             const tokenLimitReached =
                 (requestData.max_tokens != null ||
                     requestData.max_completion_tokens != null) &&
@@ -434,7 +473,24 @@ async function generateTextResponse(
             );
         const { result: completion, candidate } = await withModelFallback(
             candidates,
-            (attempt) => generateChatAttempt(c, requestData, attempt),
+            async (attempt) => {
+                const completion = await generateChatAttempt(
+                    c,
+                    requestData,
+                    attempt,
+                );
+                const finishError = chatCompletionChoiceError(completion);
+                if (finishError) {
+                    throw new UpstreamError(502, {
+                        message: finishError,
+                        requestUrl: completion.upstreamRequestUrl,
+                        responseBody: JSON.stringify(
+                            publicChatCompletion(completion),
+                        ),
+                    });
+                }
+                return completion;
+            },
             c.var.track?.attempts,
             (attempt) => requireModelAttemptAccess(c, attempt),
         );

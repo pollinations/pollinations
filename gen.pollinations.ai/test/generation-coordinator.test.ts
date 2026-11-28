@@ -80,6 +80,146 @@ afterEach(() => {
 
 describe("GenerationCoordinator", () => {
     it.each([false, true])(
+        "delivers uncached Gemini OCR to both joined callers (fallback=%s)",
+        async (fallback) => {
+            const model = "google/gemini-3.8-flash";
+            const { key } = await createTestApiKey({
+                user: { packBalance: 100 },
+            });
+            vi.spyOn(googleCloudAuth, "getAccessToken").mockResolvedValue(
+                "test-token",
+            );
+            const tinybird = createMockTinybird();
+            const providers: string[] = [];
+            let release!: () => void;
+            const gate = new Promise<void>((resolve) => {
+                release = resolve;
+            });
+            vi.spyOn(globalThis, "fetch").mockImplementation(
+                async (input, init) => {
+                    const req = new Request(input, init);
+                    const url = new URL(req.url);
+                    const host = new URL(
+                        req.headers.get("x-portkey-custom-host") ?? req.url,
+                    ).host;
+                    if (host === "portkey.test" || host === "openrouter.ai") {
+                        providers.push(host);
+                        if (fallback && host === "portkey.test")
+                            return Response.json(
+                                { error: { message: "Unavailable" } },
+                                { status: 503 },
+                            );
+                        await gate;
+                        return Response.json({
+                            model,
+                            choices: [
+                                {
+                                    index: 0,
+                                    message: {
+                                        role: "assistant",
+                                        content: null,
+                                    },
+                                    finish_reason: "stop",
+                                },
+                            ],
+                            usage: {
+                                prompt_tokens: 100,
+                                completion_tokens: 20,
+                                total_tokens: 120,
+                            },
+                        });
+                    }
+                    if (url.pathname === "/v0/pipes/public_model_stats.json")
+                        return Response.json({ data: [] });
+                    const handler = tinybird.handlerMap[url.host];
+                    if (handler) return handler(req);
+                    throw new Error(`Unexpected outbound host: ${host}`);
+                },
+            );
+            const body = JSON.stringify({
+                model,
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            {
+                                type: "text",
+                                text: `Transcribe visible words. Request ${crypto.randomUUID()}`,
+                            },
+                            {
+                                type: "image_url",
+                                image_url: {
+                                    url: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+                                },
+                            },
+                        ],
+                    },
+                ],
+            });
+            const existing = await listDurableObjectIds(
+                env.GENERATION_COORDINATOR,
+            );
+            const submit = () =>
+                SELF.fetch("https://gen.pollinations.ai/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        authorization: `Bearer ${key}`,
+                        "content-type": "application/json",
+                    },
+                    body,
+                });
+            const expected = fallback
+                ? ["portkey.test", "openrouter.ai"]
+                : ["portkey.test"];
+            const first = submit();
+            let second: Promise<Response>;
+            try {
+                await vi.waitFor(() => expect(providers).toEqual(expected));
+                const [id] = await newCoordinatorIds(existing);
+                const stub = env.GENERATION_COORDINATOR.get(id);
+                second = submit();
+                await vi.waitFor(async () =>
+                    expect(
+                        await runInDurableObject(
+                            stub,
+                            (coordinator) =>
+                                Reflect.get(coordinator, "waiters").size,
+                        ),
+                    ).toBe(2),
+                );
+            } finally {
+                release();
+            }
+            for (const response of await Promise.all([first, second])) {
+                expect(response.status).toBe(200);
+                expect(response.headers.get("cache-control")).toContain(
+                    "no-store",
+                );
+                expect(await response.json()).toMatchObject({
+                    choices: [
+                        { message: { content: "" }, finish_reason: "stop" },
+                    ],
+                });
+            }
+            expect(providers).toEqual(expected);
+            await vi.waitFor(() =>
+                expect(
+                    tinybird.state.events.filter(
+                        (event) => event.isBilledUsage,
+                    ),
+                ).toMatchObject([
+                    {
+                        modelUsed: fallback
+                            ? `${model}:openrouter:vertex-global`
+                            : model,
+                        fallbackUsed: fallback,
+                    },
+                ]),
+            );
+        },
+    );
+
+    it.each([false, true])(
         "settles Nano Banana 2.1 once across disconnect, rejoin and R2 replay (fallback=%s)",
         async (fallback) => {
             const { key, userId } = await createTestApiKey({

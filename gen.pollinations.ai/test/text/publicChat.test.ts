@@ -10,6 +10,7 @@ import { createTestApiKey } from "@shared/test/fixtures/index.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import worker from "../../src/index.ts";
+import googleCloudAuth from "../../src/text/auth/googleCloudAuth.ts";
 import {
     publicChatChoices,
     publicChatStream,
@@ -670,6 +671,105 @@ it.each([null, "", " \n\t"])(
     },
 );
 
+it("returns a fresh empty completion for a blank Gemini 3.8 Flash OCR image", async () => {
+    vi.spyOn(googleCloudAuth, "getAccessToken").mockResolvedValue("test-token");
+    const model = "google/gemini-3.8-flash";
+    const body = {
+        model,
+        messages: [
+            {
+                role: "user",
+                content: [
+                    { type: "text", text: "Transcribe only visible words." },
+                    {
+                        type: "image_url",
+                        image_url: {
+                            url: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAAQABABAREA/8QAFQABAQAAAAAAAAAAAAAAAAAAAAX/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oACAEBAAA/ALID/9k=",
+                        },
+                    },
+                ],
+            },
+        ],
+    };
+    const wire = JSON.stringify({
+        model,
+        choices: [
+            {
+                index: 0,
+                message: { role: "assistant", content: null },
+                finish_reason: "stop",
+            },
+        ],
+        usage,
+    });
+    for (let i = 0; i < 2; i++) {
+        const { response, text, calls, events } = await chatThroughHandler(
+            model,
+            ["portkey.test", "openrouter.ai"],
+            wire,
+            false,
+            undefined,
+            { path: "/v1/chat/completions", body },
+        );
+        expect(response.status, text).toBe(200);
+        expect(JSON.parse(text).choices[0]).toMatchObject({
+            finish_reason: "stop",
+            message: { content: "" },
+        });
+        expect(response.headers.get("cache-control")).toContain("no-store");
+        expect(calls).toBe(1);
+        expect(events.filter((event) => event.isBilledUsage)).toMatchObject([
+            { modelUsed: model, fallbackUsed: false },
+        ]);
+    }
+});
+
+it("retries an empty Gemini answer when only an earlier user message has an image", async () => {
+    vi.spyOn(googleCloudAuth, "getAccessToken").mockResolvedValue("test-token");
+    const model = "google/gemini-3.8-flash";
+    const wire = JSON.stringify({
+        model,
+        choices: [
+            {
+                message: { role: "assistant", content: null },
+                finish_reason: "stop",
+            },
+        ],
+        usage,
+    });
+    const { response, text, calls } = await chatThroughHandler(
+        model,
+        ["portkey.test", "openrouter.ai"],
+        wire,
+        false,
+        undefined,
+        {
+            path: "/v1/chat/completions",
+            body: {
+                model,
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            {
+                                type: "image_url",
+                                image_url: {
+                                    url: "https://example.org/image.jpg",
+                                },
+                            },
+                        ],
+                    },
+                    { role: "assistant", content: "A photo." },
+                    { role: "user", content: "Explain your answer." },
+                ],
+            },
+        },
+    );
+    expect(response.status, text).toBe(502);
+    expect(JSON.parse(text).error.code).toBe("empty_response");
+    expect(calls).toBe(2);
+});
+
 const chatProtocolCases = [
     {
         path: "/v1/chat/completions",
@@ -931,6 +1031,47 @@ it.each([
         });
     },
 );
+
+it("falls back from a failed completion and only bills the successful provider", async () => {
+    const model = "openai/gpt-5-nano";
+    const { response, text, calls, events } = await chatThroughHandler(
+        model,
+        ["myceli-prod-eastus.openai.azure.com", "api.openai.com"],
+        async (request) => {
+            const fallback = new URL(request.url).hostname === "api.openai.com";
+            return Response.json({
+                id: "failed-primary",
+                object: "chat.completion",
+                model,
+                choices: [
+                    {
+                        index: 0,
+                        message: {
+                            role: "assistant",
+                            content: fallback
+                                ? "Recovered answer"
+                                : "Partial answer",
+                        },
+                        finish_reason: fallback ? "stop" : "error",
+                    },
+                ],
+                usage,
+            });
+        },
+        false,
+    );
+    expect(response.status, text).toBe(200);
+    expect(JSON.parse(text).choices[0].message.content).toBe(
+        "Recovered answer",
+    );
+    expect(calls).toBe(2);
+    expect(
+        events.filter((event) => event.eventType === "generate.text"),
+    ).toEqual([
+        expect.objectContaining({ responseStatus: 502, isBilledUsage: false }),
+        expect.objectContaining({ responseStatus: 200, isBilledUsage: true }),
+    ]);
+});
 
 it.each([0, 1])(
     "preserves an answered choice at index %s alongside an empty length choice",
@@ -1284,3 +1425,69 @@ it.each([false, true])(
         expect(balance.packBalance).toBeCloseTo(100 - 0.0001, 10);
     },
 );
+
+it("returns 502 and skips caching when GET /text finishes with error", async () => {
+    const { key, userId } = await createTestApiKey({
+        expiresIn: 600,
+        user: { packBalance: 100 },
+    });
+    let calls = 0;
+    const wire = JSON.stringify({
+        id: "chatcmpl-text-error",
+        object: "chat.completion",
+        created: 1760000000,
+        model: "cohere/command-a-plus",
+        choices: [
+            {
+                index: 0,
+                message: { role: "assistant", content: "partial answer" },
+                finish_reason: "error",
+                error: { message: "Provider aborted mid-reply" },
+            },
+        ],
+        usage,
+    });
+    const fetchSpy = vi
+        .spyOn(globalThis, "fetch")
+        .mockImplementation(async (input, init) => {
+            const request = new Request(input, init);
+            const target =
+                request.headers.get("x-portkey-custom-host") ?? request.url;
+            if (new URL(target).host === "openrouter.ai") {
+                calls++;
+                return new Response(wire, {
+                    headers: { "content-type": "application/json" },
+                });
+            }
+            return Response.json({ data: [] });
+        });
+    try {
+        const prompt = `text-error-${crypto.randomUUID()}`;
+        const url = `https://gen.pollinations.ai/text/${encodeURIComponent(prompt)}?model=cohere/command-a-plus`;
+        for (const expectedCalls of [1, 2]) {
+            const context = createExecutionContext();
+            const response = await worker.fetch(
+                new Request(url, {
+                    headers: { authorization: `Bearer ${key}` },
+                }),
+                withInlineGenerationCoordinator(env),
+                context,
+            );
+            const text = await response.text();
+            await waitOnExecutionContext(context);
+            expect(response.status, text).toBe(502);
+            expect(JSON.parse(text)).toMatchObject({
+                status: 502,
+                error: {
+                    code: "BAD_GATEWAY",
+                    message: "Provider aborted mid-reply",
+                },
+            });
+            expect(calls).toBe(expectedCalls);
+        }
+        const balance = await getUserBalance(drizzle(env.DB), userId);
+        expect(balance.packBalance).toBe(100);
+    } finally {
+        fetchSpy.mockRestore();
+    }
+});

@@ -12,6 +12,7 @@ import type {
 } from "@/middleware/generation-deduplication.ts";
 import { logger } from "@/middleware/logger.ts";
 import { generationExecutorRoutes } from "@/routes/generation-executor.ts";
+import { isTextResultHeader } from "@/utils/text-cache.ts";
 
 async function drainResponse(response: Response): Promise<void> {
     const reader = response.body?.getReader();
@@ -134,6 +135,27 @@ export async function executeGeneration(
     try {
         const failed = !response.ok;
         const error = failed ? await captureError(response) : undefined;
+        if (
+            job.cache.storage === "text" &&
+            response.status === 200 &&
+            !cacheWrite &&
+            response.headers.get("cache-control") === "private, no-store" &&
+            response.headers.get("x-cache") !== "HIT"
+        ) {
+            return {
+                result: {
+                    status: "uncached",
+                    body: await response.text(),
+                    headers: [...response.headers.entries()].filter(
+                        ([name]) =>
+                            name === "cache-control" ||
+                            name === "content-type" ||
+                            isTextResultHeader(name),
+                    ),
+                },
+                settlement,
+            };
+        }
         if (!failed) await drainResponse(response);
 
         if (response.headers.get("x-cache") === "HIT") {
@@ -161,8 +183,7 @@ export const GENERATION_HANDOFF_HEADER = "x-generation-handoff";
 
 /** JSON form of an outcome; the error body travels as base64. */
 type HandoffOutcome =
-    | { status: "cached" }
-    | { status: "generated" }
+    | Exclude<GenerationOutcome, { status: "failed" }>
     | {
           status: "failed";
           error: Omit<GenerationErrorSnapshot, "body"> & { body: string };

@@ -18,12 +18,15 @@ import { routePath } from "hono/route";
 import type { Env } from "@/env.ts";
 import {
     applyGuardrail,
+    type BedrockGuardrailEnv,
     type BedrockResponse,
     checkShield,
+    isSensitiveOnly,
     resolveBedrockCredentials,
     resolveBedrockGuardrailEnv,
 } from "@/utils/bedrock-guardrail.ts";
 import { classifyTriggers } from "@/utils/safety-features.ts";
+import { scanSensitiveMessages } from "../utils/bedrock-sensitive-cache.ts";
 import { getRequiredSafetyFeatures } from "./model.ts";
 
 type SafetyContext = Context<Env>;
@@ -128,19 +131,60 @@ async function checkSafetyTexts(
     let response: BedrockResponse | undefined;
     let shield: Awaited<ReturnType<typeof checkShield>> | undefined;
     let redaction: BedrockResponse | undefined;
+    let cacheReusedParts: number | undefined;
+    const userId = c.var.auth?.user?.id;
+    let bedrockCalls = 0;
+    let bedrockInputParts = 0;
+    let bedrockInputCharacters = 0;
+    function recordBedrockInput(input: string[]) {
+        bedrockCalls++;
+        bedrockInputParts += input.length;
+        bedrockInputCharacters += input.reduce(
+            (total, text) => total + text.length,
+            0,
+        );
+    }
+    function scanBedrock(input: string[], config: BedrockGuardrailEnv) {
+        recordBedrockInput(input);
+        return applyGuardrail(input, "INPUT", config);
+    }
     const scanStartedAt = Date.now();
     try {
-        [response, redaction, shield] = await Promise.all([
-            guardrailEnv
-                ? applyGuardrail(scannedTexts, "INPUT", guardrailEnv)
-                : undefined,
-            redactionEnv
-                ? applyGuardrail(scannedTexts, "INPUT", redactionEnv)
-                : undefined,
-            shieldCredentials
-                ? checkShield(scannedTexts, shieldCredentials)
-                : undefined,
-        ]);
+        if (
+            c.env.BEDROCK_SENSITIVE_MESSAGE_CACHE === "on" &&
+            features.size === 2 &&
+            isSensitiveOnly(features) &&
+            guardrailEnv &&
+            userId &&
+            c.env.BETTER_AUTH_SECRET
+        ) {
+            const result = await scanSensitiveMessages({
+                texts,
+                parts: guardrailInputs,
+                guardrail: guardrailEnv,
+                secret: c.env.BETTER_AUTH_SECRET,
+                account: userId,
+                model: c.var.model?.resolved,
+                requestUrl: c.req.url,
+                scan: (input) => scanBedrock(input, guardrailEnv),
+                cacheWrite: (write) => c.executionCtx.waitUntil(write),
+            });
+            response = result.response;
+            cacheReusedParts = result.reusedParts;
+        } else {
+            if (shieldCredentials) recordBedrockInput(scannedTexts);
+            [response, redaction, shield] = await Promise.all([
+                guardrailEnv
+                    ? scanBedrock(scannedTexts, guardrailEnv)
+                    : undefined,
+                redactionEnv
+                    ? scanBedrock(scannedTexts, redactionEnv)
+                    : undefined,
+                shieldCredentials
+                    ? checkShield(scannedTexts, shieldCredentials)
+                    : undefined,
+            ]);
+        }
     } catch (error) {
         if (error instanceof HTTPException) throw error;
         c.get("log").error("Bedrock guardrail failed: {error}", {
@@ -163,7 +207,6 @@ async function checkSafetyTexts(
     if (shield?.blocked) blockedFeatures.add("shield");
     const redactedIds =
         sensitiveTriggers?.redactedIds ?? legacyTriggers.redactedIds;
-    const userId = c.var.auth?.user?.id;
     const inputFingerprint =
         userId && c.env.BETTER_AUTH_SECRET
             ? createHmac("sha256", c.env.BETTER_AUTH_SECRET)
@@ -205,6 +248,10 @@ async function checkSafetyTexts(
         requiredFeatures,
         scannedCharacters,
         scannedParts: guardrailInputs.length,
+        bedrockCalls,
+        bedrockInputParts,
+        bedrockInputCharacters,
+        ...(cacheReusedParts !== undefined && { cacheReusedParts }),
         guardrailAction:
             shield?.blocked || redaction?.action === "GUARDRAIL_INTERVENED"
                 ? "GUARDRAIL_INTERVENED"

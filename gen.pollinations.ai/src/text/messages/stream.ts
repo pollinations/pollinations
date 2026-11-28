@@ -1,3 +1,4 @@
+import { chatCompletionChoiceError } from "@shared/http/chat-completion-error.ts";
 import {
     type CompletionUsage,
     CompletionUsageSchema,
@@ -32,7 +33,11 @@ type ChatDelta = {
 
 type ChatChunk = {
     id?: string;
-    choices?: { delta?: ChatDelta; finish_reason?: string | null }[];
+    choices?: {
+        delta?: ChatDelta;
+        finish_reason?: string | null;
+        error?: unknown;
+    }[];
     usage?: CompletionUsage | null;
     error?: { message?: string };
 };
@@ -166,6 +171,11 @@ export function chatToMessagesStream(
                     fail(chunk.error.message ?? "Provider stream failed");
                     return;
                 }
+                const finishError = chatCompletionChoiceError(chunk);
+                if (finishError) {
+                    fail(finishError);
+                    return;
+                }
                 if (chunk.usage) usage = chunk.usage;
                 const choice = chunk.choices?.[0];
                 if (!choice) return;
@@ -264,9 +274,13 @@ export function chatToMessagesStream(
                     }
                     if (!ended) fail("Provider stream ended before completion");
                 } catch (error) {
-                    fail(
-                        error instanceof Error ? error.message : String(error),
-                    );
+                    if (!ended) {
+                        fail(
+                            error instanceof Error
+                                ? error.message
+                                : String(error),
+                        );
+                    }
                 }
             })();
         },

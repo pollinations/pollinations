@@ -25,6 +25,42 @@ import {
 } from "../src/text/fallbackCompatibility.ts";
 import { resolveDirectResponsesTarget } from "../src/text/responses/client.ts";
 
+describe("Baseten Bison 1 decision routes", () => {
+    it("registers a paid-only canonical model and an OpenRouter fallback", () => {
+        const model = TEXT_SERVICES["baseten/bison-1"];
+        expect(model).toMatchObject({
+            provider: "vercel",
+            category: "decision",
+            paidOnly: true,
+            aliases: [],
+            inputModalities: ["text", "image"],
+            contextLength: 32768,
+            fallbacks: ["baseten/bison-1:openrouter:baseten"],
+        });
+        expect(model.supportedEndpoints).toContain("/alpha/decisions");
+        const primary = findModelByName("baseten/bison-1");
+        expect(primary?.useSystemOneApi).toBe(true);
+        expect(primary?.config()).toMatchObject({
+            model: "baseten/bison-1",
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/decisions",
+            decisionsProtocol: "openai",
+            requiresBase64ImageUrls: true,
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["baseten"] } },
+            },
+        });
+        const fallback = findModelByName("baseten/bison-1:openrouter:baseten");
+        expect(fallback?.useSystemOneApi).toBe(true);
+        expect(fallback?.config()).toMatchObject({
+            model: "baseten/bison-1",
+            directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+            defaultOptions: {
+                provider: { only: ["baseten"], allow_fallbacks: false },
+            },
+        });
+    });
+});
+
 describe("HeyGen Decision 1 routes", () => {
     it("routes the paid multimodal model through its pinned OpenRouter endpoint", () => {
         const primary = TEXT_SERVICES["heygen/heygen-decision-1"];
@@ -718,7 +754,8 @@ describe("static provider fallbacks", () => {
             }),
         ).toBe("long_context");
         expect(fallback.priceMultiplier).toBe(1);
-        expect(fallback.paidOnly).not.toBe(true);
+        expect(primary.paidOnly).toBe(true);
+        expect(fallback.paidOnly).toBe(true);
         const billing = calculateUsageBilling({
             model: "openai/gpt-6-astra",
             usage: { promptTextTokens: 11, completionTextTokens: 5 },
@@ -737,6 +774,17 @@ describe("static provider fallbacks", () => {
                 "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/responses",
         });
     });
+
+    it.each([
+        ["openai/gpt-6.2-astra", true],
+        ["openai/gpt-6.2-sol", false],
+    ] as const)(
+        "keeps the same Pollen access when %s falls back to AWS",
+        (model, paidOnly) => {
+            expect(TEXT_SERVICES[model].paidOnly).toBe(paidOnly);
+            expect(TEXT_SERVICES[`${model}:aws`].paidOnly).toBe(paidOnly);
+        },
+    );
 
     it.each([
         "openai/gpt-5.5",
@@ -2544,27 +2592,24 @@ describe("static provider fallbacks", () => {
         expect(
             findModelByName("mistralai/mistral-large-4")?.config(),
         ).toMatchObject({
-            "custom-host": "https://api.mistral.ai/v1",
-            model: "mistral-large-4",
+            provider: "azure-openai",
+            "azure-deployment-id": "mistral-large-4-latest",
         });
         expect(
-            findModelByName("mistralai/mistral-large-4:vercel")?.config(),
+            findModelByName("mistralai/mistral-large-4:mistral")?.config(),
         ).toMatchObject({
-            provider: "openai",
-            model: "mistral/mistral-large-4",
-            defaultOptions: {
-                providerOptions: { gateway: { only: ["mistral"] } },
-            },
+            model: "mistral-large-4",
+            directEndpoint: "https://api.mistral.ai/v1/chat/completions",
+            useMistralChatFormat: true,
         });
-        for (const [unit, cost] of Object.entries(
-            TEXT_SERVICES["mistralai/mistral-large-4"].cost,
-        )) {
-            expect(
-                TEXT_SERVICES["mistralai/mistral-large-4:vercel"].cost[
-                    unit as keyof (typeof TEXT_SERVICES)["mistralai/mistral-large-4"]["cost"]
-                ],
-            ).toBeCloseTo(cost, 15);
-        }
+        expect(TEXT_SERVICES["mistralai/mistral-large-4"]).toMatchObject({
+            paidOnly: false,
+            priceMultiplier: 0.75,
+            fallbacks: ["mistralai/mistral-large-4:mistral"],
+        });
+        expect(
+            TEXT_SERVICES["mistralai/mistral-large-4:mistral"],
+        ).toMatchObject({ provider: "mistral", fallbackOnly: true });
         for (const [unit, cost] of Object.entries(
             TEXT_SERVICES["mistralai/mistral-small-4"].cost,
         )) {

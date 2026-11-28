@@ -206,6 +206,62 @@ function post(path: string, key: string, body: unknown) {
     });
 }
 
+test("forwards Bison image state as a Vercel Decisions image", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    const imageUrl = "data:image/png;base64,aW1hZ2U=";
+    const model = "baseten/bison-1";
+    mocks.decisions.state.vercelResponse = Response.json({
+        model,
+        answers: [{ name: "overdue", type: "predicate", probability: 0.96 }],
+        usage: { input_tokens: 452, output_tokens: 1 },
+    });
+    const { response, wait } = await post("/alpha/decisions", paidApiKey, {
+        model,
+        state: [
+            "Use the attached image.",
+            { type: "image_url", image_url: { url: imageUrl } },
+        ],
+        questions: { overdue: questions.overdue },
+    });
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+        model,
+        answers: { overdue: answers.overdue },
+    });
+    await wait();
+    expect(mocks.decisions.state.requests).toMatchObject([
+        {
+            pathname: "/v1/decisions",
+            body: {
+                model,
+                providerOptions: { gateway: { only: ["baseten"] } },
+                input: [
+                    {
+                        role: "user",
+                        content: [
+                            {
+                                type: "input_text",
+                                text: "Use the attached image.",
+                            },
+                            { type: "input_image", image_url: imageUrl },
+                        ],
+                    },
+                ],
+                questions: [
+                    {
+                        name: "overdue",
+                        type: "predicate",
+                        instructions: questions.overdue.instructions,
+                    },
+                ],
+            },
+        },
+    ]);
+});
+
 const heyGenListCost = (480 * 0.1477) / 1_000_000;
 
 test.for(

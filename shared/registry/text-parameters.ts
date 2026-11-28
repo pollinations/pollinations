@@ -393,27 +393,8 @@ export const CHAT_PARAMETERS = {
     ],
     mistralLarge: [...SAMPLED_CHAT, ...PENALTIES, "seed"],
     mistralLarge4: [...SAMPLED_CHAT, ...PENALTIES, "seed", "reasoning_effort"],
-    // Vercel AI Gateway Hy4 Flash parameters (2026-11-16).
-    vercelHy4Flash: [
-        ...TOOL_CHAT,
-        "temperature",
-        "stop",
-        "structured_outputs",
-        "reasoning",
-        "include_reasoning",
-        "reasoning_effort",
-    ],
     // Vercel AI Gateway Qwen 4 Max parameters (2026-11-16).
     vercelQwen4Max: [
-        ...TOOL_CHAT,
-        "temperature",
-        "stop",
-        "structured_outputs",
-        "reasoning",
-        "include_reasoning",
-        "reasoning_effort",
-    ],
-    vercelMistralLarge4: [
         ...TOOL_CHAT,
         "temperature",
         "stop",
@@ -467,6 +448,22 @@ export const CHAT_PARAMETERS = {
         "seed",
         ...OPENROUTER_REASONING,
         "reasoning_effort",
+    ],
+    // OpenRouter's Ling 3.2 Flash list (2026-11-27): no repetition_penalty or
+    // reasoning_effort, unlike Ling 3.1.
+    openRouterLing32: [
+        "max_tokens",
+        "stream",
+        ...TOOLS,
+        "temperature",
+        "top_p",
+        "top_k",
+        ...PENALTIES,
+        "stop",
+        "seed",
+        "response_format",
+        "structured_outputs",
+        ...OPENROUTER_REASONING,
     ],
     // OpenRouter Nex AGI bf16 tag for Nex-N2.5-Mini (2026-10-03); the endpoint has no tool support.
     openRouterNexMini: [

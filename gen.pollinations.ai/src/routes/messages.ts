@@ -1,3 +1,4 @@
+import { chatCompletionChoiceError } from "@shared/http/chat-completion-error.ts";
 import { CreateChatCompletionResponseSchema } from "@shared/schemas/openai.ts";
 import { type Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -205,9 +206,12 @@ export function createMessagesRoutes(dispatch: Dispatch) {
                     { headers: responseHeaders },
                 );
             }
-            const completion = CreateChatCompletionResponseSchema.safeParse(
-                await response.json().catch(() => null),
-            );
+            const raw = await response.json().catch(() => null);
+            const finishError = chatCompletionChoiceError(raw);
+            if (finishError)
+                return errorResponse(502, finishError, responseHeaders);
+            const completion =
+                CreateChatCompletionResponseSchema.safeParse(raw);
             if (!completion.success) {
                 return errorResponse(
                     502,

@@ -2411,4 +2411,84 @@ describe("prompt-agent runtime", () => {
             expect(modelCalls).toBe(2);
         },
     );
+
+    it.each([false, true])(
+        "fails instead of returning completed when base model ends with finish_reason error (stream:%s)",
+        async (stream) => {
+            const validUsage = {
+                prompt_tokens: 10,
+                completion_tokens: 4,
+                total_tokens: 14,
+            };
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    stream
+                        ? new Response(
+                              'data: {"choices":[{"delta":{"content":"partial"},"finish_reason":null}]}\n\n' +
+                                  `data: ${JSON.stringify({
+                                      choices: [
+                                          {
+                                              delta: {},
+                                              finish_reason: "error",
+                                              error: {
+                                                  message: "Upstream aborted",
+                                              },
+                                          },
+                                      ],
+                                      usage: validUsage,
+                                  })}\n\n` +
+                                  "data: [DONE]\n\n",
+                              {
+                                  headers: {
+                                      "content-type": "text/event-stream",
+                                  },
+                              },
+                          )
+                        : Response.json({
+                              choices: [
+                                  {
+                                      message: {
+                                          role: "assistant",
+                                          content: "partial",
+                                      },
+                                      finish_reason: "error",
+                                      error: { message: "Upstream aborted" },
+                                  },
+                              ],
+                              usage: validUsage,
+                          }),
+                ),
+            );
+
+            const response = await runAgent({
+                messages: [{ role: "user", content: "hello" }],
+                stream,
+            });
+
+            if (!stream) {
+                expect(response.status).toBe(502);
+                await expect(response.json()).resolves.toMatchObject({
+                    error: { code: "agent_error", message: "Upstream aborted" },
+                });
+            } else {
+                const events = responseStreamEvents(await response.text());
+                expect(
+                    events.some((event) => event.type === "response.completed"),
+                ).toBe(false);
+                expect(events).toContainEqual(
+                    expect.objectContaining({
+                        type: "response.failed",
+                        response: expect.objectContaining({
+                            status: "failed",
+                            error: {
+                                code: "agent_error",
+                                message: "Upstream aborted",
+                            },
+                        }),
+                    }),
+                );
+            }
+        },
+    );
 });

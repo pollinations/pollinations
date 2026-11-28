@@ -61,21 +61,24 @@ describe("resolveModelConfig", () => {
         }
     });
 
-    it("routes Hy4 Flash through Vercel with an OpenRouter fallback", () => {
-        const primary = resolveModelConfig(messages, {
+    it("routes Hy4 Flash to Fireworks with a DeepInfra fallback", () => {
+        const result = resolveModelConfig(messages, {
             model: "tencent/hy4-flash",
         });
-        expect(primary.options.modelConfig).toMatchObject({
+        expect(result.options.model).toBe(
+            "accounts/fireworks/models/hy4-flash",
+        );
+        expect(result.options.modelConfig).toMatchObject({
             provider: "openai",
-            "custom-host": "https://ai-gateway.vercel.sh/v1",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
         });
-
         const fallback = resolveModelConfig(messages, {
-            model: "tencent/hy4-flash:openrouter",
+            model: "tencent/hy4-flash:deepinfra",
         });
+        expect(fallback.options.model).toBe("tencent/Hy4-flash");
         expect(fallback.options.modelConfig).toMatchObject({
-            provider: "openrouter",
-            model: "tencent/hy4-flash",
+            provider: "openai",
+            "custom-host": "https://api.deepinfra.com/v1/openai",
         });
     });
 
@@ -649,12 +652,17 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("routes Mistral Large 4 to Mistral direct", () => {
+    it("routes Mistral Large 4 to its myceli Azure deployment", () => {
         const result = resolveModelConfig(messages, {
             model: "mistralai/mistral-large-4",
         });
 
-        expect(result.options.model).toBe("mistral-large-4");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "azure-openai",
+            "azure-resource-name": "myceli-prod-eastus",
+            "azure-deployment-id": "mistral-large-4-latest",
+        });
+        expect(result.options.modelConfig?.responsesEndpoint).toBeUndefined();
     });
 
     it("pins the Qwen3.8 A95B fallback to the dated SiliconFlow FP8 endpoint", () => {
@@ -686,17 +694,6 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("pins the Mistral Large 4 fallback to Mistral on Vercel", () => {
-        const result = resolveModelConfig(messages, {
-            model: "mistralai/mistral-large-4:vercel",
-        });
-
-        expect(result.options.model).toBe("mistral/mistral-large-4");
-        expect(result.options.providerOptions).toEqual({
-            gateway: { only: ["mistral"] },
-        });
-    });
-
     it("routes GPT-6.1 Terra to the myceli Azure deployment without fallback", () => {
         const resolved = resolveModelConfig(messages, {
             model: "openai/gpt-6.1-terra",
@@ -721,6 +718,18 @@ describe("resolveModelConfig", () => {
                 "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/responses",
             supportsMaxCompletionTokens: true,
             supportsStreamOptions: true,
+        });
+    });
+
+    it("routes Ling 3.2 Flash directly to OpenRouter", () => {
+        const result = resolveModelConfig(messages, {
+            model: "inclusionai/ling-3.2-flash",
+        });
+
+        expect(result.options.model).toBe("inclusionai/ling-3.2-flash");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openrouter",
+            model: "inclusionai/ling-3.2-flash",
         });
     });
 
@@ -1507,6 +1516,19 @@ describe("resolveModelConfig", () => {
             });
         },
     );
+
+    it("routes Gemma 4 31B Turbo directly to DeepInfra", () => {
+        const result = resolveModelConfig(messages, {
+            model: "google/gemma-4-31b-it:turbo",
+        });
+
+        expect(result.options.model).toBe("google/gemma-4-31B-it-turbo");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
 
     it("does not resolve the removed MiniMax M2.7 gateway fallback", () => {
         expect(

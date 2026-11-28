@@ -66,6 +66,52 @@ describe("pollinationsErrorFromResponse request IDs", () => {
     });
 });
 
+describe("pollinationsErrorFromResponse Retry-After", () => {
+    const errorWith = (retryAfter: string) =>
+        makeErrorResponse(
+            { error: { message: "slow down" } },
+            { status: 429, headers: { "Retry-After": retryAfter } },
+        );
+
+    it("reads delay-seconds", async () => {
+        const err = await pollinationsErrorFromResponse(errorWith("120"));
+        expect(err.retryAfter).toBe(120);
+        expect(
+            (await pollinationsErrorFromResponse(errorWith("0"))).retryAfter,
+        ).toBe(0);
+    });
+
+    // Number() would take these as 500s, 16s, 30.5s and 5s.
+    it.each([
+        "5e2",
+        "0x10",
+        "30.5",
+        "+5",
+        "-5",
+        "+9999",
+        "9".repeat(400),
+        "January 1, 9999",
+    ])("rejects %s, which is not delay-seconds", async (value: string) => {
+        const err = await pollinationsErrorFromResponse(errorWith(value));
+        expect(err.retryAfter).toBeUndefined();
+    });
+
+    it("reads a future HTTP date", async () => {
+        const date = new Date(Date.now() + 90_000).toUTCString();
+        const err = await pollinationsErrorFromResponse(errorWith(date));
+        expect(err.retryAfter).toBeGreaterThanOrEqual(89);
+        expect(err.retryAfter).toBeLessThanOrEqual(90);
+    });
+
+    it.each(["Sunday, 06-Nov-37 08:49:37 GMT", "Sun Nov  6 08:49:37 2037"])(
+        "reads obsolete HTTP date %s",
+        async (value) => {
+            const err = await pollinationsErrorFromResponse(errorWith(value));
+            expect(err.retryAfter).toBeGreaterThan(0);
+        },
+    );
+});
+
 describe("isOutageError", () => {
     it("recognises an outage from another entry point's error class", () => {
         // The root and React bundles each define their own PollinationsError.

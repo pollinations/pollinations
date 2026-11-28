@@ -18,9 +18,10 @@ workers_dev = true
 # Public hostnames are attached directly in the Myceli account.
 [env.production]
 
-[[env.production.send_email]]
-name = "REFUND_EMAIL"
-allowed_sender_addresses = ["notifications@notify.pollinations.ai"]
+[[env.production.services]]
+binding = "REFUND_BILLING"
+service = "pollinations-enter-production"
+entrypoint = "RefundBilling"
 
 [[env.production.ratelimits]]
 name = "REFUND_LIMIT"

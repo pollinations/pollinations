@@ -27,7 +27,7 @@ If you were charged twice, didn’t authorize a payment, didn’t receive the cr
 
 ## 4) EU/EEA consumer withdrawal
 
-If you bought a top-up online as an EEA consumer, you generally have 14 days from purchase to withdraw without giving a reason. Choose **Withdraw from contract here** at the top of this page, identify your purchase, and select **Confirm withdrawal**. We email a copy of your request with the submission date and time to you and to billing. You can also withdraw by emailing billing@pollinations.ai before the deadline.
+If you bought a top-up online as an EEA consumer, you generally have 14 days from purchase to withdraw without giving a reason. Use [Withdraw from contract here](#withdrawal) at the end of this page. Enter your invoice number and Pollinations account ID, then select **Confirm withdrawal**. We send your request to billing and a dated copy to your account email. You can also withdraw by emailing billing@pollinations.ai before the deadline.
 
 API access is a digital service. Using some credit does not, by itself, end your withdrawal right. Our checkout currently does not ask you to agree to start the service during those 14 days. If you exercise this right, we refund your payment within 14 days of receiving your request, including the part you used. Your rights if the service is faulty also apply.
 

@@ -68,8 +68,8 @@ export function LegalPage({
                             variant="page"
                         />
                     ) : null}
-                    {children}
                     <Prose>{title ? body : markdown}</Prose>
+                    {children}
                 </>
             )}
         </article>

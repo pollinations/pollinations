@@ -342,11 +342,13 @@ describe("markdown for agents", () => {
 
 describe("withdrawal on the Refunds page", () => {
     const fields = {
-        name: "Ana García",
-        purchase: "18 November, $10",
-        email: "ana@example.com",
+        accountId: "account-42",
+        invoiceNumber: "EXAMPLE-0002",
     };
-    const post = (data = fields, origin = "https://pollinations.ai") => {
+    const post = (
+        data: Record<string, string> = fields,
+        origin = "https://pollinations.ai",
+    ) => {
         const body = new URLSearchParams(data).toString();
         return new Request("https://pollinations.ai/refunds", {
             method: "POST",
@@ -360,43 +362,38 @@ describe("withdrawal on the Refunds page", () => {
     };
     const bindings = () => ({
         ASSETS: { fetch: vi.fn() },
-        REFUND_EMAIL: {
-            send: vi.fn().mockResolvedValue({ messageId: "local-test" }),
-        },
+        REFUND_BILLING: { submitWithdrawal: vi.fn().mockResolvedValue(true) },
         REFUND_LIMIT: { limit: vi.fn().mockResolvedValue({ success: true }) },
     });
 
-    test("sends one dated declaration to billing and the customer before acknowledging it", async () => {
+    test("forwards only the two identifiers and acknowledges a confirmed submission", async () => {
         const env = bindings();
-        expect((await worker.fetch(post(), env)).status).toBe(204);
-        expect(env.REFUND_EMAIL.send).toHaveBeenCalledTimes(1);
-        const [message] = env.REFUND_EMAIL.send.mock.calls[0];
-        expect(message).toMatchObject({
-            to: "billing@pollinations.ai",
-            cc: [fields.email],
-            replyTo: "billing@pollinations.ai",
-        });
-        for (const value of [
-            ...Object.values(fields),
-            "I withdraw from the contract",
-        ])
-            expect(message.text).toContain(value);
-        expect(message.text).toMatch(
-            /Received \(UTC\): \d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z/,
-        );
+        const body = {
+            ...fields,
+            email: "different@example.com",
+            name: "Someone else",
+        };
+        expect((await worker.fetch(post(body), env)).status).toBe(204);
+        expect(env.REFUND_BILLING.submitWithdrawal.mock.calls).toEqual([
+            [fields.accountId, fields.invoiceNumber],
+        ]);
         expect(env.REFUND_LIMIT.limit.mock.calls).toEqual([
             [{ key: "ip:192.0.2.10" }],
-            [{ key: "email:ana@example.com" }],
+            [{ key: "account:account-42" }],
         ]);
         expect(env.ASSETS.fetch).not.toHaveBeenCalled();
     });
 
-    test("rejects invalid, cross-site and rate-limited submissions and reports mail failures", async () => {
+    test("rejects incomplete, cross-site, oversized and rate-limited submissions before lookup", async () => {
         const env = bindings();
+        expect(
+            (await worker.fetch(post({ accountId: fields.accountId }), env))
+                .status,
+        ).toBe(400);
         expect(
             (
                 await worker.fetch(
-                    post({ ...fields, email: "x@example.com,y@example.com" }),
+                    post({ invoiceNumber: fields.invoiceNumber }),
                     env,
                 )
             ).status,
@@ -408,15 +405,25 @@ describe("withdrawal on the Refunds page", () => {
         expect(
             (
                 await worker.fetch(
-                    post({ ...fields, purchase: "x".repeat(8193) }),
+                    post({ ...fields, invoiceNumber: "x".repeat(8193) }),
                     env,
                 )
             ).status,
         ).toBe(413);
         env.REFUND_LIMIT.limit.mockResolvedValueOnce({ success: false });
         expect((await worker.fetch(post(), env)).status).toBe(429);
-        expect(env.REFUND_EMAIL.send).not.toHaveBeenCalled();
-        env.REFUND_EMAIL.send.mockRejectedValueOnce(new Error("unavailable"));
+        expect(env.REFUND_BILLING.submitWithdrawal).not.toHaveBeenCalled();
+    });
+
+    test("distinguishes a mismatch from an unavailable billing service", async () => {
+        const env = bindings();
+        env.REFUND_BILLING.submitWithdrawal.mockResolvedValueOnce(false);
+        const mismatch = await worker.fetch(post(), env);
+        expect(mismatch.status).toBe(422);
+        expect(await mismatch.text()).toBe("");
+        env.REFUND_BILLING.submitWithdrawal.mockRejectedValueOnce(
+            new Error("unavailable"),
+        );
         expect((await worker.fetch(post(), env)).status).toBe(503);
     });
 });

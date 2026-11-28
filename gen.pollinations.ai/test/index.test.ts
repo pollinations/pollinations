@@ -512,6 +512,22 @@ describe("gen worker routing", () => {
         }
     });
 
+    it("points agents at a first call that needs no account", async () => {
+        // The published skill promised a keyless image on gen.pollinations.ai.
+        // A fresh prompt there needs a key, so an agent following the skill
+        // got a 401 on its first call. These documents must point at the Free
+        // API Classic route, which answers without one.
+        const classicRoute = "https://image.pollinations.ai/prompt/";
+        const llms = await (await fetchWorker("/llms.txt")).text();
+        expect(llms).toContain(classicRoute);
+        const skill = await fetchWorker(
+            "/.well-known/agent-skills/pollinations-api/SKILL.md",
+        );
+        expect(await skill.text()).toContain(classicRoute);
+        const quickStart = await (await fetchWorker("/docs/llm.txt")).text();
+        expect(quickStart).toContain(classicRoute);
+    });
+
     it("publishes an RFC 9727 API catalog and links it from llms.txt", async () => {
         const catalog = await fetchWorker("/.well-known/api-catalog");
         expect(catalog.status).toBe(200);

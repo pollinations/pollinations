@@ -22,6 +22,17 @@ const AGENT_LINKS = [
     '<https://gen.pollinations.ai/.well-known/ai-catalog.json>; rel="describedby"',
 ].join(", ");
 
+/**
+ * Discovery documents that live on gen. Agents and scanners that receive the
+ * marketing domain probe these well-known paths on that origin; a permanent
+ * redirect keeps one source of truth (the same approach enter.pollinations.ai
+ * takes for its API catalog) instead of serving a second copy.
+ */
+const GEN_DISCOVERY_PATHS = new Set([
+    "/.well-known/api-catalog",
+    "/.well-known/agent-skills/index.json",
+]);
+
 // Only the homepage has a summary; other pages need their full HTML content.
 const HOME_MARKDOWN = `# ${ROUTE_META["/"].title}\n\n${ROUTE_META["/"].description}\n\nAgent entry point: https://gen.pollinations.ai/llms.txt\n`;
 
@@ -70,6 +81,16 @@ export default {
         if (url.hostname.startsWith("www.")) {
             url.hostname = url.hostname.slice(4);
             return Response.redirect(url.toString(), 301);
+        }
+
+        const genOrigin = url.hostname.startsWith("staging.")
+            ? "https://staging.gen.pollinations.ai"
+            : "https://gen.pollinations.ai";
+        if (
+            GEN_DISCOVERY_PATHS.has(url.pathname) &&
+            (request.method === "GET" || request.method === "HEAD")
+        ) {
+            return Response.redirect(`${genOrigin}${url.pathname}`, 308);
         }
 
         if (

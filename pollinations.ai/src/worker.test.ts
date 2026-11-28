@@ -52,6 +52,56 @@ describe("hostname redirects", () => {
     });
 });
 
+describe("well-known discovery delegation", () => {
+    test.each([
+        ["GET", "/.well-known/api-catalog"],
+        ["HEAD", "/.well-known/api-catalog"],
+        ["GET", "/.well-known/agent-skills/index.json"],
+        ["HEAD", "/.well-known/agent-skills/index.json"],
+    ])("redirects %s %s to gen", async (method, path) => {
+        const fetchAsset = vi.fn();
+        const response = await worker.fetch(
+            new Request(`https://pollinations.ai${path}`, { method }),
+            { ASSETS: { fetch: fetchAsset } },
+        );
+
+        expect(response.status).toBe(308);
+        expect(response.headers.get("Location")).toBe(
+            `https://gen.pollinations.ai${path}`,
+        );
+        expect(fetchAsset).not.toHaveBeenCalled();
+    });
+
+    test("keeps staging on staging.gen", async () => {
+        const fetchAsset = vi.fn();
+        const response = await worker.fetch(
+            new Request(
+                "https://staging.pollinations.ai/.well-known/api-catalog",
+            ),
+            { ASSETS: { fetch: fetchAsset } },
+        );
+
+        expect(response.status).toBe(308);
+        expect(response.headers.get("Location")).toBe(
+            "https://staging.gen.pollinations.ai/.well-known/api-catalog",
+        );
+        expect(fetchAsset).not.toHaveBeenCalled();
+    });
+
+    test("leaves other methods to the asset layer", async () => {
+        const fetchAsset = vi.fn(async () => new Response("", { status: 405 }));
+        const response = await worker.fetch(
+            new Request("https://pollinations.ai/.well-known/api-catalog", {
+                method: "POST",
+            }),
+            { ASSETS: { fetch: fetchAsset } },
+        );
+
+        expect(response.status).toBe(405);
+        expect(fetchAsset).toHaveBeenCalledOnce();
+    });
+});
+
 describe("legacy image links", () => {
     test.each([
         [

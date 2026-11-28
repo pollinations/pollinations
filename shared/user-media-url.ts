@@ -5,7 +5,9 @@ export type UserMediaUrlValidation =
 const BLOCKED_HOSTNAMES = /^localhost$/i;
 
 function isBlockedUserMediaHost(hostname: string): boolean {
-    const host = hostname.replace(/^\[|\]$/g, "");
+    // Trailing dots are ignored by DNS / URL parsers ("localhost." == localhost)
+    // but would miss /^localhost$/ and dotted IPv4 checks if left in place.
+    const host = hostname.replace(/^\[|\]$/g, "").replace(/\.+$/, "");
     const normalized = host.toLowerCase();
     if (
         BLOCKED_HOSTNAMES.test(normalized) ||

@@ -1,4 +1,10 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+    mkdirSync,
+    mkdtempSync,
+    rmSync,
+    symlinkSync,
+    writeFileSync,
+} from "node:fs";
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
@@ -45,6 +51,67 @@ describe("collectSiteFiles", () => {
         const hashes = new Set(collectSiteFiles(dir).map((file) => file.hash));
 
         expect(hashes.size).toBe(3);
+    });
+
+    it("publishes links that stay inside the folder, under the linked name", () => {
+        dir = mkdtempSync(join(tmpdir(), "polli-site-"));
+        write("index.html", "<h1>hi</h1>");
+        write("shared/logo.svg", "<svg/>");
+        symlinkSync(join(dir, "shared/logo.svg"), join(dir, "logo.svg"));
+        symlinkSync(join(dir, "shared"), join(dir, "assets"));
+
+        const files = collectSiteFiles(dir);
+
+        // One target, three URL paths — every name the build references is served.
+        expect(files.map((file) => file.path).sort()).toEqual([
+            "/assets/logo.svg",
+            "/index.html",
+            "/logo.svg",
+            "/shared/logo.svg",
+        ]);
+        // The linked name is the URL path, and the bytes are read through the link.
+        expect(files.find((file) => file.path === "/logo.svg")).toMatchObject({
+            size: 6,
+        });
+    });
+
+    it("leaves out links that escape the folder or point nowhere, and says why", () => {
+        dir = mkdtempSync(join(tmpdir(), "polli-site-"));
+        const outside = mkdtempSync(join(tmpdir(), "polli-outside-"));
+        writeFileSync(join(outside, "secret.txt"), "not for the site");
+        write("index.html", "<h1>hi</h1>");
+        symlinkSync(join(outside, "secret.txt"), join(dir, "secret.txt"));
+        symlinkSync(outside, join(dir, "outside"));
+        symlinkSync(join(dir, "missing.bin"), join(dir, "gone.bin"));
+        symlinkSync(join(dir, "self"), join(dir, "self"));
+
+        const skipped: Record<string, string> = {};
+        const files = collectSiteFiles(dir, (file, reason) => {
+            skipped[file.replace(dir, "")] = reason;
+        });
+
+        expect(files.map((file) => file.path)).toEqual(["/index.html"]);
+        expect(skipped).toEqual({
+            "/gone.bin": "points nowhere",
+            "/outside": "points outside the folder",
+            "/secret.txt": "points outside the folder",
+            "/self": "points nowhere",
+        });
+        rmSync(outside, { recursive: true, force: true });
+    });
+
+    it("stops at a folder link that loops back into the published tree", () => {
+        dir = mkdtempSync(join(tmpdir(), "polli-site-"));
+        write("index.html", "<h1>hi</h1>");
+        symlinkSync(dir, join(dir, "loop"));
+
+        const skipped: string[] = [];
+        const files = collectSiteFiles(dir, (_file, reason) =>
+            skipped.push(reason),
+        );
+
+        expect(files.map((file) => file.path)).toEqual(["/index.html"]);
+        expect(skipped).toEqual(["links back to a folder it sits inside"]);
     });
 });
 

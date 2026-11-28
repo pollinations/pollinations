@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { readdirSync, readFileSync } from "node:fs";
+import { readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { extname, join, relative, resolve, sep } from "node:path";
 import { setTimeout } from "node:timers/promises";
 import chalk from "chalk";
@@ -14,6 +14,7 @@ import {
     printResult,
     printSuccess,
     printTable,
+    printWarn,
 } from "../lib/output.js";
 
 type Site = {
@@ -37,13 +38,38 @@ export type SiteFile = {
     size: number;
 };
 
+/** What a link resolves to, or nothing when there are no bytes to publish. A
+ * link that loops back on itself throws ELOOP instead of reporting no entry,
+ * which leaves nothing to publish either way. */
+const statOrNull = (path: string) => {
+    try {
+        return statSync(path, { throwIfNoEntry: false });
+    } catch {
+        return undefined;
+    }
+};
+
 /** Every file under `dir` as Cloudflare's upload manifest describes it: the
  * URL path, a hash and the size. As in Cloudflare's example, the hash covers
  * the base64 content plus the extension, so the same bytes as .js and .txt
  * upload separately with their own types. Dotfiles (.env, .git) and
- * node_modules stay local; .well-known is published. */
-export function collectSiteFiles(dir: string): SiteFile[] {
+ * node_modules stay local; .well-known is published.
+ *
+ * Builds link files and folders out of the output dir (a shared assets tree,
+ * pnpm's store links), so links are followed — but only while they stay inside
+ * `dir`, otherwise a link could publish bytes the build never meant to serve.
+ * `onSkipped` hears about the links left out, so a deploy can name them instead
+ * of quietly publishing a smaller site. */
+export function collectSiteFiles(
+    dir: string,
+    onSkipped: (file: string, reason: string) => void = () => {},
+): SiteFile[] {
     const files: SiteFile[] = [];
+    const root = resolve(dir);
+    // The folders the walk is still inside, so a link back into one of them is
+    // caught before it recurses forever. A plain folder cannot cycle, so this
+    // only ever fires for a link — two names for one folder both publish.
+    const open: string[] = [root];
     const walk = (current: string) => {
         for (const entry of readdirSync(current, { withFileTypes: true })) {
             const skipped =
@@ -51,11 +77,35 @@ export function collectSiteFiles(dir: string): SiteFile[] {
                 entry.name === "node_modules";
             if (skipped) continue;
             const file = join(current, entry.name);
-            if (entry.isDirectory()) walk(file);
-            else if (entry.isFile()) {
+            let isDirectory = entry.isDirectory();
+            let isFile = entry.isFile();
+            if (entry.isSymbolicLink()) {
+                const target = statOrNull(file);
+                if (!target) {
+                    onSkipped(file, "points nowhere");
+                    continue;
+                }
+                const real = realpathSync(file);
+                if (real !== root && !real.startsWith(`${root}${sep}`)) {
+                    onSkipped(file, "points outside the folder");
+                    continue;
+                }
+                isDirectory = target.isDirectory();
+                isFile = target.isFile();
+            }
+            if (isDirectory) {
+                const real = realpathSync(file);
+                if (open.includes(real)) {
+                    onSkipped(file, "links back to a folder it sits inside");
+                    continue;
+                }
+                open.push(real);
+                walk(file);
+                open.pop();
+            } else if (isFile) {
                 const content = readFileSync(file);
                 files.push({
-                    path: `/${relative(dir, file).split(sep).join("/")}`,
+                    path: `/${relative(root, file).split(sep).join("/")}`,
                     file,
                     hash: createHash("sha256")
                         .update(
@@ -68,7 +118,7 @@ export function collectSiteFiles(dir: string): SiteFile[] {
             }
         }
     };
-    walk(dir);
+    walk(root);
     return files;
 }
 
@@ -172,7 +222,9 @@ const deploy = new Command("deploy")
     .option("--verify", "Check every published file against the local build")
     .action(async (dir: string, opts: { name: string; verify?: boolean }) => {
         const key = requireKey();
-        const files = collectSiteFiles(resolve(dir));
+        const files = collectSiteFiles(resolve(dir), (file, reason) =>
+            printWarn(`Skipped ${file}: it ${reason}`),
+        );
         const manifest = Object.fromEntries(
             files.map((file) => [
                 file.path,

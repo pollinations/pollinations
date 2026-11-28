@@ -701,14 +701,15 @@ export const TEXT_FALLBACKS = {
         },
     },
     "tencent/hy4-flash": {
-        // OpenRouter's route for the same model, with its 5.5% credit fee.
-        "tencent/hy4-flash:openrouter": {
-            provider: "openrouter",
-            addedDate: new Date("2026-11-16").getTime(),
+        "tencent/hy4-flash:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
+            provider: "deepinfra",
+            contextLength: 1048576,
+            // https://deepinfra.com/tencent/Hy4-flash/api
             cost: {
-                promptTextTokens: perMillion(0.035) * 1.055,
-                promptCachedTokens: perMillion(0.0015) * 1.055,
-                completionTextTokens: perMillion(0.1405) * 1.055,
+                promptTextTokens: perMillion(0.07),
+                promptCachedTokens: perMillion(0.003),
+                completionTextTokens: perMillion(0.281),
             },
         },
     },

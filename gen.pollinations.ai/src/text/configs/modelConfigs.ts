@@ -829,20 +829,12 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
-    // Reasoning defaults to "high" and burns ~1,300 tokens on even a
-    // trivial schema, so a caller relying on the upstream default (no
-    // explicit max_tokens) can get finish_reason:"length", content:null
-    // under a normal budget. Matches this route's own max_completion_tokens
-    // cap. Callers who pass an explicit max_tokens still hit the same gap —
-    // resolveModelConfig drops this default the moment one is supplied.
-    "tencent/hy4-flash": () =>
-        createVercelAIGatewayModelConfig({
-            model: "tencent/hy4-flash",
+    "accounts/fireworks/models/hy4-flash": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/hy4-flash",
         }),
-    "tencent/hy4-flash:openrouter": () =>
-        createOpenRouterModelConfig({
-            model: "tencent/hy4-flash",
-        }),
+    "tencent/Hy4-flash": () =>
+        createDeepInfraModelConfig({ model: "tencent/Hy4-flash" }),
     "tencent/hy4-preview": () =>
         createOpenRouterModelConfig({
             model: "tencent/hy4-preview",

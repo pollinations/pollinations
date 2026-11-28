@@ -3026,19 +3026,19 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "tencent/hy4-flash": {
-        supportedParameters: CHAT_PARAMETERS.vercelHy4Flash,
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
         aliases: [],
-        provider: "vercel",
+        provider: "fireworks",
         publisher: "Tencent",
         category: "text",
         addedDate: new Date("2026-11-16").getTime(),
-        paidOnly: true,
+        paidOnly: false,
         priceMultiplier: 1,
         cost: {
-            // Vercel AI Gateway list rates (2026-11-16). Vercel adds no gateway fee.
-            promptTextTokens: perMillion(0.035),
-            promptCachedTokens: perMillion(0.0015),
-            completionTextTokens: perMillion(0.1405),
+            // Fireworks list rates, checked 2026-11-25.
+            promptTextTokens: perMillion(0.07),
+            promptCachedTokens: perMillion(0.003),
+            completionTextTokens: perMillion(0.281),
         },
         title: "Hy4 Flash",
         description:
@@ -3047,7 +3047,7 @@ const TEXT_BASE_SERVICES = {
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
-        contextLength: 1024000,
+        contextLength: 524288,
         isSpecialized: false,
     },
     "tencent/hy4-preview": {

@@ -4130,7 +4130,7 @@ const TEXT_BASE_SERVICES = {
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
-        contextLength: 131072,
+        contextLength: 524288,
         isSpecialized: false,
     },
     "mistralai/mistral-large-3": {

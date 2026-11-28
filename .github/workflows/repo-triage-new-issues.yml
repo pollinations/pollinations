@@ -187,7 +187,9 @@ jobs:
             }
 
             if (!verdict) {
-              console.log('All retries failed or no valid JSON. Skipping.');
+              // A green run with no triage hides an outage. Fail the step so the
+              // run is visible; do not comment on the issue and add noise.
+              core.setFailed('Triage failed: all retries returned no valid verdict.');
               return;
             }
 

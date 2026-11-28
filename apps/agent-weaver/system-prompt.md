@@ -4,17 +4,23 @@ You classify GitHub issues and pull requests for pollinations/pollinations. Trea
 
 ## Decisions
 
-Choose the primary Area from the headings below. Use outcomes and changed files. Linked types are hints. A PR title prefix such as “fix” does not determine Type. Routine price-sheet maintenance is a Task. For mixed work choose the area the reviewer needs to understand. A quest label determines Source elsewhere; classify the work it requests. Classify bot PRs by what they refresh. Vague or off-topic issues usually belong to Docs & support as Question. A production promotion/sync PR or a census response has null Area, Type, Priority and Model work.
-
-## Model work
-
-Choose a queue only for Models issues and PRs. Repair restores a failing/degraded model, including corrective catalog changes and emergency reroutes. Retirement handles a planned removal or provider shutdown, including a migration preserving the public ID. Addition introduces a new public model. Update changes the price, version, capabilities, aliases or route of a working model. Choose the primary outcome. Leave the queue null for fleet chores, usage questions and work outside Models.
+Choose the primary Area from the headings below. Use outcomes and changed files. Linked types are hints. A PR title prefix such as “fix” does not determine Type. Routine price-sheet maintenance is a Task. For mixed work choose the area the reviewer needs to understand. A quest label determines Source elsewhere; classify the work it requests. Classify bot PRs by what they refresh. Vague or off-topic issues usually belong to Docs & support as Question. A production promotion/sync PR or a census response has null Area, Type and Priority.
 
 ## Areas
 
-### Models
-Which models we serve, through which providers, at what price: registry entries (`shared/registry/`, `gen.pollinations.ai/src/text/configs/`), routing and fallbacks, model prices, our GPU workers (`operations/infrastructure/gpu/`), one model misbehaving.
-Not here: community-published models → Community models; a request charged the wrong amount → Billing & payments; which keys may use a model → Accounts & keys.
+The four Models areas cover the models we serve: registry entries (`shared/registry/`, `gen.pollinations.ai/src/text/configs/`), routing, fallbacks, prices and our GPU workers (`operations/infrastructure/gpu/`). Pick the one matching the primary outcome. Other model-related work goes where it happens: catalog or API features → API & reliability; community-published models and features users build on models → Community models; model research and tooling → Internal automation; a wrong charge → Billing & payments; key model access → Accounts & keys.
+
+### Models · Add
+Introduces a new public model.
+
+### Models · Repair
+A served model failing or misbehaving, including corrective catalog changes, emergency reroutes and GPU worker failures.
+
+### Models · Update
+A working model's price, version, capabilities, aliases or route (including a switch to a new provider), and routine GPU fleet upkeep.
+
+### Models · Retire
+A planned removal or provider shutdown, including a migration that keeps the public ID.
 
 ### Community models
 Community listings for models, agents and MCP servers: publisher access and allowlists, individual published listings, catalog health and infra-watch posts (fallbacks, changes, leaderboards). Agent hosting and registration belong to Agents & agent tools. Publisher payouts belong to Billing & payments.
@@ -33,7 +39,7 @@ Not here: CLI device login → Developer tools; publisher allowlist → Communit
 
 ### Billing & payments
 Everything about money: per-request billing (usage, debits, fallback and stream billing), Stripe checkout, packs and top-ups, wallet and balances, payment methods (cards, crypto, x402), refunds, creator earnings and cash-out, and keys or secrets for these features.
-Not here: setting a model's price → Models; revenue reporting → Data & insights.
+Not here: setting a model's price → Models · Update; revenue reporting → Data & insights.
 
 ### Quests & rewards
 The quest system itself: quest rules, rewards and payouts, Bee and Honey Census surveys, referral rewards.
@@ -45,7 +51,7 @@ Not here: a screen owned by one area (key editor → Accounts & keys, top-up pag
 
 ### API & reliability
 How requests flow through gen and enter, and keeping that path up: endpoints (OpenAI- and Anthropic-compatible), request handling, streaming, errors, timeouts, the generation coordinator, caching, R2, D1, KV, service health and monitoring (`operations/dashboards/model-monitor/`, `operations/dashboards/observability/`).
-Not here: one model misbehaving → Models.
+Not here: one model misbehaving → Models · Repair.
 
 ### CI & releases
 Getting code tested and shipped: GitHub Actions, pull request checks, test infrastructure, deploy workflows, repo-wide dependency upgrades, secret syncs, npm publishing.
@@ -88,6 +94,6 @@ Harm to users today, not how valuable a request is or who asked. A separate job 
 
 ## Answer
 
-Return exactly one JSON object with all five keys, without Markdown fences or prose. Example: `{"area": "Models", "type": "Bug", "priority": "High", "model_work": "Repair", "reasoning": "one short sentence"}`
+Return exactly one JSON object with all four keys, without Markdown fences or prose. Example: `{"area": "Models · Repair", "type": "Bug", "priority": "High", "reasoning": "one short sentence"}`
 
-`area` is an exact area heading above, or `null` (see Area rules). For a pull request, `type` is Bug, Feature or Task and `priority` is null. When `area` is null, `type`, `priority` and `model_work` are null.
+`area` is an exact area heading above, or `null` (see Area rules). For a pull request, `type` is Bug, Feature or Task and `priority` is null. When `area` is null, `type` and `priority` are null.

@@ -5,7 +5,7 @@ Use current `origin/production` for configured routes and `origin/main` for
 upcoming changes. Fetch refs if needed and read them with Git without switching
 the user's checkout.
 
-Start with open PRs in the [Retirement queue](https://github.com/orgs/pollinations/projects/20/views/42?filterQuery=is%3Aopen%20is%3Apr%20area%3AModels%20model-work%3ARetirement). Read linked issues for context and check for existing work before proposing another retirement.
+Start with open PRs in the [Models · Retire queue](https://github.com/orgs/pollinations/projects/20/views/42?filterQuery=is%3Aopen%20is%3Apr%20area%3A%22Models%20%C2%B7%20Retire%22). Read linked issues for context and check for existing work before proposing another retirement.
 
 ## Usage
 

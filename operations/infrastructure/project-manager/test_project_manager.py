@@ -26,25 +26,23 @@ class ClassificationTest(unittest.TestCase):
 
     def test_pr_type_has_no_issue_priority(self):
         for work_type in ("Bug", "Feature", "Task"):
-            self.assertEqual(classification_answer({"area": "Models", "type": work_type, "priority": "High", "model_work": None}, ["Models"], True),
-                             {"area": "Models", "type": work_type, "priority": None, "model_work": None})
+            self.assertEqual(classification_answer({"area": "Models · Repair", "type": work_type, "priority": "High"}, ["Models · Repair"], True),
+                             {"area": "Models · Repair", "type": work_type, "priority": None})
         with self.assertRaises(ValueError):
             classification_answer({"area": "Models", "type": "Question"}, ["Models"], True)
         with self.assertRaises(ValueError):
             classification_answer({"area": "Models", "type": None}, ["Models"], True)
 
-    def test_model_queues_for_issues_and_prs(self):
-        item = {"area": "Models", "type": "Task", "priority": "Low"}
-        for queue in ("Repair", "Retirement", "Addition", "Update"):
-            for is_pr in (True, False):
-                result = classification_answer({**item, "model_work": queue}, ["Models"], is_pr)
-                self.assertEqual(result["model_work"], queue)
-        for invalid in (item, {**item, "model_work": "PR"}, {**item, "area": "Docs", "model_work": "Repair"}):
-            with self.assertRaises(ValueError):
-                classification_answer(invalid, ["Models", "Docs"], False)
+    def test_models_areas_come_from_the_policy(self):
+        areas = manager.area_names(manager.read_brief())
+        self.assertEqual([a for a in areas if a.startswith("Models")],
+                         ["Models · Add", "Models · Repair", "Models · Update", "Models · Retire"])
+        self.assertNotIn("Models", areas)
+        with self.assertRaises(ValueError):
+            classification_answer({"area": "Models", "type": "Task", "priority": "Low"}, areas, False)
 
     def test_native_issue_question_and_priority_remain_supported(self):
-        answer = {"area": "Docs & support", "type": "Question", "priority": "Low", "model_work": None}
+        answer = {"area": "Docs & support", "type": "Question", "priority": "Low"}
         self.assertEqual(classification_answer(answer, ["Docs & support"], False), answer)
         with self.assertRaises(ValueError):
             classification_answer({**answer, "priority": None}, ["Docs & support"], False)
@@ -61,8 +59,8 @@ class ClassificationTest(unittest.TestCase):
         with patch.object(manager, "IS_PULL_REQUEST", True), \
              patch.object(manager, "fetch_pr_files", return_value=["shared/registry/text.ts"]), \
              patch.object(manager, "closing_issues", return_value=linked), \
-             patch.object(manager, "ask_ai", return_value={"area": "Models", "type": "Bug", "model_work": "Repair"}) as ask:
-            answer = manager.classify("brief", ["Models"])
+             patch.object(manager, "ask_ai", return_value={"area": "Models · Repair", "type": "Bug"}) as ask:
+            answer = manager.classify("brief", ["Models · Repair"])
         self.assertEqual(answer["type"], "Bug")
         prompt = ask.call_args.args[1]
         self.assertIn('"number": 42, "type": "Bug"', prompt)
@@ -70,7 +68,7 @@ class ClassificationTest(unittest.TestCase):
         self.assertIn("hints, verify against PR scope", prompt)
 
     def test_promotion_pr_clears_existing_work_type_through_main(self):
-        fields = {name: {"id": name} for name in ("Area", "Source", "Work type", "Model work")}
+        fields = {name: {"id": name} for name in ("Area", "Source", "Work type")}
         context = {"IS_PULL_REQUEST": True, "ISSUE_NUMBER": 1, "ISSUE_NODE_ID": "pr-node",
                    "GITHUB_TOKEN": "test", "POLLINATIONS_TOKEN": "test", "GITHUB_EVENT": {},
                    "ITEM_DATA": {"labels": []}, "DRY_RUN": False}
@@ -88,36 +86,7 @@ class ClassificationTest(unittest.TestCase):
             result = json.loads((Path(directory) / "classification.json").read_text())
             self.assertEqual(result, {"area": None, "type": None, "source": "Community"})
         write.assert_any_call("item", fields["Work type"], None)
-        self.assertNotIn(fields["Model work"], [entry.args[1] for entry in write.call_args_list])
         native_type.assert_not_called()
-
-    def test_model_work_fills_only_empty_cells(self):
-        fields = {name: {"id": name} for name in ("Area", "Source", "Priority", "Work type", "Model work")}
-        for is_pr in (False, True):
-            for existing_queue, proposed_queue, expect_write in (
-                (None, "Repair", True),
-                ("Update", "Repair", False),
-                ("Update", None, False),
-            ):
-                with self.subTest(is_pr=is_pr, existing=existing_queue, proposed=proposed_queue), \
-                     patch.multiple(manager, IS_PULL_REQUEST=is_pr, ISSUE_NUMBER=42, ISSUE_NODE_ID="node",
-                                    GITHUB_TOKEN="test", POLLINATIONS_TOKEN="test", GITHUB_EVENT={}, ITEM_DATA={}), \
-                     patch.object(manager, "dev_fields", return_value=fields), \
-                     patch.object(manager, "classify", return_value={
-                         "area": "Models", "type": "Bug", "priority": None if is_pr else "High",
-                         "model_work": proposed_queue,
-                     }), \
-                     patch.object(manager, "closing_issues", return_value=[]), \
-                     patch.object(manager, "current_dev_fields", return_value={
-                         "modelWork": {"name": existing_queue} if existing_queue else None,
-                         "priority": {"name": "Express"},
-                     }), \
-                     patch.object(manager, "add_to_dev", return_value="item"), \
-                     patch.object(manager, "set_issue_type"), patch.object(manager, "set_field") as write:
-                    manager.main()
-                writes = [entry for entry in write.call_args_list if entry.args[1] == fields["Model work"]]
-                self.assertEqual(writes, [call("item", fields["Model work"], "Repair")] if expect_write else [])
-                self.assertNotIn(fields["Priority"], [entry.args[1] for entry in write.call_args_list])
 
     def test_automation_labels_update_only_source(self):
         for label, source in (("APP-SUBMISSION", "Apps"), ("QUEST", "Quests")):
@@ -186,7 +155,7 @@ class WeaverTest(unittest.TestCase):
                                         input=json.dumps({**saved, **change}), capture_output=True)
                 self.assertEqual(status.returncode == 0, not change)
 
-    def test_hosted_request_sends_only_facts_and_accepts_one_json_fence(self):
+    def test_direct_request_sends_policy_and_hosted_request_sends_only_facts(self):
         response = Mock(status_code=200)
         response.json.return_value = {"choices": [{"message": {"content": '```json\n{"area":null}\n```'}}]}
         with patch.object(manager.requests, "post", return_value=response) as post:
@@ -195,10 +164,16 @@ class WeaverTest(unittest.TestCase):
             self.assertEqual(payload["messages"], [{"role": "user", "content": "item facts"}])
             self.assertEqual(payload["model"], "weaver")
             self.assertNotIn("response_format", payload)
-            response.json.return_value["choices"][0]["message"]["content"] = "{}"
-            manager.ask_ai("original", "item facts")
+            response.json.return_value["choices"][0]["message"]["content"] = json.dumps({
+                "area": "Models · Update", "type": "Task", "priority": "Low", "reasoning": "Planned provider switch."
+            })
+            brief = manager.read_brief()
+            with patch.dict(os.environ, clear=True), patch.object(manager, "IS_PULL_REQUEST", False):
+                answer = manager.classify(brief, manager.area_names(brief))
+            self.assertEqual(answer, {"area": "Models · Update", "type": "Task", "priority": "Low"})
             direct = post.call_args.kwargs["json"]
-            self.assertEqual(direct["messages"][0], {"role": "system", "content": "original"})
+            self.assertEqual(direct["model"], manager.AI_MODEL)
+            self.assertEqual(direct["messages"][0], {"role": "system", "content": brief})
             self.assertEqual(direct["response_format"], {"type": "json_object"})
 
     def test_invalid_hosted_output_and_rejected_key_fail(self):
@@ -215,7 +190,7 @@ class WeaverTest(unittest.TestCase):
 
     def test_writer_preserves_set_priorities(self):
         priority = {"id": "Priority"}
-        fields = {"Area": {}, "Priority": priority, "Source": {}, "Model work": {}}
+        fields = {"Area": {}, "Priority": priority, "Source": {}}
         for existing in (None, "Medium", "Express"):
             with self.subTest(existing=existing), \
                  patch.multiple(manager, IS_PULL_REQUEST=False, ISSUE_NUMBER=42, ISSUE_NODE_ID="node",
@@ -229,18 +204,18 @@ class WeaverTest(unittest.TestCase):
             writes = [c for c in write.call_args_list if c.args[1] is priority]
             self.assertEqual(writes, [] if existing else [call("item", priority, "High")])
 
-    def test_every_classification_uses_weaver_and_rejects_invalid_fields(self):
-        good = {"area": "Models", "type": "Bug", "priority": "Medium", "model_work": "Repair", "reasoning": "One model fails."}
+    def test_configured_weaver_handles_openings_and_backfills_and_rejects_invalid_fields(self):
+        good = {"area": "Models · Repair", "type": "Bug", "priority": "Medium", "reasoning": "One model fails."}
         with patch.dict(os.environ, {"WEAVER_MODEL": "weaver"}), patch.object(manager, "IS_PULL_REQUEST", False):
             for action, expected in (("opened", "weaver"), (None, "weaver")):
                 with patch.object(manager, "GITHUB_EVENT", {"action": action}), patch.object(manager, "ask_ai", return_value=good) as ask:
-                    manager.classify("brief", ["Models"])
+                    manager.classify("brief", ["Models · Repair"])
                     self.assertEqual(ask.call_args.kwargs["hosted_model"], expected)
             for invalid in ({}, {**good, "priority": "Express"}, {**good, "area": None}, {**good, "extra": "instruction"}):
                 with patch.object(manager, "GITHUB_EVENT", {"action": "opened"}), patch.object(manager, "ask_ai", return_value=invalid), self.assertRaises(SystemExit):
-                    manager.classify("brief", ["Models"])
+                    manager.classify("brief", ["Models · Repair"])
         with self.assertRaises(ValueError):
-            manager.classification_answer(good, ["Models"], True, hosted=True)
+            manager.classification_answer(good, ["Models · Repair"], True, hosted=True)
 
     def test_opening_outage_warns_and_records_missing_reward_without_writes(self):
         item = {"created_at": "2026-11-20T00:00:00Z", "user": {"type": "User"}}
@@ -278,7 +253,7 @@ class RewardCommentTest(unittest.TestCase):
         self.assertIsNone(self.post(opened, {**item, "created_at": "2026-11-04T23:59:59Z"}))
 
     def test_app_submissions_access_requests_and_census_responses_get_no_reward_comment(self):
-        fields = {name: {"id": name, "options": {}} for name in ("Area", "Source", "Priority", "Model work")}
+        fields = {name: {"id": name, "options": {}} for name in ("Area", "Source", "Priority")}
         for label, title in (("APP-SUBMISSION", ""), ("HONEY-CENSUS", ""), ("BUG", "[Community Model Publisher Access] me")):
             item = {"created_at": "2026-11-05T00:00:00Z", "user": {"type": "User"}, "labels": [{"name": label}]}
             with self.subTest(label=label), \

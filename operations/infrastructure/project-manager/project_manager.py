@@ -1,6 +1,6 @@
 """GitHub project manager: puts every new issue and pull request on the Dev project.
 
-Weaver's system-prompt.md is the one definition of areas, types, priorities and model work.
+Weaver's system-prompt.md is the one definition of areas, types and priorities.
 """
 
 import sys
@@ -60,7 +60,6 @@ TEAM_IDS = {5099901, 36901823, 74301576, 158852059, 34513273}
 # The Discord relay ends each relayed issue with "**Author:** `name` (UID: `123`)".
 RELAY_AUTHOR_LINE = re.compile(r"^\*\*Author:\*\* .*\(UID:\s*`?\d+`?\)\s*$", re.MULTILINE)
 TYPES = ["Bug", "Feature", "Question", "Task"]
-MODEL_WORK = ["Repair", "Retirement", "Addition", "Update"]
 PR_TYPES = ["Bug", "Feature", "Task"]
 PRIORITIES = ["High", "Medium", "Low"]
 SOURCES = ["Team", "Community", "Agent", "Apps", "Quests"]
@@ -183,7 +182,7 @@ def dev_fields(areas: list) -> dict:
         for n in nodes
         if n.get("options")
     }
-    expected = [("Area", areas), ("Priority", PRIORITIES), ("Source", SOURCES), ("Model work", MODEL_WORK)]
+    expected = [("Area", areas), ("Priority", PRIORITIES), ("Source", SOURCES)]
     if IS_PULL_REQUEST:
         expected.append(("Work type", PR_TYPES))
     for name, values in expected:
@@ -236,7 +235,7 @@ def item_source(labels: set) -> str:
 
 
 def current_dev_fields() -> dict:
-    """Read existing Priority and Model work without confusing read failure with empty fields."""
+    """Read the existing Priority without confusing read failure with an empty field."""
     query = """
     query($id: ID!, $after: String) {
         node(id: $id) {
@@ -249,7 +248,6 @@ def current_dev_fields() -> dict:
         nodes {
             project { id }
             priority: fieldValueByName(name: "Priority") { ... on ProjectV2ItemFieldSingleSelectValue { name } }
-            modelWork: fieldValueByName(name: "Model work") { ... on ProjectV2ItemFieldSingleSelectValue { name } }
         }
     }
     """
@@ -360,7 +358,7 @@ def item_prompt(kind, author, author_type, title, body, files, linked):
 
 
 def classify(brief: str, areas: list) -> Optional[dict]:
-    """Use Weaver only on opening events after an explicit release selection."""
+    """Use the repository policy directly unless the workflow selects a hosted agent."""
     linked = [{"number": i["number"], "type": (i.get("issueType") or {}).get("name")}
               for i in closing_issues()] if IS_PULL_REQUEST else []
     prompt = item_prompt("pull request" if IS_PULL_REQUEST else "issue", ISSUE_AUTHOR,
@@ -378,22 +376,17 @@ def classify(brief: str, areas: list) -> Optional[dict]:
 
 def classification_answer(raw: dict, areas: list, is_pr: bool, *, hosted=False) -> dict:
     if hosted:
-        if set(raw) != {"area", "type", "priority", "model_work", "reasoning"}:
-            raise ValueError("expected precisely the five Weaver response fields")
+        if set(raw) != {"area", "type", "priority", "reasoning"}:
+            raise ValueError("expected precisely the four Weaver response fields")
         if not isinstance(raw["reasoning"], str) or not raw["reasoning"].strip():
             raise ValueError("missing reasoning")
         if is_pr and raw["priority"] is not None:
             raise ValueError("a PR cannot have an issue priority")
-        if raw["area"] is None and any(raw[k] is not None for k in ("type", "priority", "model_work")):
+        if raw["area"] is None and any(raw[k] is not None for k in ("type", "priority")):
             raise ValueError("an unclassified item must have null fields")
     area = raw.get("area")
     if area is not None and area not in areas:
         raise ValueError(f"invalid area: {area!r}")
-    model_work = raw.get("model_work")
-    if model_work is not None and (area != "Models" or model_work not in MODEL_WORK):
-        raise ValueError(f"invalid Model work for {area!r}: {model_work!r}")
-    if area == "Models" and "model_work" not in raw:
-        raise ValueError("missing model_work for Models")
     # Promotions and census responses have no type or priority.
     if area is None:
         return {"area": None, "type": None, "priority": None}
@@ -402,7 +395,7 @@ def classification_answer(raw: dict, areas: list, is_pr: bool, *, hosted=False) 
         raise ValueError(f"invalid type: {raw.get('type')!r}")
     if not is_pr and raw.get("priority") not in PRIORITIES:
         raise ValueError(f"invalid priority: {raw.get('priority')!r}")
-    return {"area": area, "type": raw["type"], "priority": None if is_pr else raw["priority"], "model_work": model_work}
+    return {"area": area, "type": raw["type"], "priority": None if is_pr else raw["priority"]}
 
 
 def reward_eligible():
@@ -480,22 +473,17 @@ def main():
             return
 
     source = item_source(labels)
-    proposed_queue = answer.get("model_work")
-    # Preserve choices made by maintainers, the Express job or an earlier run.
-    existing = current_dev_fields() if answer["priority"] or proposed_queue else {}
+    # Preserve a priority set by maintainers, the Express job or an earlier run.
+    existing = current_dev_fields() if answer["priority"] else {}
     existing_priority = (existing.get("priority") or {}).get("name")
-    existing_queue = (existing.get("modelWork") or {}).get("name")
     priority = existing_priority or answer["priority"]
-    queue = existing_queue or proposed_queue
     print(
         f"{'DRY-RUN ' if DRY_RUN else ''}#{ISSUE_NUMBER}\t{source}\t{answer['area']}\t{answer['type']}"
-        f"\t{queue}{' (kept)' if existing_queue else ''}\t{priority}{' (kept)' if existing_priority else ''}\t{ISSUE_TITLE}"
+        f"\t{priority}{' (kept)' if existing_priority else ''}\t{ISSUE_TITLE}"
     )
 
     item_id = add_to_dev()
     set_field(item_id, fields["Area"], answer["area"])
-    if proposed_queue and not existing_queue:
-        set_field(item_id, fields["Model work"], proposed_queue)
     set_field(item_id, fields["Source"], source)
     if answer["priority"] and not existing_priority:
         set_field(item_id, fields["Priority"], answer["priority"])

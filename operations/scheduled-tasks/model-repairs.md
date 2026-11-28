@@ -1,6 +1,6 @@
 # Weekly model repairs
 
-Start with the [Repair queue](https://github.com/orgs/pollinations/projects/20/views/42?filterQuery=is%3Aopen%20is%3Apr%20area%3AModels%20model-work%3ARepair).
+Start with the [Models · Repair queue](https://github.com/orgs/pollinations/projects/20/views/42?filterQuery=is%3Aopen%20is%3Apr%20area%3A%22Models%20%C2%B7%20Repair%22).
 Review open fix PRs and read their linked issues for context. Use the Tinybird-backed
 [Model Monitor](https://model-monitor.pollinations.ai) to check production impact,
 including cases where a fallback hides a failing primary route.

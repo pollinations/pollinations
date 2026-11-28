@@ -24,6 +24,7 @@ import { createTestApiKey } from "@shared/test/fixtures/index.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect, it } from "vitest";
+import { reserveApiKeyBudget } from "../src/utils/generation-access.ts";
 import { requireFunds } from "../src/utils/refusals.ts";
 
 const db = drizzle(env.DB);
@@ -110,9 +111,9 @@ describe("billing deduction", () => {
         });
     });
 
-    it("names the paid-only requirement when Quest Pollen cannot cover a model", async () => {
+    it("explains why a funded Quest balance cannot pay for a paid-only model", async () => {
         const userId = await createUser({
-            tierBalance: 0.232,
+            tierBalance: 100,
             packBalance: 0,
         });
         await expect(
@@ -120,14 +121,14 @@ describe("billing deduction", () => {
                 { env, var: {} },
                 0.0001,
                 () => getUserBalance(db, userId),
-                true,
+                { paidOnly: true },
             ),
         ).rejects.toMatchObject({
             status: 402,
             errorCode: "INSUFFICIENT_BALANCE",
             paidOnly: true,
             message: expect.stringContaining(
-                "This model requires the paid balance, so the Quest balance can't cover it. This request costs about $0.0001, but your available paid balance is $0.0000.",
+                "This model needs a paid balance above the estimate ($0.0001) to start, and you have $0.0000.",
             ),
         });
     });
@@ -139,14 +140,14 @@ describe("billing deduction", () => {
                 { env, var: {} },
                 0,
                 () => getUserBalance(db, userId),
-                true,
+                { paidOnly: true },
             ),
         ).rejects.toMatchObject({
             status: 402,
             errorCode: "INSUFFICIENT_BALANCE",
             paidOnly: true,
             message: expect.stringContaining(
-                "The final price depends on usage, but your available paid balance is $0.0000.",
+                "This model needs a positive paid balance to start, and you have $0.0000. Final cost depends on usage.",
             ),
         });
     });
@@ -161,9 +162,95 @@ describe("billing deduction", () => {
             status: 402,
             errorCode: "INSUFFICIENT_BALANCE",
             message: expect.stringContaining(
-                "This request costs less than $0.0001, but your available balance is $0.0000.",
+                "Balance too low. One balance must cover less than $0.0001 to start.",
             ),
         });
+    });
+
+    it("explains which balance a free request needs", async () => {
+        const budgetedKey = { id: "test-key", pollenBalance: -0.01 };
+        const c = { env, var: { auth: { apiKey: budgetedKey } } } as Parameters<
+            typeof requireFunds
+        >[0];
+        const funded = async () => ({ tierBalance: 1, packBalance: 0 });
+        await expect(
+            requireFunds(c, 0, funded, { free: true }),
+        ).rejects.toMatchObject({
+            errorCode: "KEY_BUDGET_EXHAUSTED",
+            message: expect.stringContaining(
+                "Free requests need a key budget of zero or more.",
+            ),
+        });
+        budgetedKey.pollenBalance = 0;
+        await expect(
+            requireFunds(c, 0, funded, { free: true }),
+        ).resolves.toEqual(await funded());
+        await expect(
+            requireFunds(
+                c,
+                0,
+                async () => ({ tierBalance: 0, packBalance: 0 }),
+                { free: true },
+            ),
+        ).rejects.toMatchObject({
+            errorCode: "INSUFFICIENT_BALANCE",
+            message: expect.stringContaining(
+                "Free requests need a positive Quest or paid balance.",
+            ),
+        });
+    });
+
+    it("shows the difference at the paid-balance threshold without disclosing it in chat", async () => {
+        const cost = 0.01578;
+        const balance = { tierBalance: 0, packBalance: 0.01577999 };
+        const check = () =>
+            requireFunds({ env, var: {} }, cost, async () => balance, {
+                paidOnly: true,
+            });
+        await expect(check()).rejects.toMatchObject({
+            message: expect.stringContaining(
+                "This model needs a paid balance above the estimate ($0.01578) to start, and you have $0.01577999.",
+            ),
+            chatMessage: expect.stringContaining(
+                "This model needs a paid balance above the estimate (about $0.0158) to start.",
+            ),
+        });
+        await expect(
+            requireFunds({ env, var: {} }, cost, async () => balance, {
+                paidOnly: true,
+                realtimeMedian: true,
+            }),
+        ).rejects.toMatchObject({
+            chatMessage: expect.stringContaining(
+                "This model needs a paid balance above the estimate (about $0.0158, based on the 7-day model median) to start. Nothing was charged.",
+            ),
+        });
+        const delegated = {
+            env,
+            var: {
+                auth: {
+                    apiKey: {
+                        id: "delegate",
+                        permissions: { account: ["machines"] },
+                    },
+                },
+            },
+        } as Parameters<typeof requireFunds>[0];
+        await expect(
+            requireFunds(delegated, cost, async () => balance, {
+                paidOnly: true,
+            }),
+        ).rejects.toMatchObject({
+            message: expect.stringContaining(
+                "This model needs a paid balance above the estimate (about $0.0158) to start. Top up",
+            ),
+        });
+        balance.packBalance = cost;
+        await expect(check()).rejects.toMatchObject({
+            errorCode: "INSUFFICIENT_BALANCE",
+        });
+        balance.packBalance += 0.00000001;
+        await expect(check()).resolves.toEqual(balance);
     });
 
     it("settles every admitted parallel request even after restricted paid funds run out", async () => {
@@ -443,6 +530,19 @@ describe("billing deduction", () => {
         );
 
         expect(results.filter((result) => result.ok)).toHaveLength(3);
+        const vars = {
+            auth: { apiKey: { id: apiKeyId } },
+            balance: { apiKeyBudgetEstimate: 3 },
+        } as Parameters<typeof reserveApiKeyBudget>[0];
+        await expect(reserveApiKeyBudget(vars, env)).rejects.toMatchObject({
+            errorCode: "KEY_BUDGET_EXHAUSTED",
+            message: expect.stringContaining(
+                "wait for them to finish and try again",
+            ),
+            chatMessage: expect.stringContaining(
+                "wait for them to finish and try again",
+            ),
+        });
         expect(await getApiKeyBalance(apiKeyId)).toBe(1);
     });
 
@@ -459,26 +559,42 @@ describe("billing deduction", () => {
         expect(await getApiKeyBalance(apiKeyId)).toBe(0);
     });
 
-    it("settles an API key reservation against the actual price", async () => {
-        const userId = await createUser({ tierBalance: 100, packBalance: 0 });
-        const { id: apiKeyId } = await createTestApiKey({
-            userId,
-            pollenBudget: 10,
-        });
-        const { reserved } = await atomicReserveApiKeyBalance(db, apiKeyId, 5);
+    it.each([
+        [3, 7],
+        [11, -1],
+    ])(
+        "settles a $5 reservation at $%s, leaving a key budget of $%s",
+        async (actual, remaining) => {
+            const userId = await createUser({
+                tierBalance: 100,
+                packBalance: 0,
+            });
+            const { id: apiKeyId } = await createTestApiKey({
+                userId,
+                pollenBudget: 10,
+            });
+            const { reserved } = await atomicReserveApiKeyBalance(
+                db,
+                apiKeyId,
+                5,
+            );
 
-        await handleBalanceDeduction({
-            db,
-            isBilledUsage: true,
-            totalPrice: 3,
-            userId,
-            apiKeyId,
-            apiKeyPollenBalance: 10,
-            apiKeyReservedAmount: reserved,
-        });
+            await handleBalanceDeduction({
+                db,
+                isBilledUsage: true,
+                totalPrice: actual,
+                userId,
+                apiKeyId,
+                apiKeyPollenBalance: 10,
+                apiKeyReservedAmount: reserved,
+            });
 
-        expect(await getApiKeyBalance(apiKeyId)).toBeCloseTo(7, 10);
-    });
+            expect(await getApiKeyBalance(apiKeyId)).toBeCloseTo(remaining, 10);
+            expect((await getUserBalance(db, userId)).tierBalance).toBe(
+                100 - actual,
+            );
+        },
+    );
 
     it("settles post-execution usage without a preflight reservation", async () => {
         const userId = await createUser({ tierBalance: 100, packBalance: 0 });

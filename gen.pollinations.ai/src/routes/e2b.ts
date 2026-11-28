@@ -19,6 +19,7 @@ import { sandboxKeep, sandboxPort } from "@shared/db/sandbox.ts";
 import { handleError } from "@shared/error.ts";
 import { sendToTinybird } from "@shared/events.ts";
 import { fixLink } from "@shared/http/fix-link.ts";
+import { PaymentRequiredError } from "@shared/http/payment-required-error.ts";
 import { ensureConfigured } from "@shared/logger.ts";
 import { requestId } from "@shared/middleware/request-id.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
@@ -951,7 +952,14 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
                 error: { message: string };
             }>();
             return c.json(
-                { code: response.status, message: details.message },
+                {
+                    code: response.status,
+                    message: details.message,
+                    ...(error instanceof PaymentRequiredError && {
+                        reason: error.errorCode,
+                        fixUrl: error.fixUrl,
+                    }),
+                },
                 response.status as ContentfulStatusCode,
             );
         });
@@ -1206,12 +1214,12 @@ export async function wakePort(
         response = await connect(sandboxID, "connect", { timeout });
     }
     if (!response.ok) {
-        const { message } = await response
-            .json<{ message: string }>()
-            .catch(() => ({ message: `E2B returned ${response.status}` }));
+        // The shared port visitor can wake the sandbox using the owner's funds.
+        // Only the owner should receive the billing details and recovery links.
+        await response.body?.cancel();
         return portRefusal(
             response.status,
-            `This sandbox is asleep and could not be woken: ${message}`,
+            "This sandbox couldn't start. Contact its owner.",
         );
     }
     const connected = await response.json<CreatedSandbox>();

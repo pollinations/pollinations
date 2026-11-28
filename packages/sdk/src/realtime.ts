@@ -174,12 +174,11 @@ export async function connectRealtime(
                 reject(options.signal.reason);
                 return;
             }
-            // A refused upgrade never opens: the key, the balance or the model
-            // is wrong, and the browser hides the HTTP response.
+            // Browsers hide the HTTP response to a refused upgrade.
             reject(
                 new PollinationsError(
                     reason ||
-                        "The realtime session closed before opening. Check the key, its balance and the model.",
+                        "The realtime connection closed before opening. Check the model name, key permissions, key budget, and account balance.",
                     "REALTIME_CONNECT_FAILED",
                     0,
                     { closeCode: code },

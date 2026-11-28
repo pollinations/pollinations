@@ -177,7 +177,7 @@ describe("polli gen chat session lifecycle", () => {
         const line = await startSession();
         await line("hello");
 
-        expect(fetch).toHaveBeenCalledTimes(2); // chat + balance hint lookup
+        expect(fetch).toHaveBeenCalledTimes(1);
         expect(h.state.promptsAfterClose).toBe(0);
         expect(process.exitCode).toBe(1);
     });

@@ -1,6 +1,6 @@
 # Terms of Service
 
-**Last updated: 2026-11-26**
+**Last updated: 2026-11-28**
 
 ## About Pollinations
 
@@ -34,7 +34,7 @@ Third-party app developers are responsible for their own apps, claims, user inte
 
 Features, plans, or pricing labeled "beta" or "preview" may be modified, suspended, or discontinued at any time. This includes changes to:
 
-- Wallet and reward structures and associated benefits (for example Quest balance grants, promotional credits, and usage limits)
+- Credit and reward structures and associated benefits (for example Quest balance grants, promotional credits, and usage limits)
 - Model availability, capabilities, and per-model pricing
 - Developer-earnings rates and markup percentages
 - Quest availability, eligibility criteria, reward amounts, and payout timing
@@ -71,12 +71,12 @@ Fees are per plan/order/invoice; currency is by default USD. Top-ups, including 
 
 **Balance.** Your balance is in-service credit, counted in US dollars, used only to pay for Pollinations API usage. We previously called it "Pollen"; the API and earlier documents may still use that name. Your balance is not legal tender, e-money, cryptocurrency, a deposit, a bank account balance, or stored value outside the Service. It is not transferable, withdrawable, or redeemable for cash except where required by law or expressly approved by us as a refund under these Terms.
 
-**Balances.** Your wallet may include:
+**Balances.** Your account may hold two types of credit:
 
 - **Quest balance:** credit earned from quests, contribution rewards, free grants, promotional credits, manual credits, and developer earnings credited from Quest balance usage. The Quest balance does not create an entitlement to future credits, fixed grant amounts, or fixed grant timing.
 - **Paid balance:** purchased credit and developer earnings credited from paid balance usage. Your paid balance refills automatically only if you enable auto top-up.
 
-**Wallet inactivity.** Effective **2026-06-01**, if your account remains inactive for 12 consecutive months, any remaining balance in your wallet (Quest balance and paid balance) will expire. For balances held before that date, the inactivity clock starts on 2026-06-01, so every existing user gets a full 12-month window from the effective date. Signing in, making API requests, or topping up counts as activity and resets the inactivity clock.
+**Account inactivity.** Effective **2026-06-01**, if your account remains inactive for 12 consecutive months, any remaining Quest balance and paid balance will expire. For balances held before that date, the inactivity clock starts on 2026-06-01, so every existing user gets a full 12-month window from the effective date. Signing in, making API requests, or topping up counts as activity and resets the inactivity clock.
 
 **Request billing.** Your balance is consumed when API requests run. Regular models draw from the Quest balance first; paid-only models draw from the paid balance only. We may refuse requests when the available balance can't cover them. If actual usage exceeds our estimate, the balance that paid for the request may briefly go negative and clears through later credits to that balance or top-ups.
 
@@ -84,7 +84,7 @@ Fees are per plan/order/invoice; currency is by default USD. Top-ups, including 
 
 **Developer earnings.** App developers may enable developer earnings on their Publishable App Keys, in which case authorized requests include a markup that goes to the developer. The current rate and the user's share are shown before authorization.
 
-Developer earnings are credited to the developer wallet in the same balance type the user paid from. They are not cash payouts and are not transferable, withdrawable, or redeemable outside the Service. We may review and adjust developer earnings for refunds, chargebacks, fraud, abuse, pricing errors, self-crediting (using your own app to inflate your earnings), or other billing corrections.
+Developer earnings are credited to the developer’s Quest or paid balance, matching the balance the user paid from. They are not cash payouts and are not transferable, withdrawable, or redeemable outside the Service. We may review and adjust developer earnings for refunds, chargebacks, fraud, abuse, pricing errors, self-crediting (using your own app to inflate your earnings), or other billing corrections.
 
 **Taxes.** Prices for top-ups are shown exclusive of tax. Applicable VAT or similar transaction taxes are calculated and added at checkout based on your billing details. Estonian standard VAT is 24% where applicable. For eligible EU B2B customers with a valid VAT ID, reverse-charge rules may apply.
 

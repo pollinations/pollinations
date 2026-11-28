@@ -1,5 +1,5 @@
 import { POLLI_CLIENT } from "./client.js";
-import { BASE_URL, resolveApiKey } from "./config.js";
+import { BASE_URL, ENTER_URL, resolveApiKey } from "./config.js";
 import { fail, printError } from "./output.js";
 
 export class ApiError extends Error {
@@ -11,6 +11,20 @@ export class ApiError extends Error {
         super(message);
         this.name = "ApiError";
     }
+}
+
+/** Show the server's recovery instructions, including the link for this key. */
+export function paymentHint(status: number, body: string): string | null {
+    if (status !== 402) return null;
+    try {
+        const result = JSON.parse(body);
+        const message = result?.error?.message ?? result?.message;
+        if (typeof message === "string" && message.trim())
+            return message.trim();
+    } catch {
+        if (body.trim()) return body.trim();
+    }
+    return `Payment required. Check your balance and key budget at ${ENTER_URL}`;
 }
 
 export const requireKey = (): string => {
@@ -74,7 +88,8 @@ const send = async (
         const text = await res.text().catch(() => "Unknown error");
         throw new ApiError(
             res.status,
-            permissionHint(res.status, text) ??
+            paymentHint(res.status, text) ??
+                permissionHint(res.status, text) ??
                 `${res.status} ${res.statusText}: ${text}`,
             text,
         );

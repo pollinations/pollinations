@@ -39,11 +39,11 @@ import { genDocsUrl } from "../config.ts";
 import { generateFunName } from "../lib/fun-name.ts";
 import { ModelFormRow } from "./community-endpoints/model-form-row.tsx";
 import { ResourceConfirmationContent } from "./community-endpoints/resource-confirmation-content.tsx";
-import { readError } from "./community-endpoints/types.ts";
 import { CopyDocs } from "./copy-docs.tsx";
 import { LoadError, SectionContent } from "./layout/dashboard-loading.tsx";
 import { ResourceDialog } from "./layout/resource-dialog.tsx";
 import { Footnotes } from "./pollen/pollen-balance.tsx";
+import { type SandboxError, sandboxError } from "./sandbox-error.ts";
 import {
     amount,
     LAUNCH_DISCOUNT,
@@ -112,15 +112,10 @@ type Pending =
     | { action: "limit"; sandbox: Sandbox }
     | { action: "kill"; sandbox: Sandbox };
 
-// Gen takes the balance 10 minutes at a time and refuses a step the wallet
-// can't pay with 402.
-const NO_POLLEN = "Your balance is too low for the next 10 minutes.";
-
 async function e2b<T>(path: string, method = "GET", body?: unknown) {
     const response = await genFetch(`${E2B_PATH}${path}`, { method, body });
-    // Gen's 402 message is for API callers, with a top-up URL to follow.
-    if (response.status === 402) throw new Error(NO_POLLEN);
-    if (!response.ok) throw new Error(await readError(response));
+    if (!response.ok)
+        throw await sandboxError(response, window.location.origin);
     // Pause and kill answer 204 with no body.
     const text = await response.text();
     return (text ? JSON.parse(text) : undefined) as T;
@@ -500,7 +495,7 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
     // be running and using balance.
     const [loadError, setLoadError] = useState<string | null>(null);
     const [listError, setListError] = useState<string | null>(null);
-    const [actionError, setActionError] = useState<string | null>(null);
+    const [actionError, setActionError] = useState<SandboxError | null>(null);
     const [busyId, setBusyId] = useState<string | null>(null);
     const [pending, setPending] = useState<Pending | null>(null);
     const [amount, setAmount] = useState("1");
@@ -550,7 +545,7 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
             await action();
         } catch (error) {
             setActionError(
-                error instanceof Error ? error.message : "Request failed.",
+                error instanceof Error ? error : new Error("Request failed."),
             );
         } finally {
             setBusyId(null);
@@ -675,11 +670,13 @@ export function Sandboxes({ signedIn }: { signedIn: boolean }) {
     const hasSandboxes = !!pricing && sandboxes.length > 0;
     const actionAlert = actionError && (
         <Alert intent="danger">
-            {actionError}
-            {actionError === NO_POLLEN && (
+            {actionError.message}
+            {actionError.recovery && (
                 <>
                     {" "}
-                    <InlineLink href="/pollen">Top up</InlineLink>
+                    <InlineLink href={actionError.recovery.href}>
+                        {actionError.recovery.label}
+                    </InlineLink>
                 </>
             )}
         </Alert>

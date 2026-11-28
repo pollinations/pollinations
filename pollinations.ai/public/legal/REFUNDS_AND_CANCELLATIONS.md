@@ -1,6 +1,6 @@
 # Refunds & Cancellations
 
-**Updated: 2026-11-17**
+**Updated: 2026-11-28**
 
 ## Refunds & Cancellations (digital API services & credit)
 
@@ -10,7 +10,7 @@
 
 Your balance is in-service credit, counted in US dollars, used only for Pollinations API usage. We previously called it "Pollen". It is not legal tender, e-money, cryptocurrency, a deposit, a bank account balance, or stored value outside the Service. It is not transferable, withdrawable, or redeemable for cash except where required by law or expressly approved by us as a refund.
 
-Your wallet may include:
+Your account may hold two types of credit:
 
 - **Quest balance:** credit earned from quests, contribution rewards, free grants, promotional credits, manual credits, and developer earnings from Quest balance usage.
 - **Paid balance:** purchased credit and developer earnings from paid balance usage.

@@ -1463,11 +1463,10 @@ test("ports of team sandboxes without a Pollinations owner are not forwarded", a
     expect(e2b.portRequests).toEqual([]);
 });
 
-test("an unshared port is served like E2B's own host and wakes nothing, nor do a gone sandbox or a payer who can't pay", async () => {
+test("an unshared port is served like E2B's own host and wakes nothing, nor does a gone sandbox", async () => {
     const e2b = stubE2b();
     const db = drizzle(env.DB);
     const owner = await sandboxKey();
-    const broke = await sandboxKey(0);
     const created = await createSandbox(owner.key);
     const { sandboxID } = await created.json<{ sandboxID: string }>();
     const host = `4000-${sandboxID}.pollinations.app`;
@@ -1521,26 +1520,125 @@ test("an unshared port is served like E2B's own host and wakes nothing, nor do a
         404,
     );
     expect(await db.select().from(sandboxPort)).toEqual([]);
-
-    e2b.sandboxes.push({
-        sandboxID: "asleep",
-        startedAt: inSeconds(-600),
-        endAt: inSeconds(-300),
-        cpuCount: 2,
-        memoryMB: 512,
-        state: "paused",
-        metadata: { pollinations_user: broke.userId },
-    });
-    expect((await sharePort(broke.key, "asleep", 4002)).status).toBe(200);
-    const refused = await visit("4002-asleep.pollinations.app");
-    expect(refused.status).toBe(402);
-    expect(await refused.text()).toMatch(
-        /^This sandbox is asleep and could not be woken: Insufficient balance\..*Top up at https:\/\//,
-    );
-    expect(e2b.sandboxes.at(-1)?.state).toBe("paused");
-    expect(e2b.portRequests).toHaveLength(4);
-    expect(await questPollen(broke.userId)).toBe(0);
 });
+
+test.each(
+    [
+        {
+            reason: "INSUFFICIENT_BALANCE",
+            tierBalance: 0.0003,
+            packBalance: 0.0004,
+            budget: 1,
+            path: "/top-up",
+            ownerDetails: ["One balance must cover"],
+            accountAmounts: ["$0.0003", "$0.0004"],
+        },
+        {
+            reason: "KEY_BUDGET_EXHAUSTED",
+            tierBalance: 1,
+            packBalance: 0,
+            budget: 0.0007,
+            path: "/edit-key",
+            ownerDetails: ["$0.0007"],
+            accountAmounts: [],
+        },
+        {
+            reason: "QUEST_POLLEN_ONLY",
+            tierBalance: 0.0003,
+            packBalance: 1,
+            budget: 1,
+            path: "/edit-key",
+            ownerDetails: ["Quest balance"],
+            accountAmounts: ["$0.0003"],
+        },
+        {
+            reason: "QUEST_POLLEN_RESTRICTED",
+            tierBalance: 1,
+            packBalance: 0,
+            budget: 1,
+            path: "/top-up",
+            ownerDetails: ["Quest balance", "locked"],
+            accountAmounts: [],
+        },
+    ].flatMap((scenario) =>
+        [false, true].map((usage) => ({ ...scenario, usage })),
+    ),
+)(
+    "a refused wake protects $reason details with account:usage=$usage",
+    async ({
+        reason,
+        tierBalance,
+        packBalance,
+        budget,
+        path,
+        ownerDetails,
+        accountAmounts,
+        usage,
+    }) => {
+        const e2b = stubE2b();
+        const db = drizzle(env.DB);
+        const owner = await createTestApiKey({
+            accountPermissions: usage ? ["machines", "usage"] : ["machines"],
+            pollenBudget: budget,
+            questPollenOnly: reason === "QUEST_POLLEN_ONLY",
+            user: { tierBalance, packBalance },
+        });
+        if (reason === "QUEST_POLLEN_RESTRICTED") {
+            await db
+                .update(user)
+                .set({ questPollenRestricted: true })
+                .where(eq(user.id, owner.userId));
+        }
+        e2b.sandboxes.push({
+            sandboxID: "asleep",
+            startedAt: inSeconds(-600),
+            endAt: inSeconds(-300),
+            cpuCount: 2,
+            memoryMB: 512,
+            state: "paused",
+            metadata: { pollinations_user: owner.userId },
+        });
+        expect((await sharePort(owner.key, "asleep", 4002)).status).toBe(200);
+
+        const visitor = await visit("4002-asleep.pollinations.app");
+        expect(visitor.status).toBe(402);
+        expect(await visitor.text()).toBe(
+            "This sandbox couldn't start. Contact its owner.\n",
+        );
+
+        const retry = await post(owner.key, "/sandboxes/asleep/connect", {
+            timeout: 300,
+        });
+        expect(retry.status).toBe(402);
+        const refusal = await retry.json<{
+            code: number;
+            message: string;
+            reason: string;
+            fixUrl: string;
+        }>();
+        expect(refusal).toMatchObject({ code: 402, reason });
+        const link = new URL(refusal.fixUrl);
+        expect(link.pathname).toBe(path);
+        if (path === "/edit-key")
+            expect(link.searchParams.get("id")).toBe(owner.id);
+        for (const detail of ownerDetails)
+            expect(refusal.message).toContain(detail);
+        for (const amount of accountAmounts)
+            expect(refusal.message.includes(amount)).toBe(usage);
+        expect(e2b.sandboxes[0].state).toBe("paused");
+        expect(e2b.portRequests).toHaveLength(0);
+        expect(e2b.leases()).toHaveLength(0);
+        expect(await getUserBalance(db, owner.userId)).toMatchObject({
+            tierBalance,
+            packBalance,
+        });
+        const [key] = await db
+            .select({ remaining: apikey.pollenBalance })
+            .from(apikey)
+            .where(eq(apikey.id, owner.id));
+        expect(key.remaining).toBe(budget);
+    },
+);
 
 test("an idle timeout is opt-in, needs a kept E2B sandbox, and stays until turned off", async () => {
     const e2b = stubE2b();

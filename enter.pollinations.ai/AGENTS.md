@@ -587,7 +587,7 @@ https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=YOUR_CAL
 | `code_challenge` | PKCE S256 challenge for code flow | `abc...` |
 | `code_challenge_method` | Must be `S256` for code flow | `S256` |
 | `models` | Comma-separated model categories and model IDs; a model ID allows only that model | `text,image` |
-| `budget` | Spending cap in US dollars | `10` |
+| `budget` | Remaining budget in US dollars | `10` |
 | `expiry` | Expiry in days (default: 7) | `7` |
 | `scope` | Account permissions; `permissions` is legacy alias | `profile usage` |
 

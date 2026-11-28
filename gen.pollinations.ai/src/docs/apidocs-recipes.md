@@ -27,7 +27,7 @@ The header is preferred for everything except browser flows that can't set custo
 | `GET /models`, `GET /v1/models`, `GET /image/models`, `GET /text/models`, `GET /audio/models`, `GET /embeddings/models` | None. The model catalogue is public. Sending a bearer key returns the same data; some endpoints add per-account fields when authenticated. |
 | Everything else | Bearer key required unless the endpoint documents `?key=` support |
 
-`401 UNAUTHORIZED` always means key missing or invalid. `402 PAYMENT_REQUIRED` means the key authenticated but the account or per-key budget is exhausted. See [Error Responses](#-error-responses).
+`401` means the key is missing or invalid. For a generation `402`, check `error.code` to see which budget or balance blocked the request. See [Error Responses](#-error-responses).
 
 <a name="-pollinations-connect-oauth-21"></a>
 

@@ -158,7 +158,7 @@ function TopUpPage() {
             <AuthFlowScreen
                 footnote="help"
                 title="Top-up"
-                error="Couldn’t load your wallet."
+                error="Couldn’t load your balance."
                 errorPaths={[BALANCE_PATH]}
                 balance={wallet}
                 topUpHref={null}

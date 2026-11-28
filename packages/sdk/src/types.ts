@@ -867,7 +867,7 @@ export interface AuthorizeOptions {
     authBaseUrl?: string;
     /** Model categories (e.g. `image`, `text`) or model IDs the key can use; a model ID allows only that model */
     models?: string[];
-    /** Spending cap in US dollars. Omit for the default cap. */
+    /** Remaining budget in US dollars. Omit to use the default. */
     budget?: number;
     /** Key lifetime in days (default: 30) */
     expiry?: number;

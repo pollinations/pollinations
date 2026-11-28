@@ -6,7 +6,7 @@ import {
 import { getFundedUserBalance } from "@shared/billing/internal-automation.ts";
 import { withByopMarkup } from "@shared/billing/markup.ts";
 import { PaymentRequiredError } from "@shared/http/payment-required-error.ts";
-import { isFreeModel } from "@shared/registry/registry.ts";
+import { isFlatRateModel, isFreeModel } from "@shared/registry/registry.ts";
 import { getModelStats } from "@shared/utils/model-stats.ts";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
@@ -18,7 +18,7 @@ import type { BalanceVariables } from "@/middleware/balance.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import { getEstimatedPrice } from "@/utils/model-stats.ts";
-import { keyBudgetExhausted, requireFunds } from "@/utils/refusals.ts";
+import { keyReservationFailed, requireFunds } from "@/utils/refusals.ts";
 import { enforceModelRateLimit } from "./model-rate-limit.ts";
 
 type GenerationAccessVariables = AuthVariables &
@@ -43,8 +43,9 @@ export async function checkBalance(
     if (!auth.user?.id) return;
 
     const isPaidOnly = model.definition.paidOnly;
+    const requestPrice = balance.requestPrice?.(model);
     const estimatedCost = withByopMarkup(
-        balance.requestPrice?.(model) ??
+        requestPrice ??
             getEstimatedPrice(
                 await getModelStats(env.KV, log),
                 model.resolved,
@@ -57,8 +58,14 @@ export async function checkBalance(
         { var: vars, env },
         estimatedCost,
         () => balance.getBalance(userId),
-        isPaidOnly,
-        isFreeModel(model.definition),
+        {
+            paidOnly: isPaidOnly,
+            free: isFreeModel(model.definition),
+            realtimeMedian:
+                model.definition.category === "realtime" &&
+                requestPrice === undefined &&
+                !isFlatRateModel(model.definition),
+        },
     );
 
     balance.balanceCheckResult = createBalanceCheckResult(
@@ -101,10 +108,7 @@ export async function reserveApiKeyBudget(
         amount - reserved,
     );
     if (!reservation.ok) {
-        throw keyBudgetExhausted(
-            { var: vars, env },
-            "API key budget was exhausted by another request; try again once it settles.",
-        );
+        throw keyReservationFailed({ var: vars, env });
     }
     vars.balance.apiKeyReservation = {
         apiKeyId,

@@ -2,10 +2,9 @@ import { writeFileSync } from "node:fs";
 import { createInterface } from "node:readline";
 import chalk from "chalk";
 import { Command } from "commander";
-import { requireKey } from "../../lib/api.js";
+import { paymentHint, requireKey } from "../../lib/api.js";
 import { POLLI_CLIENT } from "../../lib/client.js";
 import { BASE_URL } from "../../lib/config.js";
-import { budgetHint } from "../../lib/errors.js";
 import { numberOption } from "../../lib/number-option.js";
 import { getOutputMode, printError, printResult } from "../../lib/output.js";
 import { streamSSE, throwIfFailed } from "../../lib/stream.js";
@@ -98,7 +97,7 @@ export function createChatCommand() {
 
                     if (!res.ok) {
                         const errText = await res.text().catch(() => "");
-                        const hint = await budgetHint(res.status, errText);
+                        const hint = paymentHint(res.status, errText);
                         if (hint) {
                             printError(hint);
                             stopped = true;

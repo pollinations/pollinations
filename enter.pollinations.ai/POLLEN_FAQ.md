@@ -4,7 +4,7 @@
 
 Pollinations is prepaid: you add credit to your balance, and each generation spends from it according to the selected model's price and usage. Prices and balances are shown in dollars.
 
-Your balance stays inside your Pollinations wallet. It is not transferable between accounts or redeemable outside Pollinations.
+Credit cannot be transferred between accounts or redeemed outside Pollinations.
 
 ## 🧩 Is Pollinations a coding tool or app builder?
 
@@ -39,9 +39,9 @@ Quests pay for eligible account activity and community contributions.
 
 Quest availability and amounts can change, so the dashboard and the linked issue are the source of truth.
 
-## 👛 How does my wallet work? {#how-does-my-pollen-wallet-work}
+## Which balance pays for a request? {#how-does-my-pollen-wallet-work}
 
-Your wallet has two balances:
+Your account has two balances:
 
 - 🌱 **Quest balance**: earned from Quests and eligible developer earnings.
 - 💳 **Paid balance**: purchased through Stripe and eligible developer earnings.
@@ -71,7 +71,7 @@ All traffic remains subject to platform abuse protection and any model-specific 
 
 ## 🔌 What is Pollinations Pay?
 
-Pollinations Pay, also called BYOP, lets users authorize an application to spend from their own wallet.
+With Pollinations Pay (BYOP), users authorize an app to pay for requests from their Pollinations balance.
 
 For app developers:
 

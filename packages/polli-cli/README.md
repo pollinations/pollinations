@@ -30,7 +30,7 @@ Every command is agent-friendly:
 
 - `--json` — structured stdout, human messages to stderr. Safe to parse.
 - Exit code `0` on success, non-zero on error.
-- A 402 error links to your balance, Quests, and top-up options.
+- A generation budget refusal explains which limit blocked the request and how to resolve it.
 - `polli auth status --json` (or `polli whoami --json`) exposes everything about the current session.
 
 ## Other ways to start
@@ -224,7 +224,7 @@ keeps its history while the editor runs.
 
 ## Sandboxes
 
-Linux VMs on E2B or Azure, paid from your wallet (alpha).
+Linux VMs on E2B or Azure, billed to your Pollinations balance (alpha).
 
 ```bash
 polli sandbox create              # prints the id and sets up ssh

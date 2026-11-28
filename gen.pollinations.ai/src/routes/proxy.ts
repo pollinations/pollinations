@@ -33,6 +33,7 @@ import {
 const resolver = <T extends Parameters<typeof baseResolver>[0]>(schema: T) =>
     baseResolver(schema, { reused: "ref" });
 
+import { createErrorResponseSchema } from "@shared/error.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { AUDIO_VOICES } from "@shared/registry/audio.ts";
 import {
@@ -175,22 +176,38 @@ function describeRealtimeWebSocket(path: "/realtime" | "/v1/realtime") {
             "",
             `**Models:** ${REALTIME_MODEL_NAMES.map((model) => `\`${model}\``).join(", ")}.`,
             "",
-            "**Billing:** requires a positive balance and settles one session total when the socket closes.",
+            "The handshake checks the account balance and key budget. A budgeted key reserves the estimate until the session closes. Billing is based on actual usage. A budget refusal returns HTTP 402 without a charge.",
         ].join("\n"),
         responses: {
             101: {
                 description: "WebSocket connection established",
             },
-            ...errorResponseDescriptions(
-                400,
-                401,
-                402,
-                403,
-                426,
-                429,
-                500,
-                503,
-            ),
+            ...errorResponseDescriptions(401, 402, 403, 429, 500, 503),
+            400: {
+                description:
+                    "Invalid request or failed WebSocket handshake. A provider can return its own error body.",
+                content: {
+                    "application/json": {
+                        schema: resolver(
+                            z.union([
+                                createErrorResponseSchema(400),
+                                z.object({
+                                    error: z.object({
+                                        code: z.string(),
+                                        message: z.string(),
+                                    }),
+                                }),
+                            ]),
+                        ),
+                    },
+                },
+            },
+            426: {
+                description: "Send a WebSocket upgrade to open a session.",
+                content: {
+                    "text/plain": { schema: { type: "string" as const } },
+                },
+            },
         },
     });
 }

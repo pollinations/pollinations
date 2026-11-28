@@ -34,7 +34,7 @@ The directory is public, so no extra permission is required (the same as `/accou
 - Budgeted API keys always get the key's remaining budget in `balance` (no extra scope).
 - Sessions and unbudgeted keys get the account total (Quest balance + paid balance) in `balance`. That path requires `account:usage` for API keys.
 
-When the caller can view account usage (dashboard session or `account:usage`), the response also includes `accountBalance: { total, tier, paid }` so clients can see the Quest balance and the paid balance separately. Budgeted keys without `account:usage` do **not** receive `accountBalance`, which would expose the owner's wallet.
+When the caller can view account usage (dashboard session or `account:usage`), the response also includes `accountBalance: { total, tier, paid }` so clients can see the Quest balance and the paid balance separately. For budgeted keys without `account:usage`, the response contains only the key’s remaining budget.
 
 Amounts are in US dollars: a `balance` of `12.5` is $12.50. Fields and values named `pollen`, such as `currency: "pollen"` in model pricing, are US dollars too.
 

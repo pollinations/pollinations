@@ -141,7 +141,10 @@ describe("connectRealtime", () => {
         vi.stubGlobal("WebSocket", FakeSocket);
         const connected = connectRealtime({ apiKey: "sk_test" });
         socket().close(1006, "");
-        await expect(connected).rejects.toThrow(/closed before opening/);
+        await expect(connected).rejects.toMatchObject({
+            code: "REALTIME_CONNECT_FAILED",
+            message: expect.stringContaining("key budget, and account balance"),
+        });
     });
 
     it("closes the socket when the signal is aborted", async () => {

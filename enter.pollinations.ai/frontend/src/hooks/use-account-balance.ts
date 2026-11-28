@@ -12,9 +12,10 @@ export const BALANCE_PATH = "/account/balance";
 
 export async function fetchAccountBalance(): Promise<AccountBalance> {
     const response = await accountClient.balance.$get();
-    if (!response.ok) throw new Error("Failed to load wallet");
+    if (!response.ok) throw new Error("Couldn’t load your balance.");
     const data = await response.json();
-    if (!("accountBalance" in data)) throw new Error("Failed to load wallet");
+    if (!("accountBalance" in data))
+        throw new Error("Couldn’t load your balance.");
     return {
         tierBalance:
             data.accountBalance.tier + (data.accountBalance.heldTier ?? 0),

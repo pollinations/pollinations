@@ -72,7 +72,7 @@ MCP: `https://gen.pollinations.ai/mcp/pollinations` → stateless Streamable HTT
 
 ## Sandboxes
 
-Linux computers from E2B, paid per second from the wallet while they run (alpha). Before answering about sandbox sizes, prices, pausing, keeping one running, ssh or the E2B SDKs, fetch the current docs: `https://gen.pollinations.ai/docs/llm.txt?section=sandboxes`.
+Linux computers from E2B, billed to the account balance per running second (alpha). Before answering about sandbox sizes, prices, pausing, keeping one running, ssh or the E2B SDKs, fetch the current docs: `https://gen.pollinations.ai/docs/llm.txt?section=sandboxes`.
 
 ## Image Params
 

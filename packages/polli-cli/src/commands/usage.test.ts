@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { setKeyOverride } from "../lib/config.js";
 import { setOutputMode } from "../lib/output.js";
 import {
+    createUsageCommand,
     filterDailyRows,
     isKeyId,
     resolveKeyIds,
@@ -9,7 +10,6 @@ import {
     tokensIn,
     tokensOut,
     type UsageKeyInfo,
-    usageCommand,
 } from "./usage.js";
 
 const keys: UsageKeyInfo[] = [
@@ -254,7 +254,10 @@ describe("usage command output", () => {
                 return Response.json({ usage: [record], count: 1 });
             return Response.json(balanceBody);
         });
-        await usageCommand.parseAsync(args, { from: "user" });
+        // A fresh Command per run: commander keeps parsed option values on the
+        // instance, so a shared one would leak --daily/--model/--csv/--limit
+        // into the next invocation and stop the tests measuring one call.
+        await createUsageCommand().parseAsync(args, { from: "user" });
         return writes.join("");
     }
 

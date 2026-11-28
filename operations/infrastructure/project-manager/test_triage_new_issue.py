@@ -43,7 +43,8 @@ class TriageTest(unittest.TestCase):
         reply, reason = decision(answer, self.evidence)
         self.assertEqual(reply, f"Covered by the open report. Keep `[DONE]`.\n\n[issue-42]({url})")
         self.assertIsNone(reason)
-        for own_link in ("[Evidence](issue-42)", "Already tracked in #42.", f"See {url} for details."):
+        for own_link in ("[Evidence](issue-42)", "Already tracked in #42.", f"See {url} for details.",
+                         "Tracked in pollinations/pollinations#42.", "Tracked in GH-42."):
             with self.subTest(own_link=own_link), self.assertRaises(ValueError):
                 decision({**answer, "comment": own_link}, self.evidence)
 
@@ -54,6 +55,19 @@ class TriageTest(unittest.TestCase):
                 self.assertEqual(decision({**answer, "sensitive": True}, self.evidence), (None, None))
                 with self.assertRaises(ValueError):
                     decision(answer, self.evidence)
+
+    def test_report_longer_than_the_model_reads_is_left_alone(self):
+        issue = {"number": 41, "title": "Audit", "body": "x" * 12000 + " and a way to avoid charges", "state": "open",
+                 "labels": [], "user": {"login": "reporter", "type": "User"}}
+        session = Mock(headers={})
+        session.get.return_value.json.return_value = issue
+        with patch.dict(os.environ, {"ISSUE_NUMBER": "41", "GH_TOKEN": "test", "DRY_RUN": ""}), \
+             patch("triage_new_issue.requests.Session", return_value=session), \
+             patch("triage_new_issue.ask_ai") as model:
+            main()
+        model.assert_not_called()
+        session.post.assert_not_called()
+        session.patch.assert_not_called()
 
     def test_exhausted_inference_fails_but_an_explicit_skip_passes(self):
         issue = {"number": 41, "title": "Timeout", "body": "", "state": "open",

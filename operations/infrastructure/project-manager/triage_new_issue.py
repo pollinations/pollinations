@@ -13,6 +13,8 @@ from project_manager import ask_ai
 REPO = "pollinations/pollinations"
 API = f"https://api.github.com/repos/{REPO}"
 SKIP_LABELS = {"POLLI", "APP-SUBMISSION", "BEE-CENSUS", "HONEY-CENSUS"}
+# A longer report is left to a maintainer: its impact may sit past what the model reads.
+MAX_BODY = 12000
 # Markdown and the routes that serve the API reference and its static examples.
 DOCUMENTATION = re.compile(r"\.md$|/routes/[\w-]*docs[\w-]*\.ts$")
 SEARCH_PROMPT = """Choose search terms for investigating this GitHub issue.
@@ -150,8 +152,8 @@ def decision(verdict, evidence):
     comment = re.sub(r"\s*\[[^\]]*\]\([^)]*\)|\s*\[[^\]]*#L\d+[^\]]*\]", "", comment).strip()
     if not comment:
         raise InvalidModelAnswer("Missing reply")
-    # GitHub links a bare URL or #123 by itself, so either would be a second, unchecked link.
-    if re.search(r"https?://|(?<![\w/])#\d+", comment):
+    # GitHub links URLs, #123, owner/repo#123 and GH-123 by itself: a second, unchecked link.
+    if re.search(r"https?://|\bwww\.|#\d+|\bGH-\d+", comment, re.I):
         raise InvalidModelAnswer("Reply contains its own link")
     if source:
         comment += f'\n\n[{source}]({evidence[source]["url"]})'
@@ -174,7 +176,11 @@ def main():
     if not eligible(issue) or (not preview and issue["state"] != "open"):
         print(f"Skipping #{number}")
         return
-    item = {"number": number, "title": issue["title"], "body": (issue["body"] or "")[:3000]}
+    body = issue["body"] or ""
+    if len(body) > MAX_BODY:
+        print(f"Skipping #{number}: report too long to assess in full")
+        return
+    item = {"number": number, "title": issue["title"], "body": body}
     try:
         terms = ask_ai(SEARCH_PROMPT, json.dumps(item))
         if terms is None:

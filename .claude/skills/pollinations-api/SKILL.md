@@ -85,6 +85,20 @@ its permissions are `0600`. The user can revoke the issued key on the
 options and the browser consent details, see
 [Pollinations Pay](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md#️-clis--headless-apps-device-flow).
 
+### Recover from a rejected saved key
+
+The device key can expire or be revoked; the presence of the private file does
+not mean its key is still valid. If an authenticated request returns `401`,
+do not repeatedly reuse the file or retry the paid request. Check that the
+correct key was selected and that the user did not revoke it. If the user
+wants a fresh device login, move the stale file out of the way in the same
+private directory, clear `POLLINATIONS_API_KEY` in the current shell, and run
+the device-authorization block above again. The user must approve the new
+authorization in their browser. Once the fresh key works, the user can remove
+the old file. Never print either key or commit it to a project. For a key
+provided independently through `POLLINATIONS_API_KEY`, ask its owner to replace
+it; do not move an unrelated file.
+
 ## No one to approve: buy a prepaid key with x402
 
 An agent with USDC on Base can buy a key without a Pollinations account. Spend
@@ -143,3 +157,4 @@ curl "https://gen.pollinations.ai/audio/Hello%20world?voice=nova" \
   (per-section: `?section=cli`, `?section=mcp`).
 - OpenAPI schema: `https://gen.pollinations.ai/openapi.json`.
 - Interactive docs: `https://gen.pollinations.ai/docs`.
+

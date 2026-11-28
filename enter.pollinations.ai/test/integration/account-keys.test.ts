@@ -824,6 +824,76 @@ describe("Account Key Management API", () => {
             expect((await call(child.key, "/key", "GET")).status).toBe(401);
         });
 
+        test("a key with a stale model can still be edited within the caller's limits", async ({
+            accountToken,
+        }) => {
+            const caller = await (
+                await call(accountToken, "/keys", "POST", {
+                    name: "limited",
+                    accountPermissions: ["keys"],
+                    allowedModels: ["text"],
+                    pollenBudget: 5,
+                    expiresIn: 3600,
+                })
+            ).json();
+            const target = await (
+                await call(accountToken, "/keys", "POST", {
+                    name: "stale-model",
+                    accountPermissions: ["keys"],
+                    allowedModels: ["text"],
+                    pollenBudget: 1,
+                    expiresIn: 60,
+                })
+            ).json();
+            // Simulate a model that left the catalog after the key was created.
+            await drizzle(env.DB)
+                .update(schema.apikey)
+                .set({
+                    permissions: JSON.stringify({
+                        account: ["keys"],
+                        models: ["text", "removed/model"],
+                    }),
+                })
+                .where(eq(schema.apikey.id, target.id));
+
+            const updated = await call(
+                caller.key,
+                `/keys/${target.id}`,
+                "PATCH",
+                { allowedModels: ["text"] },
+            );
+            expect(updated.status).toBe(200);
+            expect((await updated.json()).permissions.models).toEqual(["text"]);
+        });
+
+        test("a child key drops a caller's stale model instead of inheriting it", async ({
+            accountToken,
+        }) => {
+            const caller = await (
+                await call(accountToken, "/keys", "POST", {
+                    name: "stale-caller",
+                    accountPermissions: ["keys"],
+                    allowedModels: ["text"],
+                    expiresIn: 3600,
+                })
+            ).json();
+            await drizzle(env.DB)
+                .update(schema.apikey)
+                .set({
+                    permissions: JSON.stringify({
+                        account: ["keys"],
+                        models: ["text", "removed/model"],
+                    }),
+                })
+                .where(eq(schema.apikey.id, caller.id));
+
+            const child = await call(caller.key, "/keys", "POST", {
+                name: "child",
+            });
+            expect(child.status).toBe(200);
+            expect((await child.json()).permissions.models).toEqual(["text"]);
+        });
+
         test("a Quest Pollen only key can't revoke a key that spends paid Pollen", async ({
             accountToken,
         }) => {

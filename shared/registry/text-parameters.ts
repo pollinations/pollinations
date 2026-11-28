@@ -458,6 +458,22 @@ export const CHAT_PARAMETERS = {
         ...OPENROUTER_REASONING,
         "reasoning_effort",
     ],
+    // OpenRouter's Ling 3.2 Flash list (2026-11-27): no repetition_penalty or
+    // reasoning_effort, unlike Ling 3.1.
+    openRouterLing32: [
+        "max_tokens",
+        "stream",
+        ...TOOLS,
+        "temperature",
+        "top_p",
+        "top_k",
+        ...PENALTIES,
+        "stop",
+        "seed",
+        "response_format",
+        "structured_outputs",
+        ...OPENROUTER_REASONING,
+    ],
     // OpenRouter Nex AGI bf16 tag for Nex-N2.5-Mini (2026-10-03); the endpoint has no tool support.
     openRouterNexMini: [
         "max_tokens",

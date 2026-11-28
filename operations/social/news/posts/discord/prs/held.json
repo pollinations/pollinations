@@ -120,11 +120,6 @@
         "deploy-cloudflare-production.yml:deploy-gen",
         "deploy-cloudflare-production.yml:deploy-media"
       ]
-    },
-    "20693": {
-      "merge_sha": "27803d3cc5e2d9ee2906e9ba41a41ab7d4929d6a",
-      "merged_at": "2026-11-28T10:48:32Z",
-      "required": []
     }
   },
   "production": "5cc6dbcd806b010835af3254d1894d032ac35562",

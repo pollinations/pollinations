@@ -5,30 +5,12 @@ import type { FC } from "react";
 import { useEffect, useState } from "react";
 import faqMarkdown from "../../../../POLLEN_FAQ.md?raw";
 import { PollenExamples } from "../models/pollen-examples.tsx";
+import { parseHeading } from "./faq-heading.ts";
 
 type FAQItem = {
-    id: string;
+    anchors: string[];
     question: string;
     answer: string;
-};
-
-// Generate URL-friendly slug from question text
-const generateSlug = (text: string): string => {
-    return text
-        .toLowerCase()
-        .replace(/[^\w\s-]/g, "") // Remove special chars
-        .replace(/\s+/g, "-") // Replace spaces with hyphens
-        .replace(/-+/g, "-") // Replace multiple hyphens with single
-        .replace(/^-+|-+$/g, "") // Remove leading/trailing hyphens
-        .trim();
-};
-
-// A heading can pin its anchor with a trailing {#id}, so renaming a
-// question keeps links that already point at it.
-const parseHeading = (heading: string) => {
-    const pinned = heading.match(/^(.*?)\s*\{#([\w-]+)\}$/);
-    const question = pinned ? pinned[1] : heading;
-    return { question, id: pinned ? pinned[2] : generateSlug(question) };
 };
 
 // Parse markdown content into FAQ items
@@ -81,7 +63,7 @@ export const FAQ: FC<FAQProps> = ({ showTitle = true }) => {
     const navigate = useNavigate();
 
     const toggleQuestion = (index: number) => {
-        const slug = faqData[index]?.id ?? "";
+        const { anchors } = faqData[index];
         const isOpen = openIndices.has(index);
         setOpenIndices((prev) => {
             const next = new Set(prev);
@@ -92,10 +74,10 @@ export const FAQ: FC<FAQProps> = ({ showTitle = true }) => {
             }
             return next;
         });
-        if (!isOpen || hash === slug) {
+        if (!isOpen || anchors.includes(hash)) {
             void navigate({
                 to: "/news",
-                hash: isOpen ? "" : slug,
+                hash: isOpen ? "" : anchors[0],
             });
         }
     };
@@ -103,12 +85,12 @@ export const FAQ: FC<FAQProps> = ({ showTitle = true }) => {
     // Auto-expand FAQ item when navigating via anchor link
     useEffect(() => {
         if (!hash) return;
-        const index = faqData.findIndex((item) => item.id === hash);
+        const index = faqData.findIndex((item) => item.anchors.includes(hash));
         if (index === -1) return;
 
         setOpenIndices((prev) => new Set(prev).add(index));
         const timeout = window.setTimeout(() => {
-            document.getElementById(hash)?.scrollIntoView({
+            document.getElementById(faqData[index].anchors[0])?.scrollIntoView({
                 behavior: "smooth",
                 block: "start",
             });
@@ -125,7 +107,7 @@ export const FAQ: FC<FAQProps> = ({ showTitle = true }) => {
             )}
             <div className="flex flex-col gap-4">
                 {faqData.map((item, index) => {
-                    const questionId = item.id;
+                    const questionId = item.anchors[0];
                     return (
                         <Surface
                             key={item.question}
@@ -157,9 +139,10 @@ export const FAQ: FC<FAQProps> = ({ showTitle = true }) => {
                                     className="mt-3 flex flex-col gap-3 text-theme-text-base"
                                 >
                                     <Markdown>{item.answer}</Markdown>
-                                    {item.question.includes(
-                                        "What can I create with Pollinations",
-                                    ) && <PollenExamples />}
+                                    {questionId ===
+                                        "how-much-does-a-generation-cost" && (
+                                        <PollenExamples />
+                                    )}
                                 </div>
                             )}
                         </Surface>

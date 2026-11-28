@@ -1973,7 +1973,9 @@ test.for([
                 8,
             );
         } else {
-            expect(body).toMatch(/paid balance (?:is required|must exceed)/i);
+            expect(body).toMatch(
+                /This model needs a (?:positive )?paid balance/,
+            );
             expect(mocks.responsesDirect.state.requests).toHaveLength(0);
             expect(billed).toHaveLength(0);
             expect(balance.tierBalance).toBe(100);

@@ -111,9 +111,9 @@ describe("billing deduction", () => {
         });
     });
 
-    it("names the paid-only requirement when Quest Pollen cannot cover a model", async () => {
+    it("explains why a funded Quest balance cannot pay for a paid-only model", async () => {
         const userId = await createUser({
-            tierBalance: 0.232,
+            tierBalance: 100,
             packBalance: 0,
         });
         await expect(
@@ -128,7 +128,7 @@ describe("billing deduction", () => {
             errorCode: "INSUFFICIENT_BALANCE",
             paidOnly: true,
             message: expect.stringContaining(
-                "Your paid balance must exceed the starting amount of $0.0001, and you have $0.0000.",
+                "This model needs a paid balance above the estimate ($0.0001) to start, and you have $0.0000.",
             ),
         });
     });
@@ -147,7 +147,7 @@ describe("billing deduction", () => {
             errorCode: "INSUFFICIENT_BALANCE",
             paidOnly: true,
             message: expect.stringContaining(
-                "A positive paid balance is required, and you have $0.0000. Final cost depends on usage.",
+                "This model needs a positive paid balance to start, and you have $0.0000. Final cost depends on usage.",
             ),
         });
     });
@@ -209,10 +209,20 @@ describe("billing deduction", () => {
             });
         await expect(check()).rejects.toMatchObject({
             message: expect.stringContaining(
-                "Your paid balance must exceed the starting amount of $0.01578, and you have $0.01577999.",
+                "This model needs a paid balance above the estimate ($0.01578) to start, and you have $0.01577999.",
             ),
             chatMessage: expect.stringContaining(
-                "Your paid balance must exceed the starting amount of about $0.0158.",
+                "This model needs a paid balance above the estimate (about $0.0158) to start.",
+            ),
+        });
+        await expect(
+            requireFunds({ env, var: {} }, cost, async () => balance, {
+                paidOnly: true,
+                realtimeMedian: true,
+            }),
+        ).rejects.toMatchObject({
+            chatMessage: expect.stringContaining(
+                "This model needs a paid balance above its 7-day median (about $0.0158) to start. Nothing was charged.",
             ),
         });
         balance.packBalance = cost;

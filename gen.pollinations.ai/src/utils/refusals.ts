@@ -86,29 +86,31 @@ export async function requireFunds(
             funds === "paid balance" && showBalances
                 ? `, and you have ${usd(balances[0], cost)}`
                 : "";
+        const noCharge = realtimeMedian ? " Nothing was charged." : "";
         if (cost <= 0) {
+            const usage = free ? "" : " Final cost depends on usage.";
+            if (funds === "paid balance")
+                return `This model needs a positive paid balance to start${remaining}.${usage}${noCharge}`;
             if (free) {
                 return funds === "key budget"
                     ? "Free requests need a key budget of zero or more."
-                    : `Free requests need a positive ${funds}${remaining}.`;
+                    : `Free requests need a positive ${funds}.`;
             }
-            return `A positive ${funds} is required${remaining}. Final cost depends on usage.${realtimeMedian ? " Nothing was charged." : ""}`;
+            return `A positive ${funds} is required.${usage}${noCharge}`;
         }
         const price = showBalances ? usd(cost, ...balances) : usd(cost);
         const rounded =
             price === `$${cost.toFixed(4)}` && Number(cost.toFixed(4)) !== cost;
         const amount = rounded ? `about ${price}` : price;
+        if (funds === "paid balance") {
+            const source = realtimeMedian ? "its 7-day median" : "the estimate";
+            return `This model needs a paid balance above ${source} (${amount}) to start${remaining}.${noCharge}`;
+        }
         if (realtimeMedian) {
-            const threshold =
-                funds === "paid balance"
-                    ? "Your paid balance must exceed"
-                    : "Opening a session needs";
             const source =
                 funds === "Quest or paid balance" ? " in one balance" : "";
-            return `${threshold} ${amount}${source} (7-day median for this model)${remaining}. Nothing was charged.`;
+            return `Opening a session needs ${amount}${source} (7-day median for this model).${noCharge}`;
         }
-        if (funds === "paid balance")
-            return `Your paid balance must exceed the starting amount of ${amount}${remaining}.`;
         if (funds === "Quest or paid balance")
             return `Balance too low. One balance must cover ${amount} to start.`;
         return `This request needs ${amount} to start.`;

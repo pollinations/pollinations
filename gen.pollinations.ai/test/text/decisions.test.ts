@@ -853,7 +853,7 @@ test("rejects Quest-only Liquid D1 calls before reaching the provider", async ({
                 usage: { total_tokens: number };
             };
             expect(notice.choices[0].message.content).toMatch(
-                /paid balance (?:is required|must exceed)/i,
+                /This model needs a (?:positive )?paid balance/,
             );
             expect(notice.usage.total_tokens).toBe(0);
             expect(response.headers.get("cache-control")).toBe(

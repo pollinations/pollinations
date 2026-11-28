@@ -202,7 +202,7 @@ describe("BYOP markup", () => {
         const refusedAt = (price: string) => ({
             status: 402,
             message: expect.stringContaining(
-                `must exceed the starting amount of ${price}`,
+                `paid balance above the estimate (${price}) to start`,
             ),
         });
 

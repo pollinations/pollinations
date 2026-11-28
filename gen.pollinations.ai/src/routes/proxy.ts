@@ -759,7 +759,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "Metadata is passed unchanged to endpoint agents; see the agent’s documentation for supported keys.",
                 "",
-                "Identical requests may be answered from a shared cache, also for callers without an API key. Change the prompt or `seed` to get a new answer.",
+                "Identical requests may be answered from a shared cache. Change the prompt or `seed` to get a new answer.",
                 "",
                 mediaResponseDescription,
             ].join("\n"),
@@ -941,7 +941,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "Use `/v1/chat/completions` when you need the full OpenAI-compatible JSON response.",
                 "",
-                "Identical requests may be answered from a shared cache, also for callers without an API key. Change the prompt or `seed` to get a new answer.",
+                "Identical requests may be answered from a shared cache. Change the prompt or `seed` to get a new answer.",
             ].join("\n"),
             responses: {
                 200: {
@@ -971,7 +971,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "This is a simplified alternative to the OpenAI-compatible `/v1/chat/completions` endpoint for quick prototyping or simple integrations.",
                 "",
-                "Identical requests may be answered from a shared cache, also for callers without an API key. Change the prompt or `seed` to get a new answer.",
+                "Identical requests may be answered from a shared cache. Change the prompt or `seed` to get a new answer.",
             ].join("\n"),
             responses: {
                 200: {
@@ -1014,7 +1014,7 @@ export const proxyRoutes = new Hono<Env>()
             description: [
                 "Generate an image from a text prompt. Returns JPEG, PNG, WebP, GIF, or SVG depending on the selected model.",
                 "",
-                "Identical requests may be answered from a shared cache, also for callers without an API key. Change the prompt or `seed` to get a new image.",
+                "Identical requests may be answered from a shared cache. Change the prompt or `seed` to get a new image.",
                 "",
                 `**Available models:** ${imageModelNames}. \`${DEFAULT_IMAGE_MODEL}\` is the default.`,
                 "",

@@ -1,7 +1,7 @@
 import { ContentHeader } from "@pollinations/ui";
 import { Prose } from "@pollinations/ui/markdown";
 import { useLocation } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { type ReactNode, useEffect } from "react";
 import { useAsync } from "../../data/useAsync";
 
 const previousHeadingIds = new Map([
@@ -18,6 +18,7 @@ type LegalPageProps = {
     markdownPath: string;
     /** Used in the failure message, e.g. "privacy policy" */
     errorLabel: string;
+    children?: ReactNode;
 };
 
 /**
@@ -28,7 +29,11 @@ type LegalPageProps = {
  * it clear of the floating menu pill; loading and failure use the same box,
  * so nothing shifts when the text arrives.
  */
-export function LegalPage({ markdownPath, errorLabel }: LegalPageProps) {
+export function LegalPage({
+    markdownPath,
+    errorLabel,
+    children,
+}: LegalPageProps) {
     const hash = useLocation({ select: (location) => location.hash });
     const { data: markdown, failed } = useAsync<string | null>(async () => {
         const response = await fetch(markdownPath);
@@ -64,6 +69,7 @@ export function LegalPage({ markdownPath, errorLabel }: LegalPageProps) {
                         />
                     ) : null}
                     <Prose>{title ? body : markdown}</Prose>
+                    {children}
                 </>
             )}
         </article>

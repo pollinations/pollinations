@@ -18,6 +18,8 @@ import {
 import { getCurrentGenOrigin, wellKnownRoutes } from "./routes/well-known.ts";
 import { handleCodeAgentOutbound } from "./services/code-agent-outbound.ts";
 
+export { RefundBilling } from "./services/refund-billing.ts";
+
 function stripTrailingSlash(path: string): string {
     return path.length > 1 ? path.replace(/\/+$/, "") : path;
 }

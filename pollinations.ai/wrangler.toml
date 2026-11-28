@@ -18,6 +18,16 @@ workers_dev = true
 # Public hostnames are attached directly in the Myceli account.
 [env.production]
 
+[[env.production.services]]
+binding = "REFUND_BILLING"
+service = "pollinations-enter-production"
+entrypoint = "RefundBilling"
+
+[[env.production.ratelimits]]
+name = "REFUND_LIMIT"
+namespace_id = "1008"
+simple = { limit = 3, period = 60 }
+
 [[env.production.routes]]
 pattern = "pollinations.myceli.ai"
 zone_name = "myceli.ai"

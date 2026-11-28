@@ -6,6 +6,7 @@
  * the key a user approves through BYOP sign-in with the app key in src/config.ts.
  */
 
+import { type RefundMailBindings, sendRefundRequest } from "./refund-email";
 import { getJsonLd, knownPage, NOT_FOUND_META, ROUTE_META } from "./routeMeta";
 
 /**
@@ -50,7 +51,7 @@ declare class HTMLRewriter {
     transform(response: Response): Response;
 }
 
-interface Env {
+interface Env extends RefundMailBindings {
     ASSETS: { fetch: (request: Request) => Promise<Response> };
 }
 
@@ -91,6 +92,10 @@ export default {
                 `https://image.pollinations.ai/prompt/${legacyImage[1]}${url.search}`,
                 301,
             );
+        }
+
+        if (request.method === "POST" && url.pathname === "/refunds") {
+            return sendRefundRequest(request, env);
         }
 
         const page = knownPage(url.pathname);

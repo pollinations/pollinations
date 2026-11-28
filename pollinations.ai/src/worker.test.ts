@@ -339,3 +339,91 @@ describe("markdown for agents", () => {
         expect(response.headers.get("content-type")).toContain("text/html");
     });
 });
+
+describe("withdrawal on the Refunds page", () => {
+    const fields = {
+        accountId: "account-42",
+        invoiceNumber: "EXAMPLE-0002",
+    };
+    const post = (
+        data: Record<string, string> = fields,
+        origin = "https://pollinations.ai",
+    ) => {
+        const body = new URLSearchParams(data).toString();
+        return new Request("https://pollinations.ai/refunds", {
+            method: "POST",
+            headers: {
+                Origin: origin,
+                "Content-Type": "application/x-www-form-urlencoded",
+                "CF-Connecting-IP": "192.0.2.10",
+            },
+            body,
+        });
+    };
+    const bindings = () => ({
+        ASSETS: { fetch: vi.fn() },
+        REFUND_BILLING: { submitWithdrawal: vi.fn().mockResolvedValue(true) },
+        REFUND_LIMIT: { limit: vi.fn().mockResolvedValue({ success: true }) },
+    });
+
+    test("forwards only the two identifiers and acknowledges a confirmed submission", async () => {
+        const env = bindings();
+        const body = {
+            ...fields,
+            email: "different@example.com",
+            name: "Someone else",
+        };
+        expect((await worker.fetch(post(body), env)).status).toBe(204);
+        expect(env.REFUND_BILLING.submitWithdrawal.mock.calls).toEqual([
+            [fields.accountId, fields.invoiceNumber],
+        ]);
+        expect(env.REFUND_LIMIT.limit.mock.calls).toEqual([
+            [{ key: "ip:192.0.2.10" }],
+            [{ key: "account:account-42" }],
+        ]);
+        expect(env.ASSETS.fetch).not.toHaveBeenCalled();
+    });
+
+    test("rejects incomplete, cross-site, oversized and rate-limited submissions before lookup", async () => {
+        const env = bindings();
+        expect(
+            (await worker.fetch(post({ accountId: fields.accountId }), env))
+                .status,
+        ).toBe(400);
+        expect(
+            (
+                await worker.fetch(
+                    post({ invoiceNumber: fields.invoiceNumber }),
+                    env,
+                )
+            ).status,
+        ).toBe(400);
+        expect(
+            (await worker.fetch(post(fields, "https://other.example"), env))
+                .status,
+        ).toBe(403);
+        expect(
+            (
+                await worker.fetch(
+                    post({ ...fields, invoiceNumber: "x".repeat(8193) }),
+                    env,
+                )
+            ).status,
+        ).toBe(413);
+        env.REFUND_LIMIT.limit.mockResolvedValueOnce({ success: false });
+        expect((await worker.fetch(post(), env)).status).toBe(429);
+        expect(env.REFUND_BILLING.submitWithdrawal).not.toHaveBeenCalled();
+    });
+
+    test("distinguishes a mismatch from an unavailable billing service", async () => {
+        const env = bindings();
+        env.REFUND_BILLING.submitWithdrawal.mockResolvedValueOnce(false);
+        const mismatch = await worker.fetch(post(), env);
+        expect(mismatch.status).toBe(422);
+        expect(await mismatch.text()).toBe("");
+        env.REFUND_BILLING.submitWithdrawal.mockRejectedValueOnce(
+            new Error("unavailable"),
+        );
+        expect((await worker.fetch(post(), env)).status).toBe(503);
+    });
+});

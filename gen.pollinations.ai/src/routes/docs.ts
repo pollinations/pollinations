@@ -1,5 +1,5 @@
 import { Scalar } from "@scalar/hono-api-reference";
-import { getPublicUrl } from "@shared/public-origin.ts";
+import { getPublicOrigin, getPublicUrl } from "@shared/public-origin.ts";
 import { ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
 import { EMBEDDING_SERVICES } from "@shared/registry/embeddings.ts";
 import { getImageModelIds, getVideoModelIds } from "@shared/registry/image.ts";
@@ -1113,6 +1113,14 @@ export async function buildMergedOpenApiSpec(
         ...injectSamples(
             mergeSchemas(generationSchema, enterSchema, mediaSchema),
         ),
+        // Agents that only read the schema (SDK generators, API directories)
+        // never see llms.txt; externalDocs hands them the plain-text guide
+        // with auth, the first call, and the error taxonomy.
+        externalDocs: {
+            description:
+                "Agent guide: authentication, first call, errors and retries",
+            url: `${getPublicOrigin(c)}/docs/llm.txt`,
+        },
         // Keep contributor identity after merging so publication can reject a
         // partial reference without changing the live endpoint's availability.
         "x-schema-sources": {

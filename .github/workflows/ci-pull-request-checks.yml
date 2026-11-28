@@ -480,6 +480,42 @@ jobs:
         if: steps.website-files.outputs.any_changed == 'true'
         run: npm test --prefix pollinations.ai
 
+  # Tracks Windows parity but is not part of `gate` yet. The suites listed in
+  # #20432 still have POSIX assumptions, so they report their failures with
+  # continue-on-error rather than making this job born red. Remove the escape
+  # hatches and add the job to `gate` once they pass on Windows.
+  windows-smoke:
+    name: Windows smoke tests
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install polli-cli dependencies
+        run: npm ci --prefix packages/polli-cli
+
+      - name: Test polli-cli
+        working-directory: packages/polli-cli
+        continue-on-error: true
+        run: npm test
+
+      - name: Test docs workflows
+        continue-on-error: true
+        run: node --test .github/scripts/docs-workflows.test.mjs
+
   # Carries the status-check name required by the main branch ruleset so the
   # jobs above gate merges without a ruleset change.
   gate:

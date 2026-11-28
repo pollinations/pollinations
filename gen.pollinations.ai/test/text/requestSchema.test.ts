@@ -259,4 +259,71 @@ describe("CreateChatCompletionRequestSchema", () => {
             }).success,
         ).toBe(true);
     });
+
+    it("rejects empty names on tools, functions, and response formats", () => {
+        const messages = [{ role: "user", content: "hello" }];
+        const tool = {
+            type: "function",
+            function: { name: "lookup", parameters: { type: "object" } },
+        };
+        for (const body of [
+            { tools: [{ ...tool, function: { name: "" } }] },
+            { functions: [{ name: "", parameters: { type: "object" } }] },
+            {
+                tools: [tool],
+                tool_choice: { type: "function", function: { name: "" } },
+            },
+            { functions: [{ name: "lookup" }], function_call: { name: "" } },
+            {
+                response_format: {
+                    type: "json_schema",
+                    json_schema: { name: "", schema: { type: "object" } },
+                },
+            },
+        ]) {
+            expect(
+                CreateChatCompletionRequestSchema.safeParse({
+                    messages,
+                    ...body,
+                }).success,
+            ).toBe(false);
+        }
+
+        // The same shapes with names parse, so the guard is the empty string only.
+        expect(
+            CreateChatCompletionRequestSchema.safeParse({
+                messages,
+                tools: [tool],
+                tool_choice: { type: "function", function: { name: "lookup" } },
+                response_format: {
+                    type: "json_schema",
+                    json_schema: { name: "answer", schema: { type: "object" } },
+                },
+            }).success,
+        ).toBe(true);
+    });
+
+    it("caps tools at the provider limit of 128", () => {
+        const messages = [{ role: "user", content: "hello" }];
+        const tools = (count: number) =>
+            Array.from({ length: count }, (_, index) => ({
+                type: "function" as const,
+                function: {
+                    name: `f${index}`,
+                    parameters: { type: "object" },
+                },
+            }));
+        expect(
+            CreateChatCompletionRequestSchema.safeParse({
+                messages,
+                tools: tools(128),
+            }).success,
+        ).toBe(true);
+        expect(
+            CreateChatCompletionRequestSchema.safeParse({
+                messages,
+                tools: tools(129),
+            }).success,
+        ).toBe(false);
+    });
 });

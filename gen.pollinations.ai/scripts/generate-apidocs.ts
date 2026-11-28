@@ -16,6 +16,10 @@ const INTRODUCTION_PATH = join(
     "introduction.md",
 );
 const RECIPES_PATH = join(__dirname, "..", "src", "docs", "apidocs-recipes.md");
+// A Windows checkout has CRLF, and the section splits below are literal.
+const read = (path: string) =>
+    readFileSync(path, "utf8").replace(/\r\n/g, "\n");
+
 const OPENAPI_URL =
     process.env.OPENAPI_URL ||
     "https://gen.pollinations.ai/docs/open-api/generate-schema";
@@ -787,7 +791,7 @@ function renderHeader(spec: Spec): string {
 }
 
 function loadIntroductionTagline(): string {
-    const introduction = readFileSync(INTRODUCTION_PATH, "utf8");
+    const introduction = read(INTRODUCTION_PATH);
     const tagline = introduction
         .split("\n")
         .find((line) => line.trim().startsWith(">"))
@@ -799,7 +803,7 @@ function loadIntroductionTagline(): string {
 }
 
 function renderGettingStarted(): string {
-    const guides = readFileSync(README_PATH, "utf8")
+    const guides = read(README_PATH)
         .split("\n## Guides\n")[1]
         ?.split("\n## ")[0]
         .trim();
@@ -865,7 +869,7 @@ function renderTableOfContents(
 function loadRecipes(): { content: string; headings: string[] } {
     let content: string;
     try {
-        content = readFileSync(RECIPES_PATH, "utf8").trim();
+        content = read(RECIPES_PATH).trim();
     } catch (err) {
         console.warn(
             `⚠️  Skipping recipes — could not read ${RECIPES_PATH}: ${(err as Error).message}`,

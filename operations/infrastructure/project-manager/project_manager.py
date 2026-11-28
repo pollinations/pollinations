@@ -1,6 +1,6 @@
 """GitHub project manager: puts every new issue and pull request on the Dev project.
 
-Weaver classifies opened items from system-prompt.md. baseline-prompt.md is kept for rollback.
+Weaver's system-prompt.md is the one definition of areas, types, priorities and model work.
 """
 
 import sys
@@ -87,7 +87,7 @@ def fail(msg: str):
 
 
 def read_brief() -> str:
-    return (WEAVER_DIR / "baseline-prompt.md").read_text()
+    return (WEAVER_DIR / "system-prompt.md").read_text().strip()
 
 
 def area_names(brief: str) -> list:
@@ -96,7 +96,7 @@ def area_names(brief: str) -> list:
     return re.findall(r"^### (.+)$", section, re.MULTILINE)
 
 
-def ask_ai(system_prompt: str, user_prompt: str, *, hosted_model=None, metrics=None, fresh=False) -> Optional[dict]:
+def ask_ai(system_prompt: str, user_prompt: str, *, hosted_model=None) -> Optional[dict]:
     """Return an object, or None when inference is temporarily unavailable."""
     messages = [{"role": "user", "content": user_prompt}]
     payload = {
@@ -105,36 +105,25 @@ def ask_ai(system_prompt: str, user_prompt: str, *, hosted_model=None, metrics=N
         "reasoning_effort": "low",
         "max_tokens": 2000,
     }
-    if fresh and not hosted_model:
-        payload["seed"] = -1  # Agent requests already have an isolated cache partition per run.
     if not hosted_model:
         messages.insert(0, {"role": "system", "content": system_prompt})
         payload["response_format"] = {"type": "json_object"}
     invalid_output = False
     for attempt in range(3):
-        record = {}
-        if metrics is not None:
-            metrics.append(record)
         try:
             response = requests.post(
                 POLLINATIONS_API, headers={"Authorization": f"Bearer {POLLINATIONS_TOKEN}"},
                 json=payload, timeout=120,
             )
         except requests.RequestException:
-            record["error"] = "transport"
             log_error("AI transport failed")
         else:
             status = response.status_code
-            if metrics is not None:
-                record.update(http_status=status, request_id=response.headers.get("X-Request-Id"), cache=response.headers.get("X-Cache"))
             if 400 <= status < 500 and status != 429:
                 raise SystemExit(f"AI rejected request: HTTP {status}")
             if status == 200:
                 try:
                     data = response.json()
-                    if metrics is not None:
-                        usage = data.get("usage") or {}
-                        record.update(completion_id=data.get("id"), usage=usage)
                     content = data["choices"][0]["message"]["content"].strip()
                     if hosted_model and (fence := re.fullmatch(r"```(?:json)?\s*(.*?)\s*```", content, re.DOTALL)):
                         content = fence.group(1)
@@ -144,7 +133,6 @@ def ask_ai(system_prompt: str, user_prompt: str, *, hosted_model=None, metrics=N
                     return parsed
                 except (ValueError, AttributeError, KeyError, IndexError, TypeError):
                     invalid_output = True
-                    record["error"] = "invalid JSON"
                     log_error("AI returned invalid JSON output")
             else:
                 log_error(f"AI HTTP {status}")
@@ -465,7 +453,7 @@ def main():
         log_debug(f"#{ISSUE_NUMBER} is a survey response; skipping")
         return
 
-    brief = ((WEAVER_DIR / "system-prompt.md").read_text().strip() if os.getenv("WEAVER_MODEL") else read_brief())
+    brief = read_brief()
     areas = area_names(brief)
     fields = dev_fields(areas)
 

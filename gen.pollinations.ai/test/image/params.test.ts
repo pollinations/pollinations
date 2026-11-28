@@ -21,6 +21,23 @@ describe("ImageParamsSchema", () => {
         ).toBe(false);
     });
 
+    it("keeps a string data URI whole and still splits remote URL lists", () => {
+        const dataUri = "data:image/png;base64,iVBORw0KGgo=";
+        expect(
+            ImageParamsSchema.parse({
+                model: "black-forest-labs/flux.1-kontext-pro",
+                image: dataUri,
+            }).image,
+        ).toEqual([dataUri]);
+
+        expect(
+            ImageParamsSchema.parse({
+                model: "microsoft/mai-image-2.7",
+                image: "https://example.com/a.png,https://example.com/b.png",
+            }).image,
+        ).toEqual(["https://example.com/a.png", "https://example.com/b.png"]);
+    });
+
     it("normalizes seed -1 to the sentinel seed", () => {
         const result = ImageParamsSchema.parse({
             model: "black-forest-labs/flux.1-schnell",

@@ -1374,19 +1374,19 @@ test.each([
         "openai/gpt-realtime-2.1-mini",
         0.01578,
         false,
-        "about $0.0158, based on the 7-day model median",
+        "about $0.0158 (7-day model median)",
     ],
     [
         "openai/gpt-realtime-2.1",
         0.006541,
         false,
-        "about $0.0065, based on the 7-day model median",
+        "about $0.0065 (7-day model median)",
     ],
     [
         "openai/gpt-realtime-2.1",
         0.04,
         true,
-        "$0.0500, based on the 7-day model median plus 25% app markup",
+        "$0.0500 (7-day model median plus 25% app markup)",
     ],
 ] as const)(
     "explains the estimated budget before opening %s (median %s, app markup %s)",
@@ -1419,7 +1419,7 @@ test.each([
             `This key has $${budget.toFixed(4)} left.`,
         );
         expect(body.error.message).toContain(
-            `You need to cover the session estimate (${expectedEstimate}). Nothing was charged.`,
+            `Opening a session needs ${expectedEstimate}. Nothing was charged.`,
         );
         expect(new URL(body.error.fixUrl).searchParams.get("id")).toBe(id);
         expect(upstream.maybeServer).toBeUndefined();

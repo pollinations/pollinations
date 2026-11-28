@@ -107,15 +107,17 @@ export async function requireFunds(
         const markup = apiKey?.byopMarkupApplies
             ? ` plus ${MARKUP_PCT * 100}% app markup`
             : "";
-        const estimate = realtimeMedian
-            ? `${amount}, based on the 7-day model median${markup}`
-            : amount;
-        if (funds === "paid balance")
+        const basis = `7-day model median${markup}`;
+        if (funds === "paid balance") {
+            const estimate = realtimeMedian
+                ? `${amount}, based on the ${basis}`
+                : amount;
             return `This model needs a paid balance above the estimate (${estimate}) to start${remaining}.${noCharge}`;
+        }
         if (realtimeMedian) {
             const source =
                 funds === "Quest or paid balance" ? " in one balance" : "";
-            return `You need to cover the session estimate (${estimate})${source}.${noCharge}`;
+            return `Opening a session needs ${amount}${source} (${basis}).${noCharge}`;
         }
         if (funds === "Quest or paid balance")
             return `Balance too low. One balance must cover ${amount} to start.`;

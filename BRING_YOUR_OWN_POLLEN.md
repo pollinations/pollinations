@@ -45,7 +45,7 @@ This works without an App Key. To show your app's name and earn from usage, add 
 | Attribute | What it does |
 |-----------|-------------|
 | `app-key` | Your App Key (optional; without it the consent screen shows your hostname) |
-| `budget` | Request budget in dollars, as `budget` below |
+| `budget` | Remaining budget in dollars, as `budget` below |
 | `expiry` | Key lifetime in days |
 | `models` | Comma-separated, as `models` below |
 | `permissions` | Comma-separated scopes: `profile`, `usage` |

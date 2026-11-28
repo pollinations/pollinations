@@ -1,4 +1,5 @@
 import { collectUpstreamHeaders } from "@shared/error.ts";
+import { extractProviderErrorMessage } from "@shared/http/chat-completion-error.ts";
 import debug from "debug";
 import { createParser } from "eventsource-parser";
 import { bedrockCredentials, signBedrockHeaders } from "./auth/bedrock.js";
@@ -192,22 +193,6 @@ function transformStreamCompletions(
     );
 }
 
-function extractErrorMessage(details: unknown): string | null {
-    if (typeof details === "string") return details.trim() || null;
-    if (!details || typeof details !== "object") return null;
-
-    const error = (details as { error?: unknown }).error;
-    if (error && typeof error === "object") {
-        const message = (error as { message?: unknown }).message;
-        if (typeof message === "string" && message.trim()) {
-            return message;
-        }
-    }
-
-    const message = (details as { message?: unknown }).message;
-    return typeof message === "string" && message.trim() ? message : null;
-}
-
 /**
  * Some OpenAI-compatible gateways return an upstream rate limit inside an
  * otherwise successful completion. Normalize explicit rate limits and input/
@@ -231,7 +216,7 @@ function responseBodyError(
             continue;
 
         return {
-            message: extractErrorMessage(details) ?? undefined,
+            message: extractProviderErrorMessage(details) ?? undefined,
             status:
                 typeof embedded.status === "number"
                     ? embedded.status
@@ -362,7 +347,7 @@ function createApiError(
     requestUrl: URL,
 ): ServiceError {
     const statusMessage = `${response.status} ${response.statusText}`;
-    const detailMessage = extractErrorMessage(details);
+    const detailMessage = extractProviderErrorMessage(details);
     const error = new Error(
         detailMessage ? `${statusMessage}: ${detailMessage}` : statusMessage,
     ) as ServiceError;

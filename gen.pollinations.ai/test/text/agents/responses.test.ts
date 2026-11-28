@@ -4,8 +4,9 @@ import {
 } from "@shared/agents/model.ts";
 import { collectOutput } from "@shared/agents/output.ts";
 import { handleAgentResponsesRequest } from "@shared/agents/responses.ts";
+import { runSdkAgent } from "@shared/agents/sdk-runner.ts";
 import type { AgentRunner } from "@shared/agents/types.ts";
-import { ToolLoopAgent } from "ai";
+import { jsonSchema, ToolLoopAgent, tool } from "ai";
 import OpenAI from "openai";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -1629,4 +1630,97 @@ describe("managed agent Responses runtime", () => {
         }
         expect(fetchMock).toHaveBeenCalledTimes(1);
     });
+
+    it.each([false, true])(
+        "rejects finish_reason error with the provider message (stream:%s)",
+        async (stream) => {
+            const onInputStart = vi.fn();
+            const onInputDelta = vi.fn();
+            const execute = vi.fn();
+            const toolCall = {
+                index: 0,
+                id: "call_test",
+                type: "function",
+                function: { name: "record", arguments: "{}" },
+            };
+            const validUsage = {
+                prompt_tokens: 10,
+                completion_tokens: 5,
+                total_tokens: 15,
+            };
+            const provider = createAgentModelProvider({
+                baseURL: "https://gen.test/v1",
+                fetch: async () =>
+                    stream
+                        ? new Response(
+                              `data: ${JSON.stringify({
+                                  choices: [
+                                      {
+                                          delta: {
+                                              content: "partial",
+                                              tool_calls: [toolCall],
+                                          },
+                                          finish_reason: null,
+                                      },
+                                  ],
+                              })}\n\n` +
+                                  `data: ${JSON.stringify({
+                                      choices: [
+                                          {
+                                              delta: {},
+                                              finish_reason: "error",
+                                              error: {
+                                                  message: "Upstream aborted",
+                                              },
+                                          },
+                                      ],
+                                      usage: validUsage,
+                                  })}\n\n` +
+                                  "data: [DONE]\n\n",
+                              {
+                                  headers: {
+                                      "content-type": "text/event-stream",
+                                  },
+                              },
+                          )
+                        : Response.json({
+                              choices: [
+                                  {
+                                      message: {
+                                          role: "assistant",
+                                          content: "partial",
+                                          tool_calls: [toolCall],
+                                      },
+                                      finish_reason: "error",
+                                      error: { message: "Upstream aborted" },
+                                  },
+                              ],
+                              usage: validUsage,
+                          }),
+            });
+            const agent = new ToolLoopAgent({
+                model: provider("test"),
+                maxRetries: 0,
+                tools: {
+                    record: tool({
+                        inputSchema: jsonSchema({ type: "object" }),
+                        onInputStart,
+                        onInputDelta,
+                        execute,
+                    }),
+                },
+            });
+            await expect(
+                runSdkAgent(agent, {
+                    messages: [{ role: "user", content: "hello" }],
+                    signal: new AbortController().signal,
+                    stream,
+                    onPart: () => {},
+                }),
+            ).rejects.toThrow("Upstream aborted");
+            expect(onInputStart).not.toHaveBeenCalled();
+            expect(onInputDelta).not.toHaveBeenCalled();
+            expect(execute).not.toHaveBeenCalled();
+        },
+    );
 });

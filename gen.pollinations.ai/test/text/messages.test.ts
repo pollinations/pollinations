@@ -1029,7 +1029,11 @@ describe("POST /v1/messages", () => {
 
     /** Mock the provider and Tinybird; returns what each received. */
     function mockUpstream(
-        options: { withUsage?: boolean; withThinking?: boolean } = {},
+        options: {
+            withUsage?: boolean;
+            withThinking?: boolean;
+            failCompletion?: boolean;
+        } = {},
     ): {
         events: TinybirdEvent[];
         providerBodies: Record<string, unknown>[];
@@ -1073,12 +1077,15 @@ describe("POST /v1/messages", () => {
                 }
                 if (!body?.messages) return Response.json({ data: [] });
                 providerBodies.push(body);
+                const finishReason = options.failCompletion ? "error" : "stop";
                 if (body.stream) {
                     return new Response(
                         sse([
                             { choices: [{ delta: { content: "Hello" } }] },
                             {
-                                choices: [{ delta: {}, finish_reason: "stop" }],
+                                choices: [
+                                    { delta: {}, finish_reason: finishReason },
+                                ],
                             },
                             { choices: [], ...providerUsage },
                             "[DONE]",
@@ -1091,10 +1098,13 @@ describe("POST /v1/messages", () => {
                     object: "chat.completion",
                     created: 1,
                     model,
+                    ...(options.failCompletion && {
+                        payg_credits_charged: 1,
+                    }),
                     choices: [
                         {
                             index: 0,
-                            finish_reason: "stop",
+                            finish_reason: finishReason,
                             message: {
                                 role: "assistant",
                                 content: "Hello",
@@ -1228,6 +1238,74 @@ describe("POST /v1/messages", () => {
             expect(
                 afterChat.tierBalance - afterMessages.tierBalance,
             ).toBeCloseTo(chatCharge, 10);
+        },
+    );
+
+    it.each(
+        (["/v1/messages", "/v1/chat/completions"] as const).flatMap((path) =>
+            [false, true].map((stream) => ({ path, stream })),
+        ),
+    )(
+        "retries failed $path completions without charging or caching, stream=$stream",
+        async ({ path, stream }) => {
+            const caller = await createTestApiKey({
+                user: { packBalance: 100 },
+            });
+            const options = { failCompletion: true };
+            const { events, providerBodies } = mockUpstream(options);
+            const body = {
+                model: "cohere/command-a-plus",
+                stream,
+                max_tokens: 256,
+                messages: [
+                    { role: "user", content: `failed ${path} ${stream}` },
+                ],
+            };
+            const { response, text } = await call(path, body, caller.key);
+            expect(response.status).toBe(stream ? 200 : 502);
+            expect(text).not.toContain("payg_credits_charged");
+            if (path === "/v1/messages") {
+                const error = stream
+                    ? parseEvents(text).at(-1)
+                    : JSON.parse(text);
+                expect(error).toMatchObject({
+                    type: "error",
+                    error: {
+                        type: "api_error",
+                        message:
+                            "Chat Completions provider failed to complete the response",
+                    },
+                });
+            } else {
+                expect(text).toContain(
+                    stream
+                        ? '"finish_reason":"error"'
+                        : "Chat Completions provider failed to complete the response",
+                );
+            }
+            const generationEvents = events.filter(
+                (event) => "isBilledUsage" in event,
+            );
+            expect(generationEvents).not.toHaveLength(0);
+            expect(
+                generationEvents.every((event) => !event.isBilledUsage),
+            ).toBe(true);
+            expect(
+                (await getUserBalance(drizzle(env.DB), caller.userId))
+                    .packBalance,
+            ).toBe(100);
+
+            const failedCalls = providerBodies.length;
+            options.failCompletion = false;
+            const recovered = await call(path, body, caller.key);
+            expect(recovered.response.status, recovered.text).toBe(200);
+            expect(recovered.text).toContain("Hello");
+            expect(recovered.response.headers.get("X-Cache")).toBe("MISS");
+            expect(providerBodies).toHaveLength(failedCalls + 1);
+
+            const cached = await call(path, body, caller.key);
+            expect(cached.response.headers.get("X-Cache")).toBe("HIT");
+            expect(providerBodies).toHaveLength(failedCalls + 1);
         },
     );
 
@@ -1796,4 +1874,90 @@ it("does not invent empty arguments when length stops before tool input", () => 
     );
     expect(result.content).toEqual([]);
     expect(result.stop_reason).toBe("max_tokens");
+});
+
+describe("Messages finish_reason error handling", () => {
+    it.each(["error", "stop"])(
+        "returns 502 for nested choice.error with finish_reason %s",
+        async (finishReason) => {
+            const routes = createMessagesRoutes(() =>
+                Response.json({
+                    id: "err",
+                    object: "chat.completion",
+                    created: 1,
+                    choices: [
+                        {
+                            finish_reason: finishReason,
+                            message: {
+                                role: "assistant",
+                                content: "partial answer",
+                            },
+                            error: { message: "  Upstream provider aborted  " },
+                        },
+                    ],
+                    usage,
+                }),
+            );
+            const response = await routes.request(
+                "https://gen.pollinations.ai/v1/messages",
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        model,
+                        max_tokens: 32,
+                        messages: [{ role: "user", content: "hi" }],
+                    }),
+                },
+                env,
+            );
+            expect(response.status).toBe(502);
+            await expect(response.json()).resolves.toEqual({
+                type: "error",
+                error: {
+                    type: "api_error",
+                    message: "Upstream provider aborted",
+                },
+            });
+        },
+    );
+
+    it.each([
+        {
+            name: "nested choice.error",
+            chunks: [
+                { choices: [{ delta: { content: "partial" } }] },
+                {
+                    choices: [
+                        {
+                            delta: {},
+                            finish_reason: "stop",
+                            error: { message: "Stream provider aborted" },
+                        },
+                    ],
+                },
+            ],
+            expectedMessage: "Stream provider aborted",
+        },
+        {
+            name: "finish_reason error without [DONE]",
+            chunks: [
+                { choices: [{ delta: { content: "partial" } }] },
+                { choices: [{ delta: {}, finish_reason: "error" }], usage },
+            ],
+            expectedMessage:
+                "Chat Completions provider failed to complete the response",
+        },
+    ])(
+        "emits an error event instead of end_turn for streaming $name",
+        async ({ chunks, expectedMessage }) => {
+            const events = await translateStream(chunks);
+            expect(events.some((e) => e.type === "message_delta")).toBe(false);
+            expect(events.some((e) => e.type === "message_stop")).toBe(false);
+            expect(events.at(-1)).toEqual({
+                type: "error",
+                error: { type: "api_error", message: expectedMessage },
+            });
+        },
+    );
 });

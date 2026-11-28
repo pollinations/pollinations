@@ -4,7 +4,7 @@
 
 Open [Play](https://pollinations.ai/play) to generate an image, video, or audio clip, or ask a decision model to choose between options. You can also [try a community app](https://pollinations.ai/apps). If you're building your own app, the [API quick start](https://gen.pollinations.ai/docs#tag/quick-start) walks you through your first request.
 
-## Can I try Pollinations without a credit card? {#how-do-quests-work #can-i-try-pollinations-without-a-credit-card}
+## Can I try Pollinations without a credit card? {#can-i-try-pollinations-without-a-credit-card #how-do-quests-work}
 
 Yes. Create an account and open [Quests](https://enter.pollinations.ai/quests) to see what you can earn. The first API key quest credits your Quest balance automatically when you qualify. For other completed quests, select **Ready to claim** and claim your credit.
 
@@ -44,7 +44,7 @@ Open [My listings](https://enter.pollinations.ai/my-models) and choose what you 
 - **Agent** — Create a [prompt or code agent](https://gen.pollinations.ai/docs#tag/publish-an-agent), then copy its model ID from the listing. Callers pay for the models and tools the agent uses.
 - **Model** — [Register an endpoint](https://gen.pollinations.ai/docs#tag/publish-a-model) you operate for text, images, video, transcription, speech, or embeddings. A priced public model earns you 75% of what users spend on it, as Pollinations credit.
 
-Link GitHub to create agents or model listings. You can keep them private or request publisher access to make them public.
+Link GitHub to create agents or model listings. You can keep them private or [request publisher access](https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml) to make them public.
 
 ## Who can see my uploaded files?
 

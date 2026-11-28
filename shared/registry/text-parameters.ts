@@ -43,13 +43,13 @@ export const CHAT_PARAMETERS = {
     ],
     // Chat-to-Responses conversion does not forward top-level verbosity.
     azureResponses: [...TOOL_CHAT, "reasoning_effort", "parallel_tool_calls"],
-    // OVH rejects `stop` (reasoning runs in a separate channel) and
-    // `parallel_tool_calls: false`, so neither is listed.
+    // OVH rejects `stop` (reasoning runs in a separate channel),
+    // `parallel_tool_calls: false` and `top_logprobs` above 1, so none is listed.
     ovhGptOss: [
         ...TOOL_CHAT,
         ...SAMPLING,
         ...PENALTIES,
-        ...LOGPROBS,
+        "logprobs",
         "seed",
         "reasoning_effort",
         "logit_bias",
@@ -624,7 +624,8 @@ export const CHAT_PARAMETERS = {
         "structured_outputs",
         "reasoning_effort",
     ],
-    qwenGuard: [...CHAT, ...SAMPLING, ...LOGPROBS, "seed"],
+    // OVH answers `top_logprobs` above 1 with a 400.
+    qwenGuard: [...CHAT, ...SAMPLING, "logprobs", "seed"],
     // The System One adapter forwards the native request untouched, so token
     // caps, sampling and tools have no effect; only the SSE wrapper is ours.
     typesafeJev: ["stream"],

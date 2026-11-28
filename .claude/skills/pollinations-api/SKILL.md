@@ -130,6 +130,15 @@ curl "https://gen.pollinations.ai/audio/Hello%20world?voice=nova" \
   -H "Authorization: Bearer $POLLINATIONS_API_KEY" -o speech.mp3
 ```
 
+## Video
+
+```bash
+curl "https://gen.pollinations.ai/video/sunset%20timelapse?model=google/veo-3.1-fast&duration=4" \
+  -H "Authorization: Bearer $POLLINATIONS_API_KEY" -o sunset.mp4
+```
+
+Returns MP4. Use `duration` for length, `aspectRatio` for orientation, and `audio` where the model supports it. Cheapest model is `alibaba/wan-2.2-fast` (~$0.01/sec, fixed 5-second output). For image-to-video, pass a public image URL as `image[0]` (start frame); `image[1]` is the end frame on models that support it. Current video models: `https://gen.pollinations.ai/video/models`.
+
 ## Model IDs
 
 - IDs use `publisher/model` names; existing aliases stay valid — match catalog

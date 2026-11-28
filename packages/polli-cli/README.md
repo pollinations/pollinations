@@ -107,10 +107,11 @@ polli keys create --name myapp --type publishable \
   --redirect-uri https://myapp.com/callback --earnings          # 3rd-party app key
 polli keys create --name server --models black-forest-labs/flux.1-schnell tongyi-mai/z-image-turbo  # only these models
 polli keys update <id> --models text black-forest-labs/flux.1-schnell  # change the model list
+polli keys create --name agent-free --models text --exclude-agents  # text models, no agents
 polli keys revoke <id>
 ```
 
-`--models` takes categories (`text`, `image`, ...) and model IDs from `polli models`; a category includes models added later, a model ID allows only that model. To change a key's name or budget, use the dashboard or revoke and recreate. Publishable app keys default developer earnings off; pass `--earnings` to enable them.
+`--models` takes categories (`text`, `image`, ...) and model IDs from `polli models`; a category includes models added later, a model ID allows only that model. `--exclude-agents` expands `text` to the current non-agent text model IDs so agents cannot be called. To change a key's name or budget, use the dashboard or revoke and recreate. Publishable app keys default developer earnings off; pass `--earnings` to enable them.
 
 ```bash
 polli usage                  # balance

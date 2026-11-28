@@ -272,9 +272,10 @@ polli keys create --name "my-bot" --type secret --budget 1000 --permissions prof
 polli keys create --name "my-app" --type publishable --redirect-uri https://app.example/callback --earnings
 polli keys create --name "server" --models black-forest-labs/flux.1-schnell tongyi-mai/z-image-turbo  # only these two models
 polli keys update <id> --models text black-forest-labs/flux.1-schnell  # every text model plus FLUX.1 Schnell
+polli keys create --name "agent-free" --models text --exclude-agents  # text models, no agents
 polli keys revoke <id>                                             # id comes from `keys list --json`
 ```
-`--models` takes categories (`text`, `image`, `video`, `audio`, `3d`, `embedding`, `realtime`, `decision`) and model IDs from `polli models`. A category includes models added later; a model ID allows only that model.
+`--models` takes categories (`text`, `image`, `video`, `audio`, `3d`, `embedding`, `realtime`, `decision`) and model IDs from `polli models`. A category includes models added later; a model ID allows only that model. `--exclude-agents` expands the `text` category to the current non-agent text model IDs, so the key cannot call prompt, code, or hosted agents.
 `--permissions <perms...>` scopes what the new key can do on the account (e.g. `profile usage` lets it call `polli --key <new> usage`). **Without `--permissions`, new scoped keys can generate media but cannot read account state** — `polli --key <new> usage` will 403. Include `keys` to let the new key create, list, and revoke keys itself. Existing keys with `account:keys` can manage my-models where that invite-only feature is enabled, but still need `account:usage` for read-only account state. Publishable app keys default developer earnings off; pass `--earnings` to enable them. To inspect a specific key other than the current one, use `polli keys list --json | jq '.[] | select(.id == "<id>")'`. `keys info` is intentionally scoped to the caller's own key.
 
 ### Connect a coding harness

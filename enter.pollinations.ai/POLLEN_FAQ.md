@@ -1,107 +1,55 @@
 # FAQ
 
-## 🪷 How does billing work? {#what-is-pollen}
+## Where should I start? {#what-can-i-create-with-pollen}
 
-Pollinations is prepaid: you add credit to your balance, and each generation spends from it according to the selected model's price and usage. Prices and balances are shown in dollars.
+Open [Play](https://pollinations.ai/play) to generate an image, video, or audio clip, or ask a decision model to choose between options. You can also [try a community app](https://pollinations.ai/apps). If you're building your own app, the [API quick start](https://gen.pollinations.ai/docs#tag/quick-start) walks you through your first request.
 
-Credit cannot be transferred between accounts or redeemed outside Pollinations.
+## Can I try Pollinations without a credit card? {#can-i-try-pollinations-without-a-credit-card #how-do-quests-work}
 
-## 🧩 Is Pollinations a coding tool or app builder?
+Yes. Create an account and open [Quests](https://enter.pollinations.ai/quests) to see what you can earn. The first API key quest credits your Quest balance automatically when you qualify. For other completed quests, select **Ready to claim** and claim your credit.
 
-No. Pollinations provides infrastructure that you connect to your own application:
+The [Classic API](https://github.com/pollinations/pollinations/blob/master/APIDOCS.md) also offers free, rate-limited text and image generation without an account.
 
-- **Generation APIs** for text, image, video, audio, realtime, embeddings, and 3D.
-- **Managed agents** built from a prompt, a base model, and optional Pollinations tools.
-- **Community models** for developers who operate compatible model endpoints.
-- **Pollinations Pay**, also called BYOP, so each app user can fund their own requests.
+## What does it cost, and where can I see what I spent? {#how-much-does-a-generation-cost #what-is-pollen #how-do-i-get-pollen #what-payment-options-are-available}
 
-You build and host the application. Pollinations provides model access, account authorization, and billing.
+Pollinations is prepaid. Credit cannot be transferred between accounts or redeemed outside Pollinations. [Models](https://enter.pollinations.ai/models) shows each model's rates in US dollars. [Activity](https://enter.pollinations.ai/activity) shows what you spent by model or API key.
 
-## 🛒 How do I add credit? {#how-do-i-get-pollen}
+Buy a one-time top-up through Stripe from [Credits](https://enter.pollinations.ai/pollen). Checkout shows the payment methods available to you. You can also turn on automatic top-ups with a supported saved payment method.
 
-- **Top up** from [Credits](https://enter.pollinations.ai/pollen) through Stripe Checkout.
-- **Complete Quests** and claim what you earn from the [Quests dashboard](https://enter.pollinations.ai/quests).
-- **Earn from an app** by enabling Developer earnings on its App Key. Users pay a 25% markup on that app's model usage, which is credited to the developer.
-- **Publish a community model** with a price. The model owner receives 75% of what is spent on it.
+## Why was my request refused when I still have credit? {#how-does-my-pollen-wallet-work}
 
-## 🆓 Can I try Pollinations without a credit card?
+One eligible balance must cover the estimate. For most models, the whole charge comes from your **Quest balance** if it covers the final cost, or from your **Paid balance** if it has credit available. Paid-only models always use Paid balance. A final cost above the estimate can take a balance below zero.
 
-Yes. Create an account, complete eligible Quests, and claim what you earn to add it to your 🌱 Quest balance. Available Quests and their amounts are shown in the [Quests dashboard](https://enter.pollinations.ai/quests).
+A key can also be set to **Quest balance only** or have its own budget. The estimate must fit the key's remaining budget, but the final charge can exceed it. Follow the link in the error to [raise the key budget](https://enter.pollinations.ai/keys) or [top up your account balance](https://enter.pollinations.ai/pollen).
 
-## 🎯 How do Quests work?
+## Which API key should I use?
 
-Quests pay for eligible account activity and community contributions.
+Keep your personal Secret Key (`sk_`) on your server. For a browser or mobile app, use [Pollinations Connect](https://gen.pollinations.ai/docs#tag/pollinations-pay). Each user approves a budget, expiry, models, and permissions. Your app receives a scoped `sk_` for their requests. Users can edit or revoke access in [Keys](https://enter.pollinations.ai/keys).
 
-- Browse the dashboard for current requirements, progress, and amounts.
-- Claim what you earned from the dashboard; past qualifying activity may count.
-- Contribution quests are labeled GitHub issues with a stated amount. Multiple contributors may submit solutions without claiming the issue first. The author of the selected merged PR can claim it afterward.
-- A quest that asks for an app is completed through the app submission form: enter the quest number in its Quest field, and you can claim what you earned after the catalog PR merges.
+Connect works without an App Key. Register a publishable App Key (`pk_`) to show your app's name at consent, attribute usage to it, or enable developer earnings.
 
-Quest availability and amounts can change, so the dashboard and the linked issue are the source of truth.
+## Who pays when someone uses my app? {#what-is-pollinations-pay}
 
-## Which balance pays for a request? {#how-does-my-pollen-wallet-work}
+With [Pollinations Pay](https://gen.pollinations.ai/docs#tag/pollinations-pay) (BYOP), users authorize your app to pay for requests from their Pollinations balance. Developer earnings are optional. If you enable them on your App Key, a $1 model request costs the user $1.25 and earns you $0.25 in the same balance type they used. You can track that credit in [Activity](https://enter.pollinations.ai/activity?tab=earnings) and spend it on Pollinations.
 
-Your account has two balances:
+## Can I host my app or run code here? {#is-pollinations-a-coding-tool-or-app-builder}
 
-- 🌱 **Quest balance**: earned from Quests and eligible developer earnings.
-- 💳 **Paid balance**: purchased through Stripe and eligible developer earnings.
+Publish a static site for free at `<name>.pollinations.app` with [Sites](https://gen.pollinations.ai/docs#tag/sites). If you need a Linux machine to install software or run a process, open a [Sandbox](https://enter.pollinations.ai/sandboxes) over SSH or in VS Code. Runtime is prepaid. Pausing stops further runtime charges.
 
-Every request is charged to one balance, never split across both:
+## How do I share an app, agent, or model? {#can-i-build-my-own-agent #can-i-bring-my-own-model}
 
-- A regular model uses the 🌱 Quest balance when it can cover the estimated charge; otherwise it uses the paid balance.
-- A paid-only model requires the paid balance.
-- The final cost can exceed the estimate and make the selected balance negative.
+Open [My listings](https://enter.pollinations.ai/my-models) and choose what you want to share.
 
-Developer earnings are credited to the matching balance type used by the paying user.
+- **App** — Submit it for catalog review. If it completes an app quest, enter the quest number on the submission form.
+- **Agent** — Create a [prompt or code agent](https://gen.pollinations.ai/docs#tag/publish-an-agent), then copy its model ID from the listing. Callers pay for the models and tools the agent uses.
+- **Model** — [Register an endpoint](https://gen.pollinations.ai/docs#tag/publish-a-model) you operate for text, images, video, transcription, speech, or embeddings. A priced public model earns you 75% of what users spend on it, as Pollinations credit.
 
-## 💰 How much does a generation cost?
+Link GitHub to create agents or model listings. You can keep them private or [request publisher access](https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml) to make them public.
 
-Prices depend on the model and may use tokens, images, seconds, or another model-specific unit. Check the live [model catalog](https://enter.pollinations.ai/models) or [`GET /v1/models`](https://gen.pollinations.ai/v1/models) instead of relying on a hardcoded model list or price.
+## Who can see my uploaded files?
 
-## 🎨 What can I create with Pollinations? {#what-can-i-create-with-pollen}
+Anyone with the file URL can open it. Untagged uploads stay out of public galleries. Adding a tag publishes the file to that tag's gallery. Storage is temporary, so download anything you want to keep. If you send a file to an externally hosted community model, its operator receives it. See [Media storage](https://gen.pollinations.ai/docs#tag/media-storage) and the [Privacy Policy](https://pollinations.ai/privacy).
 
-Pollinations supports text, images and image edits, video, speech and audio, transcription, realtime conversations, embeddings, and 3D generation. Availability and capabilities differ by model; use the live model catalog to choose one for your task.
+## Where can I get help?
 
-## 🔑 Which API key should I use?
-
-- **Personal Secret Key (`sk_`)**: use on a trusted server for your own model usage. It can have a spending budget, expiry, model restrictions, and account permissions. Do not ship a personal Secret Key in browser or mobile code.
-- **App Key (`pk_`)**: a publishable OAuth client identifier for Pollinations Pay. It identifies your app and its redirect URIs; it is not the generation credential. After user consent, your app receives a scoped, user-authorized `sk_` for API calls.
-
-All traffic remains subject to platform abuse protection and any model-specific constraints.
-
-## 🔌 What is Pollinations Pay?
-
-With Pollinations Pay (BYOP), users authorize an app to pay for requests from their Pollinations balance.
-
-For app developers:
-
-1. Create an App Key. Web apps must register their exact redirect URIs.
-2. Use the OAuth authorization-code flow with PKCE, or the device flow for headless clients.
-3. Call the API with the scoped user key returned after consent.
-4. Optionally enable Developer earnings, which adds a disclosed 25% markup to that app's traffic.
-
-Users choose the budget, expiry, models, and account permissions they approve. They can edit or revoke issued keys from the dashboard.
-
-Read the [Pollinations Pay guide](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md) for the complete integration.
-
-## 🤖 Can I build my own agent?
-
-Yes. A managed agent combines a system prompt, a Pollinations base model, and optional built-in Pollinations tools. Create one in [My listings](https://enter.pollinations.ai/my-models), then call its registered `owner/name` ID through the normal text-generation API.
-
-An agent listing has no owner-set price, but the caller pays for its base model and any generations performed by tools. A linked GitHub username is required to create an agent. Private agents are owner-only; publishing requires community publisher access. Read [Publish an Agent](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md) for setup details.
-
-## 🧩 Can I bring my own model?
-
-Yes. Register a compatible text, image, or transcription provider from [My listings](https://enter.pollinations.ai/my-models?tab=models) or the `/account/my-models` API. A linked GitHub username is required. Private models are owner-only; public publishing requires community publisher access. Read [Publish a Model](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_MODEL.md) for setup details.
-
-Public community models can set prices and compatible fallback models. Pollinations monitors public text and image endpoints and credits 75% of what is spent on them to the owner.
-
-## 💳 What payment options are available?
-
-Top-ups are one-time purchases through Stripe Checkout. Stripe displays the payment methods and local pricing available for the buyer's region and checkout session. Pollinations does not currently require a monthly subscription.
-
-You can also configure automatic top-up from [Credits](https://enter.pollinations.ai/pollen) after adding a supported default payment method.
-
-## 🆘 Where can I get help?
-
-Use [Discord](https://discord.gg/k9F7SyTgqn) for community help, email [hello@pollinations.ai](mailto:hello@pollinations.ai) for general support, or email [billing@pollinations.ai](mailto:billing@pollinations.ai) for billing questions.
+Ask the community on [Discord](https://discord.gg/k9F7SyTgqn) or email [hello@pollinations.ai](mailto:hello@pollinations.ai). For a purchase question, email [billing@pollinations.ai](mailto:billing@pollinations.ai) or read the [refund policy](https://pollinations.ai/refunds).

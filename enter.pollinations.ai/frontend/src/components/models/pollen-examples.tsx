@@ -3,7 +3,7 @@
  * Shows 2 examples each from video, image, and text models
  */
 
-import { ChatIcon, ImageIcon, VideoIcon } from "@pollinations/ui";
+import { ChatIcon, ImageIcon, InlineLink, VideoIcon } from "@pollinations/ui";
 import { type FC, type ReactNode, useEffect, useMemo, useState } from "react";
 import { calculatePerPollen } from "./calculations.ts";
 import {
@@ -137,7 +137,7 @@ export const PollenExamples: FC = () => {
     return (
         <div className="mt-4 space-y-4 border-t border-divider pt-4">
             <div className="text-sm text-theme-text-muted mb-3">
-                <strong>What $1 gets you:</strong>
+                <strong>What $1 gets you</strong>
             </div>
 
             <CategorySection
@@ -157,8 +157,8 @@ export const PollenExamples: FC = () => {
             />
 
             <div className="text-xs text-theme-text-muted pt-2">
-                Values are estimates based on typical usage. See{" "}
-                <strong>Pricing</strong> below for exact rates.
+                Estimates are based on typical usage. See current rates in{" "}
+                <InlineLink href="/models">Models</InlineLink>.
             </div>
         </div>
     );

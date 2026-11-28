@@ -1237,7 +1237,7 @@ function QuestOverviewContent({
                     });
                     if (!response.ok) {
                         throw new Error(
-                            "Couldn’t claim the reward. Please try again.",
+                            "Couldn’t claim your quest credit. Please try again.",
                         );
                     }
                 }
@@ -1266,7 +1266,7 @@ function QuestOverviewContent({
             setClaimError(
                 error instanceof Error
                     ? error.message
-                    : "Couldn’t claim the reward. Please try again.",
+                    : "Couldn’t claim your quest credit. Please try again.",
             );
         }
     }

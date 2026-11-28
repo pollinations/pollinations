@@ -17,6 +17,7 @@ import {
 } from "./routes/quest-leaderboard.ts";
 import { getCurrentGenOrigin, wellKnownRoutes } from "./routes/well-known.ts";
 import { handleCodeAgentOutbound } from "./services/code-agent-outbound.ts";
+import { retryWithdrawals } from "./services/withdrawals.ts";
 
 function stripTrailingSlash(path: string): string {
     return path.length > 1 ? path.replace(/\/+$/, "") : path;
@@ -107,7 +108,10 @@ export default {
             ctx,
             () => ({ route_path: controller.cron, method: "CRON" }),
             async () => {
-                await refreshQuestLeaderboard(env, LEADERBOARD_SLICE_PAUSE_MS);
+                await Promise.all([
+                    refreshQuestLeaderboard(env, LEADERBOARD_SLICE_PAUSE_MS),
+                    retryWithdrawals(env),
+                ]);
             },
         ),
 } satisfies ExportedHandler<Env["Bindings"]>;

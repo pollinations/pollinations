@@ -10,11 +10,11 @@ import { LOW_BALANCE_SHARE } from "@shared/billing/auto-top-up.ts";
 
 const log = getLogger(["enter", "account-notices"]);
 
-const FROM = {
+export const NOTIFICATION_SENDER = {
     email: "notifications@notify.pollinations.ai",
     name: "Pollinations",
 };
-const REPLY_TO = "billing@pollinations.ai";
+export const BILLING_EMAIL = "billing@pollinations.ai";
 const ADDRESS = "Myceli.AI OÜ · Tornimäe tn 5, 10145 Tallinn, Estonia";
 // The wallet's paid colour (--polli-color-paid-deep in @pollinations/ui) as
 // hex, because email clients can't read oklch.
@@ -185,8 +185,8 @@ export async function sendNotice(
     try {
         await env.EMAIL.send({
             to: user.email,
-            from: FROM,
-            replyTo: REPLY_TO,
+            from: NOTIFICATION_SENDER,
+            replyTo: BILLING_EMAIL,
             subject: notice.subject,
             // One-click unsubscribe (RFC 8058), which Gmail and Yahoo expect.
             headers: {

@@ -8,7 +8,7 @@ These providers process personal data for us. Some process it outside the EEA, i
 
 | Provider | Purpose |
 | --- | --- |
-| Cloudflare | Hosting, storage, caching, tool containers, and account email delivery |
+| Cloudflare | Hosting, storage, caching, tool containers, and email delivery for account notices and withdrawal statements |
 | Microsoft Azure | Managed PostgreSQL in Sweden for Open WebUI accounts, chats, and document search data |
 | Tinybird | Usage and billing analytics |
 | Amazon Bedrock | Prompt safety checks |

@@ -26,7 +26,7 @@ Provide accurate registration/billing details and keep credentials secure. Secre
 
 When you authorize an app, you allow that app to use your Pollinations account through the approved API key, scopes, model restrictions, expiry, and spending cap. Only authorize apps you trust. You can revoke app access or adjust app spending caps in the dashboard.
 
-When you delete your account, we permanently revoke its access and remove or de-identify its profile, credentials, balances, connected-app access, and user-owned resources as described in the Privacy Policy. We retain the linked GitHub user ID with reward ledger records to prevent duplicate quest payouts. If you later create a new account with the same GitHub identity, rewards already issued to that identity cannot be claimed again.
+When you delete your account, we permanently revoke its access and remove or de-identify its profile, credentials, balances, connected-app access, and user-owned resources as described in the Privacy Policy. We retain the linked GitHub user ID with quest credit records to prevent duplicate quest payouts. If you later create a new account with the same GitHub identity, you cannot claim the same quest credit twice.
 
 Third-party app developers are responsible for their own apps, claims, user interfaces, and end-user relationships. Unless we say otherwise, third-party apps are not operated by us. Betas/experiments are provided "as is".
 
@@ -34,10 +34,10 @@ Third-party app developers are responsible for their own apps, claims, user inte
 
 Features, plans, or pricing labeled "beta" or "preview" may be modified, suspended, or discontinued at any time. This includes changes to:
 
-- Credit and reward structures and associated benefits (for example Quest balance grants, promotional credits, and usage limits)
+- Credit programmes and associated benefits (for example Quest balance grants, promotional credits, and usage limits)
 - Model availability, capabilities, and per-model pricing
 - Developer-earnings rates and markup percentages
-- Quest availability, eligibility criteria, reward amounts, and payout timing
+- Quest availability, eligibility criteria, credit amounts, and when credit is added
 - Usage limits, quotas, and rate limits
 - Feature availability and functionality
 
@@ -69,20 +69,20 @@ If you publish an externally hosted community model, you are responsible for the
 
 Fees are per plan/order/invoice; currency is by default USD. Top-ups, including auto top-up charges, include a service fee shown before payment.
 
-**Balance.** Your balance is in-service credit, counted in US dollars, used only to pay for Pollinations API usage. We previously called it "Pollen"; the API and earlier documents may still use that name. Your balance is not legal tender, e-money, cryptocurrency, a deposit, a bank account balance, or stored value outside the Service. It is not transferable, withdrawable, or redeemable for cash except where required by law or expressly approved by us as a refund under these Terms.
+**Balance.** Your balance is in-service credit, counted in US dollars, used only to pay for Pollinations API usage. Your balance is not legal tender, e-money, cryptocurrency, a deposit, a bank account balance, or stored value outside the Service. It is not transferable, withdrawable, or redeemable for cash except where required by law or expressly approved by us as a refund under these Terms.
 
 **Balances.** Your account may hold two types of credit:
 
-- **Quest balance:** credit earned from quests, contribution rewards, free grants, promotional credits, manual credits, and developer earnings credited from Quest balance usage. The Quest balance does not create an entitlement to future credits, fixed grant amounts, or fixed grant timing.
+- **Quest balance:** credit from quests, contributions, free grants, promotions, manual credits, and earnings from Quest balance usage. The Quest balance does not create an entitlement to future credits, fixed grant amounts, or fixed grant timing.
 - **Paid balance:** purchased credit and developer earnings credited from paid balance usage. Your paid balance refills automatically only if you enable auto top-up.
 
 **Account inactivity.** Effective **2026-06-01**, if your account remains inactive for 12 consecutive months, any remaining Quest balance and paid balance will expire. For balances held before that date, the inactivity clock starts on 2026-06-01, so every existing user gets a full 12-month window from the effective date. Signing in, making API requests, or topping up counts as activity and resets the inactivity clock.
 
 **Request billing.** Your balance is consumed when API requests run. Regular models draw from the Quest balance first; paid-only models draw from the paid balance only. We may refuse requests when the available balance can't cover them. If actual usage exceeds our estimate, the balance that paid for the request may briefly go negative and clears through later credits to that balance or top-ups.
 
-**Rewards.** We may offer quests, contribution rewards, promotional credits, referral credits, or manual credits. Eligibility may be verified from your Pollinations account activity, API usage metadata, billing events, app-directory records, linked GitHub profile/activity, and public GitHub issue/PR status. Rewards are credited only when our systems or maintainers verify completion. We retain minimized identity and reward records after account deletion to prevent a reward from being claimed again through a replacement account. We may withhold, reverse, or adjust rewards for duplicate claims, mistaken payouts, abuse, fraud, failure to follow quest instructions, or other billing corrections. Rewards are credited to your balance and have no cash value.
+**Quests and other credits.** We may add credit for quests, contributions, promotions, or referrals, or credit an account manually. Eligibility may be verified from your Pollinations account activity, API usage metadata, billing events, app-directory records, linked GitHub profile/activity, and public GitHub issue/PR status. For quests, our systems or maintainers verify completion before adding credit. We retain minimized identity and credit records after account deletion to prevent duplicate claims through a replacement account. We may withhold, reverse, or adjust these credits for duplicate claims, mistaken payouts, abuse, fraud, failure to follow quest instructions, or other billing corrections. These credits have no cash value.
 
-**Developer earnings.** App developers may enable developer earnings on their Publishable App Keys, in which case authorized requests include a markup that goes to the developer. The current rate and the user's share are shown before authorization.
+**Developer earnings.** Developers can enable earnings for a Pollinations Pay app. Authorized requests then include a markup that goes to the app developer. The current rate and the user's share are shown before authorization. Eligible community model usage can also generate earnings for the model publisher.
 
 Developer earnings are credited to the developer’s Quest or paid balance, matching the balance the user paid from. They are not cash payouts and are not transferable, withdrawable, or redeemable outside the Service. We may review and adjust developer earnings for refunds, chargebacks, fraud, abuse, pricing errors, self-crediting (using your own app to inflate your earnings), or other billing corrections.
 
@@ -90,13 +90,13 @@ Developer earnings are credited to the developer’s Quest or paid balance, matc
 
 **Payments.** Payments are processed by Stripe Payments Europe, Limited. Stripe sends purchase invoices by email.
 
-**No late payments.** All credit is prepaid: there are no invoices, due dates, or late fees. The only way a balance can go below zero is when final usage on a request exceeds the pre-flight estimate; that negative balance clears automatically through later credits to that balance or future top-ups, as described under Request billing above. We may refuse new paid-model requests until a negative paid balance is covered.
+**No late payments.** Top-ups are prepaid. We issue an invoice for each purchase. There are no later payment due dates or late fees. The only way a balance can go below zero is when final usage on a request exceeds the pre-flight estimate; that negative balance clears automatically through later credits to that balance or future top-ups, as described under Request billing above. We may refuse new paid-model requests until a negative paid balance is covered.
 
 **Price changes.** Prices, model costs, and credit rates may change at any time without notice; what's shown at top-up or in the pre-flight estimate is what applies to that transaction. If a change materially raises the cost of models you actively use, you may request a refund of unused paid balance within 14 days.
 
 ## 7) Refunds & Cancellations
 
-Refunds, cancellations, and chargebacks are governed by our **[Refunds & Cancellations Policy](/refunds)**. Nothing in these Terms limits non-waivable statutory rights.
+Refunds, cancellations, and chargebacks are governed by our **[Refunds & Cancellations Policy](/refunds)**. Consumers can [withdraw from a credit top-up contract here](https://enter.pollinations.ai/withdrawal). Nothing in these Terms limits non-waivable statutory rights.
 
 ## 8) IP & Open-Source
 

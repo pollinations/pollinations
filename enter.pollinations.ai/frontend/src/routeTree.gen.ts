@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WithdrawalRouteImport } from './routes/withdrawal'
 import { Route as TopUpRouteImport } from './routes/top-up'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as RefundsRouteImport } from './routes/refunds'
@@ -34,6 +35,11 @@ import { Route as DashboardAgentsRouteImport } from './routes/_dashboard.agents'
 import { Route as DashboardActivityRouteImport } from './routes/_dashboard.activity'
 import { Route as DashboardAccountRouteImport } from './routes/_dashboard.account'
 
+const WithdrawalRoute = WithdrawalRouteImport.update({
+  id: '/withdrawal',
+  path: '/withdrawal',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TopUpRoute = TopUpRouteImport.update({
   id: '/top-up',
   path: '/top-up',
@@ -165,6 +171,7 @@ export interface FileRoutesByFullPath {
   '/refunds': typeof RefundsRoute
   '/terms': typeof TermsRoute
   '/top-up': typeof TopUpRoute
+  '/withdrawal': typeof WithdrawalRoute
   '/account': typeof DashboardAccountRoute
   '/activity': typeof DashboardActivityRoute
   '/agents': typeof DashboardAgentsRoute
@@ -190,6 +197,7 @@ export interface FileRoutesByTo {
   '/refunds': typeof RefundsRoute
   '/terms': typeof TermsRoute
   '/top-up': typeof TopUpRoute
+  '/withdrawal': typeof WithdrawalRoute
   '/account': typeof DashboardAccountRoute
   '/activity': typeof DashboardActivityRoute
   '/agents': typeof DashboardAgentsRoute
@@ -217,6 +225,7 @@ export interface FileRoutesById {
   '/refunds': typeof RefundsRoute
   '/terms': typeof TermsRoute
   '/top-up': typeof TopUpRoute
+  '/withdrawal': typeof WithdrawalRoute
   '/_dashboard/account': typeof DashboardAccountRoute
   '/_dashboard/activity': typeof DashboardActivityRoute
   '/_dashboard/agents': typeof DashboardAgentsRoute
@@ -244,6 +253,7 @@ export interface FileRouteTypes {
     | '/refunds'
     | '/terms'
     | '/top-up'
+    | '/withdrawal'
     | '/account'
     | '/activity'
     | '/agents'
@@ -269,6 +279,7 @@ export interface FileRouteTypes {
     | '/refunds'
     | '/terms'
     | '/top-up'
+    | '/withdrawal'
     | '/account'
     | '/activity'
     | '/agents'
@@ -295,6 +306,7 @@ export interface FileRouteTypes {
     | '/refunds'
     | '/terms'
     | '/top-up'
+    | '/withdrawal'
     | '/_dashboard/account'
     | '/_dashboard/activity'
     | '/_dashboard/agents'
@@ -322,11 +334,19 @@ export interface RootRouteChildren {
   RefundsRoute: typeof RefundsRoute
   TermsRoute: typeof TermsRoute
   TopUpRoute: typeof TopUpRoute
+  WithdrawalRoute: typeof WithdrawalRoute
   AppSignInRoute: typeof AppSignInRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/withdrawal': {
+      id: '/withdrawal'
+      path: '/withdrawal'
+      fullPath: '/withdrawal'
+      preLoaderRoute: typeof WithdrawalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/top-up': {
       id: '/top-up'
       path: '/top-up'
@@ -544,6 +564,7 @@ const rootRouteChildren: RootRouteChildren = {
   RefundsRoute: RefundsRoute,
   TermsRoute: TermsRoute,
   TopUpRoute: TopUpRoute,
+  WithdrawalRoute: WithdrawalRoute,
   AppSignInRoute: AppSignInRoute,
 }
 export const routeTree = rootRouteImport

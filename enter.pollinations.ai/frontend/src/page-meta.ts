@@ -23,6 +23,7 @@ export const PAGE_TITLES: Record<keyof FileRoutesByFullPath, string> = {
     "/error": "Sign in",
     "/grant": "Allow access",
     "/top-up": "Top-up",
+    "/withdrawal": "Withdraw from your credit top-up contract",
     "/privacy": "Privacy",
     "/terms": "Terms",
     "/refunds": "Refunds",

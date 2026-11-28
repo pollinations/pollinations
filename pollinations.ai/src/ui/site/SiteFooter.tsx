@@ -27,6 +27,10 @@ const COLUMNS = [
             { to: "/terms", label: "Terms" },
             // Payment providers generally require this to be reachable.
             { to: "/refunds", label: "Refunds" },
+            {
+                href: "https://enter.pollinations.ai/withdrawal",
+                label: "Withdraw from contract here",
+            },
         ],
     },
 ] as const;

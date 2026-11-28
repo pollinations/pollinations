@@ -9,6 +9,7 @@ import { AuthFlowScreen } from "../components/auth/auth-flow-screen.tsx";
 import { SignInScreen } from "../components/auth/sign-in-screen.tsx";
 import { BuyPollenPanel } from "../components/pollen";
 import { CheckoutConfirmation } from "../components/pollen/checkout-confirmation.tsx";
+import { WithdrawFromContractLink } from "../components/pollen/pollen-balance.tsx";
 import {
     type AccountBalance,
     BALANCE_PATH,
@@ -113,7 +114,9 @@ function TopUpPage() {
             <SignInScreen
                 title="Top-up"
                 description="Sign in to your Pollinations account to continue."
-            />
+            >
+                <WithdrawFromContractLink />
+            </SignInScreen>
         );
     }
 
@@ -149,6 +152,7 @@ function TopUpPage() {
                         }
                     />
                 )}
+                <WithdrawFromContractLink />
             </AuthFlowScreen>
         );
     }
@@ -170,7 +174,9 @@ function TopUpPage() {
                         Try again
                     </Button>
                 }
-            />
+            >
+                <WithdrawFromContractLink />
+            </AuthFlowScreen>
         );
     }
 

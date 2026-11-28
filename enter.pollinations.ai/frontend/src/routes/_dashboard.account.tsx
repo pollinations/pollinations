@@ -312,15 +312,15 @@ function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogProps) {
                             Profile, sessions, connected accounts, and API keys
                         </li>
                         <li>
-                            Balances, access to reward history, agents, and
+                            Balances, access to your quest history, agents, and
                             community models
                         </li>
                         <li>Published media listings and tags</li>
                     </ul>
                     <p>
                         We retain only your immutable GitHub or Google user ID
-                        with records of rewards already issued to prevent
-                        duplicate quest payouts.
+                        with records of quest credit already issued to prevent
+                        duplicate claims.
                     </p>
                     <p>
                         Cached copies of uploaded and generated media may remain

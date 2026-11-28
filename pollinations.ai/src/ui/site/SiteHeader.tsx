@@ -36,6 +36,7 @@ const NAV = [
 const LEGAL = [
     { to: "/terms", label: "Terms" },
     { to: "/privacy", label: "Privacy" },
+    { to: "/refunds", label: "Refunds" },
 ] as const;
 
 const [GITHUB, DISCORD, ...OTHER_SOCIAL] = SOCIAL;

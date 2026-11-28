@@ -268,6 +268,7 @@ Be concise. PRs/comments/issues: bullets, <200 words, no fluff.
 
 ### Pollinations identity
 
+- In customer-facing copy, call the unit **credit** and the two balances **paid balance** and **Quest balance**. Use **quests** for activities and **earnings** for eligible app or model usage. Use these terms in checkout, receipts, policies, and help text.
 - Pollinations.ai is the product brand. Use `hello@pollinations.ai` for public support, privacy, legal, and general customer contact, and `billing@pollinations.ai` for billing contact.
 - Myceli.AI OÜ is the registered legal entity and data controller. Preserve its legal name, copyright and ownership attribution, contributor identities, provider-account identities, infrastructure hostnames, and entity-specific operational contacts.
 - Never replace Myceli entity or infrastructure references merely because they differ from the Pollinations product brand. Change them only as part of an explicitly requested legal-entity or infrastructure migration.

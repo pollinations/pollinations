@@ -9,7 +9,7 @@ export function StartBuilding() {
         <Callout
             tone="dark"
             title="Start with one piece."
-            body="Your first API key earns a small Quest reward. Make a call, then publish when you’re ready."
+            body="Create your first API key to earn credit in your Quest balance. Make a call, then publish when you’re ready."
         >
             <ExternalLinkButton
                 href="https://enter.pollinations.ai/keys"

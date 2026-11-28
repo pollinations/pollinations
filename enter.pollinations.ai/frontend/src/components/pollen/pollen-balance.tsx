@@ -107,7 +107,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                     icon={<CardIcon className="h-4 w-4" />}
                                     items={[
                                         "Top-ups you bought",
-                                        "Earnings from paid-side spend in your apps",
+                                        "Earnings when someone uses paid credit in your Pollinations Pay app or on your eligible model",
                                         "Used for paid-only models, or when Quest balance can't cover",
                                     ]}
                                     earned={paidWeek}
@@ -148,8 +148,8 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                     title="Quest balance"
                                     icon={<SproutIcon className="h-4 w-4" />}
                                     items={[
-                                        "Earned from completing Quests",
-                                        "Earnings credited from your apps",
+                                        "Credit from completing quests",
+                                        "Earnings when someone uses Quest credit in your Pollinations Pay app or on your eligible model",
                                         questPollenRestricted
                                             ? "Available after your account is verified"
                                             : "Used first for regular models, when it can cover",
@@ -347,9 +347,10 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                 initialPack={initialPack}
             />
         </Surface>
+        <WithdrawFromContractLink />
         <Footnotes>
             {/* When auto top-up charges, stated before anyone turns it on.
-                "Paid": Quest Pollen doesn't trigger it. */}
+                "Paid": Quest credit doesn't trigger it. */}
             <p className="flex items-start gap-1.5">
                 <RefreshIcon
                     aria-hidden="true"
@@ -376,6 +377,12 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
             />
         </Footnotes>
     </>
+);
+
+export const WithdrawFromContractLink: FC = () => (
+    <InlineLink href="/withdrawal" size="sm" className="w-fit">
+        Withdraw from contract here
+    </InlineLink>
 );
 
 /**

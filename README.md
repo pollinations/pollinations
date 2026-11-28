@@ -198,7 +198,7 @@ curl 'https://gen.pollinations.ai/v1/audio/speech' \
   -o speech.mp3
 ```
 
-Available voices: `alloy`, `echo`, `fable`, `onyx`, `nova`, `shimmer`, plus [30+ ElevenLabs voices](https://gen.pollinations.ai/docs).
+Available voices: `alloy`, `echo`, `fable`, `onyx`, `nova`, `shimmer`, plus [35+ ElevenLabs voices](https://gen.pollinations.ai/docs).
 
 **Speech-to-text:**
 

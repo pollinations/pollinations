@@ -121,6 +121,7 @@ import {
     filterCatalogEntries,
     getModelHealthLookup,
 } from "./model-catalog.ts";
+import { modelQuoteRoutes } from "./model-quote.ts";
 import { handleRealtimeWebSocket } from "./realtime.ts";
 
 const ModelInfoListSchema = z.array(ModelInfoSchema).meta({
@@ -462,6 +463,7 @@ async function resolveVisibleModelEntry(
 export const proxyRoutes = new Hono<Env>()
     // Edge rate limiter: first line of defense (10 req/s per IP)
     .use("*", edgeRateLimit)
+    .route("/", modelQuoteRoutes)
     // Optional auth for models endpoints - doesn't require auth but uses it if provided
     .use("/v1/models", auth())
     // Canonical IDs contain slashes (`openai/gpt-5-nano`), so match the rest

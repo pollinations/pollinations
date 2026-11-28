@@ -120,6 +120,40 @@ describe("device login output", () => {
 });
 
 describe("auth status", () => {
+    it("reports unknown authentication and fails when neither check is available", async () => {
+        setKeyOverride("sk_test");
+        setOutputMode("json");
+        const stdout = vi
+            .spyOn(process.stdout, "write")
+            .mockImplementation(() => true);
+        vi.stubGlobal("fetch", async () => Response.json({}, { status: 503 }));
+
+        await expect(showAuthStatus()).rejects.toEqual(new ExitSignal(1));
+        expect(JSON.parse(String(stdout.mock.calls[0][0]))).toMatchObject({
+            authenticated: null,
+            status: "Could not verify API key. Retry later.",
+        });
+    });
+
+    it("still verifies authentication when only the balance check succeeds", async () => {
+        setKeyOverride("sk_test");
+        setOutputMode("json");
+        const stdout = vi
+            .spyOn(process.stdout, "write")
+            .mockImplementation(() => true);
+        vi.stubGlobal("fetch", async (url: string) =>
+            url.endsWith("/account/balance")
+                ? Response.json({ balance: 1, accountBalance: { total: 1 } })
+                : Response.json({}, { status: 503 }),
+        );
+
+        await showAuthStatus();
+        expect(JSON.parse(String(stdout.mock.calls[0][0]))).toMatchObject({
+            authenticated: true,
+            pollen: 1,
+        });
+    });
+
     it("shows the wallet as pollen and the key budget separately", async () => {
         setKeyOverride("sk_test");
         setOutputMode("json");

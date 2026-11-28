@@ -59,28 +59,49 @@ export async function* sseEvents(
 
     const decoder = new TextDecoder();
     let buffer = "";
+    // One `data:` line: the terminating [DONE], a parsed event, or neither.
+    const parseLine = (
+        line: string,
+    ): { done: boolean; event?: Record<string, unknown> } => {
+        if (!line.startsWith("data:")) return { done: false };
+        const data = line.slice(5).trim();
+        if (data === "[DONE]") return { done: true };
+        try {
+            return { done: false, event: JSON.parse(data) };
+        } catch {
+            // A malformed payload is skipped, as before.
+            return { done: false };
+        }
+    };
+
+    let complete = false;
     try {
-        while (true) {
+        while (!complete) {
             const { done, value } = await reader.read();
-            if (done) throw new Error("Stream interrupted before [DONE]");
+            if (done) break;
 
             buffer += decoder.decode(value, { stream: true });
             const lines = buffer.split("\n");
             buffer = lines.pop() ?? "";
 
             for (const line of lines) {
-                if (!line.startsWith("data:")) continue;
-                const data = line.slice(5).trim();
-                if (data === "[DONE]") return;
-                let parsed: Record<string, unknown>;
-                try {
-                    parsed = JSON.parse(data);
-                } catch {
-                    continue;
-                }
-                yield parsed;
+                const parsed = parseLine(line);
+                complete = parsed.done;
+                if (complete) break;
+                if ("event" in parsed)
+                    yield parsed.event as Record<string, unknown>;
             }
         }
+        // A stream may end right after its last line, without the trailing
+        // newline; that buffered line is still a complete event.
+        if (!complete) {
+            buffer += decoder.decode();
+            const parsed = parseLine(buffer);
+            complete = parsed.done;
+            if ("event" in parsed)
+                yield parsed.event as Record<string, unknown>;
+        }
+        if (!complete) throw new Error("Stream interrupted before [DONE]");
     } finally {
         await reader.cancel().catch(() => undefined);
     }

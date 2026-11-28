@@ -3607,7 +3607,7 @@ const TEXT_BASE_SERVICES = {
             "Analyze long documents at low cost or ask questions about images and videos.",
         inputModalities: ["text", "image", "video"],
         outputModalities: ["text"],
-        maxReferenceImages: 20, // Bedrock Converse image limit.
+        maxReferenceImages: 5, // Nova 2 Converse accepts at most 5 inline images per request (AWS Nova 2 user guide, multimodal limits).
         tools: true,
         reasoning: true,
         contextLength: 1048576,

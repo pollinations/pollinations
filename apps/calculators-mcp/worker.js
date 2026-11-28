@@ -2,6 +2,7 @@ import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { baseTools } from "./tools/bases.js";
 import { checkDigitTools } from "./tools/checkdigit.js";
+import { combinatoricsTools } from "./tools/combinatorics.js";
 import { contrastTools } from "./tools/contrast.js";
 import { currencyTools } from "./tools/currency.js";
 import { diffTools } from "./tools/diff.js";
@@ -21,6 +22,7 @@ const handler = createMcpHandler(
         );
         for (const [name, description, shape, run] of [
             ...timeTools,
+            ...combinatoricsTools,
             ...contrastTools,
             ...unicodeTools,
             ...qrTools,

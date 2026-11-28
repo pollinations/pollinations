@@ -64,6 +64,7 @@ for (const modern of [false, true])
                 "currency_convert",
                 "currency_list",
                 "currency_rates",
+                "modular_power",
                 "check_contrast",
                 "compare_versions",
                 "to_fraction",
@@ -892,6 +893,75 @@ test("integer_math is exact past the range of a JSON number", async (t) => {
         ).result,
         "62",
     );
+});
+
+test("modular_power keeps huge exponents exact and rejects bad moduli", async (t) => {
+    const client = await clientFor(t);
+    // The classical worked example: 4 ** 13 is 67108864, which is 445 modulo 497.
+    assert.deepEqual(
+        await call(client, "modular_power", {
+            base: "4",
+            exponent: "13",
+            modulus: "497",
+        }),
+        { result: "445" },
+    );
+    assert.deepEqual(
+        await call(client, "modular_power", {
+            base: "2",
+            exponent: "10",
+            modulus: "1000",
+        }),
+        { result: "24" },
+    );
+    // Computing the power first would need a billion digits, so this pins the
+    // square-and-multiply path rather than plain exponentiation.
+    assert.deepEqual(
+        await call(client, "modular_power", {
+            base: "123456789",
+            exponent: "987654321",
+            modulus: "1000000007",
+        }),
+        { result: "652541198" },
+    );
+    // Anything modulo 1 is 0, including the empty product of exponent 0.
+    assert.deepEqual(
+        await call(client, "modular_power", {
+            base: "5",
+            exponent: "0",
+            modulus: "1",
+        }),
+        { result: "0" },
+    );
+    assert.deepEqual(
+        await call(client, "modular_power", {
+            base: "5",
+            exponent: "0",
+            modulus: "7",
+        }),
+        { result: "1" },
+    );
+    // A negative base is reduced into 0..modulus-1, so -8 modulo 5 is 2, not -3.
+    assert.deepEqual(
+        await call(client, "modular_power", {
+            base: "-2",
+            exponent: "3",
+            modulus: "5",
+        }),
+        { result: "2" },
+    );
+    for (const args of [
+        { base: "2", exponent: "3", modulus: "0" },
+        { base: "2", exponent: "-1", modulus: "5" },
+        { base: "2.5", exponent: "3", modulus: "5" },
+        { base: "2", exponent: "3", modulus: "abc" },
+    ])
+        assert.equal(
+            (await client.callTool({ name: "modular_power", arguments: args }))
+                .isError,
+            true,
+            JSON.stringify(args),
+        );
 });
 
 test("integer_math truncates toward zero and takes the gcd of signed values", async (t) => {

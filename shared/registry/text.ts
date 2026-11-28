@@ -4109,15 +4109,16 @@ const TEXT_BASE_SERVICES = {
     "mistralai/mistral-large-4": {
         supportedParameters: CHAT_PARAMETERS.mistralLarge4,
         aliases: [],
-        provider: "mistral",
+        provider: "azure",
         publisher: "Mistral",
         category: "text",
         addedDate: new Date("2026-10-06").getTime(),
-        paidOnly: true,
-        priceMultiplier: 1,
+        paidOnly: false,
+        priceMultiplier: 0.75,
         cost: {
-            // Mistral direct API standard rates, verified 2026-11-11:
-            // https://docs.mistral.ai/inference/pricing
+            // Azure Foundry Global Standard rates for mistral-large-4-latest,
+            // from the Foundry model page (2026-11-11). Matches Mistral's direct
+            // standard rate. DataZone deployments cost more.
             promptTextTokens: perMillion(0.7),
             promptCachedTokens: perMillion(0.07),
             completionTextTokens: perMillion(2.1),

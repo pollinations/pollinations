@@ -665,6 +665,18 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "mistralai/mistral-large-4": {
+        "mistralai/mistral-large-4:mistral": {
+            provider: "mistral",
+            addedDate: new Date("2026-11-12").getTime(),
+            // Mistral direct API standard rates.
+            cost: {
+                promptTextTokens: perMillion(0.7),
+                promptCachedTokens: perMillion(0.07),
+                completionTextTokens: perMillion(2.1),
+            },
+        },
+    },
     "mistralai/mistral-large-3": {
         "mistralai/mistral-large-3:aws": {
             supportedParameters: CHAT_PARAMETERS.mistralLarge,
@@ -690,14 +702,6 @@ export const TEXT_FALLBACKS = {
                 promptCacheWriteTokens: perMillion(2),
                 completionTextTokens: perMillion(10),
             },
-        },
-    },
-    "mistralai/mistral-large-4": {
-        // Both routes use Mistral infrastructure; this covers gateway failures.
-        "mistralai/mistral-large-4:vercel": {
-            supportedParameters: CHAT_PARAMETERS.vercelMistralLarge4,
-            provider: "vercel",
-            addedDate: new Date("2026-10-06").getTime(),
         },
     },
     "tencent/hy4-flash": {

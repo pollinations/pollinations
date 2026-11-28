@@ -71,8 +71,6 @@ describe("genericOpenAIClient", () => {
     );
 
     it.each([
-        ["mistralai/mistral-large-4", false],
-        ["mistralai/mistral-large-4", true],
         // Reasoning on Mistral Small 4 also returns content as thinking chunks.
         ["mistralai/mistral-small-4", false],
         ["mistralai/mistral-small-4", true],
@@ -252,7 +250,7 @@ describe("genericOpenAIClient", () => {
 
     it("translates Mistral request controls while hiding reasoning locally", async () => {
         const resolved = resolveModelConfig([], {
-            model: "mistralai/mistral-large-4",
+            model: "mistralai/mistral-small-4",
             seed: 42,
             include_reasoning: false,
             reasoning: { effort: "high" },

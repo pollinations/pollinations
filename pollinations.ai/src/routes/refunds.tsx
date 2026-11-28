@@ -55,7 +55,12 @@ function RefundsPage() {
         >
             <details className="rounded-card border border-divider p-4">
                 <summary className="cursor-pointer font-semibold">
-                    Withdraw from contract here
+                    <span>Withdraw from contract here</span>
+                    <span className="mt-1 block text-sm font-normal text-theme-text-muted">
+                        If you bought credit for personal use in the European
+                        Economic Area, you usually have 14 days from purchase to
+                        withdraw.
+                    </span>
                 </summary>
                 {sentTo ? (
                     <p className="mt-3" role="status">
@@ -70,27 +75,30 @@ function RefundsPage() {
                         onSubmit={submit}
                     >
                         <p>{withdrawalStatement}</p>
-                        <FieldStack label="Your name">
-                            <Input
-                                name="name"
-                                autoComplete="name"
-                                required
-                                maxLength={120}
-                            />
-                        </FieldStack>
                         <FieldStack
-                            label="Credit top-up"
-                            helper="Enter an order or invoice number, or the date and amount."
+                            label="Email for your copy"
+                            helper="Your Pollinations account email helps billing find your purchase. You can also use another address."
                         >
-                            <Input name="purchase" required maxLength={300} />
-                        </FieldStack>
-                        <FieldStack label="Email for your copy">
                             <Input
                                 name="email"
                                 type="email"
                                 autoComplete="email"
                                 required
                                 maxLength={254}
+                            />
+                        </FieldStack>
+                        <FieldStack
+                            label="Credit top-up"
+                            helper="Enter an order or invoice number, or the date and amount. You can also include your account ID from Account → Profile."
+                        >
+                            <Input name="purchase" required maxLength={300} />
+                        </FieldStack>
+                        <FieldStack label="Your name">
+                            <Input
+                                name="name"
+                                autoComplete="name"
+                                required
+                                maxLength={120}
                             />
                         </FieldStack>
                         <Button
